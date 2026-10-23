@@ -9,6 +9,7 @@ import { OPTIONS_STEPS } from "./options.mjs";
 import { FLOW_STEPS } from "./flow.mjs";
 import { ASSISTED_STEPS } from "./assisted.mjs";
 import { ASSISTED_2 } from "./assisted-2.mjs";
+import { DRAG_STEPS } from "./assisted-drag.mjs";
 import { T8 } from "./t8.mjs";
 import { B1, withNeeds } from "./setup.mjs";
 
@@ -25,7 +26,7 @@ export function compareStepIds(a, b) {
 
 // last: true 的步骤（B15 汇总控制台错误）无论编号都排在最后，以覆盖此前所有步骤
 export const sortSteps = steps => [...steps].sort((a, b) => (a.last ? 1 : 0) - (b.last ? 1 : 0) || compareStepIds(a.id, b.id));
-export const STEPS = sortSteps([...OPTIONS_STEPS, ...FLOW_STEPS, B1, ...ASSISTED_STEPS, ...ASSISTED_2, T8].map(withNeeds));
+export const STEPS = sortSteps([...OPTIONS_STEPS, ...FLOW_STEPS, B1, ...ASSISTED_STEPS, ...DRAG_STEPS, ...ASSISTED_2, T8].map(withNeeds));
 
 export function selectSteps(steps, { autoOnly = false, only = null } = {}) {
   if (only) {

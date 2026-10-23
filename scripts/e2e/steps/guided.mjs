@@ -2,6 +2,7 @@
 // 向导接口约定（server.mjs）：每次 setStep 只收一个答案；重试、提示变化都要重新 setStep（新 seq）再等。
 import { EXT_ID } from "../config.mjs";
 import { sleep, pageTargets } from "./util.mjs";
+import { isSorry } from "./captcha.mjs";
 
 const EXT_PREFIX = `chrome-extension://${EXT_ID}/`;
 const OPT_PREFIX = `${EXT_PREFIX}options/`;
@@ -12,17 +13,22 @@ const stoppedCtx = ctx => !!(ctx.signal?.aborted || ctx.abortSignal?.aborted);
 // 一次等待结束后向导页显示的空闲卡片（无按钮）：免得上一个说明和按钮留在页面上，用户以为还要操作
 export const IDLE = { title: "处理中…", instruction: "脚本正在处理刚才的结果，请稍候，下一步的说明马上出现。请先不要操作测试浏览器。", buttons: [] };
 
-// Google 人机验证页：只读 CDP 目标网址，不依赖扩展
-export async function sorryHint(ctx) {
+// Google 人机验证页：只读 CDP 目标网址，不依赖扩展。o.onRetry 存在时“重试”会重新准备现场，才叫用户点它
+export async function sorryHint(ctx, o = {}) {
   if (!ctx.browser?.client) return null;
-  const hit = (await pageTargets(ctx.browser)).find(t => /^https:\/\/(www|ipv4|ipv6)\.google\.com\/sorry/.test(t.url));
-  return hit ? "Google 弹出了人机验证页（google.com/sorry）。请切到那个标签完成验证，验证通过后 Google 会跳回搜索结果，"
-    + "脚本继续等待；如果之后仍没有出现预期的结果，点“重试”再操作一次。" : null;
+  const hit = (await pageTargets(ctx.browser)).find(t => isSorry(t.url));
+  if (!hit) return null;
+  return "Google 弹出了人机验证页（google.com/sorry）。请切到那个标签完成验证，验证通过后 Google 会跳回搜索结果，脚本继续等待。"
+    + (o.onRetry ? "如果之后仍没有出现预期的结果，点“重试”：脚本会重新整理标签、重新准备这一项，再按说明操作一次。"
+      : "如果之后仍没有出现预期的结果，按说明再操作一次（不用点“重试”）。");
 }
+// 点“重试”且步骤提供了 onRetry 时，重新准备期间显示的卡片（无按钮，免得用户在旧说明上再点一次）
+export const RETRYING = title => ({ title, instruction: "正在重新准备这一项（整理标签、重新打开测试网址），请稍候，说明马上重新出现。", buttons: [] });
 
 // 显示说明并等待：probe() 返回真值即满足；用户的答案（skip/retry/pass/fail/done）也会结束等待（retry 除外）。
 // 返回 { kind: "met", value } | { kind: "answer", answer } | { kind: "timeout", last }。
 // o: { title, instruction, sampleText?, copyText?, buttons?, probe?, hint?, timeoutMs?, intervalMs?, onRetry?, what, afterShow? }
+// onRetry：用户点“重试”时先执行（重新整理现场、重新打开触发网址、重新记下判定要用的 id），再重新显示说明并重新计时
 // afterShow：说明显示出来、停顿 afterShowMs（默认 1500）之后执行一次，例如把设置页切到前台（先让用户看到说明）
 export async function userWait(ctx, o) {
   const limit = o.timeoutMs ?? ctx.timeoutMs ?? 120000;
@@ -47,8 +53,13 @@ export async function userWait(ctx, o) {
       if (stoppedCtx(ctx)) throw new Error(`等待“${o.what}”时步骤被中断`);
       if (answer === "retry") {
         answer = null;
+        if (o.onRetry) {
+          token++; // 旧卡片上的答案作废
+          ctx.guide.setStep(RETRYING(o.title));
+          await o.onRetry();
+        }
         end = Date.now() + limit;
-        await o.onRetry?.();
+        hint = null;
         show();
         continue;
       }
@@ -58,7 +69,7 @@ export async function userWait(ctx, o) {
         catch (e) { last = e.message; }
       }
       if (hintFn) {
-        const h = await Promise.resolve().then(() => hintFn(ctx)).catch(() => null);
+        const h = await Promise.resolve().then(() => hintFn(ctx, o)).catch(() => null);
         if (h !== hint) { hint = h; show(); }
       }
       if (Date.now() >= end) return { kind: "timeout", last };
@@ -144,7 +155,7 @@ export function abortable(ctx, p) {
 // 由脚本发起授权申请（CDP 带用户手势），用户只需在弹框里点“允许”。返回是否已授权；被中断时抛出
 export async function requestGrant(ctx, origins, { title = "授权", why = "" } = {}) {
   const hosts = [...new Set(origins.map(o => o.replace(/^\w+:\/\//, "").replace(/\/\*$/, "")))];
-  ctx.guide.setStep({ title, instruction: `${why}即将弹出 Chrome 的授权框（${hosts.join("、")}），请点“允许”。允许后脚本自动继续。`, buttons: [] });
+  ctx.guide.setStep({ title, instruction: `${why}即将弹出 Chrome 的授权框（${hosts.join("、")}），请点“允许（Allow）”。允许后脚本自动继续。`, buttons: [] });
   await sleep(1500);
   await ctx.browser.evalExt("true"); // 确保有设置页
   const opt = (await pageTargets(ctx.browser)).find(t => t.url.startsWith(OPT_PREFIX));

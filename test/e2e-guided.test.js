@@ -206,7 +206,7 @@ test("ensureGrants: auto-only 缺授权只报缺失、不弹框；引导式带�
   assert.equal(req.length, 1);
   assert.equal(req[0].opts.userGesture, true);
   assert.match(req[0].expr, /engine-a\.localhost:8765.*kagi\.com/);
-  assert.match(g2.steps[0].instruction, /请点“允许”/);
+  assert.match(g2.steps[0].instruction, /请点“允许（Allow）”/);
 
   const r3 = await ensureGrants({ browser: fakeBrowser(false), guide: fakeGuide(), port: 8765 }, { autoOnly: false });
   assert.equal(r3.ok, false);
