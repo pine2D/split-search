@@ -4,6 +4,7 @@ import { EXT_ID, GRANT_ORIGINS } from "../config.mjs";
 import { SRC_DIR } from "../ext.mjs";
 import { evalIn } from "./util.mjs";
 import { userWait, guideUrl, extTargets, extAlive, contains, requestGrant, focusGuide } from "./guided.mjs";
+import { L } from "./labels.mjs";
 
 const OPT_URL = `chrome-extension://${EXT_ID}/options/options.html`;
 
@@ -22,10 +23,10 @@ export function b1Verdict({ fresh, optionsOpened, id }) {
 const installText = ens => (ens.hint
   ? [`测试浏览器里已经登记了 Split Search，但它目前不可用（${ens.hint}）。`,
     "1. 在已打开的 chrome://extensions 标签里找到 Split Search；",
-    "2. 打开它右下角的开关（启用）。", "启用后脚本自动继续。"]
+    "2. 打开它卡片右下角的开关（启用；英文界面同一位置的开关）。", "启用后脚本自动继续。"]
   : ["测试浏览器里还没有安装 Split Search，需要做一次（之后的运行不用再做）：",
-    "1. 切到已打开的 chrome://extensions 标签，打开右上角的“开发者模式”；",
-    "2. 点“加载已解压的扩展程序”，选择下面这个目录（可复制）：", `   ${SRC_DIR}`,
+    `1. 切到已打开的 chrome://extensions 标签，打开右上角的${L.devMode}；`,
+    `2. 点${L.loadUnpacked}，选择下面这个目录（可复制）：`, `   ${SRC_DIR}`,
     `3. 加载后扩展 ID 应为 ${EXT_ID}，并会自动打开设置页（这就是 B1 的检查）。`,
     "脚本检测到扩展后自动继续；点“跳过”则结束本次运行。"]).join("\n");
 
@@ -150,11 +151,11 @@ export function withNeeds(step) {
 
 // ---- 收尾：恢复测试浏览器的搜索设置（只在测试配置里，但保持整洁）----
 const CLEANUP = {
-  default: "把默认搜索引擎改回 Google：chrome://settings/searchEngines →“搜索引擎”里 Google 右侧 ⋮ →“设为默认选项”（不能删除正在用作默认的条目，所以先做这一步）",
-  gb: "删除网站搜索 gb：“网站搜索”里 gb 右侧 ⋮ →“删除”",
-  t14: "删除网站搜索 bg、dg、px、kg（T14 添加的）",
-  t12: "编辑 Chrome 自动发现的 Kagi 条目，把网址末尾追加的 &_ss=kagi,bing 删掉后保存",
-  access: "如果 T8 里把扩展的“网站访问权限”改成了“点击时”，确认已改回",
+  default: `把默认搜索引擎改回 Google：chrome://settings/searchEngines →${L.searchEngines}里 Google 右侧 ${L.more} →${L.makeDefault}（不能删除正在用作默认的条目，所以先做这一步）`,
+  gb: `删除网站搜索 gb：${L.siteSearch}里 gb 右侧 ${L.more} →${L.del}`,
+  t14: `删除网站搜索 bg、dg、px、kg（T14 添加的；各自右侧 ${L.more} →${L.del}）`,
+  t12: `点 Chrome 自动发现的 Kagi 条目右侧的${L.edit}，把网址末尾追加的 &_ss=kagi,bing 删掉后保存`,
+  access: `如果 T8 里把扩展的${L.siteAccess}改成了${L.onClick}，确认已改回${L.onSpecific}`,
 };
 export function cleanupItems(steps) {
   const want = new Set(steps.flatMap(s => s.cleanup ?? []));

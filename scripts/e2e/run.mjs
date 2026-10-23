@@ -15,6 +15,7 @@ import { renderReport, reportBaseName, redact } from "./report.mjs";
 import { openGuide, installGuide, ensureGrants, cleanupPrompt, cleanupItems, cleanupText } from "./steps/setup.mjs";
 import { makeAfterStep } from "./steps/recover.mjs";
 import { extAlive } from "./steps/guided.mjs";
+import { L } from "./steps/labels.mjs";
 
 // 终端输出一律脱敏（网址里的 token/session 等参数值）
 const log = m => console.log(redact(m));
@@ -34,7 +35,7 @@ function preconditionMessage(ens, args) {
     `前置条件缺失：测试配置里还没有安装 Split Search 扩展（ID ${EXT_ID}）${ens.hint ? `，${ens.hint}` : ""}。`,
     "一次性准备（之后不用再做）：",
     `  1. 打开测试浏览器：${CHROME_BIN} --user-data-dir=${PROFILE_DIR} --disable-sync --no-first-run chrome://extensions`,
-    "  2. 打开右上角“开发者模式”，点“加载已解压的扩展程序”，选择目录：",
+    `  2. 打开右上角${L.devMode}，点${L.loadUnpacked}，选择目录：`,
     `     ${ext.SRC_DIR}`,
     `  3. 确认扩展 ID 为 ${EXT_ID}，关闭这个浏览器，然后重新运行 npm run e2e`,
   ].join("\n");

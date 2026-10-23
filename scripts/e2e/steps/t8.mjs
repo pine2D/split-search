@@ -3,6 +3,7 @@
 import { EXT_ID, GRANT_ORIGINS, HOSTS } from "../config.mjs";
 import { splitPairs, trigger, engineA, nonce, resetTabs, openTab, waitState, pageTargets, summarize, sleep, GO_PREFIX } from "./util.mjs";
 import { assist, judge, focusGuide, extAlive, contains, requestGrant, GRANT_TIMEOUT_MS } from "./guided.mjs";
+import { L } from "./labels.mjs";
 
 const SETTLE_MS = 4000; // 触发后等这么久仍没有跳转/分屏，才判定为“降级为普通搜索”
 const DETAILS = `chrome://extensions/?id=${EXT_ID}`;
@@ -31,10 +32,17 @@ async function expectPlain(ctx, q, { useExt = true } = {}) {
   return problems.length ? { status: "fail", detail: problems.join("；") } : { status: "pass", detail: `普通左侧搜索，未分屏：${url}` };
 }
 
+// 脚本看不到无痕窗口（扩展不在那里运行），只能由用户判断；没人作答就按 judge 的超时判失败
+export const INCOGNITO_TEXT = "这一项只能你来判断，脚本不会自动继续：看完后必须回到这里点“通过”或“不通过”（做不了点“跳过”）。\n"
+  + "1. 按 Ctrl+Shift+N 打开无痕窗口；\n2. 在无痕窗口的地址栏输入“gb 无痕测试”回车（gb 是 T1 添加的网站搜索）；\n"
+  + "3. 看结果：应是一次普通的 Google 搜索，不分屏、不出错误页。无痕窗口里扩展不运行，Google 收到 `_ss` 是正常的"
+  + "（地址栏里能看到 _ss=google,bing，这就是预期的降级，不算失败）；Google 弹出人机验证页也不算失败；\n"
+  + "4. 关掉无痕窗口，回到这里：是普通搜索点“通过”，分屏了或出了错误页点“不通过”。";
 const incognito = ctx => sub("(a) 无痕窗口", () => judge(ctx, {
-  title: "T8(a) 无痕窗口", copyText: "gb 无痕测试", timeoutMs: ctx.timeoutMs * 2,
-  instruction: "1. 按 Ctrl+Shift+N 打开无痕窗口；\n2. 在无痕窗口的地址栏输入“gb 无痕测试”回车（gb 是 T1 添加的网站搜索）；\n"
-    + "3. 看结果：应是一次普通的 Google 搜索（地址栏里能看到 _ss=google,bing），不分屏、不出错误页；\n4. 关掉无痕窗口，回到这里判断。",
+  title: "T8(a) 无痕窗口（看完请点“通过”或“不通过”）", copyText: "gb 无痕测试", timeoutMs: ctx.timeoutMs * 2,
+  instruction: INCOGNITO_TEXT,
+  passDetail: "用户判断：通过（无痕窗口里是普通 Google 搜索，带 _ss，属预期降级）",
+  failDetail: "用户判断：不通过（无痕窗口里分屏了或出了错误页）",
 }));
 
 const disabled = ctx => sub("(b) 停用扩展", async () => {
@@ -42,7 +50,7 @@ const disabled = ctx => sub("(b) 停用扩展", async () => {
   await focusGuide(ctx);
   const off = await assist(ctx, {
     title: "T8(b) 停用扩展", what: "扩展已停用", copyText: "chrome://extensions", hint: null,
-    instruction: "新开一个标签打开 chrome://extensions，把 Split Search 右下角的开关关掉（停用）。\n脚本检测到停用后会自己打开一个测试网址，然后请你重新启用。",
+    instruction: "新开一个标签打开 chrome://extensions，把 Split Search 卡片右下角的开关关掉（停用，英文界面同一位置的开关）。\n脚本检测到停用后会自己打开一个测试网址，然后请你重新启用。",
     probe: async () => !(await extAlive(ctx.browser)) && !(await extAlive(ctx.browser)), // 连续两次不可用才算，避免偶发失败误判
   });
   if (off.status !== "pass") return off;
@@ -86,9 +94,9 @@ const onClick = ctx => sub("(d) 站点访问“点击时”", async () => {
   await resetTabs(ctx);
   await focusGuide(ctx);
   const has = await judge(ctx, {
-    title: "T8(d) 站点访问“点击时”", copyText: DETAILS, timeoutMs: ctx.timeoutMs * 2, buttons: ["pass", "skip"],
-    instruction: "1. 新开一个标签打开下面的扩展详情页；\n2. 看“网站访问权限”（站点访问）里有没有“点击时”这个选项；\n"
-      + "3. 有：选“点击时”，然后回来点“通过”，脚本会自己触发一次；没有：点“跳过”（记为不适用）。",
+    title: "T8(d) 站点访问“点击时（On click）”", copyText: DETAILS, timeoutMs: ctx.timeoutMs * 2, buttons: ["pass", "skip"],
+    instruction: `1. 新开一个标签打开下面的扩展详情页；\n2. 看${L.siteAccess}里有没有${L.onClick}这个选项；\n`
+      + `3. 有：选${L.onClick}，然后回来点“通过”，脚本会自己触发一次；没有：点“跳过”（记为不适用）。`,
     passDetail: "有“点击时”选项，已选中", skipDetail: "扩展详情页没有“点击时”选项，不适用",
   });
   if (has.status !== "pass") return has;
@@ -97,10 +105,10 @@ const onClick = ctx => sub("(d) 站点访问“点击时”", async () => {
   const origins = GRANT_ORIGINS(ctx.port);
   const back = await assist(ctx, {
     title: "T8(d) 改回站点访问", what: "授权恢复", copyText: DETAILS, hint: null, timeoutMs: ctx.timeoutMs * 2,
-    instruction: "测试网址已经触发过了。请在扩展详情页把“网站访问权限”改回你原来的选项——通常是“在特定网站上”"
+    instruction: `测试网址已经触发过了。请在扩展详情页把${L.siteAccess}改回你原来的选项——通常是${L.onSpecific}`
       + "（列着 engine-a/b/c、site-x 这几个 localhost 和 google、bing、kagi、duckduckgo、perplexity）。\n"
-      + "不要选“在所有网站上”：那会授予 https://*/*，之后撤销单个网站的授权就不起作用了。\n"
-      + "脚本检测到授权恢复后自动继续；改回后仍没反应，点“跳过”，脚本会弹出授权框请你点“允许”。",
+      + `不要选${L.onAll}：那会授予 https://*/*，之后撤销单个网站的授权就不起作用了。\n`
+      + `脚本检测到授权恢复后自动继续；改回后仍没反应，点“跳过”，脚本会弹出授权框请你点${L.allow}。`,
     probe: () => contains(ctx.browser, origins),
   });
   if (back.status !== "pass" && !ctx.signal?.aborted) {
@@ -120,7 +128,7 @@ async function noWildcard(ctx) {
   await focusGuide(ctx);
   const r = await assist(ctx, {
     title: "T8(d) 去掉“在所有网站上”", what: "授权里不再有 https://*/* 等通配", copyText: DETAILS, hint: null,
-    instruction: "扩展现在拥有“在所有网站上”的授权（https://*/*）。请在扩展详情页把“网站访问权限”改成“在特定网站上”。\n"
+    instruction: `扩展现在拥有${L.onAll}的授权（https://*/*）。请在扩展详情页把${L.siteAccess}改成${L.onSpecific}。\n`
       + "改好后脚本自动继续（如果改完缺了某些网站的授权，稍后脚本会弹框请你允许）。",
     probe: async () => !(await wildcards(ctx)).length,
   });

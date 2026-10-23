@@ -3,6 +3,8 @@ import { splitPairs, sleep, pageTargets, summarize } from "./util.mjs";
 import { openOptions } from "./optpage.mjs";
 import { assist, judge, focusGuide, activate, guideUrl } from "./guided.mjs";
 import { prepare, hostOf, fmt, SETTINGS, G, BING } from "./assisted.mjs";
+import { L } from "./labels.mjs";
+import { readServiceWorkers, swText, t14Verdict, originOf } from "./sw.mjs";
 
 // 联想只记录、不判失败（清单里是“建议”）：通过=有，不通过=没有
 async function ask(ctx, title, question) {
@@ -19,10 +21,10 @@ const T12 = {
     const split = await assist(ctx, {
       title: "T12 自动发现的条目", what: "Kagi ｜ Bing 分屏（关键词“联想测试”）", copyText: "&_ss=kagi,bing", timeoutMs: ctx.timeoutMs * 2,
       instruction: [
-        `1. 按 Ctrl+T 新开一个标签打开 ${SETTINGS}，找到 Chrome 自动发现的 Kagi 条目（快捷字词通常是 kagi.com）：在“网站搜索”或下方“未使用的快捷字词”里`
-          + "（可能要先点“更多无效网站”展开；没有就先在 kagi.com 搜索一次再刷新）。在“未使用的快捷字词”里的条目，先点它右侧的“启用”；",
-        "2. 点它右侧的铅笔图标（修改），在网址末尾追加下面这段（可复制），保存；",
-        "3. 在它右侧 ⋮ 里点“设为默认选项”；",
+        `1. 按 Ctrl+T 新开一个标签打开 ${SETTINGS}，找到 Chrome 自动发现的 Kagi 条目（快捷字词通常是 kagi.com）：在${L.siteSearch}或下方${L.inactive}里`
+          + `（可能要先点${L.moreInactive}展开；没有就先在 kagi.com 搜索一次再刷新）。在${L.inactive}里的条目，先点它右侧的${L.activate}；`,
+        `2. 点它右侧的${L.edit}，在网址末尾追加下面这段（可复制），保存；`,
+        `3. 在它右侧 ${L.more} 里点${L.makeDefault}；`,
         "4. 在地址栏直接输入“联想测试”（不用快捷字词），先留意下拉框里有没有 Kagi 的搜索联想，再回车。",
         "期望：Kagi ｜ Bing 分屏。之后会问你联想的情况。（默认改回 Google、删掉追加的 _ss 放在全部步骤后的收尾提示里。）",
       ].join("\n"),
@@ -49,7 +51,7 @@ const LEFTS = [
 ];
 const HOMES = ["https://www.google.com/", "https://www.bing.com/", "https://duckduckgo.com/", "https://www.perplexity.ai/", "https://kagi.com/"];
 
-// 先把五个引擎首页各打开一遍，让它们的 Service Worker 注册上（T14 要看 SW 会不会绕过 DNR）
+// 先把五个引擎首页各打开一遍，让它们有机会注册 Service Worker（T14 要看 SW 会不会绕过 DNR）
 async function warmUp(ctx) {
   const ids = [];
   for (const url of HOMES) ids.push((await ctx.browser.client.send("Target.createTarget", { url, background: true })).targetId);
@@ -66,6 +68,61 @@ export async function engineTabs(ctx, host) {
   return `${host} 上的标签：${tabs.slice(0, 3).map(t => `${t.id}${(t.splitViewId ?? -1) !== -1 ? `（分屏 ${t.splitViewId}）` : "（未分屏）"} ${t.url}`).join("；")}`;
 }
 
+// 引擎收到了带 _ss 的触发网址（DNR 没生效）：普通左侧搜索、不在分屏里
+const hasSs = url => { try { return [...new URL(url).searchParams.keys()].some(k => k === "_ss" || k === "amp;_ss"); } catch { return false; } };
+const PLAIN_STABLE_MS = 3000; // 同一个标签连续这么久都是“带 _ss、未分屏”才判降级，避开导航中间态
+
+const swNow = async ctx => readServiceWorkers(ctx.browser, { prefer: t => t.url.startsWith(guideUrl(ctx.port)) })
+  .catch(e => ({ map: new Map(), error: e.message }));
+
+async function leftItem(ctx, e) {
+  const origin = originOf(e.url.replace("%s", "x"));
+  const sw0 = await swNow(ctx);
+  const swBefore = sw0.error ? `未知（${sw0.error}）` : swText(sw0.map, origin);
+  await focusGuide(ctx);
+  let before, beforeTabs, plainSeen = null;
+  const snap = async () => {
+    const st = await ctx.ext.state();
+    before = new Set(splitPairs(st).map(p => p[0].splitViewId));
+    beforeTabs = new Set(st.tabs.map(t => t.id));
+    plainSeen = null;
+  };
+  await snap();
+  const q = `左侧 ${e.name} 测试`;
+  const trig = `${e.url}&_ss=${e.id},google`;
+  const r = await assist(ctx, {
+    title: `T14 ${e.name} 作左侧`, label: `T14 ${e.name}`, what: `左侧为 ${e.host} 的新分屏`, sampleText: q, copyText: trig,
+    timeoutMs: ctx.timeoutMs * 2,
+    instruction: `1. 在 ${SETTINGS} 的${L.siteSearch}里点${L.add}：名称和快捷字词都填 ${e.kw}，网址粘贴下面的网址，保存；\n`
+      + `2. 在 ${e.kw} 右侧 ${L.more} 里点${L.makeDefault}；\n3. 回到向导页，选中下面的文字，拖到标签栏上两个标签之间。\n`
+      + `期望：${e.name} ｜ Google 分屏。（${e.name} 的 Service Worker：${swBefore}）脚本能自己认出“只打开了普通的 ${e.name} 搜索（带 _ss、没分屏）”；`
+      + "认不出时点“没分屏”（记为失败，脚本会记下那个标签的网址）；做不了这一项才点“跳过”。点“重试”会重新记下现有标签，再拖一次。",
+    buttons: ["nosplit", "skip", "retry"],
+    onRetry: snap,
+    probe: async () => {
+      const st = await ctx.ext.state();
+      const p = splitPairs(st).find(x => !before.has(x[0].splitViewId) && hostOf(x[0].url) === e.host && hostOf(x[1].url) === G);
+      if (p) return { split: p };
+      const t = st.tabs.find(x => !beforeTabs.has(x.id) && hostOf(x.url) === e.host && hasSs(x.url) && (x.splitViewId ?? -1) === -1);
+      if (!t) { plainSeen = null; return null; }
+      if (plainSeen?.id !== t.id) plainSeen = { id: t.id, at: Date.now() };
+      return Date.now() - plainSeen.at >= PLAIN_STABLE_MS && { plain: t };
+    },
+    verdict: async v => {
+      const sw1 = await swNow(ctx);
+      return t14Verdict({ name: e.name, split: !!v.split, swBefore, swAfter: sw1.error ? "未知" : swText(sw1.map, origin),
+        splitText: v.split ? fmt(v.split) : "", plainText: v.plain ? `普通左侧搜索（引擎收到了 _ss）：标签 ${v.plain.id} ${v.plain.url}` : "" });
+    },
+    onAnswer: async a => {
+      const seen = await engineTabs(ctx, e.host);
+      if (a !== "nosplit") return { status: "skip", detail: `用户点了“跳过”；SW 注册：触发前${swBefore}；${seen}` };
+      const sw1 = await swNow(ctx);
+      return t14Verdict({ name: e.name, split: false, swBefore, swAfter: sw1.error ? "未知" : swText(sw1.map, origin), plainText: `用户报告没分屏；${seen}` });
+    },
+  });
+  return { name: `${e.name} 作左侧`, ...r };
+}
+
 const T14 = {
   id: "T14", title: "Bing、DuckDuckGo、Perplexity、Kagi 各当一次左侧：拖拽都分屏", kind: "assist", needs: ["kagi"], timeoutFactor: 11,
   cleanup: ["default", "t14"],
@@ -75,30 +132,12 @@ const T14 = {
     const items = [];
     for (const e of LEFTS) {
       if (ctx.signal?.aborted) break;
-      await focusGuide(ctx);
-      const before = new Set(splitPairs(await ctx.ext.state()).map(p => p[0].splitViewId));
-      const q = `左侧 ${e.name} 测试`;
-      const trig = `${e.url}&_ss=${e.id},google`;
-      const r = await assist(ctx, {
-        title: `T14 ${e.name} 作左侧`, label: `T14 ${e.name}`, what: `左侧为 ${e.host} 的新分屏`, sampleText: q, copyText: trig,
-        timeoutMs: ctx.timeoutMs * 2,
-        instruction: `1. 在 ${SETTINGS} 的“网站搜索”里添加：名称和快捷字词都填 ${e.kw}，网址粘贴下面的网址，保存；\n`
-          + `2. 在 ${e.kw} 右侧 ⋮ 里点“设为默认选项”；\n3. 回到向导页，选中下面的文字，拖到标签栏上两个标签之间。\n`
-          + `期望：${e.name} ｜ Google 分屏。若只打开了普通的 ${e.name} 搜索（没分屏），可能是该引擎的 Service Worker 绕过了 DNR：`
-          + "点“没分屏”（记为失败，脚本会记下那个标签的网址）；做不了这一项才点“跳过”。",
-        buttons: ["nosplit", "skip", "retry"],
-        probe: async () => splitPairs(await ctx.ext.state()).find(p => !before.has(p[0].splitViewId) && hostOf(p[0].url) === e.host && hostOf(p[1].url) === G),
-        verdict: p => ({ status: "pass", detail: fmt(p) }),
-        onAnswer: async a => {
-          const seen = await engineTabs(ctx, e.host);
-          if (a === "nosplit") return { status: "fail", detail: `用户报告没分屏（可能被该引擎的 Service Worker 绕过了 DNR）；${seen}` };
-          return { status: "skip", detail: `用户点了“跳过”；${seen}` };
-        },
-      });
-      items.push({ name: `${e.name} 作左侧`, ...r });
+      items.push(await leftItem(ctx, e));
     }
     const res = summarize(items);
-    return { ...res, detail: `${res.detail}\n（开始前已打开五个引擎首页注册 Service Worker）` };
+    const degraded = items.filter(i => i.degraded).map(i => i.name.replace(" 作左侧", ""));
+    return { ...res, detail: `${res.detail}\n（开始前已打开五个引擎首页，让它们有机会注册 Service Worker；SW 由 CDP ServiceWorker 域与 service_worker 目标核实）`
+      + (degraded.length ? `\n预期降级（有 SW、未分屏）：${degraded.join("、")}——据此决定是否给这些预置引擎设 leftDiscouraged` : "") };
   },
 };
 
