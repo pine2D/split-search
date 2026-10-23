@@ -62,7 +62,7 @@ test("runSteps: 步骤自报 fail 也附诊断；读状态失败时说明原因"
 test("runSteps: 超时记为 fail，并通知步骤的 signal", async () => {
   const { ctx } = makeCtx();
   let seen;
-  const [r] = await runSteps([step("T5", c => new Promise(() => { seen = c.signal; }))], ctx, { timeoutMs: 30 });
+  const [r] = await runSteps([step("T5", c => new Promise(() => { seen = c.signal; }))], ctx, { timeoutMs: 30, settleMs: 50 });
   assert.equal(r.status, "fail");
   assert.match(r.detail, /超时/);
   assert.equal(seen.aborted, true);
@@ -82,7 +82,7 @@ test("runSteps: 中断后当前与剩余步骤记为 skip（中断）", async ()
     step("B2", async () => ({ status: "pass", detail: "" })),
     step("B3", () => { setTimeout(() => ac.abort(), 10); return new Promise(() => {}); }),
     step("B5", async () => ({ status: "pass", detail: "不该执行" })),
-  ], ctx, { timeoutMs: 5000 });
+  ], ctx, { timeoutMs: 5000, settleMs: 50 });
   assert.deepEqual(rs.map(r => r.status), ["pass", "skip", "skip"]);
   assert.match(rs[1].detail, /中断/);
   assert.match(rs[2].detail, /中断/);
@@ -174,4 +174,72 @@ test("STEPS: B15 标记 last 且排在最后，后注册的 T 步骤仍在它之
   const all = sortSteps([...STEPS, { id: "T9", title: "t", kind: "auto", needs: [], run: async () => ({ status: "pass" }) }]);
   assert.equal(all.at(-1).id, "B15");
   assert.equal(all.at(-2).id, "T9");
+});
+
+test("runSteps: 超时后等步骤真正结束（有上限）再开始下一步", async () => {
+  const { ctx } = makeCtx();
+  const order = [];
+  const rs = await runSteps([
+    step("B2", c => new Promise(r => {
+      c.signal.addEventListener("abort", () => setTimeout(() => { order.push("B2 收尾完成"); r({ status: "pass" }); }, 60));
+    })),
+    step("B3", async () => { order.push("B3 开始"); return { status: "pass", detail: "" }; }),
+  ], ctx, { timeoutMs: 20, settleMs: 2000 });
+  assert.deepEqual(order, ["B2 收尾完成", "B3 开始"]);
+  assert.equal(rs[0].status, "fail");
+  assert.match(rs[0].detail, /超时/);
+  assert.doesNotMatch(rs[0].detail, /收尾期限/);
+});
+
+test("runSteps: 步骤一直不结束时，最多等 settleMs 就继续并在说明里注明", async () => {
+  const { ctx } = makeCtx();
+  let started = 0;
+  const t0 = Date.now();
+  const rs = await runSteps([
+    step("B2", () => new Promise(() => {})),
+    step("B3", async () => { started = Date.now(); return { status: "pass", detail: "" }; }),
+  ], ctx, { timeoutMs: 20, settleMs: 80 });
+  assert.ok(started - t0 >= 95, `B3 过早开始：${started - t0} ms`);
+  assert.match(rs[0].detail, /收尾期限内仍未结束/);
+  assert.equal(rs[1].status, "pass");
+});
+
+test("runSteps: 中断后也等当前步骤收尾，runSteps 才返回", async () => {
+  const ac = new AbortController();
+  const { ctx } = makeCtx({ abortSignal: ac.signal });
+  let finished = false;
+  setTimeout(() => ac.abort("收到 SIGINT"), 10);
+  const rs = await runSteps([
+    step("B2", c => new Promise(r => {
+      c.signal.addEventListener("abort", () => setTimeout(() => { finished = true; r({ status: "pass" }); }, 50));
+    })),
+  ], ctx, { timeoutMs: 5000, settleMs: 2000 });
+  assert.equal(finished, true);
+  assert.equal(rs[0].status, "skip");
+});
+
+test("guarded: signal 已中断时不写回 storage", async () => {
+  const { guarded } = await import("../scripts/e2e/steps/optpage.mjs");
+  const exprs = [];
+  const ext = { eval: async expr => { exprs.push(expr); return expr.includes(".get(") ? { order: ["ea"] } : true; } };
+  const ac = new AbortController();
+  const ctx = { ext, signal: ac.signal, log: () => {} };
+  const r = await guarded(ctx, ["order"], async () => { ac.abort(); return { status: "pass", detail: "做完了" }; });
+  assert.equal(exprs.filter(e => /\.(set|remove)\(/.test(e)).length, 0, exprs.join("\n"));
+  assert.equal(r.status, "skip");
+  assert.match(r.detail, /跳过 order 的写回/);
+  // 运行级中断同样跳过
+  const ac2 = new AbortController();
+  exprs.length = 0;
+  await assert.rejects(guarded({ ext, abortSignal: ac2.signal }, ["order"], async () => { ac2.abort(); throw new Error("坏了"); }), /坏了/);
+  assert.equal(exprs.filter(e => /\.(set|remove)\(/.test(e)).length, 0);
+});
+
+test("guarded: 未中断时照常写回并读回核对", async () => {
+  const { guarded } = await import("../scripts/e2e/steps/optpage.mjs");
+  const exprs = [];
+  const ext = { eval: async expr => { exprs.push(expr); return expr.includes(".get(") ? { order: ["ea"] } : true; } };
+  const r = await guarded({ ext, signal: new AbortController().signal }, ["order"], async () => ({ status: "pass", detail: "好" }));
+  assert.equal(r.status, "pass");
+  assert.equal(exprs.filter(e => /\.set\(/.test(e)).length, 1);
 });

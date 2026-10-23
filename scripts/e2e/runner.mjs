@@ -27,7 +27,11 @@ function withTimeout(p, ms, msg) {
   return Promise.race([p, new Promise((_, rej) => { t = setTimeout(() => rej(new Error(msg)), ms); })]).finally(() => clearTimeout(t));
 }
 
-export async function runSteps(steps, ctx, { timeoutMs } = {}) {
+// 超时/中断后等步骤自己收尾的上限：步骤的 guarded 清理可能还在写 storage，
+// 不能让下一步（或 run.mjs 的快照恢复）与它并发，否则恢复后的用户配置会被模拟数据覆盖
+export const SETTLE_MS = 15000;
+
+export async function runSteps(steps, ctx, { timeoutMs, settleMs = SETTLE_MS } = {}) {
   const results = [];
   const total = steps.length;
   const log = ctx.log || (() => {});
@@ -48,17 +52,26 @@ export async function runSteps(steps, ctx, { timeoutMs } = {}) {
     log(`▶ ${step.id} ${step.title}`);
 
     let timer, onAbort;
+    const running = Promise.resolve()
+      .then(() => step.run({ ...ctx, signal: stepAbort.signal }))
+      .then(value => ({ kind: "value", value }), error => ({ kind: "error", error }));
     const outcome = await new Promise(resolve => {
       timer = setTimeout(() => resolve({ kind: "timeout" }), limit);
       onAbort = () => resolve({ kind: "abort" });
       abortSignal?.addEventListener("abort", onAbort, { once: true });
-      Promise.resolve()
-        .then(() => step.run({ ...ctx, signal: stepAbort.signal }))
-        .then(value => resolve({ kind: "value", value }), error => resolve({ kind: "error", error }));
+      running.then(resolve);
     });
     clearTimeout(timer);
     abortSignal?.removeEventListener("abort", onAbort);
-    if (outcome.kind !== "value") stepAbort.abort();
+    let unsettled = false;
+    if (outcome.kind === "timeout" || outcome.kind === "abort") {
+      stepAbort.abort();
+      // 有上限地等步骤真正结束：到点仍未结束就不再等（guarded 看到 signal 已中断会跳过写回）
+      let t2;
+      const settled = await Promise.race([running.then(() => true), new Promise(r => { t2 = setTimeout(() => r(false), settleMs); })]);
+      clearTimeout(t2);
+      unsettled = !settled;
+    }
 
     let status, detail;
     if (outcome.kind === "abort") { status = "skip"; detail = `${ABORTED}（步骤执行中${why() ? "；" + why() : ""}）`; }
@@ -70,6 +83,7 @@ export async function runSteps(steps, ctx, { timeoutMs } = {}) {
         status = "fail"; detail = `步骤返回值不合法：${JSON.stringify(v)}`;
       } else { status = v.status; detail = String(v.detail ?? ""); }
     }
+    if (unsettled) detail += `；步骤在 ${settleMs} ms 收尾期限内仍未结束，已不再等待`;
 
     const result = { ...base, status, detail, durationMs: Date.now() - started };
     if (status === "fail" && !abortSignal?.aborted) {

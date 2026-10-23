@@ -95,10 +95,20 @@ export const restoreKey = (ext, key, value) => ext.eval(value === undefined
 
 // 步骤包装：记下涉及的键，fn 结束（无论成败）后恢复到原值并读回核对。
 // 清理失败：记日志、追加到说明；步骤本来通过则改判失败；步骤抛异常则把清理失败附在异常上。
+// 步骤已超时或运行被中断（ctx.signal / ctx.abortSignal 已触发）时不写回：运行器可能已开始
+// 恢复快照，此时写回会把模拟数据写进用户的真实配置；整体由 run.mjs 的快照恢复兜底。
+export const stopped = ctx => !!(ctx.signal?.aborted || ctx.abortSignal?.aborted);
+
 export async function guarded(ctx, keys, fn) {
   const saved = await readKeys(ctx.ext, keys);
   let res, thrown;
   try { res = await fn(); } catch (e) { thrown = e; }
+  if (stopped(ctx)) {
+    const note = `步骤已中断，跳过 ${keys.join("、")} 的写回（由快照恢复兜底）`;
+    ctx.log?.(note);
+    if (thrown) throw thrown;
+    return { status: "skip", detail: `${res?.detail ?? ""}；${note}` };
+  }
   const errs = [];
   for (const k of keys) {
     try {
