@@ -50,6 +50,13 @@ export function parseGeometry(out) {
   return { width: Number(m[1]), height: Number(m[2]) };
 }
 
+// xprop -root _NET_CLIENT_LIST_STACKING 的输出 → 十进制窗口 id（从下到上）；属性不存在 → null
+export function parseStacking(out) {
+  const m = /_NET_CLIENT_LIST_STACKING\(WINDOW\): window id # (.*)$/m.exec(String(out));
+  if (!m) return null;
+  return m[1].split(",").map(x => x.trim()).filter(x => /^0x[0-9a-f]+$/i.test(x)).map(x => String(parseInt(x, 16)));
+}
+
 const BUTTONS = new Set([1, 2, 3]);
 const COMBO_RE = /^[A-Za-z0-9_]+(\+[A-Za-z0-9_]+)*$/;
 const ASCII_RE = /^[\x20-\x7e]*$/;
@@ -57,7 +64,7 @@ const isWid = w => typeof w === "string" && /^\d+$/.test(w);
 const MODIFIERS = ["Control_L", "Control_R", "Alt_L", "Alt_R", "Shift_L", "Shift_R", "Super_L", "Super_R"];
 const lines = s => String(s).split("\n").map(x => x.trim()).filter(Boolean);
 
-export function createXinput({ exec = defaultExec, env = process.env, timeoutMs = DEFAULT_TIMEOUT } = {}) {
+export function createXinput({ exec = defaultExec, env = process.env, timeoutMs = DEFAULT_TIMEOUT, debug = false } = {}) {
   const call = (cmd, args, opts = {}) => exec(cmd, args.map(String), { timeout: timeoutMs, env, ...opts });
   const run = async (args, opts) => String(await call("xdotool", args, opts)).trim();
 
@@ -151,11 +158,21 @@ export function createXinput({ exec = defaultExec, env = process.env, timeoutMs 
   // 松开所有修饰键（type/key 超时或出错后调用，防止 Ctrl/Alt 卡在按下状态）
   const releaseModifiers = () => run(["keyup", ...MODIFIERS]);
 
+  // 逐字符输入：每个字符前都核对前台（裁定 I3），前台一变就停，剩下的字符不再发出。“--” 防止以 - 开头的字符被当成选项
   async function typeAscii(s, { expectWindow, delayMs = 8 } = {}) {
     if (typeof s !== "string" || !ASCII_RE.test(s)) throw new Error(`xauto 只支持 ASCII：${JSON.stringify(String(s)).slice(0, 60)}`);
-    if (expectWindow !== undefined) await assertActive(expectWindow);
-    // “--” 防止以 - 开头的文本被当成选项；超时按长度放宽
-    await run(["type", "--delay", delayMs, "--", s], { timeout: timeoutMs + s.length * (delayMs + 20) });
+    for (const ch of s) {
+      if (expectWindow !== undefined) await assertActive(expectWindow);
+      await run(["type", "--delay", 0, "--", ch]);
+      if (delayMs) await new Promise(r => setTimeout(r, delayMs));
+    }
+  }
+
+  // 根窗口的 _NET_CLIENT_LIST_STACKING（从下到上，十进制 id）。xprop 不在、属性不存在或读不了 → null（调用方降级）
+  async function stacking() {
+    try {
+      return parseStacking(await call("xprop", ["-root", "_NET_CLIENT_LIST_STACKING"]));
+    } catch { return null; }
   }
 
   // 截窗口的原始 RGB（每像素 3 字节，行优先）；坐标相对窗口
@@ -185,17 +202,17 @@ export function createXinput({ exec = defaultExec, env = process.env, timeoutMs 
     return { ok: true };
   }
 
-  // 不暴露原始的 run（任意 xdotool 子命令）：调用方只能用带检查的原语。debugRun 仅供单测核对参数传递
+  // 不暴露原始的 run（任意 xdotool 子命令）：调用方只能用带检查的原语。debugRun 只在 debug:true（单测）时提供
   return {
-    available, listWindows, findWindow, findWindowByTitle, pidWindows, visibleWindows, rootWindow, pointer, activeWindow, windowSize, windowRect,
+    available, listWindows, findWindow, findWindowByTitle, pidWindows, visibleWindows, stacking, rootWindow, pointer, activeWindow, windowSize, windowRect,
     assertPointerIn, assertActive, move, down: mouseOp("mousedown"), up: mouseOp("mouseup"), click: mouseOp("click"),
-    key, typeAscii, releaseModifiers, captureRgb, debugRun: run,
+    key, typeAscii, releaseModifiers, captureRgb, ...(debug ? { debugRun: run } : {}),
   };
 }
 
 const xi = createXinput();
 export const {
-  available, listWindows, findWindow, findWindowByTitle, pidWindows, visibleWindows, rootWindow, pointer, activeWindow, windowSize, windowRect,
+  available, listWindows, findWindow, findWindowByTitle, pidWindows, visibleWindows, stacking, rootWindow, pointer, activeWindow, windowSize, windowRect,
   assertPointerIn, assertActive, move, down, up, click, key, typeAscii, releaseModifiers, captureRgb,
 } = xi;
 export default xi;

@@ -41,7 +41,24 @@ test("withAttempts: skip（光标不在、用户在动鼠标）不重试；env �
   const e = await withAttempts(ctx0(), async () => { n++; throw gestureError("env", "新窗口未获得前台"); });
   assert.equal(n, 3);
   assert.equal(e.status, "skip");
-  assert.match(e.detail, /环境不支持/);
+  assert.match(e.detail, /都是环境干扰/);
+});
+
+test("withAttempts: 有过真实失败就判失败——fail → env → env、fail → skip、fail → stuck 停止后", async () => {
+  const seq = steps => async n => { const s = steps[n - 1]; if (s instanceof Error) throw s; return s; };
+  const r1 = await withAttempts(ctx0(), seq([{ status: "fail", detail: "没出现分屏" }, gestureError("env", "读回位置不符"), gestureError("env", "被遮挡")]));
+  assert.equal(r1.status, "fail");
+  assert.match(r1.detail, /^3 次尝试都没成功\n第 1 次 没出现分屏\n第 2 次（环境） 读回位置不符\n第 3 次（环境） 被遮挡$/);
+  const r2 = await withAttempts(ctx0(), seq([{ status: "fail", detail: "没出现分屏" }, gestureError("skip", "光标不在测试窗口上")]));
+  assert.equal(r2.status, "fail");
+  assert.match(r2.detail, /第 2 次尝试跳过（光标不在测试窗口上），但之前有真实失败（之前：第 1 次 没出现分屏）/);
+  const ctx = ctx0();
+  let n = 0;
+  const r3 = await withAttempts(ctx, async () => { if (++n === 1) return { status: "fail", detail: "判定不符" }; ctx.gx.stop = REASON_STUCK; return { status: "fail", detail: "x" }; });
+  assert.equal(r3.status, "fail");
+  const r4 = await withAttempts(ctx0(), seq([gestureError("env", "被遮挡"), { status: "pass", detail: "ok" }]));
+  assert.equal(r4.status, "pass");
+  assert.match(r4.detail, /^第 2 次尝试通过（之前：第 1 次（环境） 被遮挡）：ok/);
 });
 
 test("withAttempts: stuck → 停掉剩余 xauto 步骤；final 的失败不重试", async () => {

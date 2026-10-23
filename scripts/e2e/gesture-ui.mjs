@@ -29,24 +29,24 @@ export function menuRows(rgb, width, height, { dark = 300, minGap = 6 } = {}) {
 export async function contextMenuPick(ctx, { at, itemIndex, expectItems, wid, menuWaitMs = 3000 }) {
   const { xi, sleep, root } = deps(ctx);
   if (!wid) throw new Error("contextMenuPick 需要事先取好的测试窗口 id");
-  await readyMouse(ctx, wid);
+  const home = await readyMouse(ctx, wid);
   const pid = pidOf(ctx);
   const before = new Set(await xi.pidWindows(pid));
-  await moveToIn(xi, at.x, at.y, wid, "右键位置", pid, root);
+  await moveToIn(xi, at.x, at.y, wid, "右键位置", { pid, root, home });
   await xi.click(3, { expectWindow: wid });
+  const dismiss = async () => { // 在页面里（测试窗口）左键点一下关闭菜单
+    await moveToIn(xi, at.x, at.y + 400, wid, "关闭菜单的位置", { pid }).then(() => xi.click(1, { expectWindow: wid })).catch(() => {});
+  };
   let menu = null;
   const end = Date.now() + menuWaitMs;
   while (!menu && Date.now() < end) {
     await sleep(150);
     const fresh = (await xi.pidWindows(pid)).filter(w => !before.has(w));
     if (fresh.length === 1) menu = fresh[0];
-    else if (fresh.length > 1) throw gestureError("env", `右键后出现了 ${fresh.length} 个新窗口，认不出菜单`);
+    else if (fresh.length > 1) { await dismiss(); throw gestureError("env", `右键后出现了 ${fresh.length} 个新窗口，认不出菜单`); }
   }
   if (!menu) throw gestureError("fail", "右键后没有出现菜单");
   await sleep(250);
-  const dismiss = async () => { // 在页面里（测试窗口）左键点一下关闭菜单
-    await moveToIn(xi, at.x, at.y + 400, wid, "关闭菜单的位置").then(() => xi.click(1, { expectWindow: wid })).catch(() => {});
-  };
   try {
     const r = await xi.windowRect(menu);
     if (!(Number.isInteger(r.x) && Math.abs(r.x - at.x) < 80 && Math.abs(r.y - at.y) < 80)) throw gestureError("env", `菜单位置 ${r.x},${r.y} 离右键点 ${at.x},${at.y} 太远，不猜测`);
@@ -98,8 +98,8 @@ export async function omnibox(ctx, { text, altEnter = false, url }) {
 // 先点一下页面再右键就稳定。点完会清掉页面选区，调用方之后再建选区
 export async function primeClick(ctx, at, wid) {
   const { xi, root } = deps(ctx);
-  await readyMouse(ctx, wid);
-  await moveToIn(xi, at.x, at.y, wid, "页面空白处", pidOf(ctx), root);
+  const home = await readyMouse(ctx, wid);
+  await moveToIn(xi, at.x, at.y, wid, "页面空白处", { pid: pidOf(ctx), root, home });
   await xi.click(1, { expectWindow: wid });
   await deps(ctx).sleep(300);
 }

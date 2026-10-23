@@ -73,34 +73,44 @@ async function stuckGuide(ctx) {
 }
 
 // 最多 max 次（每次 attempt(n) 都自己完整重建现场）。返回值：pass/skip 直接用；fail 或抛错 → 重试；
-// 抛错 kind：skip（光标不在、用户在动鼠标）不重试判跳过；env（环境不支持、拿不到前台）重试，最后仍是它判跳过；
-// stuck → 停掉剩余 xauto 步骤。detail 第一行写明第几次尝试
-// final(r)：返回 true 的失败是确定结论（如 T14 的预期降级），不再重试
+// 抛错 kind：skip（光标不在、用户在动鼠标）不重试；env（环境不支持、拿不到前台、被别的窗口干扰）重试；stuck → 停掉剩余 xauto 步骤。
+// 裁定 I2：只要有一次尝试是真实失败（不是 env），这一步就判失败——之后的 env/skip 不能把它吞成跳过；
+// 只有全部失败都是 env（或在任何真实失败之前就 skip）才判跳过。之后某次通过仍判通过（detail 记下之前的失败，作为不稳定信号）。
+// final(r)：返回 true 的失败是确定结论（如 T14 的预期降级），不再重试。detail 第一行写明第几次尝试
 export async function withAttempts(ctx, attempt, { max = 3, final = () => false } = {}) {
   const fails = [];
-  let lastEnv = false;
+  let real = false;
+  const prev = () => (fails.length ? `（之前：${fails.join("；")}）` : "");
+  const realFail = (n, why) => ({ status: "fail", detail: `第 ${n} 次尝试${why}，但之前有真实失败${prev()}`, attempt: n });
   for (let n = 1; n <= max; n++) {
-    if (ctx.gx?.stop) return { status: "skip", detail: `${ctx.gx.stop}，剩余 xauto 步骤已停止` };
+    if (ctx.gx?.stop) {
+      const why = `${ctx.gx.stop}，剩余 xauto 步骤已停止`;
+      return real ? realFail(n, `没做（${why}）`) : { status: "skip", detail: why };
+    }
     let r;
     try { r = await attempt(n); }
     catch (e) {
       if (stoppedCtx(ctx)) throw e;
-      if (e.kind === "skip") return { status: "skip", detail: `跳过：${e.message}（第 ${n} 次尝试）`, attempt: n, reason: e.message };
+      if (e.kind === "skip") {
+        if (real) return realFail(n, `跳过（${e.message}）`);
+        return { status: "skip", detail: `跳过：${e.message}（第 ${n} 次尝试）${prev()}`, attempt: n, reason: e.message };
+      }
       if (e.kind === "stuck") {
         const after = await stuckGuide(ctx);
-        return { status: "fail", detail: `${e.message}；${after}（第 ${n} 次尝试）`, attempt: n };
+        return { status: "fail", detail: `${e.message}；${after}（第 ${n} 次尝试）${prev()}`, attempt: n };
       }
       r = { status: "fail", detail: e.message, env: e.kind === "env" };
     }
+    if (r.status === "skip" && real) return realFail(n, `跳过（${r.detail}）`);
     if (r.status === "pass" || r.status === "skip" || final(r)) {
-      const prev = fails.length ? `（之前：${fails.join("；")}）` : "";
       const verb = { pass: "通过", skip: "跳过", fail: "失败" }[r.status];
-      return { ...r, detail: `第 ${n} 次尝试${verb}${prev}：${r.detail}`, attempt: n };
+      return { ...r, detail: `第 ${n} 次尝试${verb}${prev()}：${r.detail}`, attempt: n };
     }
-    lastEnv = !!r.env;
-    fails.push(`第 ${n} 次 ${r.detail.split("\n")[0]}`);
+    if (!r.env) real = true;
+    fails.push(`第 ${n} 次${r.env ? "（环境）" : ""} ${r.detail.split("\n")[0]}`);
   }
-  return { status: lastEnv ? "skip" : "fail", detail: `${max} 次尝试都没成功${lastEnv ? "（环境不支持）" : ""}\n${fails.join("\n")}`, attempt: max };
+  return real ? { status: "fail", detail: `${max} 次尝试都没成功\n${fails.join("\n")}`, attempt: max }
+    : { status: "skip", detail: `${max} 次尝试都没成功（都是环境干扰）\n${fails.join("\n")}`, attempt: max };
 }
 
 // 构造 xauto 步骤：timeoutMs 固定（与 --timeout 无关：手势本身不等人，只有光标提示最多等 30 秒/次）

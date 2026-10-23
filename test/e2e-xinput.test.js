@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { createXinput, parsePointer, parseGeometry, parseRoot, parseRect, classRegex } from "../scripts/e2e/xinput.mjs";
+import { createXinput, parsePointer, parseGeometry, parseRoot, parseRect, parseStacking, classRegex } from "../scripts/e2e/xinput.mjs";
 
 const PROFILE = "/home/u/.cache/split-search-e2e/profile";
 
@@ -109,8 +109,30 @@ test("typeAscii: 非 ASCII 抛错且不执行命令；ASCII 用 -- 隔开参数"
   await assert.rejects(xi.typeAscii("中"), { message: /^xauto 只支持 ASCII：/ });
   await assert.rejects(xi.typeAscii("a\nb"), /ASCII/);
   assert.equal(calls.length, 0);
-  await xi.typeAscii("-x y");
-  assert.deepEqual(calls[0], ["xdotool", "type", "--delay", "8", "--", "-x y"]);
+  await xi.typeAscii("-x y", { delayMs: 0 });
+  assert.deepEqual(calls, ["-", "x", " ", "y"].map(c => ["xdotool", "type", "--delay", "0", "--", c]), "逐字符输入");
+});
+
+test("typeAscii: 每个字符前都核对前台；中途前台被换走 → 剩下的字符不再发出", async () => {
+  let typed = 0;
+  const { exec, calls } = fakeExec([
+    [is("xdotool", "getactivewindow"), () => (typed >= 3 ? "99\n" : "7\n")],
+    [is("xdotool", "type"), () => { typed++; return ""; }],
+  ]);
+  const xi = createXinput({ exec, env: { DISPLAY: ":0" } });
+  await assert.rejects(xi.typeAscii("abcdef", { expectWindow: "7", delayMs: 0 }), /前台窗口/);
+  assert.deepEqual(calls.filter(c => c[1] === "type").map(c => c.at(-1)), ["a", "b", "c"]);
+  for (const [i, c] of calls.entries()) if (c[1] === "type") assert.equal(calls[i - 1][1], "getactivewindow");
+});
+
+test("stacking / parseStacking: 读 _NET_CLIENT_LIST_STACKING；xprop 不在或属性不存在 → null", async () => {
+  assert.deepEqual(parseStacking("_NET_CLIENT_LIST_STACKING(WINDOW): window id # 0xc00003, 0x1600004\n"), ["12582915", "23068676"]);
+  assert.equal(parseStacking("_NET_CLIENT_LIST_STACKING:  not found.\n"), null);
+  const ok = fakeExec([[is("xprop"), "_NET_CLIENT_LIST_STACKING(WINDOW): window id # 0x438\n"]]);
+  assert.deepEqual(await createXinput({ exec: ok.exec, env: { DISPLAY: ":0" } }).stacking(), ["1080"]);
+  assert.deepEqual(ok.calls[0], ["xprop", "-root", "_NET_CLIENT_LIST_STACKING"]);
+  const missing = fakeExec([[is("xprop"), enoent("xprop")]]);
+  assert.equal(await createXinput({ exec: missing.exec, env: { DISPLAY: ":0" } }).stacking(), null);
 });
 
 test("move/down/up/click/key: 参数校验", async () => {
@@ -153,8 +175,9 @@ test("key/typeAscii 带 expectWindow：前台窗口不符 -> 抛错且不按键"
 
 test("debugRun: 用 exec 传参数组并带超时与 DISPLAY 环境", async () => {
   let seen;
-  const xi = createXinput({ exec: async (cmd, args, opts) => { seen = { cmd, args, opts }; return " 5 \n"; }, env: { DISPLAY: ":9" }, timeoutMs: 1234 });
+  const xi = createXinput({ exec: async (cmd, args, opts) => { seen = { cmd, args, opts }; return " 5 \n"; }, env: { DISPLAY: ":9" }, timeoutMs: 1234, debug: true });
   assert.equal(await xi.debugRun(["getactivewindow"]), "5");
+  assert.equal(createXinput({ env: {} }).debugRun, undefined, "默认不提供 debugRun");
   assert.equal(xi.run, undefined, "不暴露原始 run");
   assert.equal(seen.cmd, "xdotool");
   assert.deepEqual(seen.args, ["getactivewindow"]);

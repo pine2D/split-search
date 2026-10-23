@@ -4,16 +4,18 @@ import { createXinput } from "../scripts/e2e/xinput.mjs";
 import {
   idle, dragText, cursorHome, held, releaseAfterClose, REASON_CURSOR, REASON_BUSY, REASON_STUCK,
 } from "../scripts/e2e/gesture.mjs";
-import { omnibox, menuRows } from "../scripts/e2e/gesture-ui.mjs";
+import { omnibox, menuRows, contextMenuPick } from "../scripts/e2e/gesture-ui.mjs";
+import { releaseHeldSync } from "../scripts/e2e/gesture-guard.mjs";
 
 const ROOT = "1080", WID = "12582915"; // 0xC00003：测试 Chrome 的 X 客户端 0xC00000
 
 // 假 X 服务器：mousemove 改指针位置，getmouselocation 按 windowAt(x, y, st) 报窗口；记录全部调用
-function sim({ windowAt = () => WID, active = () => WID, windows = () => [WID], visible = null, jitter = false } = {}) {
+function sim({ windowAt = () => WID, active = () => WID, windows = () => [WID], visible = null, stack = null, jitter = false } = {}) {
   const st = { x: 5, y: 5, down: false, calls: [], n: 0 };
   const exec = async (cmd, args) => {
     st.calls.push([cmd, ...args]);
-    if (cmd !== "xdotool") throw new Error(`未预设：${cmd}`);
+    if (cmd === "xprop" && stack) return `_NET_CLIENT_LIST_STACKING(WINDOW): window id # ${stack(st).map(w => `0x${Number(w).toString(16)}`).join(", ")}\n`;
+    if (cmd !== "xdotool") throw Object.assign(new Error(`spawn ${cmd} ENOENT`), { code: "ENOENT" });
     const [c, ...r] = args;
     switch (c) {
       case "mousemove": st.x = Number(r[0]); st.y = Number(r[1]); return "";
@@ -183,7 +185,7 @@ test("omnibox: 新窗口拿到前台后才按键，每次按键前都核对前�
   const r = await omnibox(ctx, { text: "sse2e xkw abc", url: "http://x/" });
   assert.equal(r.wid, "20");
   const keys = st.calls.filter(c => c[1] === "key" || c[1] === "type").map(c => c.at(-1));
-  assert.deepEqual(keys, ["ctrl+l", "sse2e xkw abc", "Delete", "Return"]);
+  assert.deepEqual(keys, ["ctrl+l", ..."sse2e xkw abc", "Delete", "Return"], "地址栏文字逐字符输入");
   for (const [i, c] of st.calls.entries()) if (c[1] === "key" || c[1] === "type") assert.equal(st.calls[i - 1][1], "getactivewindow");
 });
 
@@ -250,4 +252,110 @@ test("sameClient: 同一 X 客户端连接的窗口 id（按最小掩码 0x3FFFF
   assert.equal(sameClient("14680067", "12582915"), false);  // 0xE00003：别的客户端
   assert.equal(sameClient("1080", "12582915"), false);
   assert.equal(sameClient("x", "12582915"), false);
+});
+
+// ---- 裁定 I1：前台与叠放顺序 ----
+const F = "4194409"; // 别的应用（不同 X 客户端）
+const dragArgs = { fromTargetId: "T", text: "abc", to: { x: 500, y: 20 }, wid: WID, steps: 2, stepMs: 0, dwellMs: 0 };
+
+test("I1：拖拽中前台换成别的应用的窗口 → 不在落点松开；回到起点时前台已恢复 → 在起点松开", async () => {
+  const { st, xi } = sim({ active: s => (s.down && s.y < 30 ? F : WID) });
+  st.y = 300;
+  await assert.rejects(dragText(mkCtx(xi), dragArgs), e => /前台换成了别的应用的窗口（4194409）/.test(e.message) && /已回到起点松开/.test(e.message));
+  const u = ups(st);
+  assert.equal(u.length, 1);
+  assert.deepEqual(lastMoveBefore(st, u[0][1]).slice(2), ["200", "170"]);
+});
+
+test("I1：前台一直是别的应用 → 起点也不松开，stuck", async () => {
+  const { st, xi } = sim({ active: s => (s.down ? F : WID) });
+  st.y = 300;
+  await assert.rejects(dragText(mkCtx(xi), dragArgs), e => e.kind === "stuck");
+  assert.equal(ups(st).length, 0);
+  held.current = null;
+});
+
+test("I1：叠放顺序里别的应用（按下前就在）被提到测试窗口上面 → 不在落点松开；起点核对时已回到下面 → 在起点松开", async () => {
+  const { st, xi } = sim({ stack: s => (s.down && s.y < 30 ? [WID, F] : [F, WID]) });
+  st.y = 300;
+  await assert.rejects(dragText(mkCtx(xi), dragArgs), e => /别的应用的窗口（4194409）被提到了测试窗口上面/.test(e.message));
+  const u = ups(st);
+  assert.equal(u.length, 1);
+  assert.deepEqual(lastMoveBefore(st, u[0][1]).slice(2), ["200", "170"]);
+});
+
+test("I1：叠放顺序一开始读得到、拖拽中读不到 → 中止；一直在上面 → stuck", async () => {
+  const a = sim({ stack: s => (s.down ? [] : [F, WID]) });
+  a.st.y = 300;
+  await assert.rejects(dragText(mkCtx(a.xi), dragArgs), e => e.kind === "stuck" && /读不到测试窗口的叠放位置/.test(e.message));
+  assert.equal(ups(a.st).length, 0);
+  held.current = null;
+  const b = sim({ stack: s => (s.down ? [WID, F] : [F, WID]) });
+  b.st.y = 300;
+  await assert.rejects(dragText(mkCtx(b.xi), dragArgs), e => e.kind === "stuck");
+  assert.equal(ups(b.st).length, 0);
+  held.current = null;
+});
+
+test("I1：没有 xprop（或 WSLg 不提供叠放属性）→ 降级为只核对前台，拖拽照常完成", async () => {
+  const { st, xi } = sim();
+  st.y = 300;
+  await dragText(mkCtx(xi), dragArgs);
+  assert.ok(st.calls.some(c => c[0] === "xprop"), "试过读叠放顺序");
+  assert.equal(ups(st).length, 1);
+});
+
+test("I1：外来窗口快照在落点预检之前取——预检之后冒出来的窗口也算新的，不按下", async () => {
+  let seenDrop = false;
+  // 指针一到落点（预检）就冒出 F；它在按下前的核对时必须被认成“新”的
+  const { st, xi } = sim({ windowAt: (x, y) => { if (y < 30) seenDrop = true; return WID; }, visible: () => (seenDrop ? [WID, F] : [WID]) });
+  st.y = 300;
+  await assert.rejects(dragText(mkCtx(xi), dragArgs), /别的应用的新窗口（4194409）/);
+  assert.equal(st.calls.some(c => c[1] === "mousedown"), false);
+});
+
+test("M-1：落点是 root 时回到确认过的光标位置复查——那里也成了 root（光标被移走）→ skip", async () => {
+  let moved = 0;
+  const { st, xi } = sim({ windowAt: () => (moved > 0 ? ROOT : WID) });
+  st.y = 300;
+  const orig = xi.move;
+  xi.move = async (...a) => { moved++; return orig(...a); };
+  await assert.rejects(dragText(mkCtx(xi), dragArgs), e => e.kind === "skip" && e.message.startsWith(REASON_CURSOR));
+  assert.equal(st.calls.some(c => c[1] === "mousedown"), false);
+});
+
+test("releaseHeldSync：起点核对通过才 mouseup；前台是别的应用 → stuck，不松开", () => {
+  const mk = active => {
+    const calls = [];
+    const exec = (cmd, args) => {
+      calls.push([cmd, ...args]);
+      if (args[0] === "getmouselocation") return `X=200\nY=170\nSCREEN=0\nWINDOW=${WID}\n`;
+      if (args[0] === "search") return `${WID}\n`;
+      if (args[0] === "getactivewindow") return `${active}\n`;
+      return "";
+    };
+    held.current = { origin: ORIGIN, guard: { wid: WID, image: null, pid: 4242, before: new Set([WID]), active0: WID, above0: null } };
+    return { calls, exec };
+  };
+  const ok = mk(WID);
+  assert.equal(releaseHeldSync({ exec: ok.exec }), "released");
+  assert.ok(ok.calls.some(c => c[1] === "mouseup"));
+  const bad = mk(F);
+  assert.equal(releaseHeldSync({ exec: bad.exec }), "stuck");
+  assert.equal(bad.calls.some(c => c[1] === "mouseup"), false);
+  held.current = null;
+});
+
+test("contextMenuPick：右键后冒出多个新窗口 → 在测试窗口里点一下关闭菜单，不在菜单上点", async () => {
+  let clicked3 = false;
+  const { st, xi } = sim({ windows: () => (clicked3 ? [WID, "12582990", "12582991"] : [WID]) });
+  st.y = 300;
+  const origClick = xi.click;
+  xi.click = async (b, o) => { await origClick(b, o); if (b === 3) clicked3 = true; };
+  await assert.rejects(contextMenuPick(mkCtx(xi), { at: { x: 200, y: 170 }, itemIndex: 2, expectItems: 4, wid: WID }), e => e.kind === "env");
+  const clicks = st.calls.map((c, i) => [c, i]).filter(([c]) => c[1] === "click");
+  assert.deepEqual(clicks.map(([c]) => c.at(-1)), ["3", "1"]);
+  const [, i1] = clicks[1];
+  assert.deepEqual(lastMoveBefore(st, i1).slice(2), ["200", "570"]);
+  assert.equal(st.calls[i1 - 1][1], "getmouselocation", "点之前核对指针在测试窗口里");
 });

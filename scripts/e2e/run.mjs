@@ -80,7 +80,7 @@ async function main() {
   const onSignal = sig => {
     if (signalName) {
       warn(`\n再次收到 ${sig}，立即退出。若已做快照，它保留在 ${ext.SNAPSHOT_FILE}（网站搜索：${se.SE_SNAPSHOT_FILE}），下次启动会自动恢复。`);
-      if (releaseHeldSync() === "stuck") warn("真实输入的鼠标左键可能仍按着：请把光标移到测试浏览器窗口里点一下左键。");
+      if (releaseHeldSync() === "stuck") warn("真实输入的鼠标左键可能仍按着（测试浏览器也会随之退出）：请把光标移到桌面空白处（不在任何 Linux 窗口上），再运行 xdotool mouseup 1。");
       try { writePartialReportSync(rt, s, reportDeps); } catch (e) { warn(`写部分报告失败：${e.message}`); }
       process.exit(sig === "SIGINT" ? 130 : 143);
     }
