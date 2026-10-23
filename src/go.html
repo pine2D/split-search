@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
   <title>Split Search</title>
   <style>
     :root {
@@ -58,7 +59,8 @@
       background: var(--btn-bg);
       color: var(--btn-fg);
     }
-    #open-options { background: var(--btn2-bg); color: var(--btn2-fg); }
+    #open-options, #left-only { background: var(--btn2-bg); color: var(--btn2-fg); }
+    .actions { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
     [hidden] { display: none !important; }
   </style>
   <script type="module" src="go.js"></script>
@@ -70,7 +72,10 @@
       <p id="error-message"></p>
       <button id="open-options" type="button">打开设置</button>
     </div>
-    <button id="rerun" type="button" hidden>重新执行</button>
+    <div class="actions">
+      <button id="rerun" type="button" hidden>重新执行</button>
+      <button id="left-only" type="button" hidden>只打开左侧搜索</button>
+    </div>
   </main>
 </body>
 </html>

@@ -80,7 +80,31 @@ export async function openInOtherWindow({ leftUrl, rightUrl }) {
   } catch (err) {
     log("其他窗口：创建右侧失败", err);
   }
+  // 新分屏建在已有的后台窗口里时，把该窗口切到前台；新建的窗口本来就在前台
+  if (target) {
+    try {
+      await chrome.windows.update(target.id, { focused: true });
+    } catch (err) {
+      log("其他窗口：切到前台失败", err);
+    }
+  }
   return { replaceWith: leftUrl };
+}
+
+// 其他分屏分支之后：当前标签回到被替换之前的页面；没有历史就关闭，关不掉就保留本页。
+// 返回 "back" | "closed" | "kept"。hist 默认是页面的 history，测试时可传入替身。
+export async function leaveTab(tab, hist = globalThis.history) {
+  if (hist.length > 1) {
+    hist.back();
+    return "back";
+  }
+  try {
+    await chrome.tabs.remove(tab.id);
+    return "closed";
+  } catch (err) {
+    log("关闭当前标签失败，保留本页", err);
+    return "kept";
+  }
 }
 
 export const ACTIONS = {
