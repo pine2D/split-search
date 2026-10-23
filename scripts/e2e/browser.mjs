@@ -81,9 +81,18 @@ export async function launch({ headless = false, restoreSession = false, profile
     return withSession(client, sid, () => evaluate(sid, expr, opts));
   };
 
-  const close = async () => {
+  const alive = () => proc.exitCode === null && proc.signalCode === null;
+  // graceful：先发 Browser.close 让 Chrome 正常退出并写好会话（--restore-last-session 依赖它），
+  // 10 秒内没退出再走信号
+  const close = async ({ graceful = false } = {}) => {
+    if (graceful && alive()) {
+      await client.send("Browser.close", {}, undefined, { timeoutMs: 5000 }).catch(() => {});
+      let t;
+      await Promise.race([exited, new Promise(r => { t = setTimeout(r, 10000); })]);
+      clearTimeout(t);
+    }
     client.close();
-    if (proc.exitCode === null && proc.signalCode === null) {
+    if (alive()) {
       proc.kill("SIGTERM");
       const t = setTimeout(() => proc.kill("SIGKILL"), 8000);
       await exited;

@@ -7,13 +7,15 @@ const TYPES = new Set(["page", "service_worker", "worker", "shared_worker"]);
 
 const argText = a => (a.type === "string" ? a.value : a.value !== undefined ? JSON.stringify(a.value) : a.description ?? "");
 
-export async function collectConsole(browser) {
+// carry：浏览器重启前的收集器，沿用它的错误列表、去重集合与附着计数（B15 要覆盖整次运行）
+export async function collectConsole(browser, { carry } = {}) {
   const { client } = browser;
-  const errors = [];
-  const seen = new Set();
+  const errors = carry?.errors ?? [];
+  const seen = carry?.seen ?? new Set();
   const extPrefix = `chrome-extension://${EXT_ID}/`;
   const sessions = new Set();
-  let attached = 0, extAttached = 0; // 历次附着的会话数（会话 detach 后 sessions 会减少）
+  const base = carry?.stats() ?? { attached: 0, extAttached: 0 };
+  let attached = base.attached, extAttached = base.extAttached; // 历次附着的会话数（会话 detach 后 sessions 会减少）
   const push = e => {
     const k = `${e.text}|${e.url}|${e.ts}`;
     if (seen.has(k)) return;
@@ -52,6 +54,7 @@ export async function collectConsole(browser) {
 
   return {
     errors,
+    seen,
     sessionCount: () => sessions.size,
     stats: () => ({ attached, extAttached }),
     stop: async () => {

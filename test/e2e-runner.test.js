@@ -136,7 +136,8 @@ test("selectSteps: only 按 id 过滤，未知 id 抛出", () => {
 test("STEPS: 已注册 B5 且按编号排序、形状正确", () => {
   const ids = STEPS.map(s => s.id);
   assert.ok(ids.includes("B5"));
-  assert.deepEqual(ids, [...ids].sort(compareStepIds));
+  const plain = STEPS.filter(s => !s.last).map(s => s.id); // last 步骤另有测试
+  assert.deepEqual(plain, [...plain].sort(compareStepIds));
   assert.equal(new Set(ids).size, ids.length);
   for (const s of STEPS) {
     assert.ok(["auto", "assist", "judge"].includes(s.kind), s.id);
@@ -173,7 +174,8 @@ test("STEPS: B15 标记 last 且排在最后，后注册的 T 步骤仍在它之
   assert.equal(STEPS.at(-1).last, true);
   const all = sortSteps([...STEPS, { id: "T9", title: "t", kind: "auto", needs: [], run: async () => ({ status: "pass" }) }]);
   assert.equal(all.at(-1).id, "B15");
-  assert.equal(all.at(-2).id, "T9");
+  const order = all.map(s => s.id);
+  assert.ok(order.indexOf("T9") > order.indexOf("T7") && order.indexOf("T9") < order.indexOf("T10"), order.join(","));
 });
 
 test("runSteps: 超时后等步骤真正结束（有上限）再开始下一步", async () => {
@@ -242,4 +244,9 @@ test("guarded: 未中断时照常写回并读回核对", async () => {
   const r = await guarded({ ext, signal: new AbortController().signal }, ["order"], async () => ({ status: "pass", detail: "好" }));
   assert.equal(r.status, "pass");
   assert.equal(exprs.filter(e => /\.set\(/.test(e)).length, 1);
+});
+
+test("STEPS: 分屏流程步骤都已登记为 auto", () => {
+  const byId = Object.fromEntries(STEPS.map(s => [s.id, s]));
+  for (const id of ["CORE-NEW", "CORE-EXISTING", "T5", "T6", "T7", "T10", "T13"]) assert.equal(byId[id]?.kind, "auto", id);
 });

@@ -1,8 +1,10 @@
 // 步骤注册表与过滤。步骤形状：
 // { id, title, kind: "auto"|"assist"|"judge", needs: string[], timeoutMs?, run: async ctx => ({ status, detail }) }
-// ctx = { browser, guide, ext, port, timeoutMs, abortSignal, signal, log, consoleErrors }
+// ctx = { browser, guide, ext, port, timeoutMs, abortSignal, signal, log, consoleErrors, consoleCollector,
+//         restartBrowser({ restoreSession }) → 新的 { browser, ext, ... }，步骤应 Object.assign 到自己的 ctx }
 // 后续任务各自在这里登记自己的步骤模块。
 import { OPTIONS_STEPS } from "./options.mjs";
+import { FLOW_STEPS } from "./flow.mjs";
 
 // B 系列在前，CORE-* 其次，T 系列最后；同类按数字排序
 const GROUP = { B: 0, CORE: 1, T: 2 };
@@ -17,7 +19,7 @@ export function compareStepIds(a, b) {
 
 // last: true 的步骤（B15 汇总控制台错误）无论编号都排在最后，以覆盖此前所有步骤
 export const sortSteps = steps => [...steps].sort((a, b) => (a.last ? 1 : 0) - (b.last ? 1 : 0) || compareStepIds(a.id, b.id));
-export const STEPS = sortSteps(OPTIONS_STEPS);
+export const STEPS = sortSteps([...OPTIONS_STEPS, ...FLOW_STEPS]);
 
 export function selectSteps(steps, { autoOnly = false, only = null } = {}) {
   if (only) {

@@ -71,19 +71,22 @@ async function main() {
 
   const startedAt = new Date();
   const notes = [];
+  let orphanErrors = null; // 重启后收集器没能启用时，保留重启前的错误
   let browser = null, col = null, results = null, storage = null, snapshotTaken = false, chromeVersion = null, fatal = null;
   try {
     try { server = await startServer({ port: args.port }); }
     catch (e) { warn(`前置条件缺失：${e.message}`); return 2; }
     log(`模拟服务与向导页：http://127.0.0.1:${args.port}/guide`);
 
-    try { browser = await launch({ headless: args.headless }); }
-    catch (e) { warn(`前置条件缺失：启动 Chrome 失败：${e.message}`); return 2; }
-    browser.proc.once("exit", () => {
-      if (closing) return;
+    // 只认当前这一个浏览器进程的退出：重启时旧进程的退出不算“中途退出”
+    const watchExit = b => b.proc.once("exit", () => {
+      if (closing || b !== browser) return;
       browserDead = true;
       if (!abort.signal.aborted) { warn("测试浏览器已退出，停止运行。"); abort.abort("测试浏览器已退出"); }
     });
+    try { browser = await launch({ headless: args.headless }); }
+    catch (e) { warn(`前置条件缺失：启动 Chrome 失败：${e.message}`); return 2; }
+    watchExit(browser);
     chromeVersion = (await browser.client.send("Browser.getVersion")).product;
     log(`已启动 ${chromeVersion}${args.headless ? "（无头）" : ""}`);
     try { col = await collectConsole(browser); }
@@ -110,6 +113,39 @@ async function main() {
       browser, guide: server.guide, ext: ext.bindExt(browser, { port: args.port }), port: args.port,
       timeoutMs: args.timeoutMs, abortSignal: abort.signal, log, consoleErrors: col?.errors ?? [], consoleCollector: col ?? undefined,
     };
+    // 步骤内重启浏览器（T5/T10）：同一配置、带 --restore-last-session 重新启动；storage 随配置保留，
+    // 不做快照恢复。会更新 ctx.browser / ctx.ext / 控制台收集器，返回新值供步骤更新自己的 ctx 副本
+    ctx.restartBrowser = async ({ restoreSession = true } = {}) => {
+      const old = browser;
+      browser = null;
+      closing = true;
+      await col?.stop().catch(() => {});
+      await old.close({ graceful: true }).catch(() => {});
+      closing = false;
+      try {
+        browser = await launch({ headless: args.headless, restoreSession });
+      } catch (e) {
+        browserDead = true;
+        abort.abort("测试浏览器重启失败");
+        throw new Error(`重启浏览器失败：${e.message}`);
+      }
+      watchExit(browser);
+      const prev = col;
+      try { col = await collectConsole(browser, { carry: prev ?? undefined }); }
+      catch (e) {
+        // B15 会因收集器缺失判失败；重启前收集到的错误仍写进报告
+        notes.push(`重启后控制台收集未启用：${e.message}`);
+        col = null; orphanErrors = prev?.errors ?? orphanErrors;
+      }
+      await browser.waitFor(async () => (await browser.evalExt("chrome.runtime.id", { timeoutMs: 3000 })) === EXT_ID,
+        { timeoutMs: 30000, intervalMs: 500 });
+      Object.assign(ctx, {
+        browser, ext: ext.bindExt(browser, { port: args.port }),
+        consoleErrors: col?.errors ?? ctx.consoleErrors, consoleCollector: col ?? undefined,
+      });
+      log(`  浏览器已重启${restoreSession ? "（恢复上次会话）" : ""}`);
+      return { browser: ctx.browser, ext: ctx.ext, consoleErrors: ctx.consoleErrors, consoleCollector: ctx.consoleCollector };
+    };
     results = await runSteps(steps, ctx, { timeoutMs: args.timeoutMs });
   } catch (e) {
     fatal = e;
@@ -135,7 +171,7 @@ async function main() {
       if (!results) results = steps.map(s => ({ id: s.id, title: s.title, kind: s.kind, status: "skip", detail: "未执行（运行提前结束）", durationMs: 0 }));
       if (signalName) notes.push(`运行被 ${signalName} 中断，报告不完整`);
       if (browserDead && !signalName) notes.push("测试浏览器在运行中途退出");
-      writeReport({ startedAt, args, results, consoleErrors: col?.errors ?? [], chromeVersion, storage, notes });
+      writeReport({ startedAt, args, results, consoleErrors: col?.errors ?? orphanErrors ?? [], chromeVersion, storage, notes });
     }
     await col?.stop().catch(() => {});
     closing = true;
