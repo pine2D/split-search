@@ -157,7 +157,7 @@ async function main() {
     });
     results = await runSteps(steps, ctx, { timeoutMs: args.timeoutMs });
     if (install?.b1 && !steps.some(s => s.id === "B1")) notes.push(`B1（未选入本次运行）：${install.b1.status}——${install.b1.detail}`);
-    // 收尾提示：恢复 T1/T2/T11/T12/T14 等步骤让用户改过的搜索设置（只在测试配置里）
+    // 收尾提示：只有 T8(d) 在 assist 回退路径里改过的“站点访问”要用户改回；其余搜索设置留在测试配置里复用
     if (!args.autoOnly && !abort.signal.aborted && !rt.stopReason) {
       const r = await cleanupPrompt({ ...ctx, browser: rt.browser }, rt.started, results).catch(e => ({ note: `收尾提示出错：${e.message}` }));
       if (r?.note) notes.push(r.note);

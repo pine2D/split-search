@@ -179,6 +179,10 @@ test("收尾：T8(d) 站点访问只在 assist 回退路径真的做过时才提
   assert.equal(cleanupItems([t8], res("共 2 项：通过 1，跳过 1，失败 0\n(a) 无痕窗口：通过——x\n(d) 站点访问“点击时”：跳过——不适用")).length, 0);
   assert.equal(cleanupItems([t8], res("共 1 项：通过 1，跳过 0，失败 0\n(a) 无痕窗口：通过——x")).length, 0);
   assert.equal(cleanupItems([t8], null).length, 1, "中断时没有结果，保守提示");
+  for (const d of ["中断（用户按了 Ctrl+C）", "超时（600000 ms 内未完成）", "异常：boom", ""]) {
+    assert.equal(cleanupItems([t8], res(d)).length, 1, d);
+  }
+  assert.equal(cleanupItems([t8], []).length, 1, "T8 没有结果");
   assert.equal(cleanupItems([byIdStub()], [{ id: "T8", detail: "" }]).length, 0);
 });
 const byIdStub = () => ({ id: "T1", cleanup: ["default", "gb"] });

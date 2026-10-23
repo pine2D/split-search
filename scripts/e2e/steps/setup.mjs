@@ -155,12 +155,17 @@ export function withNeeds(step) {
 const FIXTURE_TAGS = new Set(["default", "gb", "t14", "t12"]);
 export const FIXTURES_NOTE = "测试期间加的网站搜索和默认引擎只在测试配置里，保留即可，下次运行会复用。";
 const ACCESS = `如果 T8 里把扩展的${L.siteAccess}改成了${L.onClick}，确认已改回${L.onSpecific}`;
-const ranD = r => /^\(d\)[^\n]*?：(通过|失败)——/m.test(r?.detail ?? "");
-// results 为 null（运行中断、还没有结果）时，T8 开始过就保守地提示
+// 只有 T8 正常结束（有“共 N 项”汇总首行）且 (d) 行是跳过或没有时才不提示；缺结果、中断/超时/异常、(d) 通过或失败都提示
+const dSkipped = r => {
+  const d = r?.detail ?? "";
+  if (!/^共 \d+ 项/.test(d)) return false;
+  const line = d.split("\n").find(l => l.startsWith("(d)"));
+  return !line || /^\(d\)[^\n]*?：跳过——/.test(line);
+};
 export function cleanupItems(steps, results = null) {
   if (!steps.some(s => s.cleanup?.includes("access"))) return [];
   const t8 = results?.find(r => r.id === "T8");
-  return !results || !t8 || ranD(t8) ? [ACCESS] : [];
+  return dSkipped(t8) ? [] : [ACCESS];
 }
 export const cleanupNote = steps => (steps.some(s => s.cleanup?.some(k => FIXTURE_TAGS.has(k))) ? FIXTURES_NOTE : null);
 

@@ -41,12 +41,6 @@ const fenced = text => {
   const f = "`".repeat(Math.max(3, ...(t.match(/`+/g) ?? []).map(m => m.length + 1)));
   return [f, t, f];
 };
-// 多子项步骤（T14 等）每个子项一行，渲染成列表项：长行自动折行，任何 Markdown 查看器里都看得见；
-// 单行说明（T12 联想回答、超长单行）仍放代码块
-const detailBody = detail => {
-  const lines = String(detail ?? "").split("\n").filter(l => l.trim());
-  return lines.length < 2 ? fenced(detail) : [lines[0], "", ...lines.slice(1).map(l => `- ${l}`)];
-};
 // spec 3.5：e2e 不覆盖的项目，固定写进报告
 export const UNCOVERED = [
   "T3(b) 从外部 Windows 应用拖入：留给 Windows 冒烟（docs/acceptance-v0.1.md 第 2 节）",
@@ -95,7 +89,7 @@ export function renderReport(input) {
   const full = results.filter(r => r.status !== "fail" && needsFull(r));
   if (full.length) {
     md.push("## 详细说明（通过与跳过的步骤）", "");
-    for (const r of full) md.push(`### ${r.id} ${r.title ?? ""}（${STATUS[r.status] ?? r.status}）`, "", ...detailBody(r.detail), "");
+    for (const r of full) md.push(`### ${r.id} ${r.title ?? ""}（${STATUS[r.status] ?? r.status}）`, "", ...fenced(r.detail), "");
   }
 
   md.push("## 控制台中的 [split-search] 错误", "");

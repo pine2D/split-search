@@ -69,7 +69,7 @@ WSL 覆盖不到 Windows 环境本身，以及从 Windows 应用拖入。在 Win
 | T9 | 带 `_ss` 的触发网址：(a) 已登录的 Kagi（`https://kagi.com/search?q=split+test&_ss=kagi,google`）；(b) 经过 Turnstile 跳转的 Kagi（退出登录后触发）；(c) Google | (a) Kagi ｜ Google 分屏，左侧停在 kagi.com/search，结果页正常；参数被改写导致没分屏请记录 | (a) e2e assist（向导引导登录）；(b) 未覆盖；(c) 由 T1–T5 覆盖 |
 | T10 | 分屏后在左侧后退、前进；退出 Chrome 再用“继续上次浏览的位置”恢复会话 | 不再次分屏；不停在 go.html；会话恢复后 go.html 不重新分屏 | e2e auto |
 | T11 | 网页选中文字，右键 ->“使用 gb 搜索…”（默认引擎） | Google ｜ Bing 分屏 | e2e assist |
-| T12 | 编辑 Chrome 自动发现的 Kagi 条目，网址末尾追加 `&_ss=kagi,bing`，设为默认，地址栏直接输入关键词；再试快捷字词模式 | 记录：(1) 是否分屏；(2) 地址栏是否仍有该引擎的联想（建议）；(3) 快捷字词模式下的联想。结束后默认改回、删掉追加的 `_ss` | e2e judge（分屏由脚本判定，联想由你回答） |
+| T12 | 编辑 Chrome 自动发现的 Kagi 条目，网址末尾追加 `&_ss=kagi,bing`，设为默认，地址栏直接输入关键词；再试快捷字词模式 | 记录：(1) 是否分屏；(2) 地址栏是否仍有该引擎的联想（建议）；(3) 快捷字词模式下的联想。e2e 里默认引擎和追加的 `_ss` 保留在测试配置里，下次运行复用 | e2e judge（分屏由脚本判定，联想由你回答） |
 | T13 | 触发源为：(a) 固定标签；(b) 标签组里的标签；(c) 标签组里最后一个标签；(d) 窗口里唯一的标签；(e) popup 窗口；(f) PWA/应用窗口 | 不崩溃，按预期分屏或降级；(e)(f) 在普通窗口里新建一对分屏 | (a)–(e) e2e auto；(f) 未覆盖 |
 | T14 | 先访问五个引擎首页（注册 Service Worker），再让 Bing、DuckDuckGo、Perplexity、Kagi 各当一次左侧（网站搜索 `bg`/`dg`/`px`/`kg`，`_ss=<id>,google`），设为默认后拖一次文字（Google 作左侧由 T1–T5 覆盖） | 每个引擎作左侧都分屏。某引擎的 SW 让分屏失效（表现为普通搜索）时，写下引擎和现象回报，由控制端设为“仅建议作右侧” | e2e assist（脚本先打开五个首页） |
 | T15 | 在装了 uBlock Origin 的配置下跑 T1–T4 | 分屏 | 未覆盖 |

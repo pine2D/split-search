@@ -26,7 +26,7 @@ const T12 = {
         `2. 点它右侧的${L.edit}，在网址末尾追加下面这段（可复制），保存；`,
         `3. 在它右侧 ${L.more} 里点${L.makeDefault}；`,
         "4. 在地址栏直接输入“联想测试”（不用快捷字词），先留意下拉框里有没有 Kagi 的搜索联想，再回车。",
-        "期望：Kagi ｜ Bing 分屏。之后会问你联想的情况。（默认改回 Google、删掉追加的 _ss 放在全部步骤后的收尾提示里。）",
+        "期望：Kagi ｜ Bing 分屏。之后会问你联想的情况。（默认引擎和追加的 _ss 保留在测试配置里，下次运行复用。）",
       ].join("\n"),
       probe: async () => splitPairs(await ctx.ext.state()).find(([l, r]) => hostOf(l.url) === "kagi.com" && hostOf(r.url) === BING),
       verdict: p => ({ status: "pass", detail: `分屏：${fmt(p)}` }),

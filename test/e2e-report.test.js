@@ -84,12 +84,14 @@ test("renderReport: 通过/跳过但表格放不下的说明（多行、超长�
 });
 
 test("renderReport: T14 多行说明——每个引擎一行都在“详细说明”里，标题后不是空的", () => {
-  const detail = ["共 4 项：通过 3，跳过 1，失败 0", ...["Bing", "DuckDuckGo", "Perplexity"].map(n => `${n} 作左侧：通过——分屏：是；SW 注册：触发前无，触发后无；${"u".repeat(150)}`),
+  const detail = ["共 4 项：通过 3，跳过 1，失败 0", ...["Bing", "DuckDuckGo", "Perplexity"].map(n => `${n} 作左侧：通过——分屏：是；SW 注册：触发前无，触发后无；${"u".repeat(150)}?token=abc`),
     "Kagi 作左侧：跳过——用户点了“跳过”", "（开始前已打开五个引擎首页）"].join("\n");
   const { md } = renderReport({ ...base, results: [{ id: "T14", title: "各引擎", kind: "assist", status: "pass", detail, durationMs: 1 }] });
   const body = md.split("### T14")[1].split("\n## ")[0];
-  for (const n of ["Bing", "DuckDuckGo", "Perplexity", "Kagi"]) assert.ok(body.includes(`- ${n} 作左侧：`), n);
-  assert.ok(body.includes("- （开始前已打开五个引擎首页）") && body.includes("共 4 项：通过 3"));
+  const fence = body.split("```");
+  assert.equal(fence.length, 3, "整段说明在一个围栏代码块里");
+  for (const n of ["Bing", "DuckDuckGo", "Perplexity", "Kagi"]) assert.ok(fence[1].includes(`\n${n} 作左侧：`), n);
+  assert.ok(fence[1].includes("token=***") && fence[1].includes("共 4 项：通过 3"));
 });
 
 test("renderReport: 说明里有 ``` 时代码块围栏更长；多行备注缩进；固定列出未覆盖项", () => {
