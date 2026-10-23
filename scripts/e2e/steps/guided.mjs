@@ -75,7 +75,11 @@ export async function assist(ctx, o) {
     ctx.guide.setResult?.(o.label ?? o.title, v.status, v.detail);
     return v;
   }
-  if (r.kind === "answer") return { status: "skip", detail: `用户点了“跳过”（未等到：${o.what}）` };
+  // onAnswer：步骤自定义按钮（如 T14 的“没分屏”）的判定；返回 null 时按跳过处理
+  if (r.kind === "answer") {
+    const v = o.onAnswer ? await o.onAnswer(r.answer) : null;
+    return v ?? { status: "skip", detail: `用户点了“跳过”（未等到：${o.what}）` };
+  }
   return { status: "fail", detail: `${Math.round(limit / 1000)} 秒内未等到：${o.what}${r.last ? `（最后一次检查出错：${r.last}）` : ""}` };
 }
 

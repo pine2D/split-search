@@ -6,7 +6,6 @@ import { evalIn } from "./util.mjs";
 import { userWait, assist, guideUrl, extTargets, extAlive, contains, requestGrant, focusGuide } from "./guided.mjs";
 
 const OPT_URL = `chrome-extension://${EXT_ID}/options/options.html`;
-export const KAGI_HOME = "https://kagi.com/";
 
 export async function openGuide(browser, port) {
   await browser.client.send("Target.createTarget", { url: guideUrl(port) });
@@ -67,32 +66,51 @@ export async function ensureGrants(ctx, { autoOnly }) {
 }
 
 // ---- Kagi 登录（只在 needs 含 "kagi" 的步骤前检查）----
-export const isSignin = href => { try { return new URL(href).pathname.startsWith("/signin"); } catch { return false; } };
-const isKagi = href => { try { return new URL(href).hostname === "kagi.com"; } catch { return false; } };
+// 实测（审阅时用 curl 核对）：未登录时 kagi.com/ 照常 200，/settings 会经 /signin → /oauth2 跳到
+// account.kagi.com/loginname…，/search 会 302 到 /turnstile。所以探测 /settings：只有最终停在
+// kagi.com 的 /settings 才算已登录，其余（account.kagi.com、/signin、/turnstile、别的）都算未登录
+export const KAGI_PROBE = "https://kagi.com/settings";
+export function kagiLoggedIn(href) {
+  try { const u = new URL(href); return u.hostname === "kagi.com" && u.pathname.startsWith("/settings"); }
+  catch { return false; }
+}
 
-export async function ensureKagi(ctx) {
+// 开一个后台标签打开 /settings，等它加载完（新目标先是 about:blank，跳过），返回最终网址后关掉
+async function probeKagi(ctx) {
   const { client } = ctx.browser;
-  const { targetId } = await client.send("Target.createTarget", { url: KAGI_HOME });
-  // 新目标先是 about:blank（readyState 也是 complete），只认 kagi.com 上加载完成的页面
-  const href = async () => {
-    const h = await evalIn(ctx, targetId, `document.readyState === "complete" ? location.href : ""`);
-    return isKagi(h) ? h : "";
-  };
+  const { targetId } = await client.send("Target.createTarget", { url: KAGI_PROBE, background: true });
   try {
-    let now;
-    try { now = await ctx.browser.waitFor(href, { timeoutMs: 30000, intervalMs: 500 }); }
-    catch (e) { return { status: "fail", detail: `打不开 ${KAGI_HOME}：${e.message}` }; }
-    if (!isSignin(now)) return null;
-    const r = await assist(ctx, {
+    return await ctx.browser.waitFor(async () => {
+      const h = await evalIn(ctx, targetId, `document.readyState === "complete" ? location.href : ""`);
+      return h && h !== "about:blank" ? h : "";
+    }, { timeoutMs: 30000, intervalMs: 500 });
+  } finally { await client.send("Target.closeTarget", { targetId }).catch(() => {}); }
+}
+
+export async function ensureKagi(ctx, { probe = probeKagi, wait = assist } = {}) {
+  let first;
+  try { first = await probe(ctx); }
+  catch (e) { return { status: "fail", detail: `打不开 ${KAGI_PROBE}：${e.message}` }; }
+  if (kagiLoggedIn(first)) return null;
+  const { client } = ctx.browser;
+  const { targetId } = await client.send("Target.createTarget", { url: KAGI_PROBE }).catch(() => ({}));
+  let lastAt = 0;
+  try {
+    const r = await wait(ctx, {
       title: "准备：登录 Kagi", what: "Kagi 登录完成", hint: null, label: "Kagi 登录",
-      instruction: "这一步要用到已登录的 Kagi。请切到刚打开的 kagi.com 标签登录（只登录 kagi.com，不要登录 Chrome 账号）。\n"
-        + "登录信息只保存在测试配置里，下次运行不用再登。登录完成后脚本自动继续。",
+      instruction: "这一步要用到已登录的 Kagi。请切到刚打开的 Kagi 登录页登录（只登录 Kagi，不要登录 Chrome 账号）。\n"
+        + "登录信息只保存在测试配置里，下次运行不用再登。脚本每隔几秒在后台检查一次，登录完成后自动继续。",
       timeoutMs: (ctx.timeoutMs ?? 120000) * 3,
-      probe: async () => { const h = await href(); return h && !isSignin(h); },
+      // 后台探测会开关标签，限频：最多 5 秒一次
+      probe: async () => {
+        if (Date.now() - lastAt < 5000) return false;
+        lastAt = Date.now();
+        return kagiLoggedIn(await probe(ctx));
+      },
     });
     return r.status === "pass" ? null : { status: r.status, detail: `Kagi 未登录：${r.detail}` };
   } finally {
-    await client.send("Target.closeTarget", { targetId }).catch(() => {});
+    if (targetId) await client.send("Target.closeTarget", { targetId }).catch(() => {});
     await focusGuide(ctx).catch(() => {});
   }
 }
@@ -117,11 +135,13 @@ export function cleanupItems(steps) {
   return Object.keys(CLEANUP).filter(k => want.has(k)).map(k => CLEANUP[k]);
 }
 
+export const cleanupText = items => items.map((t, i) => `${i + 1}. ${t}`).join("\n");
+
+// 交互式确认（只在正常结束时）。清单本身由 run.mjs 在 finally 里无论如何都打印并写进报告备注
 export async function cleanupPrompt(ctx, steps) {
   const items = cleanupItems(steps);
   if (!items.length) return null;
-  const text = items.map((t, i) => `${i + 1}. ${t}`).join("\n");
-  ctx.log?.(`\n收尾：请在测试浏览器里恢复这些设置（只影响测试配置）：\n${text}`);
+  const text = cleanupText(items);
   await focusGuide(ctx).catch(() => {});
   const r = await userWait(ctx, {
     title: "收尾：恢复测试浏览器的搜索设置", what: "用户确认已恢复", hint: null, buttons: ["done", "skip"],

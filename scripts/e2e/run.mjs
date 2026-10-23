@@ -12,7 +12,8 @@ import { STEPS, selectSteps } from "./steps/index.mjs";
 import { runSteps } from "./runner.mjs";
 import { makeRestart } from "./restart.mjs";
 import { renderReport, reportBaseName, redact } from "./report.mjs";
-import { openGuide, installGuide, ensureGrants, cleanupPrompt } from "./steps/setup.mjs";
+import { openGuide, installGuide, ensureGrants, cleanupPrompt, cleanupItems, cleanupText } from "./steps/setup.mjs";
+import { makeAfterStep } from "./steps/recover.mjs";
 
 // 终端输出一律脱敏（网址里的 token/session 等参数值）
 const log = m => console.log(redact(m));
@@ -76,7 +77,7 @@ async function main() {
   const notes = [];
   // 运行时状态（重启会替换 browser/col）。orphanErrors：重启后收集器没能启用时，保留重启前的错误；
   // stopReason：浏览器不可用时设置，运行器据此跳过剩余步骤
-  const rt = { browser: null, col: null, closing: false, browserDead: false, restartFailed: false, stopReason: null, orphanErrors: null, notes, ctx: null };
+  const rt = { browser: null, col: null, closing: false, browserDead: false, restartFailed: false, stopReason: null, orphanErrors: null, notes, ctx: null, started: [] };
   let results = null, storage = null, snapshotTaken = false, chromeVersion = null, fatal = null;
   try {
     try { server = await startServer({ port: args.port }); }
@@ -101,7 +102,9 @@ async function main() {
     const setupCtx = { browser, guide: server.guide, port: args.port, timeoutMs: args.timeoutMs, abortSignal: abort.signal, log };
     if (!args.autoOnly) await openGuide(browser, args.port);
 
-    const ens = await ext.ensureExtension(browser, { autoOnly: args.autoOnly });
+    let ens = await ext.ensureExtension(browser, { autoOnly: args.autoOnly });
+    // 已登记但设置页一时打不开：多半是冷启动慢，稍等再试一次，别直接进入“启用扩展”引导
+    if (!ens.ok && ens.hint) { await new Promise(r => setTimeout(r, 3000)); ens = await ext.ensureExtension(browser, { autoOnly: args.autoOnly }); }
     let install = null;
     if (!ens.ok && ens.reason === "not-installed" && !args.autoOnly) {
       log("扩展未安装：请按向导页的说明加载（一次性）");
@@ -139,6 +142,10 @@ async function main() {
       browser, guide: server.guide, ext: ext.bindExt(browser, { port: args.port }), port: args.port,
       timeoutMs: args.timeoutMs, abortSignal: abort.signal, log, consoleErrors: col?.errors ?? [], consoleCollector: col ?? undefined,
       stopReason: () => rt.stopReason, install,
+      // 记下真正开始过的步骤：收尾清单只列它们让用户改过的设置
+      onStepStart: step => { rt.started.push(step); },
+      // B4、T8 这类会撤销授权/停用扩展的步骤之后，确认扩展可用、授权齐全（见 recover.mjs）
+      afterStep: makeAfterStep(rt, { log, warn }),
     };
     // 步骤内重启浏览器（T5/T10），见 restart.mjs
     ctx.restartBrowser = makeRestart(rt, {
@@ -150,7 +157,7 @@ async function main() {
     if (install?.b1 && !steps.some(s => s.id === "B1")) notes.push(`B1（未选入本次运行）：${install.b1.status}——${install.b1.detail}`);
     // 收尾提示：恢复 T1/T2/T11/T12/T14 等步骤让用户改过的搜索设置（只在测试配置里）
     if (!args.autoOnly && !abort.signal.aborted && !rt.stopReason) {
-      const note = await cleanupPrompt({ ...ctx, browser: rt.browser }, steps).catch(e => `收尾提示出错：${e.message}`);
+      const note = await cleanupPrompt({ ...ctx, browser: rt.browser }, rt.started).catch(e => `收尾提示出错：${e.message}`);
       if (note) notes.push(note);
     }
   } catch (e) {
@@ -172,6 +179,13 @@ async function main() {
           warn(notes.at(-1));
         }
       }
+    }
+    // 恢复清单：引导式运行里只要开始过带 cleanup 的步骤，无论正常结束、中断、出错还是浏览器退出，都打印并写进报告
+    const cleanup = args && !args.autoOnly ? cleanupItems(rt.started) : [];
+    if (cleanup.length) {
+      const text = cleanupText(cleanup);
+      log(`\n收尾：请在测试浏览器里恢复这些设置（只影响测试配置，下次运行 npm run e2e 时也可以再做）：\n${text}`);
+      notes.push(`需要恢复的测试浏览器设置：\n${text}`);
     }
     if (snapshotTaken || results) {
       if (!results) results = steps.map(s => ({ id: s.id, title: s.title, kind: s.kind, status: "skip", detail: "未执行（运行提前结束）", durationMs: 0 }));

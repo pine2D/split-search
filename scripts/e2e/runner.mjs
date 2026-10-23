@@ -55,10 +55,12 @@ export async function runSteps(steps, ctx, { timeoutMs, settleMs = SETTLE_MS } =
       continue;
     }
     // timeoutFactor：assist/judge 步骤要等人（可能有多个子项、会重试），上限按单步超时的倍数放宽
-    const limit = step.timeoutMs ?? (timeoutMs ?? ctx.timeoutMs ?? 120000) * (step.timeoutFactor ?? 1);
+    // timeoutExtraMs：步骤里有授权申请这类固定时长的等待（GRANT_TIMEOUT_MS），再加上它
+    const limit = step.timeoutMs ?? (timeoutMs ?? ctx.timeoutMs ?? 120000) * (step.timeoutFactor ?? 1) + (step.timeoutExtraMs ?? 0);
     const stepAbort = new AbortController();
     const started = Date.now();
     log(`▶ ${step.id} ${step.title}`);
+    ctx.onStepStart?.(step);
 
     let timer, onAbort;
     const running = Promise.resolve()
@@ -107,6 +109,12 @@ export async function runSteps(steps, ctx, { timeoutMs, settleMs = SETTLE_MS } =
     log(`  ${status === "pass" ? "✔ 通过" : status === "fail" ? "✘ 失败" : "↷ 跳过"}（${(result.durationMs / 1000).toFixed(1)}s）${detail ? "：" + detail.split("\n")[0] : ""}`);
     ctx.guide?.setResult?.(step.id, status, result.detail);
     ctx.guide?.setProgress?.(results.length, total);
+    // afterStep（run.mjs 的授权/启用恢复检查）：不受单步超时限制，无论步骤结果如何、是否超时都执行；
+    // 整次运行已被中断（Ctrl+C、浏览器退出）时不再执行，由下次运行的一次性授权检查兜底
+    if (ctx.afterStep && !abortSignal?.aborted) {
+      try { await ctx.afterStep(step, result); }
+      catch (e) { log(`  步骤后的恢复检查出错：${e.message}`); }
+    }
   }
   return results;
 }

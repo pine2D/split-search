@@ -2,7 +2,7 @@
 // 期望值以 docs/acceptance-v0.1.md 为准，默认组合 Google ｜ Bing。用户改 chrome://settings，脚本只看标签/分屏状态。
 import { splitPairs, resetTabs, openTab, waitState, summarize } from "./util.mjs";
 import { guarded, openOptions } from "./optpage.mjs";
-import { assist, judge, focusGuide, activate, contains, requestGrant } from "./guided.mjs";
+import { assist, judge, focusGuide, activate, contains, GRANT_TIMEOUT_MS } from "./guided.mjs";
 
 export const G = "www.google.com", BING = "www.bing.com";
 export const GB_TRIGGER = "https://www.google.com/search?q=%s&_ss=google,bing";
@@ -28,12 +28,12 @@ export const NEED_GB = `（前提：默认搜索引擎是网站搜索 gb。还�
 export async function prepare(ctx) { const base = await resetTabs(ctx); await focusGuide(ctx); return base; }
 
 const B4 = {
-  id: "B4", title: "设置页横幅授权：一次申请 Google 和 Bing", kind: "assist", needs: [], timeoutFactor: 3,
+  id: "B4", title: "设置页横幅授权：一次申请 Google 和 Bing", kind: "assist", needs: [], timeoutFactor: 2,
+  restores: true, timeoutExtraMs: GRANT_TIMEOUT_MS,
   async run(ctx) {
     return guarded(ctx, ["defaultPair"], async () => {
       await ctx.ext.eval(`chrome.storage.sync.set({ defaultPair: ["google", "bing"] }).then(() => true)`);
       await ctx.ext.eval(`chrome.permissions.remove({ origins: ${JSON.stringify(GB_ORIGINS)} })`);
-      let granted = false;
       const page = await openOptions(ctx.browser);
       try {
         const label = await page.until(`return document.querySelector("#banner button")?.textContent`, 8000).catch(() => null);
@@ -48,28 +48,25 @@ const B4 = {
           probe: () => contains(ctx.browser, GB_ORIGINS),
         });
         if (r.status !== "pass") return r;
-        granted = true;
         const gone = await page.until(`return document.getElementById("banner").children.length === 0`, 5000).then(() => true, () => false);
         if (!gone) problems.push("授权后横幅没有消失");
         return problems.length ? { status: "fail", detail: problems.join("；") } : { status: "pass", detail: `横幅“${label}”一次申请了两个网站；允许后横幅消失` };
       } finally {
+        // 没完成时的授权恢复由 run.mjs 的步骤后检查（restores: true，recover.mjs）负责，不受本步超时限制
         await page.close();
-        if (!granted && !ctx.signal?.aborted && (await contains(ctx.browser, GB_ORIGINS).catch(() => false)) !== true) {
-          await requestGrant(ctx, GB_ORIGINS, { title: "B4 恢复授权", why: "B4 没有完成，后续步骤需要 Google 和 Bing 的授权。" }).catch(() => false);
-        }
       }
     });
   },
 };
 
 const T1 = {
-  id: "T1", title: "地址栏快捷字词 gb：Google ｜ Bing 分屏", kind: "assist", needs: [], timeoutFactor: 4, cleanup: ["gb"],
+  id: "T1", title: "地址栏快捷字词 gb：Google ｜ Bing 分屏", kind: "assist", needs: [], timeoutFactor: 4, cleanup: ["default", "gb"],
   async run(ctx) {
     await prepare(ctx);
     return assist(ctx, {
       title: "T1 地址栏快捷字词", what: "Google ｜ Bing 分屏，两侧关键词都是“测试”", copyText: GB_TRIGGER,
       timeoutMs: ctx.timeoutMs * 3,
-      instruction: `1. 新开一个标签，打开 ${SETTINGS}；\n2. “网站搜索”旁点“添加”：名称 gb，快捷字词 gb，网址粘贴下面的网址，保存；\n`
+      instruction: `1. 新开一个标签，打开 ${SETTINGS}；\n2. “网站搜索”旁点“添加”：名称 gb，快捷字词 gb，网址粘贴下面的网址，保存（已有 gb 条目就跳过添加，直接设为默认）；\n`
         + "3. 在地址栏输入 gb，按空格（进入 gb 搜索），再输入“测试”回车。\n期望：打开 Google ｜ Bing 原生分屏，左侧 Google 为当前焦点。",
       probe: gbProbe(ctx, "测试"),
       verdict: p => (p[0].active ? { status: "pass", detail: `Google ｜ Bing 分屏，左侧为焦点：${fmt(p)}` }
@@ -79,7 +76,7 @@ const T1 = {
 };
 
 const T2 = {
-  id: "T2", title: "默认引擎 gb：直接输入分屏；Alt+Enter 新标签打开不崩溃", kind: "assist", needs: [], timeoutFactor: 5, cleanup: ["default"],
+  id: "T2", title: "默认引擎 gb：直接输入分屏；Alt+Enter 新标签打开不崩溃", kind: "assist", needs: [], timeoutFactor: 5, cleanup: ["default", "gb"],
   async run(ctx) {
     await prepare(ctx);
     const a = await assist(ctx, {
@@ -109,7 +106,7 @@ const T2 = {
 };
 
 const T3 = {
-  id: "T3", title: "(a) 选中文字拖到两个标签之间：Google ｜ Bing 分屏", kind: "assist", needs: [], timeoutFactor: 3, cleanup: ["default"],
+  id: "T3", title: "(a) 选中文字拖到两个标签之间：Google ｜ Bing 分屏", kind: "assist", needs: [], timeoutFactor: 3, cleanup: ["default", "gb"],
   async run(ctx) {
     await prepare(ctx);
     const q = "拖拽测试文字";
@@ -123,7 +120,7 @@ const T3 = {
 };
 
 const T4 = {
-  id: "T4", title: "选中文字拖到已有标签上：该标签变左侧，右侧新开", kind: "assist", needs: [], timeoutFactor: 3, cleanup: ["default"],
+  id: "T4", title: "选中文字拖到已有标签上：该标签变左侧，右侧新开", kind: "assist", needs: [], timeoutFactor: 3, cleanup: ["default", "gb"],
   async run(ctx) {
     const base = await prepare(ctx);
     const q = "拖到已有标签";
@@ -138,7 +135,7 @@ const T4 = {
 };
 
 const T5_DRAG = {
-  id: "T5-DRAG", title: "拖到本扩展分屏的右侧标签：两侧就地刷新，左右不对调", kind: "assist", needs: [], timeoutFactor: 4, cleanup: ["default"],
+  id: "T5-DRAG", title: "拖到本扩展分屏的右侧标签：两侧就地刷新，左右不对调", kind: "assist", needs: [], timeoutFactor: 4, cleanup: ["default", "gb"],
   async run(ctx) {
     await prepare(ctx);
     await openTab(ctx, "https://www.google.com/search?q=t5&_ss=google,bing");
@@ -170,7 +167,7 @@ const T5_DRAG = {
 };
 
 const T6_NTP = {
-  id: "T6-NTP", title: "手动分屏里的新标签页上拖文字：新开一对，新标签页回到原页面", kind: "judge", needs: [], timeoutFactor: 3, cleanup: ["default"],
+  id: "T6-NTP", title: "手动分屏里的新标签页上拖文字：新开一对，新标签页回到原页面", kind: "judge", needs: [], timeoutFactor: 3, cleanup: ["default", "gb"],
   async run(ctx) {
     await prepare(ctx);
     const q = "新标签页测试";
@@ -202,7 +199,7 @@ const T9 = {
 };
 
 const T11 = {
-  id: "T11", title: "选中文字右键“用 gb 搜索”：Google ｜ Bing 分屏", kind: "assist", needs: [], timeoutFactor: 3, cleanup: ["default"],
+  id: "T11", title: "选中文字右键“用 gb 搜索”：Google ｜ Bing 分屏", kind: "assist", needs: [], timeoutFactor: 3, cleanup: ["default", "gb"],
   async run(ctx) {
     await prepare(ctx);
     const q = "右键搜索测试";

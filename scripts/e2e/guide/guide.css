@@ -25,7 +25,7 @@ h3 { font-size: 14px; margin: 0 0 8px; color: var(--muted); }
 .btn:hover { border-color: var(--accent); }
 .btn:disabled { opacity: .5; cursor: default; }
 .btn.pass, .btn.done { background: var(--ok); border-color: var(--ok); color: #fff; }
-.btn.fail { background: var(--bad); border-color: var(--bad); color: #fff; }
+.btn.fail, .btn.nosplit { background: var(--bad); border-color: var(--bad); color: #fff; }
 .results { list-style: none; margin: 0; padding: 0; font-size: 14px; }
 .results li { padding: 4px 0; border-top: 1px solid var(--line); display: flex; gap: 8px; }
 .results li:first-child { border-top: 0; }

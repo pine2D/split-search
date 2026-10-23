@@ -3,9 +3,10 @@ import http from "node:http";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { HOSTS, mockEngines } from "./config.mjs";
+import { redact } from "./report.mjs";
 
 const GUIDE_DIR = fileURLToPath(new URL("./guide/", import.meta.url));
-const ANSWERS = new Set(["pass", "fail", "skip", "retry", "done"]);
+const ANSWERS = new Set(["pass", "fail", "skip", "retry", "done", "nosplit"]);
 const STATIC = {
   "/guide": ["guide.html", "text/html; charset=utf-8"],
   "/guide/guide.js": ["guide.js", "text/javascript; charset=utf-8"],
@@ -35,7 +36,7 @@ function createGuide() {
       settle("timeout");
       seq++; step = s; answered = null; consumed = false;
     },
-    setResult(id, status, detail) { results.push({ id, status, detail }); },
+    setResult(id, status, detail) { results.push({ id, status, detail: redact(detail) }); }, // 向导页上的说明也脱敏
     setProgress(done, total) { progress = { done, total }; },
     waitAnswer({ timeoutMs }) {
       settle("timeout");

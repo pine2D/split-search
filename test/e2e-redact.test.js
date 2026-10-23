@@ -17,6 +17,23 @@ test("redact: token/session/sid/auth/key/code 的值换成 ***，大小写不限
   assert.deepEqual(redactDeep({ a: ["?key=1"], n: 3, d: { u: "&sid=2" } }), { a: ["?key=***"], n: 3, d: { u: "&sid=***" } });
 });
 
+test("redact: 百分号编码的嵌套网址与 access_token/*_token/session_id/sessionid", () => {
+  assert.equal(redact("https://kagi.com/signin?next=%2Fsearch%3Ftoken%3Dabc"), "https://kagi.com/signin?next=%2Fsearch%3Ftoken%3D***");
+  assert.equal(redact("https://kagi.com/turnstile?r=/search%3Fq%3Dx%26token%3Dabc%26y%3D1"), "https://kagi.com/turnstile?r=/search%3Fq%3Dx%26token%3D***%26y%3D1");
+  assert.equal(redact("?a=1%23Code%3Dzz"), "?a=1%23Code%3D***");
+  assert.equal(redact("?access_token=1&x_token=2&Session_ID=3&sessionid=4&q=1"), "?access_token=***&x_token=***&Session_ID=***&sessionid=***&q=1");
+  assert.equal(redact("?q=a%3Dtoken%3D1&monkey=2"), "?q=a%3Dtoken%3D1&monkey=2");
+});
+
+test("guide.setResult: 向导页上的说明也脱敏", async () => {
+  const { startServer } = await import("../scripts/e2e/server.mjs");
+  const srv = await startServer({ port: 0 });
+  try {
+    srv.guide.setResult("T9", "fail", "落在 https://kagi.com/?token=abc");
+    assert.equal(srv.guide.state().results.at(-1).detail, "落在 https://kagi.com/?token=***");
+  } finally { await srv.close(); }
+});
+
 test("renderReport: 说明、诊断、控制台错误、备注在 md 与 json 里都已脱敏", () => {
   const secret = "SeCrEt42";
   const { md, json } = renderReport({

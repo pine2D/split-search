@@ -2,7 +2,7 @@
 // (d) 站点访问“点击时” judge + 脚本验证。模拟引擎 ea | eb；每项做完先恢复再做下一项。
 import { EXT_ID, GRANT_ORIGINS, HOSTS } from "../config.mjs";
 import { splitPairs, trigger, engineA, nonce, resetTabs, openTab, waitState, pageTargets, summarize, sleep, GO_PREFIX } from "./util.mjs";
-import { assist, judge, focusGuide, extAlive, contains, requestGrant } from "./guided.mjs";
+import { assist, judge, focusGuide, extAlive, contains, requestGrant, GRANT_TIMEOUT_MS } from "./guided.mjs";
 
 const SETTLE_MS = 4000; // 触发后等这么久仍没有跳转/分屏，才判定为“降级为普通搜索”
 const DETAILS = `chrome://extensions/?id=${EXT_ID}`;
@@ -97,7 +97,9 @@ const onClick = ctx => sub("(d) 站点访问“点击时”", async () => {
   const origins = GRANT_ORIGINS(ctx.port);
   const back = await assist(ctx, {
     title: "T8(d) 改回站点访问", what: "授权恢复", copyText: DETAILS, hint: null, timeoutMs: ctx.timeoutMs * 2,
-    instruction: "测试网址已经触发过了。请在扩展详情页把“网站访问权限”改回原来的选项（“在特定网站上”或“在所有网站上”）。\n"
+    instruction: "测试网址已经触发过了。请在扩展详情页把“网站访问权限”改回你原来的选项——通常是“在特定网站上”"
+      + "（列着 engine-a/b/c、site-x 这几个 localhost 和 google、bing、kagi、duckduckgo、perplexity）。\n"
+      + "不要选“在所有网站上”：那会授予 https://*/*，之后撤销单个网站的授权就不起作用了。\n"
       + "脚本检测到授权恢复后自动继续；改回后仍没反应，点“跳过”，脚本会弹出授权框请你点“允许”。",
     probe: () => contains(ctx.browser, origins),
   });
@@ -105,11 +107,29 @@ const onClick = ctx => sub("(d) 站点访问“点击时”", async () => {
     const ok = await requestGrant(ctx, origins, { title: "T8 恢复授权", why: "改回站点访问后授权仍不完整。" }).catch(() => false);
     if (!ok) return { status: "fail", detail: `${r.detail}；但授权没有恢复，后续步骤会失败` };
   }
+  const wide = await noWildcard(ctx);
+  if (wide.status !== "pass") return { status: "fail", detail: `${r.detail}；${wide.detail}` };
   return { ...r, detail: `${has.detail}；${r.detail}` };
 });
 
+// 授权里不能留着通配（“在所有网站上”会授予 https://*/* 或 http://*/*）；有就请用户改回“在特定网站上”
+const WILD = ["https://*/*", "http://*/*", "<all_urls>", "*://*/*"];
+const wildcards = async ctx => ((await ctx.ext.eval("chrome.permissions.getAll()"))?.origins ?? []).filter(o => WILD.includes(o));
+async function noWildcard(ctx) {
+  if (!(await wildcards(ctx)).length) return { status: "pass", detail: "授权里没有通配" };
+  await focusGuide(ctx);
+  const r = await assist(ctx, {
+    title: "T8(d) 去掉“在所有网站上”", what: "授权里不再有 https://*/* 等通配", copyText: DETAILS, hint: null,
+    instruction: "扩展现在拥有“在所有网站上”的授权（https://*/*）。请在扩展详情页把“网站访问权限”改成“在特定网站上”。\n"
+      + "改好后脚本自动继续（如果改完缺了某些网站的授权，步骤结束后脚本会弹框请你允许）。",
+    probe: async () => !(await wildcards(ctx)).length,
+  });
+  return r.status === "pass" ? r : { status: "fail", detail: `授权里仍有通配：${(await wildcards(ctx).catch(() => [])).join("、")}` };
+}
+
 export const T8 = {
-  id: "T8", title: "优雅降级：无痕、停用扩展、撤销授权、站点访问“点击时”", kind: "assist", needs: [], timeoutFactor: 16, cleanup: ["access"],
+  id: "T8", title: "优雅降级：无痕、停用扩展、撤销授权、站点访问“点击时”", kind: "assist", needs: [], timeoutFactor: 16,
+  restores: true, timeoutExtraMs: 2 * GRANT_TIMEOUT_MS, cleanup: ["access"],
   async run(ctx) {
     const items = [await incognito(ctx), await disabled(ctx)];
     items.push(...await revoke(ctx));

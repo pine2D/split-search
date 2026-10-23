@@ -54,6 +54,15 @@ async function warmUp(ctx) {
   for (const targetId of ids) await ctx.browser.client.send("Target.closeTarget", { targetId }).catch(() => {});
 }
 
+// 记下该引擎 host 上的标签网址（最新的在前），供“没分屏 / 跳过”时写进说明
+export async function engineTabs(ctx, host) {
+  const st = await ctx.ext.state().catch(() => null);
+  if (!st) return "读不到标签状态";
+  const tabs = st.tabs.filter(t => hostOf(t.url) === host).sort((x, y) => y.id - x.id);
+  if (!tabs.length) return `没有 ${host} 上的标签`;
+  return `${host} 上的标签：${tabs.slice(0, 3).map(t => `${t.id}${(t.splitViewId ?? -1) !== -1 ? `（分屏 ${t.splitViewId}）` : "（未分屏）"} ${t.url}`).join("；")}`;
+}
+
 const T14 = {
   id: "T14", title: "Bing、DuckDuckGo、Perplexity、Kagi 各当一次左侧：拖拽都分屏", kind: "assist", needs: ["kagi"], timeoutFactor: 11,
   cleanup: ["default", "t14"],
@@ -72,9 +81,16 @@ const T14 = {
         timeoutMs: ctx.timeoutMs * 2,
         instruction: `1. 在 ${SETTINGS} 的“网站搜索”里添加：名称和快捷字词都填 ${e.kw}，网址粘贴下面的网址，保存；\n`
           + `2. 在 ${e.kw} 右侧 ⋮ 里点“设为默认”；\n3. 回到向导页，选中下面的文字，拖到标签栏上两个标签之间。\n`
-          + `期望：${e.name} ｜ Google 分屏。若只打开了普通的 ${e.name} 搜索（没分屏），可能是该引擎的 Service Worker 绕过了 DNR：点“跳过”，并记下现象。`,
+          + `期望：${e.name} ｜ Google 分屏。若只打开了普通的 ${e.name} 搜索（没分屏），可能是该引擎的 Service Worker 绕过了 DNR：`
+          + "点“没分屏”（记为失败，脚本会记下那个标签的网址）；做不了这一项才点“跳过”。",
+        buttons: ["nosplit", "skip", "retry"],
         probe: async () => splitPairs(await ctx.ext.state()).find(p => !before.has(p[0].splitViewId) && hostOf(p[0].url) === e.host && hostOf(p[1].url) === G),
         verdict: p => ({ status: "pass", detail: fmt(p) }),
+        onAnswer: async a => {
+          const seen = await engineTabs(ctx, e.host);
+          if (a === "nosplit") return { status: "fail", detail: `用户报告没分屏（可能被该引擎的 Service Worker 绕过了 DNR）；${seen}` };
+          return { status: "skip", detail: `用户点了“跳过”；${seen}` };
+        },
       });
       items.push({ name: `${e.name} 作左侧`, ...r });
     }
