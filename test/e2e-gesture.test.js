@@ -10,7 +10,9 @@ import { releaseHeldSync } from "../scripts/e2e/gesture-guard.mjs";
 const ROOT = "1080", WID = "12582915"; // 0xC00003：测试 Chrome 的 X 客户端 0xC00000
 
 // 假 X 服务器：mousemove 改指针位置，getmouselocation 按 windowAt(x, y, st) 报窗口；记录全部调用
-function sim({ windowAt = () => WID, active = () => WID, windows = () => [WID], visible = null, stack = null, tree = null, jitter = false } = {}) {
+function sim({ windowAt = () => WID, active = () => WID, windows = () => [WID], visible = null, stack = null, tree, jitter = false } = {}) {
+  // 默认：xwininfo 读得到，根下只有测试窗口（叠放核对通过）；tree: null 表示读不到
+  if (tree === undefined) tree = stack ? null : () => ({ kids: [{ id: WID, x: 0, y: 0, w: 4000, h: 4000 }] });
   const st = { x: 5, y: 5, down: false, calls: [], n: 0 };
   const exec = async (cmd, args) => {
     st.calls.push([cmd, ...args]);
@@ -312,12 +314,12 @@ test("I1：叠放顺序一开始读得到、拖拽中读不到 → 中止；一�
   held.current = null;
 });
 
-test("I1：没有 xprop（或 WSLg 不提供叠放属性）→ 降级为只核对前台，拖拽照常完成", async () => {
-  const { st, xi } = sim();
+test("N-1：按下前读不到叠放顺序（xwininfo 偶发失败、也没有 EWMH 后备）→ 环境问题，不按下", async () => {
+  const { st, xi } = sim({ tree: null });
   st.y = 300;
-  await dragText(mkCtx(xi), dragArgs);
-  assert.ok(st.calls.some(c => c[0] === "xprop"), "试过读叠放顺序");
-  assert.equal(ups(st).length, 1);
+  await assert.rejects(dragText(mkCtx(xi), dragArgs), e => e.kind === "env" && /按下前读不到/.test(e.message));
+  assert.ok(st.calls.some(c => c[0] === "xprop"), "试过 EWMH 后备");
+  assert.equal(st.calls.some(c => c[1] === "mousedown"), false);
 });
 
 test("I1：外来窗口快照在落点预检之前取——预检之后冒出来的窗口也算新的，不按下", async () => {

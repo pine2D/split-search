@@ -93,6 +93,8 @@ export async function dropGuard(xi, { pid, wid, sel, snap }) {
   g.stack0 = !g.tree && xi.stacking ? await xi.stacking() : null;
   const above0 = g.stack0 && above(g.stack0, wid);
   g.above0 = above0 ? new Set(above0) : null;
+  // xwininfo 本应读得到却没读到（偶发失败）：不降级为只核对前台，按下前就放弃
+  if (xi.rootChildren && !g.tree && !g.above0) throw gestureError("env", "按下前读不到测试窗口在叠放顺序里的位置（xwininfo），无法确认落点上面没有别的窗口，未按下");
   const isImage = async (w, ours) => {
     if (g.before.has(w) || !ours(w)) return false;
     const r = await xi.windowRect(w).catch(() => null);
