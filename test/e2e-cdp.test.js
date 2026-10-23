@@ -60,3 +60,24 @@ test("createClient: 事件分发与 off", async () => {
   assert.deepEqual(got, [{ x: 1 }]);
   c.close();
 });
+
+for (const side of ["readable", "writable"]) {
+  test(`createClient: ${side} 流 error 时挂起与后续 send 均 reject,不崩溃`, async () => {
+    const { toChrome, fromChrome } = fakeChrome(() => null);
+    const c = createClient(toChrome, fromChrome);
+    const pend = c.send("Foo.pend", {}, undefined, { timeoutMs: 5000 });
+    (side === "readable" ? fromChrome : toChrome).destroy(new Error("x"));
+    await assert.rejects(pend, /CDP 连接错误：x/);
+    const t0 = Date.now();
+    await assert.rejects(c.send("Foo.after"), /CDP 连接已关闭/);
+    assert.ok(Date.now() - t0 < 500);
+  });
+}
+test("createClient: close() 后 send 立即 reject", async () => {
+  const { toChrome, fromChrome } = fakeChrome(() => null);
+  const c = createClient(toChrome, fromChrome);
+  c.close();
+  const t0 = Date.now();
+  await assert.rejects(c.send("Foo.x"), /CDP 连接已关闭/);
+  assert.ok(Date.now() - t0 < 500);
+});

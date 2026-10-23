@@ -38,13 +38,19 @@ export function createClient(writable, readable) {
   const onData = d => feed(typeof d === "string" ? d : sd.write(d));
   readable.on("data", onData);
 
+  let closed = false;
   function rejectAll(err) {
+    closed = true;
     for (const [id, p] of pending) { clearTimeout(p.timer); p.reject(err); pending.delete(id); }
   }
   readable.on("close", () => rejectAll(new Error("CDP 连接已关闭")));
+  const onErr = e => rejectAll(new Error("CDP 连接错误：" + e.message));
+  readable.on("error", onErr);
+  writable.on("error", onErr);
 
   return {
     send(method, params = {}, sessionId, { timeoutMs = DEFAULT_TIMEOUT_MS } = {}) {
+      if (closed) return Promise.reject(new Error("CDP 连接已关闭"));
       const id = nextId++;
       return new Promise((resolve, reject) => {
         const timer = setTimeout(() => {

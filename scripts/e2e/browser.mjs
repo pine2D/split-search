@@ -17,10 +17,10 @@ export function checkProfileLock(profileDir) {
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-export async function launch({ headless = false, restoreSession = false, profileDir = PROFILE_DIR } = {}) {
+export async function launch({ headless = false, restoreSession = false, profileDir = PROFILE_DIR, bin = CHROME_BIN } = {}) {
   const lock = checkProfileLock(profileDir);
   if (lock.locked) throw new Error(`测试配置已被占用（pid ${lock.pid}），请先关闭使用它的 Chrome`);
-  const proc = spawn(CHROME_BIN, CHROME_ARGS(profileDir, { headless, restoreSession }),
+  const proc = spawn(bin, CHROME_ARGS(profileDir, { headless, restoreSession }),
     { stdio: ["ignore", "ignore", "ignore", "pipe", "pipe"] });
   const exited = new Promise(r => proc.once("exit", r));
   let spawnErr = null;
