@@ -1,12 +1,13 @@
 // CLI 入口：解析参数 → 前置检查 → 启动 → 确认扩展 → 快照并配置模拟引擎 → 执行步骤 → 恢复 → 写报告
 // 退出码：0 全部通过或跳过；1 有失败（含恢复失败、浏览器中途退出）；2 前置条件缺失；130/143 被 SIGINT/SIGTERM 中断
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { parseArgs } from "./args.mjs";
 import { checkProfileLock, launch } from "./browser.mjs";
 import { startServer } from "./server.mjs";
 import { PROFILE_DIR, CHROME_BIN, EXT_ID } from "./config.mjs";
 import * as ext from "./ext.mjs";
+import * as se from "./settings-se.mjs";
 import { collectConsole } from "./console.mjs";
 import { STEPS, selectSteps } from "./steps/index.mjs";
 import { runSteps } from "./runner.mjs";
@@ -64,11 +65,11 @@ async function main() {
   let signalName = null, server = null;
   const onSignal = sig => {
     if (signalName) {
-      warn(`\n再次收到 ${sig}，立即退出。若已做快照，它保留在 ${ext.SNAPSHOT_FILE}，下次启动会自动恢复。`);
+      warn(`\n再次收到 ${sig}，立即退出。若已做快照，它保留在 ${ext.SNAPSHOT_FILE}（网站搜索：${se.SE_SNAPSHOT_FILE}），下次启动会自动恢复。`);
       process.exit(sig === "SIGINT" ? 130 : 143);
     }
     signalName = sig;
-    warn(`\n收到 ${sig}：停止步骤，恢复 storage 并写出部分报告（再按一次 Ctrl+C 强制退出）…`);
+    warn(`\n收到 ${sig}：停止步骤，恢复 storage 与网站搜索并写出部分报告（再按一次 Ctrl+C 强制退出）…`);
     abort.abort(`收到 ${sig}`);
     server?.guide.cancel();
   };
@@ -81,6 +82,8 @@ async function main() {
   // stopReason：浏览器不可用时设置，运行器据此跳过剩余步骤
   const rt = { browser: null, col: null, closing: false, browserDead: false, restartFailed: false, stopReason: null, orphanErrors: null, notes, ctx: null, started: [] };
   let results = null, storage = null, snapshotTaken = false, chromeVersion = null, fatal = null, cleanupConfirmed = false;
+  // seTouched：本次运行改过网站搜索（含启动时恢复遗留快照），关浏览器时要正常退出，否则最后几秒的改动可能没写进磁盘
+  let seTouched = false, seFailed = false;
   try {
     try { server = await startServer({ port: args.port }); }
     catch (e) { warn(`前置条件缺失：${e.message}`); return 2; }
@@ -100,6 +103,12 @@ async function main() {
     log(`已启动 ${chromeVersion}${args.headless ? "（无头）" : ""}`);
     try { rt.col = await collectConsole(browser); }
     catch (e) { notes.push(`控制台收集未启用：${e.message}`); }
+    // 网站搜索的遗留快照与扩展无关，启动后立刻恢复（早于安装引导等可能提前退出的环节）
+    if (await se.restorePending(browser)) {
+      seTouched = true;
+      log("发现上次遗留的网站搜索快照，已先恢复（默认引擎改回运行前、删除 sse2e 条目）");
+      notes.push("启动时发现上次遗留的网站搜索快照，已先恢复");
+    }
     // 引导式运行：打开向导页（准备、assist、judge 步骤的说明都显示在这里）
     const setupCtx = { browser, guide: server.guide, port: args.port, timeoutMs: args.timeoutMs, abortSignal: abort.signal, log };
     if (!args.autoOnly) await openGuide(browser, args.port);
@@ -144,6 +153,8 @@ async function main() {
       browser, guide: server.guide, ext: ext.bindExt(browser, { port: args.port }), port: args.port,
       timeoutMs: args.timeoutMs, abortSignal: abort.signal, log, consoleErrors: col?.errors ?? [], consoleCollector: col ?? undefined,
       stopReason: () => rt.stopReason, install,
+      // 网站搜索（sse2e 专用条目）：ensure 前自动快照，结束时在 finally 里恢复
+      se: se.bindSettings(() => rt.browser),
       // 记下真正开始过的步骤：收尾清单只列它们让用户改过的设置
       onStepStart: step => { rt.started.push(step); },
       // B4、T8 这类会撤销授权/停用扩展的步骤之后，确认扩展可用、授权齐全（见 recover.mjs）
@@ -191,6 +202,24 @@ async function main() {
         }
       }
     }
+    // 网站搜索：有快照（启动恢复失败或步骤里改过）就恢复；浏览器不在了则保留快照，下次启动先恢复
+    if (existsSync(se.SE_SNAPSHOT_FILE)) {
+      if (rt.browserDead || !rt.browser) {
+        seFailed = true;
+        notes.push(`浏览器不可用，无法恢复网站搜索；快照保留在 ${se.SE_SNAPSHOT_FILE}，下次启动会自动恢复`);
+        warn(notes.at(-1));
+      } else {
+        seTouched = true;
+        try {
+          const r = await se.restore(rt.browser);
+          log(`网站搜索已恢复：默认引擎 ${r.defaultKeyword}，删除 ${r.removed.join(", ") || "（无）"}`);
+        } catch (e) {
+          seFailed = true;
+          notes.push(`恢复网站搜索失败：${e.message}；快照保留在 ${se.SE_SNAPSHOT_FILE}，下次启动会自动恢复`);
+          warn(notes.at(-1));
+        }
+      }
+    }
     // 恢复清单：引导式运行里只要开始过带 cleanup 的步骤，无论正常结束、中断、出错还是浏览器退出，都打印并写进报告
     const cleanup = args && !args.autoOnly ? cleanupItems(rt.started, results) : [];
     const keep = args && !args.autoOnly ? cleanupNote(rt.started) : null;
@@ -217,12 +246,12 @@ async function main() {
     }
     await rt.col?.stop().catch(() => {});
     rt.closing = true;
-    await rt.browser?.close().catch(() => {});
+    await rt.browser?.close({ graceful: seTouched }).catch(() => {});
     await server?.close().catch(() => {});
   }
 
   if (signalName) return signalName === "SIGINT" ? 130 : 143;
-  const failed = fatal || rt.browserDead || rt.stopReason || !storage?.equal || results.some(r => r.status === "fail");
+  const failed = fatal || seFailed || rt.browserDead || rt.stopReason || !storage?.equal || results.some(r => r.status === "fail");
   return failed ? 1 : 0;
 }
 
