@@ -17,6 +17,12 @@ export function checkProfileLock(profileDir) {
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
+// 用完会话必须 detach：否则每次调用都泄漏一个会话，控制台收集器还会对每个会话 Runtime.enable
+export async function withSession(client, sessionId, fn) {
+  try { return await fn(sessionId); }
+  finally { await client.send("Target.detachFromTarget", { sessionId }).catch(() => {}); }
+}
+
 export async function launch({ headless = false, restoreSession = false, profileDir = PROFILE_DIR, bin = CHROME_BIN } = {}) {
   const lock = checkProfileLock(profileDir);
   if (lock.locked) throw new Error(`测试配置已被占用（pid ${lock.pid}），请先关闭使用它的 Chrome`);
@@ -62,10 +68,18 @@ export async function launch({ headless = false, restoreSession = false, profile
     }
     const sid = await attach(t.targetId); // 每次重新 attach，扩展重载后复用旧会话会挂起
     // 新建页面刚创建时尚未进入扩展上下文，等 chrome.runtime 可用
-    await waitFor(() => evaluate(sid, "!!(globalThis.chrome && chrome.runtime && chrome.runtime.id)", { timeoutMs: 3000 }), { timeoutMs: 10000 });
+    try {
+      await waitFor(() => evaluate(sid, "!!(globalThis.chrome && chrome.runtime && chrome.runtime.id)", { timeoutMs: 3000 }), { timeoutMs: 10000 });
+    } catch (e) {
+      await client.send("Target.detachFromTarget", { sessionId: sid }).catch(() => {});
+      throw e;
+    }
     return sid;
   };
-  const evalExt = async (expr, opts = {}) => evaluate(await extPage(), expr, opts);
+  const evalExt = async (expr, opts = {}) => {
+    const sid = await extPage();
+    return withSession(client, sid, () => evaluate(sid, expr, opts));
+  };
 
   const close = async () => {
     client.close();

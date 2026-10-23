@@ -39,3 +39,15 @@ test("config: 引擎与授权 origin", () => {
   assert.equal(EXT_ID, "alngkkgnobglnfbhcplhpaflcgfiajnj");
   assert.equal(CHROME_BIN, "/opt/google/chrome/google-chrome");
 });
+
+test("withSession: 成功与失败都会 detach 会话", async () => {
+  const { withSession } = await import("../scripts/e2e/browser.mjs");
+  const calls = [];
+  const client = { send: async (m, p) => { calls.push([m, p]); if (m === "Target.detachFromTarget") throw new Error("already gone"); } };
+  assert.equal(await withSession(client, "S1", async sid => `ok-${sid}`), "ok-S1");
+  await assert.rejects(withSession(client, "S2", async () => { throw new Error("boom"); }), /boom/);
+  assert.deepEqual(calls, [
+    ["Target.detachFromTarget", { sessionId: "S1" }],
+    ["Target.detachFromTarget", { sessionId: "S2" }],
+  ]);
+});
