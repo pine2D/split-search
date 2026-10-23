@@ -68,3 +68,26 @@ test("renderReport: storage 前后摘要写进 md", () => {
 test("reportBaseName: 本地时间戳", () => {
   assert.equal(reportBaseName(new Date(2026, 9, 23, 8, 5, 9)), "report-20261023-080509");
 });
+
+test("renderReport: 通过/跳过但表格放不下的说明（多行、超长、judge）完整写进“详细说明”；单元格截断带省略号", () => {
+  const t12 = "直接输入时联想：有；快捷字词模式联想：没有；分屏：" + "x".repeat(200);
+  const { md } = renderReport({ ...base, results: [
+    { id: "T12", title: "联想", kind: "judge", status: "pass", detail: t12, durationMs: 1 },
+    { id: "T14", title: "各引擎", kind: "assist", status: "pass", detail: "共 4 项：通过 3，跳过 1，失败 0\nKagi 作左侧：跳过——用户点了“跳过”", durationMs: 1 },
+    { id: "B5", title: "DNR", kind: "auto", status: "pass", detail: "规则正确", durationMs: 1 },
+  ] });
+  assert.match(md, /## 详细说明/);
+  assert.ok(md.includes(t12), "T12 的联想回答完整出现");
+  assert.ok(md.includes("Kagi 作左侧：跳过"), "T14 跳过的子项看得见");
+  assert.ok(!/### B5/.test(md), "放得下的单行说明不重复");
+  assert.match(tableRows(md)[0], /…/);
+});
+
+test("renderReport: 说明里有 ``` 时代码块围栏更长；多行备注缩进；固定列出未覆盖项", () => {
+  const { md, json } = renderReport({ ...base, results: [{ id: "T7", title: "t", kind: "auto", status: "fail", detail: "a ``` b", durationMs: 1 }],
+    notes: ["需要恢复：\n1. 改回默认"] });
+  assert.ok(md.includes("````\na ``` b\n````"));
+  assert.ok(md.includes("- 需要恢复：\n  1. 改回默认"));
+  assert.match(md, /## 未覆盖[\s\S]*T3\(b\)[\s\S]*T9\(b\)[\s\S]*T13\(f\)[\s\S]*T15/);
+  assert.ok(json.uncovered.length >= 2);
+});

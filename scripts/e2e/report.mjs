@@ -21,7 +21,25 @@ export function reportBaseName(d) {
   return `report-${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
 }
 
-const cell = s => String(s ?? "").split("\n")[0].replace(/\|/g, "\\|").slice(0, 120);
+const CELL_MAX = 120;
+const cell = s => {
+  const line = String(s ?? "").split("\n")[0].replace(/\|/g, "\\|");
+  return line.length > CELL_MAX ? `${line.slice(0, CELL_MAX)}…` : line;
+};
+// 表格单元格放不下的说明（多行、超长或 judge 的回答）要在“详细说明”里完整给出
+const needsFull = r => r.kind === "judge" || String(r.detail ?? "").includes("\n") || String(r.detail ?? "").length > CELL_MAX;
+// 代码块围栏比说明里最长的连续反引号多一个，说明里有 ``` 也不会提前结束代码块
+const fenced = text => {
+  const t = String(text ?? "");
+  const f = "`".repeat(Math.max(3, ...(t.match(/`+/g) ?? []).map(m => m.length + 1)));
+  return [f, t, f];
+};
+// spec 3.5：e2e 不覆盖的项目，固定写进报告
+export const UNCOVERED = [
+  "T3(b) 从外部 Windows 应用拖入：留给 Windows 冒烟（docs/acceptance-v0.1.md 第 2 节）",
+  "B9 快捷字词 bk（地址栏快捷字词机制由 T1 覆盖）、T9(b) 经 Turnstile 跳转的 Kagi、T13(f) PWA/应用窗口、T15 uBlock Origin：未覆盖",
+  "扩展 Service Worker 空闲回收后的冷启动：e2e 运行中调试会话让 SW 一直存活，测不到，靠 Windows 冒烟或手测",
+];
 const secs = ms => (typeof ms === "number" ? `${(ms / 1000).toFixed(1)}s` : "-");
 const iso = d => (d instanceof Date ? d.toISOString() : d ?? null);
 
@@ -39,7 +57,7 @@ export function renderReport(input) {
   const summary = summarize(results);
   const json = {
     startedAt: iso(startedAt), finishedAt: iso(finishedAt), chromeVersion: chromeVersion ?? null, args,
-    summary, results, consoleErrors, storage: storage ?? null, notes,
+    summary, results, consoleErrors, storage: storage ?? null, notes, uncovered: UNCOVERED,
   };
 
   const md = [];
@@ -58,7 +76,13 @@ export function renderReport(input) {
   const failed = results.filter(r => r.status === "fail");
   if (failed.length) {
     md.push("## 失败详情", "");
-    for (const r of failed) md.push(`### ${r.id} ${r.title ?? ""}`, "", "```", String(r.detail ?? ""), "```", "");
+    for (const r of failed) md.push(`### ${r.id} ${r.title ?? ""}`, "", ...fenced(r.detail), "");
+  }
+  // 通过/跳过的步骤里，表格只显示了第一行的那些（多子项的计数与各子项、T12 的联想回答、T8(d) 是否适用、T14 各引擎）
+  const full = results.filter(r => r.status !== "fail" && needsFull(r));
+  if (full.length) {
+    md.push("## 详细说明（通过与跳过的步骤）", "");
+    for (const r of full) md.push(`### ${r.id} ${r.title ?? ""}（${STATUS[r.status] ?? r.status}）`, "", ...fenced(r.detail), "");
   }
 
   md.push("## 控制台中的 [split-search] 错误", "");
@@ -77,8 +101,11 @@ export function renderReport(input) {
   }
   if (notes.length) {
     md.push("## 备注", "");
-    for (const n of notes) md.push(`- ${n}`);
+    for (const n of notes) md.push(`- ${String(n).replace(/\n/g, "\n  ")}`); // 多行备注缩进，留在同一个列表项里
     md.push("");
   }
+  md.push("## 未覆盖", "");
+  for (const u of UNCOVERED) md.push(`- ${u}`);
+  md.push("");
   return { md: md.join("\n"), json };
 }

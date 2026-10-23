@@ -15,6 +15,7 @@ export function splitPairs(state) {
     groups.get(t.splitViewId).push(t);
   }
   return [...groups.values()]
+    .filter(g => g.length >= 2) // 单标签分组（另一侧刚关闭、尚未解除分屏）不算一对
     .map(g => g.sort((a, b) => a.index - b.index))
     .sort((a, b) => a[0].windowId - b[0].windowId || a[0].index - b[0].index)
     .map(g => [g[0], g[1]]);
@@ -103,9 +104,12 @@ export async function resetTabs(ctx, path = "/start") {
   return { ...made, url, targetId: site.targetId };
 }
 
-// 一组子项的汇总：任何一项失败即失败；全部通过/跳过时通过，跳过项写明原因
+// 一组子项的汇总：任何一项失败即失败；全部跳过（或没有子项）判跳过；通过与跳过混合判通过。
+// 第一行写计数（报告表格与终端只显示第一行，跳过的子项也要看得见），之后每个子项一行
 export function summarize(items) {
   const line = i => `${i.name}：${i.status === "pass" ? "通过" : i.status === "skip" ? "跳过" : "失败"}——${i.detail}`;
-  const status = items.some(i => i.status === "fail") ? "fail" : "pass";
-  return { status, detail: items.map(line).join("\n") };
+  const n = s => items.filter(i => i.status === s).length;
+  const status = n("fail") ? "fail" : n("pass") ? "pass" : "skip";
+  const head = `共 ${items.length} 项：通过 ${n("pass")}，跳过 ${n("skip")}，失败 ${n("fail")}`;
+  return { status, detail: [head, ...items.map(line)].join("\n") };
 }

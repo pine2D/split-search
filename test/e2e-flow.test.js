@@ -23,11 +23,25 @@ test("expectPair/trigger: 左侧保留 +，右侧用 %20；触发网址带 _ss",
   assert.equal(isPair([tab(1, 0, 3, 1, l + "&_ss=ea,eb"), tab(2, 1, 3, 1, r)], 8765, "x"), false, "左侧含 _ss 不算");
 });
 
-test("summarize: 任一子项失败即失败，跳过项不致失败", () => {
-  assert.equal(summarize([{ name: "a", status: "pass", detail: "" }, { name: "b", status: "skip", detail: "原因" }]).status, "pass");
+test("summarize: 任一子项失败即失败，跳过项不致失败；首行是计数", () => {
+  const mixed = summarize([{ name: "a", status: "pass", detail: "" }, { name: "b", status: "skip", detail: "原因" }]);
+  assert.equal(mixed.status, "pass");
+  assert.equal(mixed.detail.split("\n")[0], "共 2 项：通过 1，跳过 1，失败 0");
   const r = summarize([{ name: "a", status: "pass", detail: "" }, { name: "b", status: "fail", detail: "坏" }]);
   assert.equal(r.status, "fail");
   assert.match(r.detail, /b：失败——坏/);
+  assert.equal(r.detail.split("\n")[0], "共 2 项：通过 1，跳过 0，失败 1");
+});
+
+test("summarize: 全部跳过判跳过，不是通过；没有子项也判跳过", () => {
+  const r = summarize([{ name: "(a)", status: "skip", detail: "用户点了“跳过”" }, { name: "(b)", status: "skip", detail: "x" }]);
+  assert.equal(r.status, "skip");
+  assert.equal(r.detail.split("\n")[0], "共 2 项：通过 0，跳过 2，失败 0");
+  assert.equal(summarize([]).status, "skip");
+});
+
+test("splitPairs: 只有一个标签的分组（另一侧刚关闭）不算一对", () => {
+  assert.deepEqual(splitPairs({ tabs: [tab(1, 0, 4), tab(2, 1, 5), tab(3, 2, 5)] }).map(p => p.map(t => t.id)), [[2, 3]]);
 });
 
 function fakeBrowser() {
