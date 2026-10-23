@@ -1,0 +1,39 @@
+{
+  "manifest_version": 3,
+  "name": "Split Search",
+  "version": "0.1.0",
+  "description": "地址栏或拖拽搜索，一键用两个搜索引擎打开原生分屏对比",
+  "minimum_chrome_version": "155",
+  "incognito": "not_allowed",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0ZNKfhoaeTQJvk8txOrxu1Wq4hmZhmp/4E2vj30HbSQ/YRtVBf1TyCp3i3VUQG5U/ASACVmPXvsBHkNKey+Njh0cSTV5CshU0OUDfbkG31oJzdM0IASE4GHmKAZTrTA1H7ns+QtK1zKCl7zYhUNd4Zn4GBix1TcErn8auhJBW+om8TuNjl2/5D3U74/u8esbsRt4AXdEshhqRtSUsjI8WCTN0QeFn9I7CG6rPPqVWI33Yusgup33XG10n25mk6Wqr0wc6VOXwYFYG4dowHc5PmKQvfVqtWiM06s/6rWNw+EamJaaml01bHp9eWuGdLDVKf0qwhO2BZS8snn9R/0flwIDAQAB",
+  "permissions": [
+    "declarativeNetRequest",
+    "storage"
+  ],
+  "optional_host_permissions": [
+    "https://*/*",
+    "http://*/*"
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "go.html"
+      ],
+      "matches": [
+        "<all_urls>"
+      ],
+      "use_dynamic_url": true
+    }
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "options_ui": {
+    "page": "options/options.html",
+    "open_in_tab": true
+  },
+  "action": {
+    "default_title": "Split Search 设置"
+  }
+}
