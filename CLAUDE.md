@@ -67,21 +67,29 @@ Chrome MV3 扩展：用户在地址栏搜索，或把文字拖到标签栏时，
 split-search/
 ├── CLAUDE.md                     项目约定
 ├── README.md                     面向用户的简介与安装
+├── .gitignore
 ├── package.json                  仅含 "test": "node --test" 脚本
+├── docs/acceptance-v0.1.md       v0.1 手测验收清单（B 表 + T1–T15）
 ├── scripts/
 │   ├── gen-key.sh                生成或复用私钥，把公钥写入 src/manifest.json 的 key
 │   └── sync-to-windows.sh        rsync src/ → D 盘镜像目录
 ├── src/                          扩展根目录（加载这个目录）
 │   ├── manifest.json
 │   ├── background.js             SW：重建 DNR 规则、打开设置页
-│   ├── go.html / go.js           触发处理页
-│   ├── options/options.html|js|css  设置页
+│   ├── go.html / go.js           触发处理页（解析、判定、出错页与“只打开左侧搜索”兜底）
+│   ├── options/options.html|css  设置页静态结构、引导文字与样式
+│   ├── options/options.js        设置页编排：读配置、查授权、渲染、串行写入
+│   ├── options/edits.js          设置页纯逻辑：表单校验、算出写回存储的补丁
+│   ├── options/engine-list.js    引擎列表、已隐藏列表、新增/编辑对话框
+│   ├── options/guide.js          触发网址卡片与组合生成器
+│   ├── options/ui.js             DOM 小工具、提示、复制按钮、host 权限查询与申请
 │   ├── lib/engines.js            预置引擎、模板校验、配置合并
 │   ├── lib/trigger.js            触发网址生成与解析、模板展开
 │   ├── lib/rules.js              DNR 规则构造
 │   ├── lib/split-decision.js     分屏动作判定
-│   └── chrome/config-store.js    storage.sync 读写封装
-└── test/                         node --test（每个 lib 一个文件，另加 manifest.test.js、config-store.test.js）
+│   ├── chrome/config-store.js    storage.sync 读写封装
+│   └── chrome/split-actions.js   分屏动作执行（tabs / windows / storage.session 薄封装）
+└── test/                         node --test（每个 lib 一个文件，另有 manifest、config-store、split-actions、options-edits、options-ui）
 ```
 
 纯逻辑放 `src/lib/`（不碰 `chrome.*`），`src/chrome/` 是对 `chrome.*` 的薄封装，页面脚本只负责编排。
@@ -110,7 +118,7 @@ split-search/
 ## 测试纪律
 
 - `src/lib/` 新增逻辑先写 node 测试，再写实现。
-- 涉及分屏、DNR、权限的行为，只能在 Windows Chrome 155+ 里按 spec 第 7 节（T1–T15）手测。WSL 里的 Chrome 版本不够，不能用。
+- 涉及分屏、DNR、权限的行为，按 spec 第 7 节（T1–T15）手测，清单见 `docs/acceptance-v0.1.md`。拖拽到标签栏和真实配置（已登录、已同步的 profile）下的表现必须在用户的 Windows Chrome 155+ 里测。WSL 里的 Google Chrome 是 155.0.8059.84，可用于不涉及拖拽的检查。
 
 ## 提交
 
