@@ -4,3 +4,4 @@ node_modules/
 *.crx
 *.zip
 .codegraph/
+.e2e/
