@@ -57,6 +57,22 @@ export function parseStacking(out) {
   return m[1].split(",").map(x => x.trim()).filter(x => /^0x[0-9a-f]+$/i.test(x)).map(x => String(parseInt(x, 16)));
 }
 
+// xwininfo -children 的输出 → { parent, children: [{ id, x, y, w, h }] }（id 十进制；x/y 为绝对坐标）。
+// children 保持 xwininfo 的打印顺序：实测是从上到下（2026-10-23：两个测试 Chrome 窗口先后打开，后开、在前台的那个的
+// 框架窗口排第一；xwininfo 按 XQueryTree 的逆序打印）。WSLg 的 Weston WM 会给顶层窗口套一层框架窗口（根的子窗口）
+export function parseChildren(out) {
+  const text = String(out);
+  const p = /Parent window id: 0x([0-9a-f]+)/i.exec(text);
+  const children = [];
+  for (const line of text.split("\n")) {
+    const m = /^\s+0x([0-9a-f]+)\s.*\s(\d+)x(\d+)\S*\s+([+-]-?\d+)([+-]-?\d+)\s*$/i.exec(line);
+    if (!m) continue;
+    const num = v => Number(v.replace(/^\+/, ""));
+    children.push({ id: String(parseInt(m[1], 16)), w: Number(m[2]), h: Number(m[3]), x: num(m[4]), y: num(m[5]) });
+  }
+  return { parent: p ? String(parseInt(p[1], 16)) : null, children };
+}
+
 const BUTTONS = new Set([1, 2, 3]);
 const COMBO_RE = /^[A-Za-z0-9_]+(\+[A-Za-z0-9_]+)*$/;
 const ASCII_RE = /^[\x20-\x7e]*$/;
@@ -168,6 +184,20 @@ export function createXinput({ exec = defaultExec, env = process.env, timeoutMs 
     }
   }
 
+  // 根窗口的子窗口，从下到上（叠放顺序的主来源，裁定 Task 4 fix round 2）；xwininfo 不在或出错 → null
+  async function rootChildren() {
+    try { return parseChildren(await call("xwininfo", ["-root", "-children"])).children.reverse(); } catch { return null; }
+  }
+  const windowTree = async wid => {
+    if (!isWid(wid)) throw new Error(`窗口 id 不合法：${wid}`);
+    return parseChildren(await call("xwininfo", ["-id", wid, "-children"]));
+  };
+  // "IsViewable" / "IsUnMapped" / "IsUnviewable"；读不到 → null
+  const mapState = async wid => {
+    if (!isWid(wid)) throw new Error(`窗口 id 不合法：${wid}`);
+    return /Map State:\s*(\w+)/.exec(String(await call("xwininfo", ["-id", wid])))?.[1] ?? null;
+  };
+
   // 根窗口的 _NET_CLIENT_LIST_STACKING（从下到上，十进制 id）。xprop 不在、属性不存在或读不了 → null（调用方降级）
   async function stacking() {
     try {
@@ -185,12 +215,12 @@ export function createXinput({ exec = defaultExec, env = process.env, timeoutMs 
     return buf;
   }
 
-  // xinput 可用 = DISPLAY 存在、三个命令可执行、XTEST 扩展在、非 headless、未传 --no-xinput
+  // xinput 可用 = DISPLAY 存在、四个命令（xdotool、import、xdpyinfo、xwininfo）可执行、XTEST 扩展在、非 headless、未传 --no-xinput
   async function available({ headless = false, noXinput = false } = {}) {
     if (noXinput) return { ok: false, reason: "已传 --no-xinput" };
     if (headless) return { ok: false, reason: "无头（headless）模式没有窗口" };
     if (!env.DISPLAY) return { ok: false, reason: "没有 DISPLAY 环境变量" };
-    const probes = [["xdotool", ["version"]], ["import", ["-version"]], ["xdpyinfo", ["-queryExtensions"]]];
+    const probes = [["xdotool", ["version"]], ["import", ["-version"]], ["xdpyinfo", ["-queryExtensions"]], ["xwininfo", ["-version"]]];
     const outs = {};
     for (const [cmd, args] of probes) {
       try { outs[cmd] = String(await call(cmd, args)); }
@@ -204,7 +234,7 @@ export function createXinput({ exec = defaultExec, env = process.env, timeoutMs 
 
   // 不暴露原始的 run（任意 xdotool 子命令）：调用方只能用带检查的原语。debugRun 只在 debug:true（单测）时提供
   return {
-    available, listWindows, findWindow, findWindowByTitle, pidWindows, visibleWindows, stacking, rootWindow, pointer, activeWindow, windowSize, windowRect,
+    available, listWindows, findWindow, findWindowByTitle, pidWindows, visibleWindows, stacking, rootChildren, windowTree, mapState, rootWindow, pointer, activeWindow, windowSize, windowRect,
     assertPointerIn, assertActive, move, down: mouseOp("mousedown"), up: mouseOp("mouseup"), click: mouseOp("click"),
     key, typeAscii, releaseModifiers, captureRgb, ...(debug ? { debugRun: run } : {}),
   };
@@ -212,7 +242,7 @@ export function createXinput({ exec = defaultExec, env = process.env, timeoutMs 
 
 const xi = createXinput();
 export const {
-  available, listWindows, findWindow, findWindowByTitle, pidWindows, visibleWindows, stacking, rootWindow, pointer, activeWindow, windowSize, windowRect,
+  available, listWindows, findWindow, findWindowByTitle, pidWindows, visibleWindows, stacking, rootChildren, windowTree, mapState, rootWindow, pointer, activeWindow, windowSize, windowRect,
   assertPointerIn, assertActive, move, down, up, click, key, typeAscii, releaseModifiers, captureRgb,
 } = xi;
 export default xi;

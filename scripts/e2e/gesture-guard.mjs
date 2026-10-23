@@ -4,10 +4,12 @@
 // 1) 指针下是测试窗口，或认定的拖拽图像窗口（按下后才出现、属于测试 Chrome、大小与选区相符）；
 // 2) 屏幕上没有冒出别的应用的新窗口（快照在落点预检之前取）；
 // 3) 前台窗口没有变成别的应用的窗口（WSLg 下窗口被提到上层通常伴随激活）；
-// 4) 能读到根窗口的 _NET_CLIENT_LIST_STACKING（xprop）时：没有别的应用的窗口被提到测试窗口上面。读不到就只靠 3)。
+// 4) 叠放顺序：用 xwininfo -root -children（WSLg 没有 _NET_CLIENT_LIST_STACKING，见 fix round 2）——按下之后新提到测试窗口
+//    （的 Weston 框架）上面、映射着、不属于测试 Chrome、又盖住指针所在点的窗口一个都不能有；xwininfo 读不到时退回 EWMH 属性，
+//    再不行只靠 3)。
 // 任何一条不满足：不在落点松开，回起点按同样的规则核对后松开；起点也不行 → stuck，按键保持按下。
 import { execFileSync } from "node:child_process";
-import { parseStacking } from "./xinput.mjs";
+import { parseStacking, parseChildren } from "./xinput.mjs";
 
 export const REASON_STUCK = "可能有按键卡住";
 export function gestureError(kind, msg) { const e = new Error(msg); e.kind = kind; return e; }
@@ -40,16 +42,55 @@ export function above(stack, wid) {
   return i < 0 ? null : stack.slice(i + 1);
 }
 
-// 落点预检之前调用：屏幕上已有的可见窗口
-export async function guardSnapshot(xi) {
-  return { before: new Set(await xi.visibleWindows()) };
+// ---- 叠放顺序（主来源：xwininfo -root -children；WSLg 的 Weston WM 不提供 _NET_CLIENT_LIST_STACKING，后者只作后备）----
+// 测试窗口被 Weston WM 套了一层框架，比较的是它在根窗口子窗口里的祖先
+export async function rootAncestor(xi, wid, root) {
+  let w = String(wid);
+  for (let i = 0; i < 6; i++) {
+    const t = await xi.windowTree(w);
+    if (!t.parent || t.parent === "0" || t.parent === String(root)) return w;
+    w = t.parent;
+  }
+  return null;
+}
+
+// 纯函数：kids（根的子窗口，从下到上，带绝对坐标）里，排在祖先 anc 上面、按下前不在它上面（above0）、且盖住点 p 的窗口；
+// 找不到祖先 → null（读不出叠放位置）
+export function raisedCovering(kids, anc, above0, p) {
+  const i = kids.findIndex(k => k.id === anc);
+  if (i < 0) return null;
+  return kids.slice(i + 1).filter(k => !above0.has(k.id) && p.x >= k.x && p.x < k.x + k.w && p.y >= k.y && p.y < k.y + k.h);
+}
+
+// 这个根的子窗口是不是测试 Chrome 的：本身属于它（拖拽图像、菜单），或是 Weston 框架、里面的窗口全属于它（设置页等）
+async function testOwned(xi, id, ours) {
+  if (ours(id)) return true;
+  const inner = (await xi.windowTree(id).catch(() => ({ children: [] }))).children;
+  return inner.length > 0 && inner.every(c => ours(c.id));
+}
+
+async function stackSnapshot(xi, wid, root) {
+  const kids = xi.rootChildren ? await xi.rootChildren() : null;
+  if (!kids) return null;
+  const anc = await rootAncestor(xi, wid, root).catch(() => null);
+  const i = anc ? kids.findIndex(k => k.id === anc) : -1;
+  return i < 0 ? null : { anc, above0: new Set(kids.slice(i + 1).map(k => k.id)) };
+}
+
+// 落点预检之前调用：屏幕上已有的可见窗口，以及（xwininfo 读得到时）测试窗口祖先上面已有的窗口——
+// 两份快照都在预检之前取，预检之后才冒出来或被提上来的窗口都算“新”的
+export async function guardSnapshot(xi, { wid, root } = {}) {
+  return { before: new Set(await xi.visibleWindows()), tree: wid ? await stackSnapshot(xi, wid, root) : null };
 }
 
 // 按下前（指针已在起点）调用：再记下前台窗口与叠放顺序
+// 叠放核对三档：xwininfo 读得到 → 主规则（新提到测试窗口上面、映射着、不属于测试 Chrome、盖住指针所在点的根子窗口一个都不能有）；
+// 读不到但有 _NET_CLIENT_LIST_STACKING → 后备规则；都没有 → 只靠前台核对
 export async function dropGuard(xi, { pid, wid, sel, snap }) {
   const g = { image: null, before: snap.before, pid, wid: String(wid) };
   g.active0 = await xi.activeWindow();
-  g.stack0 = xi.stacking ? await xi.stacking() : null;
+  g.tree = snap.tree ?? null;
+  g.stack0 = !g.tree && xi.stacking ? await xi.stacking() : null;
   const above0 = g.stack0 && above(g.stack0, wid);
   g.above0 = above0 ? new Set(above0) : null;
   const isImage = async (w, ours) => {
@@ -69,7 +110,17 @@ export async function dropGuard(xi, { pid, wid, sel, snap }) {
     if (foreign.length) throw gestureError("env", `拖拽期间屏幕上出现了别的应用的新窗口（${foreign.join(",")}），可能盖住落点，已中止`);
     const act = await xi.activeWindow();
     if (act && act !== g.active0 && !ours(act)) throw gestureError("env", `拖拽期间前台换成了别的应用的窗口（${act}），它可能被提到了测试窗口上面，已中止`);
-    if (g.above0) {
+    if (g.tree) {
+      const kids = await xi.rootChildren();
+      const hits = kids && raisedCovering(kids, g.tree.anc, g.tree.above0, p);
+      if (!hits) throw gestureError("env", "拖拽期间读不到测试窗口在叠放顺序里的位置（xwininfo），无法确认上面没有别的窗口，已中止");
+      for (const k of hits) {
+        if (await testOwned(xi, k.id, ours)) continue;
+        const state = await xi.mapState(k.id).catch(() => null);
+        if (state === "IsUnMapped" || state === "IsUnviewable") continue;
+        throw gestureError("env", `拖拽期间别的应用的窗口（${k.id}，${k.w}x${k.h}+${k.x}+${k.y}）被提到了测试窗口上面并盖住了${what}，已中止`);
+      }
+    } else if (g.above0) {
       const stack = await xi.stacking();
       const now = stack && above(stack, wid);
       if (!now) throw gestureError("env", "拖拽期间读不到测试窗口的叠放位置（_NET_CLIENT_LIST_STACKING），无法确认上面没有别的窗口，已中止");
@@ -126,7 +177,19 @@ export function releaseHeldSync({ env = process.env, exec = execFileSync } = {})
     let act = null;
     try { act = String(x("getactivewindow")).trim(); } catch { act = null; }
     if (act && act !== g.active0 && !ours(act)) return "stuck";
-    if (g.above0) {
+    if (g.tree) {
+      const info = (...a) => String(exec("xwininfo", a.map(String), { env, timeout: 2000, encoding: "utf8" }));
+      const kids = parseChildren(info("-root", "-children")).children.reverse();
+      const hits = raisedCovering(kids, g.tree.anc, g.tree.above0, h.origin);
+      if (!hits) return "stuck";
+      for (const k of hits) {
+        if (ours(k.id)) continue;
+        const inner = parseChildren(info("-id", k.id, "-children")).children;
+        if (inner.length && inner.every(c => ours(c.id))) continue;
+        if (/Map State:\s*Is(UnMapped|Unviewable)/.test(info("-id", k.id))) continue;
+        return "stuck";
+      }
+    } else if (g.above0) {
       const out = String(exec("xprop", ["-root", "_NET_CLIENT_LIST_STACKING"], { env, timeout: 2000, encoding: "utf8" }));
       const now = above(parseStacking(out) ?? [], g.wid);
       if (!now || now.some(w => !g.above0.has(w) && !ours(w))) return "stuck";

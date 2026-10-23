@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { createXinput, parsePointer, parseGeometry, parseRoot, parseRect, parseStacking, classRegex } from "../scripts/e2e/xinput.mjs";
+import { createXinput, parsePointer, parseGeometry, parseRoot, parseRect, parseStacking, parseChildren, classRegex } from "../scripts/e2e/xinput.mjs";
 
 const PROFILE = "/home/u/.cache/split-search-e2e/profile";
 
@@ -190,6 +190,7 @@ const goodProbes = () => fakeExec([
   [is("xdotool", "version"), "xdotool version 3.20160805.1\n"],
   [is("import", "-version"), "Version: ImageMagick 6.9\n"],
   [is("xdpyinfo", "-queryExtensions"), "number of extensions: 3\n    XTEST  (opcode: 132)\n    XFIXES\n"],
+  [is("xwininfo", "-version"), "xwininfo 1.1.6\n"],
 ]);
 
 test("available: 一切就绪 -> ok", async () => {
@@ -213,15 +214,20 @@ test("available: 缺命令 / 无 XTEST -> 不可用并写明原因", async () =>
     [is("xdotool", "version"), "ok\n"],
     [is("import"), enoent("import")],
     [is("xdpyinfo"), "XTEST\n"],
+    [is("xwininfo"), "xwininfo 1.1.6\n"],
   ]);
   const r1 = await createXinput({ exec: missing.exec, env: { DISPLAY: ":0" } }).available();
   assert.equal(r1.ok, false); assert.match(r1.reason, /缺少命令 import/);
   const noX = fakeExec([
     [is("xdotool"), "ok\n"], [is("import"), "ok\n"],
     [is("xdpyinfo"), "number of extensions: 1\n    XFIXES\n"],
+    [is("xwininfo"), "xwininfo 1.1.6\n"],
   ]);
   const r2 = await createXinput({ exec: noX.exec, env: { DISPLAY: ":0" } }).available();
   assert.equal(r2.ok, false); assert.match(r2.reason, /XTEST/);
+  const noInfo = fakeExec([[is("xdotool"), "ok\n"], [is("import"), "ok\n"], [is("xdpyinfo"), "XTEST\n"], [is("xwininfo"), enoent("xwininfo")]]);
+  const r3 = await createXinput({ exec: noInfo.exec, env: { DISPLAY: ":0" } }).available();
+  assert.equal(r3.ok, false); assert.match(r3.reason, /缺少命令 xwininfo/);
 });
 
 test("parsePointer: 只认纯数字的 X/Y/WINDOW", () => {
@@ -258,4 +264,31 @@ test("releaseModifiers: keyup 全部修饰键", async () => {
   await createXinput({ exec, env: { DISPLAY: ":0" } }).releaseModifiers();
   assert.deepEqual(calls[0].slice(0, 3), ["xdotool", "keyup", "Control_L"]);
   assert.ok(calls[0].includes("Alt_L") && calls[0].includes("Shift_L"));
+});
+
+test("parseChildren: xwininfo -children 的实测输出（从上到下打印，负坐标，名字里带括号和数字）", () => {
+  const out = `xwininfo: Window id: 0x438 (the root window) (has no name)
+
+  Root window id: 0x438 (the root window) (has no name)
+  Parent window id: 0x0 (none)
+     3 children:
+     0x27dbf7 (has no name): ()  877x697+10+52  +10+52
+     0x27db55 "a (b) 3x4+1+2": ("x" "y")  877x697+-11+10  +-11+10
+     0x200002 (has no name): ()  8192x8192+0+0  +0+0
+`;
+  const t = parseChildren(out);
+  assert.equal(t.parent, "0");
+  assert.deepEqual(t.children, [
+    { id: String(0x27dbf7), w: 877, h: 697, x: 10, y: 52 },
+    { id: String(0x27db55), w: 877, h: 697, x: -11, y: 10 },
+    { id: String(0x200002), w: 8192, h: 8192, x: 0, y: 0 },
+  ]);
+  assert.equal(parseChildren("  Parent window id: 0x27db55 (has no name)\n     0 children.\n").parent, String(0x27db55));
+});
+
+test("rootChildren: 反转成从下到上；xwininfo 不在 → null", async () => {
+  const ok = fakeExec([[is("xwininfo", "-root"), "  Parent window id: 0x0 (none)\n     0x2 a: ()  1x1+0+0  +0+0\n     0x1 b: ()  1x1+0+0  +0+0\n"]]);
+  assert.deepEqual((await createXinput({ exec: ok.exec, env: { DISPLAY: ":0" } }).rootChildren()).map(k => k.id), ["1", "2"]);
+  const no = fakeExec([[is("xwininfo"), enoent("xwininfo")]]);
+  assert.equal(await createXinput({ exec: no.exec, env: { DISPLAY: ":0" } }).rootChildren(), null);
 });

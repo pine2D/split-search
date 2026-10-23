@@ -10,11 +10,12 @@ import { releaseHeldSync } from "../scripts/e2e/gesture-guard.mjs";
 const ROOT = "1080", WID = "12582915"; // 0xC00003：测试 Chrome 的 X 客户端 0xC00000
 
 // 假 X 服务器：mousemove 改指针位置，getmouselocation 按 windowAt(x, y, st) 报窗口；记录全部调用
-function sim({ windowAt = () => WID, active = () => WID, windows = () => [WID], visible = null, stack = null, jitter = false } = {}) {
+function sim({ windowAt = () => WID, active = () => WID, windows = () => [WID], visible = null, stack = null, tree = null, jitter = false } = {}) {
   const st = { x: 5, y: 5, down: false, calls: [], n: 0 };
   const exec = async (cmd, args) => {
     st.calls.push([cmd, ...args]);
     if (cmd === "xprop" && stack) return `_NET_CLIENT_LIST_STACKING(WINDOW): window id # ${stack(st).map(w => `0x${Number(w).toString(16)}`).join(", ")}\n`;
+    if (cmd === "xwininfo" && tree) return xwininfoOut(tree(st), args);
     if (cmd !== "xdotool") throw Object.assign(new Error(`spawn ${cmd} ENOENT`), { code: "ENOENT" });
     const [c, ...r] = args;
     switch (c) {
@@ -30,6 +31,20 @@ function sim({ windowAt = () => WID, active = () => WID, windows = () => [WID], 
     }
   };
   return { st, xi: createXinput({ exec, env: { DISPLAY: ":0" } }) };
+}
+
+// 假 xwininfo：t = { kids: [{ id, x, y, w, h, inner?: [id], map? }]（从上到下，与真实打印顺序一致）, parents: { 窗口: 父窗口 } }
+const hex = id => `0x${Number(id).toString(16)}`;
+const line = k => `     ${hex(k.id)} (has no name): ()  ${k.w}x${k.h}+${k.x}+${k.y}  +${k.x}+${k.y}`;
+function xwininfoOut(t, args) {
+  if (!t) throw new Error("xwininfo 读不到");
+  if (args[0] === "-root") return ["  Parent window id: 0x0 (none)", ...t.kids.map(line)].join("\n") + "\n";
+  const id = args[1], k = t.kids.find(x => x.id === id);
+  if (args[2] === "-children") {
+    const inner = (k?.inner ?? []).map(c => ({ id: c, x: 0, y: 0, w: 1, h: 1 }));
+    return [`  Parent window id: ${hex(t.parents?.[id] ?? ROOT)}`, ...inner.map(line)].join("\n") + "\n";
+  }
+  return `  Map State: ${k?.map ?? "IsViewable"}\n`;
 }
 
 // 假 browser：选区在 CSS (200,70)，页面度量 dpr 1、无工具栏偏移以外的东西 → 屏幕 (200,170)
@@ -358,4 +373,55 @@ test("contextMenuPick：右键后冒出多个新窗口 → 在测试窗口里点
   const [, i1] = clicks[1];
   assert.deepEqual(lastMoveBefore(st, i1).slice(2), ["200", "570"]);
   assert.equal(st.calls[i1 - 1][1], "getmouselocation", "点之前核对指针在测试窗口里");
+});
+
+// ---- fix round 2：xwininfo 叠放顺序（WSLg 没有 _NET_CLIENT_LIST_STACKING）----
+const FRAME_T = String(0x27db55), FRAME_F = String(0x27dbf7); // Weston 框架窗口（WM 客户端）
+const kidsWith = top => ({ kids: top, parents: { [WID]: FRAME_T } });
+const frameT = { id: FRAME_T, x: 0, y: 0, w: 2400, h: 1500, inner: [WID] };
+const coverDrop = o => ({ id: FRAME_F, x: 400, y: 0, w: 300, h: 100, inner: [F], ...o }); // 盖住落点 (501,20)，不盖起点 (200,170)
+
+test("叠放：按下前就在下面的别的应用被提到测试窗口上面并盖住落点 → 不在落点松开，回起点松开", async () => {
+  const { st, xi } = sim({ tree: s => kidsWith(s.down && s.y < 30 ? [coverDrop(), frameT] : [frameT, coverDrop()]) });
+  st.y = 300;
+  await assert.rejects(dragText(mkCtx(xi), dragArgs), e => /别的应用的窗口（2612215，300x100\+400\+0）被提到了测试窗口上面并盖住了落点/.test(e.message));
+  const u = ups(st);
+  assert.equal(u.length, 1);
+  assert.deepEqual(lastMoveBefore(st, u[0][1]).slice(2), ["200", "170"]);
+});
+
+test("叠放：提上来的窗口不盖住落点、没映射、或属于测试 Chrome（框架里是自家窗口 / 同一客户端的拖拽图像）→ 都不算，照常松开", async () => {
+  const cases = [
+    coverDrop({ x: 1500 }),                                   // 不盖住落点
+    coverDrop({ map: "IsUnMapped" }),                          // 没映射
+    coverDrop({ inner: ["12582990"] }),                        // 框架里是测试 Chrome 的窗口（如设置页）
+    { id: "12582958", x: 450, y: 0, w: 120, h: 60 },           // 同一客户端的拖拽图像（根的直接子窗口）
+  ];
+  for (const top of cases) {
+    const { st, xi } = sim({ tree: s => kidsWith(s.down ? [top, frameT] : [frameT, top]) });
+    st.y = 300;
+    await dragText(mkCtx(xi), dragArgs);
+    const u = ups(st);
+    assert.equal(u.length, 1, JSON.stringify(top));
+    assert.deepEqual(lastMoveBefore(st, u[0][1]).slice(2), ["501", "20"]);
+  }
+});
+
+test("叠放：快照在落点预检之前取——预检之后才被提上来的也算", async () => {
+  let seen = false;
+  const { st, xi } = sim({ windowAt: (x, y) => { if (y < 30) seen = true; return WID; }, tree: () => kidsWith(seen ? [coverDrop(), frameT] : [frameT, coverDrop()]) });
+  st.y = 300;
+  // 起点没被盖住，所以会按下；但到落点核对时它被认成“新提上来的”，不在落点松开（快照若在预检之后取，就会漏掉它）
+  await assert.rejects(dragText(mkCtx(xi), dragArgs), /被提到了测试窗口上面/);
+  const u = ups(st);
+  assert.equal(u.length, 1);
+  assert.deepEqual(lastMoveBefore(st, u[0][1]).slice(2), ["200", "170"]);
+});
+
+test("叠放：一开始读得到、拖拽中读不到 → 中止；起点也读不到 → stuck", async () => {
+  const { st, xi } = sim({ tree: s => (s.down ? null : kidsWith([frameT])) });
+  st.y = 300;
+  await assert.rejects(dragText(mkCtx(xi), dragArgs), e => e.kind === "stuck" && /读不到测试窗口在叠放顺序里的位置/.test(e.message));
+  assert.equal(ups(st).length, 0);
+  held.current = null;
 });

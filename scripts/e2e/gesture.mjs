@@ -106,7 +106,7 @@ export async function dragText(ctx, { fromTargetId, text, to, wid, steps = 25, s
   const from = { x: sel.x, y: sel.y };
   checkStop(ctx);
   // 外来窗口快照在落点预检之前取：预检之后才冒出来的窗口也算“新”的
-  const snap = await guardSnapshot(xi);
+  const snap = await guardSnapshot(xi, { wid, root });
   await moveToIn(xi, to.x + 1, to.y, wid, "落点（按下前预检）", { pid, root, home });
   await moveToIn(xi, from.x, from.y, wid, "选区起点", { pid, root, home });
   const guard = await dropGuard(xi, { pid, wid, sel, snap });
