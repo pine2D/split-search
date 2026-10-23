@@ -3,7 +3,7 @@
 // 拖拽的选区都放在一个不在分屏里的 site-x 标签（整页宽，坐标换算才对），落点按标签栏截图实测。
 import { resetTabs, findPair, waitState, siteX, nonce, openTab, trigger, expectPair, splitPairs, pageTargets, summarize } from "./util.mjs";
 import { dragText } from "../gesture.mjs";
-import { contextMenuPick, omnibox } from "../gesture-ui.mjs";
+import { contextMenuPick, omnibox, primeClick } from "../gesture-ui.mjs";
 import { selectionCenter } from "../screen.mjs";
 import { mockEntry, useDefault, fixWindow, testWindow, tabSpan, withAttempts, xauto, assertAscii } from "./xauto-lib.mjs";
 import { ASSISTED_STEPS } from "./assisted.mjs";
@@ -187,6 +187,8 @@ const T11 = xauto({
     return withAttempts(ctx, async () => {
       const { base, wid } = await dragScene(ctx);
       const { text, q } = query("xmenu");
+      const first = await selectionCenter(ctx.browser, base.targetId, text);
+      await primeClick(ctx, { x: first.x, y: first.y + 400 }, wid);
       const at = await selectionCenter(ctx.browser, base.targetId, text);
       const m = await contextMenuPick(ctx, { at, itemIndex: 2, expectItems: 4, wid });
       const p = await pairOf(ctx, q);

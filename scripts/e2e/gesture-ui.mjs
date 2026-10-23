@@ -93,3 +93,13 @@ export async function omnibox(ctx, { text, altEnter = false, url }) {
   }
   return nf;
 }
+
+// 在测试窗口的页面空白处左键点一下（不在标签栏、不在选区上）：实测窗口刚被设置页抢走前台后，第一次右键弹出的菜单会立刻关掉，
+// 先点一下页面再右键就稳定。点完会清掉页面选区，调用方之后再建选区
+export async function primeClick(ctx, at, wid) {
+  const { xi, root } = deps(ctx);
+  await readyMouse(ctx, wid);
+  await moveToIn(xi, at.x, at.y, wid, "页面空白处", pidOf(ctx), root);
+  await xi.click(1, { expectWindow: wid });
+  await deps(ctx).sleep(300);
+}
