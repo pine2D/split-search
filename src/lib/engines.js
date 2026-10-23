@@ -70,13 +70,25 @@ export function mergeConfig(stored = {}) {
   }
   for (const e of all) if (!seen.has(e.id)) engines.push(e);
 
-  let pair = DEFAULT_PAIR;
+  let pair = null;
   if (Array.isArray(defaultPair) && defaultPair.length === 2) {
     const l = byId.get(defaultPair[0]);
     const r = byId.get(defaultPair[1]);
     if (l && r && canBeLeft(l)) pair = [defaultPair[0], defaultPair[1]];
   }
-  return { engines, hidden, defaultPair: [...pair] };
+  if (!pair) {
+    const l = byId.get(DEFAULT_PAIR[0]);
+    const r = byId.get(DEFAULT_PAIR[1]);
+    if (l && r && canBeLeft(l)) {
+      pair = [...DEFAULT_PAIR];
+    } else {
+      // 默认组合不可用（被隐藏，或模板不能作左侧）：取显示顺序里第一个可作左侧的引擎和第一个不同的引擎
+      const left = engines.find(canBeLeft);
+      if (left) pair = [left.id, (engines.find(e => e.id !== left.id) || left).id];
+      else pair = [...DEFAULT_PAIR];
+    }
+  }
+  return { engines, hidden, defaultPair: pair };
 }
 
 export function isIdTaken(id, stored = {}) {

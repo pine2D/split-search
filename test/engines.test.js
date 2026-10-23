@@ -66,6 +66,13 @@ test("mergeConfig: defaultPair 引用了不存在、隐藏的引擎，或左侧�
   assert.deepEqual(mergeConfig({ presetOverrides: { ddg: { hidden: true } }, defaultPair: ["ddg", "kagi"] }).defaultPair, ["google", "bing"]);
   assert.deepEqual(mergeConfig({ customEngines: [{ id: "wiki", name: "Wiki", url: "https://en.wikipedia.org/wiki/%s" }], defaultPair: ["wiki", "kagi"] }).defaultPair, ["google", "bing"]);
 });
+test("mergeConfig: 无存储组合且默认组合不可用时，回退到第一个可见且可作左侧的引擎", () => {
+  assert.deepEqual(mergeConfig({ presetOverrides: { bing: { hidden: true } } }).defaultPair, ["google", "ddg"]);
+  const rightOnly = "https://www.google.com/search/%s";
+  assert.deepEqual(mergeConfig({ presetOverrides: { google: { url: rightOnly } } }).defaultPair, ["bing", "google"]);
+  assert.deepEqual(mergeConfig({ presetOverrides: { bing: { hidden: true } }, defaultPair: ["nope", "x"] }).defaultPair, ["google", "ddg"]);
+  assert.deepEqual(mergeConfig({}).defaultPair, ["google", "bing"]);
+});
 test("mergeConfig: 合法的 defaultPair 原样保留", () => {
   assert.deepEqual(mergeConfig({ defaultPair: ["google", "kagi"] }).defaultPair, ["google", "kagi"]);
   assert.deepEqual(mergeConfig({ defaultPair: ["kagi", "kagi"] }).defaultPair, ["kagi", "kagi"]);
