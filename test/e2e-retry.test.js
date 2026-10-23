@@ -102,3 +102,40 @@ test("sorryHint: 有 onRetry 才叫用户点“重试”", async () => {
   const none = { browser: { client: { send: async () => ({ targetInfos: [{ type: "page", url: "https://www.google.com/search?q=1", targetId: "x" }] }) } } };
   assert.equal(await sorryHint(none, {}), null);
 });
+
+test("T5-DRAG: 拖拽阶段重试时重建分屏超时，不结束这一步：卡片说明原因，可再重试成功", async () => {
+  const srv = await startServer({ port: 0 });
+  try {
+    const { guide } = srv;
+    let tabs = gb(1, 2, "t5"), waits = 0;
+    const deps = {
+      prepare: async () => {}, openTab: async () => {}, focusGuide: async () => {},
+      // 第一次重建超时，第二次成功（新的一对 5｜6）
+      waitPair: async () => { if (++waits === 1) throw new Error("30 秒内未等到：Google ｜ Bing 分屏（关键词 t5）"); tabs = gb(5, 6, "t5"); return tabs; },
+      state: async () => ({ tabs }),
+      assist: async (ctx, o) => {
+        if (o.title === "T5 准备分屏") return o.verdict(await o.probe());
+        return (await import("../scripts/e2e/steps/guided.mjs")).assist(ctx, { ...o, hint: null, intervalMs: 10 });
+      },
+    };
+    const ctx = { guide, timeoutMs: 5000, abortSignal: new AbortController().signal };
+    const p = T5_DRAG.run(ctx, deps);
+    await sleep(40);
+    // 旧的一对 1｜2 已被关掉：用户点重试 → 重建超时
+    tabs = [];
+    guide.answer(guide.state().seq, "retry");
+    await sleep(80);
+    const st = guide.state();
+    assert.match(st.step.instruction, /^⚠ 重建分屏没成功（30 秒内未等到.*）。可再点“重试”或“跳过”。/);
+    assert.deepEqual(st.step.buttons, ["skip", "retry"], "仍可重试或跳过");
+    // 再点重试：重建成功，拖拽后两侧就地刷新
+    guide.answer(st.seq, "retry");
+    await sleep(80);
+    assert.ok(!/重建分屏没成功/.test(guide.state().step.instruction), "成功后去掉失败说明");
+    tabs = gb(5, 6, "拖到右侧标签");
+    const r = await p;
+    assert.equal(r.status, "pass", r.detail);
+    assert.match(r.detail, /5｜6/);
+    assert.equal(waits, 2);
+  } finally { await srv.close(); }
+});

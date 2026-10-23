@@ -28,18 +28,20 @@ export const RETRYING = title => ({ title, instruction: "正在重新准备这�
 // 显示说明并等待：probe() 返回真值即满足；用户的答案（skip/retry/pass/fail/done）也会结束等待（retry 除外）。
 // 返回 { kind: "met", value } | { kind: "answer", answer } | { kind: "timeout", last }。
 // o: { title, instruction, sampleText?, copyText?, buttons?, probe?, hint?, timeoutMs?, intervalMs?, onRetry?, what, afterShow? }
-// onRetry：用户点“重试”时先执行（重新整理现场、重新打开触发网址、重新记下判定要用的 id），再重新显示说明并重新计时
+// onRetry：用户点“重试”时先执行（重新整理现场、重新打开触发网址、重新记下判定要用的 id），再重新显示说明并重新计时；
+// 它抛出时不结束等待，说明前加上失败原因，用户可再重试或跳过
 // afterShow：说明显示出来、停顿 afterShowMs（默认 1500）之后执行一次，例如把设置页切到前台（先让用户看到说明）
 export async function userWait(ctx, o) {
   const limit = o.timeoutMs ?? ctx.timeoutMs ?? 120000;
   const interval = o.intervalMs ?? 500;
   const buttons = o.buttons ?? ["skip", "retry"];
   const hintFn = o.hint === undefined ? sorryHint : o.hint;
-  let hint = null, answer = null, token = 0, last = null;
+  let hint = null, answer = null, token = 0, last = null, retryNote = null;
   const show = () => {
     const my = ++token;
+    const warn = [retryNote, hint].filter(Boolean).map(t => `⚠ ${t}\n\n`).join("");
     ctx.guide.setStep({
-      title: o.title, instruction: hint ? `⚠ ${hint}\n\n${o.instruction}` : o.instruction,
+      title: o.title, instruction: `${warn}${o.instruction}`,
       sampleText: o.sampleText, copyText: o.copyText, buttons,
     });
     Promise.resolve(ctx.guide.waitAnswer({ timeoutMs: FOREVER }))
@@ -56,7 +58,10 @@ export async function userWait(ctx, o) {
         if (o.onRetry) {
           token++; // 旧卡片上的答案作废
           ctx.guide.setStep(RETRYING(o.title));
-          await o.onRetry();
+          // 重新准备失败（如重建分屏超时）不结束这一步：卡片上说明原因，用户可再点“重试”或“跳过”
+          retryNote = null;
+          try { await o.onRetry(); }
+          catch (e) { last = e.message; retryNote = `${e.message}。可再点“重试”或“跳过”。`; }
         }
         end = Date.now() + limit;
         hint = null;

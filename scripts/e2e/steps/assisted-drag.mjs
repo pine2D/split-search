@@ -47,7 +47,7 @@ const T5_DRAG = {
     });
     if (made.status !== "pass") return { status: made.status, detail: `没能建出初始分屏：${made.detail}` };
     let [l, r] = made.pair;
-    let count = (await d.state(ctx)).tabs.length;
+    let count = (await d.state(ctx)).tabs.length, ready = true;
     await d.focusGuide(ctx);
     const q = "拖到右侧标签";
     return d.assist(ctx, {
@@ -56,13 +56,19 @@ const T5_DRAG = {
         + `期望：两侧就地刷新为新关键词，标签数不增加，左右不对调。\n${NEED_GB}\n${SORRY_OK}\n`
         + "做错了或分屏被关掉了，点“重试”：脚本会重新建一个初始分屏，再按说明操作一次。",
       // 重试：重建初始分屏，重新记下两侧 id 和标签数（旧的那一对可能已被关掉）
+      // 重建失败时 ready=false：旧 id 已不可信，不判定，等用户再重试或跳过
       onRetry: async () => {
-        await build();
-        [l, r] = await d.waitPair(ctx, T5_Q);
-        count = (await d.state(ctx)).tabs.length;
-        await d.focusGuide(ctx);
+        ready = false;
+        try {
+          await build();
+          [l, r] = await d.waitPair(ctx, T5_Q);
+          count = (await d.state(ctx)).tabs.length;
+          ready = true;
+        } catch (e) { throw new Error(`重建分屏没成功（${e.message}）`); }
+        finally { await d.focusGuide(ctx).catch(() => {}); }
       },
       probe: async () => {
+        if (!ready) return null;
         const st = await d.state(ctx);
         const p = gbPair(st, q);
         return p && { p, n: st.tabs.length };

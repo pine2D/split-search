@@ -101,3 +101,29 @@ test("T8(a) 卡片：写明必须点通过/不通过，并说明无痕窗口里 
   assert.match(INCOGNITO_TEXT, /必须回到这里点“通过”或“不通过”/);
   assert.match(INCOGNITO_TEXT, /无痕窗口里扩展不运行，Google 收到 `_ss` 是正常的/);
 });
+
+test("t14Verdict 三态：有/无/未知 × 分屏/不分屏 全组合；只有“有 + 不分屏”才是预期降级", () => {
+  const HAS = "有（注册 https://www.perplexity.ai/）", NONE = "无", UNK = "未知（ServiceWorker.enable 超时）";
+  const cases = [
+    // [触发前, 触发后, 分屏, 期望状态, degraded, sw, 说明匹配]
+    [NONE, NONE, true, "pass", undefined, "无", /^分屏：是/],
+    [HAS, HAS, true, "pass", undefined, "有", /^分屏：是/],
+    [UNK, UNK, true, "pass", undefined, "未知", /^分屏：是/],
+    [NONE, NONE, false, "fail", false, "无", /不是预期降级，需要排查/],
+    [HAS, NONE, false, "fail", true, "有", /预期降级（G5）.*leftDiscouraged/],
+    [NONE, HAS, false, "fail", true, "有", /预期降级（G5）/],
+    [HAS, UNK, false, "fail", true, "有", /预期降级（G5）/],
+    [UNK, UNK, false, "fail", false, "未知", /SW 状态读不到，无法区分降级和缺陷/],
+    [UNK, NONE, false, "fail", false, "未知", /SW 状态读不到，无法区分降级和缺陷/],
+    [NONE, "未知", false, "fail", false, "未知", /SW 状态读不到/],
+  ];
+  for (const [b, a, split, status, degraded, sw, re] of cases) {
+    const v = t14Verdict({ name: "Perplexity", split, swBefore: b, swAfter: a });
+    const label = `${b} / ${a} / ${split}`;
+    assert.equal(v.status, status, label);
+    assert.equal(v.degraded, degraded, label);
+    assert.equal(v.sw, sw, label);
+    assert.match(v.detail, re, label);
+    if (sw === "未知" && !split) assert.ok(!/预期降级|建议给该预置引擎/.test(v.detail), `${label}：读不到时不给产品建议`);
+  }
+});

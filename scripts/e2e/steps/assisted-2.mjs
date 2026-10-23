@@ -110,14 +110,14 @@ async function leftItem(ctx, e) {
     },
     verdict: async v => {
       const sw1 = await swNow(ctx);
-      return t14Verdict({ name: e.name, split: !!v.split, swBefore, swAfter: sw1.error ? "未知" : swText(sw1.map, origin),
+      return t14Verdict({ name: e.name, split: !!v.split, swBefore, swAfter: sw1.error ? `未知（${sw1.error}）` : swText(sw1.map, origin),
         splitText: v.split ? fmt(v.split) : "", plainText: v.plain ? `普通左侧搜索（引擎收到了 _ss）：标签 ${v.plain.id} ${v.plain.url}` : "" });
     },
     onAnswer: async a => {
       const seen = await engineTabs(ctx, e.host);
       if (a !== "nosplit") return { status: "skip", detail: `用户点了“跳过”；SW 注册：触发前${swBefore}；${seen}` };
       const sw1 = await swNow(ctx);
-      return t14Verdict({ name: e.name, split: false, swBefore, swAfter: sw1.error ? "未知" : swText(sw1.map, origin), plainText: `用户报告没分屏；${seen}` });
+      return t14Verdict({ name: e.name, split: false, swBefore, swAfter: sw1.error ? `未知（${sw1.error}）` : swText(sw1.map, origin), plainText: `用户报告没分屏；${seen}` });
     },
   });
   return { name: `${e.name} 作左侧`, ...r };
@@ -135,9 +135,12 @@ const T14 = {
       items.push(await leftItem(ctx, e));
     }
     const res = summarize(items);
-    const degraded = items.filter(i => i.degraded).map(i => i.name.replace(" 作左侧", ""));
+    const short = i => i.name.replace(" 作左侧", "");
+    const degraded = items.filter(i => i.degraded).map(short);
+    const unknown = items.filter(i => i.status === "fail" && i.sw === "未知").map(short);
     return { ...res, detail: `${res.detail}\n（开始前已打开五个引擎首页，让它们有机会注册 Service Worker；SW 由 CDP ServiceWorker 域与 service_worker 目标核实）`
-      + (degraded.length ? `\n预期降级（有 SW、未分屏）：${degraded.join("、")}——据此决定是否给这些预置引擎设 leftDiscouraged` : "") };
+      + (degraded.length ? `\n预期降级（有 SW、未分屏）：${degraded.join("、")}——据此决定是否给这些预置引擎设 leftDiscouraged` : "")
+      + (unknown.length ? `\nSW 状态读不到、未分屏（无法区分降级和缺陷，不据此设 leftDiscouraged）：${unknown.join("、")}` : "") };
   },
 };
 
