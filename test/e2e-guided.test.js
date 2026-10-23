@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { startServer } from "../scripts/e2e/server.mjs";
 import { userWait, assist, judge } from "../scripts/e2e/steps/guided.mjs";
-import { b1Verdict, kagiLoggedIn, ensureKagi, cleanupItems, ensureGrants, withNeeds } from "../scripts/e2e/steps/setup.mjs";
+import { b1Verdict, kagiLoggedIn, ensureKagi, cleanupItems, cleanupNote, FIXTURES_NOTE, ensureGrants, withNeeds } from "../scripts/e2e/steps/setup.mjs";
 import { ensureRecovered, makeAfterStep } from "../scripts/e2e/steps/recover.mjs";
 import { runSteps } from "../scripts/e2e/runner.mjs";
 import { STEPS, selectSteps } from "../scripts/e2e/steps/index.mjs";
@@ -158,24 +158,30 @@ test("ensureKagi: 已登录直接返回 null；未登录只看现有标签网址
   assert.equal(r4.status, "fail");
 });
 
-test("cleanupItems: 只写 --only T3 时也提示删 gb、改回默认（让用户添加过 gb 的步骤都登记了）", () => {
+test("收尾：不再列删除 gb/bg/dg/px/kg、改回默认引擎、编辑 Kagi 条目；只给一句保留说明", () => {
   const byId = Object.fromEntries(STEPS.map(s => [s.id, s]));
-  for (const id of ["T1", "T2", "T3", "T4", "T5-DRAG", "T6-NTP", "T11"]) {
-    const items = cleanupItems([byId[id]]);
-    assert.ok(items.some(t => /默认搜索引擎改回 Google/.test(t)) && items.some(t => /删除网站搜索 gb/.test(t)), id);
+  for (const id of ["T1", "T2", "T3", "T4", "T5-DRAG", "T6-NTP", "T11", "T12", "T14"]) {
+    assert.deepEqual(cleanupItems([byId[id]]), [], id);
+    assert.match(cleanupNote([byId[id]]), /保留即可，下次运行会复用/, id);
   }
-  assert.ok(cleanupItems([byId.T14]).some(t => /bg、dg、px、kg/.test(t)));
+  assert.equal(cleanupNote([byId.T7]), null);
   assert.deepEqual(cleanupItems([byId.T7]), []);
+  assert.deepEqual(cleanupItems([{ id: "B5" }]), []);
+  assert.doesNotMatch(FIXTURES_NOTE, /删除网站搜索|改回 Google|_ss/);
 });
 
-test("cleanupItems: 按固定顺序去重（先改回默认引擎，再删条目）", () => {
-  const items = cleanupItems([{ cleanup: ["t14", "default"] }, { cleanup: ["gb", "default"] }, {}]);
-  assert.equal(items.length, 3);
-  assert.match(items[0], /默认搜索引擎改回 Google/);
-  assert.match(items[1], /gb/);
-  assert.match(items[2], /dg、px、kg/);
-  assert.deepEqual(cleanupItems([{ id: "B5" }]), []);
+test("收尾：T8(d) 站点访问只在 assist 回退路径真的做过时才提示改回", () => {
+  const t8 = STEPS.find(s => s.id === "T8");
+  const res = detail => [{ id: "T8", detail }];
+  const items = cleanupItems([t8], res("共 2 项：通过 2，跳过 0，失败 0\n(a) 无痕窗口：通过——x\n(d) 站点访问“点击时”：通过——有选项"));
+  assert.equal(items.length, 1);
+  assert.match(items[0], /Site access/);
+  assert.equal(cleanupItems([t8], res("共 2 项：通过 1，跳过 1，失败 0\n(a) 无痕窗口：通过——x\n(d) 站点访问“点击时”：跳过——不适用")).length, 0);
+  assert.equal(cleanupItems([t8], res("共 1 项：通过 1，跳过 0，失败 0\n(a) 无痕窗口：通过——x")).length, 0);
+  assert.equal(cleanupItems([t8], null).length, 1, "中断时没有结果，保守提示");
+  assert.equal(cleanupItems([byIdStub()], [{ id: "T8", detail: "" }]).length, 0);
 });
+const byIdStub = () => ({ id: "T1", cleanup: ["default", "gb"] });
 
 function fakeBrowser(grantedAfterRequest) {
   const calls = [];

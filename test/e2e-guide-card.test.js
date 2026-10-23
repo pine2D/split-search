@@ -106,8 +106,9 @@ test("cleanupPrompt: 返回 { confirmed, note }；用户点“我已完成”时
   const g = recGuide();
   g.waitAnswer = () => sleep(5).then(() => "done");
   const fakeBrowser = { client: { send: async m => (m === "Target.getTargets" ? { targetInfos: [] } : {}) } };
-  const r = await cleanupPrompt({ guide: g, browser: fakeBrowser, port: 8765, timeoutMs: 1000 }, [{ cleanup: ["default", "gb"] }]);
+  const r = await cleanupPrompt({ guide: g, browser: fakeBrowser, port: 8765, timeoutMs: 1000 }, [{ cleanup: ["access"] }]);
   assert.equal(r.confirmed, true);
   assert.match(r.note, /用户已确认/);
   assert.equal(await cleanupPrompt({ guide: g, browser: fakeBrowser, port: 8765 }, [{}]), null);
+  assert.equal(await cleanupPrompt({ guide: g, browser: fakeBrowser, port: 8765 }, [{ cleanup: ["default", "gb"] }]), null, "只有测试配置里的固定条目时不再打扰用户");
 });

@@ -12,7 +12,7 @@ import { STEPS, selectSteps } from "./steps/index.mjs";
 import { runSteps } from "./runner.mjs";
 import { makeRestart } from "./restart.mjs";
 import { renderReport, reportBaseName, redact } from "./report.mjs";
-import { openGuide, installGuide, ensureGrants, cleanupPrompt, cleanupItems, cleanupText } from "./steps/setup.mjs";
+import { openGuide, installGuide, ensureGrants, cleanupPrompt, cleanupItems, cleanupNote, cleanupText } from "./steps/setup.mjs";
 import { makeAfterStep } from "./steps/recover.mjs";
 import { extAlive } from "./steps/guided.mjs";
 import { L } from "./steps/labels.mjs";
@@ -159,7 +159,7 @@ async function main() {
     if (install?.b1 && !steps.some(s => s.id === "B1")) notes.push(`B1（未选入本次运行）：${install.b1.status}——${install.b1.detail}`);
     // 收尾提示：恢复 T1/T2/T11/T12/T14 等步骤让用户改过的搜索设置（只在测试配置里）
     if (!args.autoOnly && !abort.signal.aborted && !rt.stopReason) {
-      const r = await cleanupPrompt({ ...ctx, browser: rt.browser }, rt.started).catch(e => ({ note: `收尾提示出错：${e.message}` }));
+      const r = await cleanupPrompt({ ...ctx, browser: rt.browser }, rt.started, results).catch(e => ({ note: `收尾提示出错：${e.message}` }));
       if (r?.note) notes.push(r.note);
       cleanupConfirmed = !!r?.confirmed;
     }
@@ -192,7 +192,9 @@ async function main() {
       }
     }
     // 恢复清单：引导式运行里只要开始过带 cleanup 的步骤，无论正常结束、中断、出错还是浏览器退出，都打印并写进报告
-    const cleanup = args && !args.autoOnly ? cleanupItems(rt.started) : [];
+    const cleanup = args && !args.autoOnly ? cleanupItems(rt.started, results) : [];
+    const keep = args && !args.autoOnly ? cleanupNote(rt.started) : null;
+    if (keep) { log(`\n收尾：${keep}`); notes.push(keep); }
     if (cleanup.length) {
       const text = cleanupText(cleanup);
       if (cleanupConfirmed) log(`\n收尾：已由用户确认恢复这些设置：\n${text}`);

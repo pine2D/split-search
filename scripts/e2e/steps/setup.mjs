@@ -150,34 +150,36 @@ export function withNeeds(step) {
 }
 
 // ---- 收尾：恢复测试浏览器的搜索设置（只在测试配置里，但保持整洁）----
-const CLEANUP = {
-  default: `把默认搜索引擎改回 Google：chrome://settings/searchEngines →${L.searchEngines}里 Google 右侧 ${L.more} →${L.makeDefault}（不能删除正在用作默认的条目，所以先做这一步）`,
-  gb: `删除网站搜索 gb：${L.siteSearch}里 gb 右侧 ${L.more} →${L.del}`,
-  t14: `删除网站搜索 bg、dg、px、kg（T14 添加的；各自右侧 ${L.more} →${L.del}）`,
-  t12: `点 Chrome 自动发现的 Kagi 条目右侧的${L.edit}，把网址末尾追加的 &_ss=kagi,bing 删掉后保存`,
-  access: `如果 T8 里把扩展的${L.siteAccess}改成了${L.onClick}，确认已改回${L.onSpecific}`,
-};
-export function cleanupItems(steps) {
-  const want = new Set(steps.flatMap(s => s.cleanup ?? []));
-  return Object.keys(CLEANUP).filter(k => want.has(k)).map(k => CLEANUP[k]);
+// 测试期间加的网站搜索（gb/bg/dg/px/kg）、默认引擎、Kagi 条目的 _ss 只在隔离的测试配置里，保留即可，下次运行会复用；
+// 唯一要用户改回的是 T8(d) 在 assist 回退路径里改过的“站点访问”（没做到 (d) 或 (d) 跳过就不提）
+const FIXTURE_TAGS = new Set(["default", "gb", "t14", "t12"]);
+export const FIXTURES_NOTE = "测试期间加的网站搜索和默认引擎只在测试配置里，保留即可，下次运行会复用。";
+const ACCESS = `如果 T8 里把扩展的${L.siteAccess}改成了${L.onClick}，确认已改回${L.onSpecific}`;
+const ranD = r => /^\(d\)[^\n]*?：(通过|失败)——/m.test(r?.detail ?? "");
+// results 为 null（运行中断、还没有结果）时，T8 开始过就保守地提示
+export function cleanupItems(steps, results = null) {
+  if (!steps.some(s => s.cleanup?.includes("access"))) return [];
+  const t8 = results?.find(r => r.id === "T8");
+  return !results || !t8 || ranD(t8) ? [ACCESS] : [];
 }
+export const cleanupNote = steps => (steps.some(s => s.cleanup?.some(k => FIXTURE_TAGS.has(k))) ? FIXTURES_NOTE : null);
 
 export const cleanupText = items => items.map((t, i) => `${i + 1}. ${t}`).join("\n");
 
 // 交互式确认（只在正常结束时）。返回 { confirmed, note } 或 null（没有要恢复的项）。
 // 清单本身由 run.mjs 在 finally 里打印并写进报告备注（用户已确认时改写成“已由用户确认恢复”）
-export async function cleanupPrompt(ctx, steps) {
-  const items = cleanupItems(steps);
+export async function cleanupPrompt(ctx, steps, results = null) {
+  const items = cleanupItems(steps, results);
   if (!items.length) return null;
   const text = cleanupText(items);
   await focusGuide(ctx).catch(() => {});
   const r = await userWait(ctx, {
-    title: "收尾：恢复测试浏览器的搜索设置", what: "用户确认已恢复", hint: null, buttons: ["done", "skip"],
-    instruction: `这些改动只在测试配置里，但请恢复原样，免得影响下次运行：\n${text}\n\n做完点“我已完成”。`,
-    copyText: "chrome://settings/searchEngines", timeoutMs: (ctx.timeoutMs ?? 120000) * 3,
+    title: "收尾：恢复测试浏览器的站点访问设置", what: "用户确认已恢复", hint: null, buttons: ["done", "skip"],
+    instruction: `这项改动只在测试配置里，但请恢复原样，免得影响下次运行：\n${text}\n\n做完点“我已完成”。`,
+    copyText: "chrome://extensions", timeoutMs: (ctx.timeoutMs ?? 120000) * 3,
   });
   const confirmed = r.kind === "answer" && r.answer === "done";
-  return { confirmed, note: confirmed ? "收尾：用户已确认恢复搜索设置" : `收尾：用户未确认恢复搜索设置（${items.length} 项，见终端）` };
+  return { confirmed, note: confirmed ? "收尾：用户已确认恢复站点访问设置" : `收尾：用户未确认恢复站点访问设置（${items.length} 项，见终端）` };
 }
 
 export const B1 = {
