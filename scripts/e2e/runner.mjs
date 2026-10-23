@@ -1,6 +1,7 @@
 // 步骤执行器：逐个执行，异常/超时记为 fail 并附诊断（assist 步骤被跳过时也附），收到中断后剩余步骤记为 skip。
 // 说明与诊断里的网址先脱敏（report.mjs 的 redact），再写进结果、终端和向导页
 import { redact, redactDeep } from "./report.mjs";
+import { collectCdp, formatCdp, tabSuffix } from "./diag.mjs";
 const STATUSES = new Set(["pass", "fail", "skip"]);
 const ABORTED = "中断";
 
@@ -16,24 +17,29 @@ export function startCard(step) {
   return { title, buttons: [], instruction: "脚本正在准备这一步（整理标签），说明马上出现在这里。请先不要操作测试浏览器。" };
 }
 
-export function formatDiag(state) {
+// cdp：diag.mjs 的 collectCdp 结果（可缺）。整段文字脱敏
+export function formatDiag(state, cdp = null) {
   const lines = ["诊断（当前浏览器状态）："];
   for (const w of state.windows || []) lines.push(`窗口 ${w.id} ${w.type}${w.focused ? " 聚焦" : ""}`);
   for (const t of state.tabs || []) {
-    lines.push(`  标签 ${t.id} 窗口=${t.windowId} 位置=${t.index} split=${t.splitViewId ?? "-"} 固定=${t.pinned ? "是" : "否"} 组=${t.groupId} ${t.status ?? ""} ${redact(t.url) || "(网址不可读)"}`);
+    lines.push(`  标签 ${t.id} 窗口=${t.windowId} 位置=${t.index} split=${t.splitViewId ?? "-"} 固定=${t.pinned ? "是" : "否"} 组=${t.groupId} ${t.status ?? ""} ${t.url || "(网址不可读)"}${tabSuffix(cdp, t)}`);
   }
-  lines.push(`  DNR 规则 ${(state.rules || []).length} 条`);
-  return lines.join("\n");
+  if (state.rules) lines.push(`  DNR 规则 ${state.rules.length} 条`);
+  lines.push(...formatCdp(cdp));
+  return redact(lines.join("\n"));
 }
 
+// 扩展状态与 CDP 目标各自读取：扩展读不到（停用、设置页打不开）时仍给出 CDP 目标和导航记录
 async function diagnose(ctx) {
   if (!ctx.ext?.state) return { text: "诊断：无（未提供 state）" };
-  try {
-    const state = await withTimeout(ctx.ext.state(), 10000, "读取状态超时");
-    return { text: formatDiag(state), state };
-  } catch (e) {
-    return { text: `诊断：无法读取状态：${e.message}` };
+  let state = null, err = null, cdp = null;
+  try { state = await withTimeout(ctx.ext.state(), 10000, "读取状态超时"); }
+  catch (e) { err = e.message; }
+  if (ctx.browser?.client) {
+    cdp = await withTimeout(collectCdp(ctx, state), 15000, "读取 CDP 目标超时").catch(e => ({ error: e.message }));
   }
+  const text = state ? formatDiag(state, cdp) : redact([`诊断：无法读取状态（扩展）：${err}`, ...formatCdp(cdp)].join("\n"));
+  return { text, state: state || cdp ? { ...(state ?? {}), ...(cdp ? { cdp } : {}) } : null };
 }
 
 function withTimeout(p, ms, msg) {
