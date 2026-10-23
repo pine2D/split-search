@@ -1,5 +1,7 @@
-// 设置页与规则相关的自动步骤（B 系列）。Task 5 先实现 B5，其余由 Task 6 补充。
+// 设置页与规则相关的自动步骤（B 系列）。Task 5 先实现 B5，其余见 options-b.mjs / options-b2.mjs。
 import { EXT_ID, mockEngines } from "../config.mjs";
+import { B_STEPS_1 } from "./options-b.mjs";
+import { B_STEPS_2 } from "./options-b2.mjs";
 
 export const REAL_HOSTS = ["www.google.com", "www.bing.com", "duckduckgo.com", "www.perplexity.ai", "kagi.com"];
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -42,4 +44,4 @@ const B5 = {
   },
 };
 
-export const OPTIONS_STEPS = [B5];
+export const OPTIONS_STEPS = [B5, ...B_STEPS_1, ...B_STEPS_2];
