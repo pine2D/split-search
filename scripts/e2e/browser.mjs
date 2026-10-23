@@ -83,13 +83,13 @@ export async function launch({ headless = false, restoreSession = false, profile
 
   const alive = () => proc.exitCode === null && proc.signalCode === null;
   // graceful：先发 Browser.close 让 Chrome 正常退出并写好会话（--restore-last-session 依赖它）和网站搜索等数据库，
-  // 10 秒内没退出再走信号。返回 { graceful }：Chrome 是否因 Browser.close 在发信号之前自行正常退出
+  // 10 秒内没退出再走信号。返回 { graceful }：Chrome 是否因 Browser.close 在发信号之前自行退出且退出码为 0
   const close = async ({ graceful = false } = {}) => {
     let clean = false;
     if (graceful && alive()) {
       await client.send("Browser.close", {}, undefined, { timeoutMs: 5000 }).catch(() => {});
       let t;
-      clean = await Promise.race([exited.then(() => proc.signalCode === null),
+      clean = await Promise.race([exited.then(() => proc.signalCode === null && proc.exitCode === 0),
         new Promise(r => { t = setTimeout(() => r(false), 10000); })]);
       clearTimeout(t);
     }

@@ -177,25 +177,34 @@ export async function ensure(browser, entry, opts = {}) {
   });
 }
 
-export const makeDefault = (browser, keyword, opts = {}) => withPage(browser, opts, page => doMakeDefault(page, keyword, opts));
+// 把默认切到专用条目。已有快照且当前默认是用户条目时，先把它记成“要恢复的默认引擎”：
+// 恢复时改回的是这次切换之前的默认（例如 assist 步骤里用户刚设的 gb），而不是拍快照那一刻的
+export const makeDefault = (browser, keyword, opts = {}) => withPage(browser, opts, async page => {
+  const file = opts.file ?? SE_SNAPSHOT_FILE;
+  const cur = pickDefault(await page.list());
+  if (cur && !isOurs(cur.keyword) && cur.keyword !== keyword && existsSync(file)) {
+    const snap = readSnap(file);
+    if (snap.defaultKeyword !== cur.keyword || snap.defaultName !== cur.name) writeSnap(file, { ...snap, defaultKeyword: cur.keyword, defaultName: cur.name });
+  }
+  await doMakeDefault(page, keyword, opts);
+});
 
 export async function remove(browser, keyword, opts = {}) {
   assertOurs(keyword); // 先于打开页面
   return withPage(browser, opts, page => doRemove(page, keyword, opts));
 }
 
-// 快照里的默认引擎不在了时选谁：当前默认不是专用条目就保持不动；仍是专用条目则改为预置 Google，
-// 没有就取 defaults 组里第一个可设为默认的非专用条目
+// 快照里的默认引擎不在了、当前默认又是专用条目时选谁：预置 Google，没有就取 defaults 组里第一个可设为默认的非专用条目
 function fallbackDefault(list) {
-  const cur = pickDefault(list);
-  if (cur && !isOurs(cur.keyword)) return { entry: cur, change: false };
   const ok = e => !isOurs(e.keyword) && e.canBeDefault !== false;
   const e = list.find(x => ok(x) && x.prepopulated && x.keyword === "google.com") ?? list.find(x => ok(x) && x.group === "defaults");
   if (!e) throw new Error("快照里的默认引擎已不存在，也找不到可以设为默认的其他条目");
-  return { entry: e, change: true };
+  return e;
 }
 
-// 先把默认改回运行前的条目，再删除全部 sse2e 条目，读回核对。幂等：状态已经对就只核对。
+// 只撤销脚本自己的改动：当前默认是 sse2e 条目时才改回（改回快照里记的、切换之前的默认引擎）；
+// 当前默认是用户条目（运行中用户在 assist 步骤里设的 gb、Kagi 等）就不动它。然后删除全部 sse2e 条目，读回核对。
+// 幂等：状态已经对就只核对。
 // opts.keepFile：核对通过也保留快照（Chrome 要正常退出才保证写进磁盘，由调用方在正常关闭后删除），
 // 此时若默认引擎换成了兜底条目，快照改写为实际生效的那个，下次核对不再重复提示。任何失败都保留快照
 export async function restore(browser, opts = {}) {
@@ -203,15 +212,16 @@ export async function restore(browser, opts = {}) {
   const snap = readSnap(file);
   return withPage(browser, opts, async page => {
     const list = await page.list();
-    let def = findEntry(list, snap.defaultKeyword, snap.defaultName), warning = null;
-    if (def) await doMakeDefault(page, def.keyword, opts, def.name);
-    else {
-      const fb = fallbackDefault(list);
-      def = fb.entry;
-      if (fb.change) {
-        await doMakeDefault(page, def.keyword, opts, def.name);
+    const cur = pickDefault(list);
+    let def = cur, warning = null;
+    const changed = !cur || isOurs(cur.keyword);
+    if (changed) {
+      def = findEntry(list, snap.defaultKeyword, snap.defaultName);
+      if (!def) {
+        def = fallbackDefault(list);
         warning = `快照里的默认引擎已不存在，已改为 ${def.name}`;
-      } else warning = `快照里的默认引擎 ${snap.defaultName}（${snap.defaultKeyword}）已不存在，保持当前默认 ${def.name}`;
+      }
+      await doMakeDefault(page, def.keyword, opts, def.name);
     }
     const now = (await page.list()).filter(e => isOurs(e.keyword)).map(e => e.keyword);
     const removed = [];
@@ -224,7 +234,7 @@ export async function restore(browser, opts = {}) {
     }
     if (!opts.keepFile) unlinkSync(file);
     else if (warning) writeSnap(file, { ...snap, defaultKeyword: def.keyword, defaultName: def.name });
-    return { defaultKeyword: def.keyword, removed, warning };
+    return { defaultKeyword: def.keyword, defaultChanged: changed, removed, warning };
   });
 }
 
@@ -252,7 +262,8 @@ export function bindSettings(getBrowser, opts = {}) {
     ensure: entry => guarded((b, _kw, e) => ensure(b, e, opts))(entry?.keyword, entry),
     makeDefault: guarded((b, kw) => makeDefault(b, kw, opts)),
     remove: keyword => remove(getBrowser(), keyword, opts),
-    restore: () => restore(getBrowser(), opts),
+    // 与 run.mjs 收尾相同：核对后保留快照，正常关闭浏览器之后才删（dropSnapshot）
+    restore: () => restore(getBrowser(), { ...opts, keepFile: true }),
     hasSnapshot: () => existsSync(file),
   };
 }

@@ -1,7 +1,6 @@
 // CLI 入口：解析参数 → 前置检查 → 启动 → 确认扩展 → 快照并配置模拟引擎 → 执行步骤 → 恢复 → 写报告
 // 退出码：0 全部通过或跳过；1 有失败（含恢复失败、浏览器中途退出）；2 前置条件缺失；130/143 被 SIGINT/SIGTERM 中断
-import { mkdirSync, writeFileSync, existsSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync } from "node:fs";
 import { parseArgs } from "./args.mjs";
 import { checkProfileLock, launch } from "./browser.mjs";
 import { startServer } from "./server.mjs";
@@ -12,7 +11,8 @@ import { collectConsole } from "./console.mjs";
 import { STEPS, selectSteps } from "./steps/index.mjs";
 import { runSteps } from "./runner.mjs";
 import { makeRestart } from "./restart.mjs";
-import { renderReport, reportBaseName, redact } from "./report.mjs";
+import { redact } from "./report.mjs";
+import { teardown, writePartialReportSync } from "./teardown.mjs";
 import { openGuide, installGuide, ensureGrants, cleanupPrompt, cleanupItems, cleanupNote, cleanupText } from "./steps/setup.mjs";
 import { makeAfterStep } from "./steps/recover.mjs";
 import { extAlive } from "./steps/guided.mjs";
@@ -63,12 +63,23 @@ async function main() {
   // ---- 中断处理：第一次中断走完恢复流程，第二次立即退出 ----
   const abort = new AbortController();
   let signalName = null, server = null;
+  const startedAt = new Date();
+  const notes = [];
+  // 运行时状态（重启会替换 browser/col）。orphanErrors：重启后收集器没能启用时，保留重启前的错误；
+  // stopReason：浏览器不可用时设置，运行器据此跳过剩余步骤
+  const rt = { browser: null, col: null, closing: false, browserDead: false, restartFailed: false, stopReason: null, orphanErrors: null, notes, ctx: null, started: [] };
+  // 收尾记录（teardown.mjs）。partial：运行器边跑边写的结果；网站搜索：Chrome 要正常退出才保证改动写进磁盘
+  // （实测 SIGTERM 会丢最后几秒），所以恢复只做到“读回核对”并保留快照，正常关闭浏览器之后才删
+  const s = { args, steps, startedAt, chromeVersion: null, storage: null, snapshotTaken: false, results: null, partial: [],
+    signalName: null, aborted: () => abort.signal.aborted, cleanupConfirmed: false, seTouched: false, seFailed: false, seVerified: false };
+  const reportDeps = { outDir: ext.OUT_DIR, log, warn };
   const onSignal = sig => {
     if (signalName) {
       warn(`\n再次收到 ${sig}，立即退出。若已做快照，它保留在 ${ext.SNAPSHOT_FILE}（网站搜索：${se.SE_SNAPSHOT_FILE}），下次启动会自动恢复。`);
+      try { writePartialReportSync(rt, s, reportDeps); } catch (e) { warn(`写部分报告失败：${e.message}`); }
       process.exit(sig === "SIGINT" ? 130 : 143);
     }
-    signalName = sig;
+    signalName = s.signalName = sig;
     warn(`\n收到 ${sig}：停止步骤，恢复 storage 与网站搜索并写出部分报告（再按一次 Ctrl+C 强制退出）…`);
     abort.abort(`收到 ${sig}`);
     server?.guide.cancel();
@@ -76,15 +87,7 @@ async function main() {
   process.on("SIGINT", onSignal);
   process.on("SIGTERM", onSignal);
 
-  const startedAt = new Date();
-  const notes = [];
-  // 运行时状态（重启会替换 browser/col）。orphanErrors：重启后收集器没能启用时，保留重启前的错误；
-  // stopReason：浏览器不可用时设置，运行器据此跳过剩余步骤
-  const rt = { browser: null, col: null, closing: false, browserDead: false, restartFailed: false, stopReason: null, orphanErrors: null, notes, ctx: null, started: [] };
-  let results = null, storage = null, snapshotTaken = false, chromeVersion = null, fatal = null, cleanupConfirmed = false;
-  // 网站搜索：Chrome 要正常退出才保证改动写进磁盘（实测 SIGTERM 会丢最后几秒）。所以恢复只做到“读回核对”并保留快照，
-  // 正常关闭浏览器之后才删快照；否则下次启动再核对一遍（restore 幂等）。seTouched：本次运行动过网站搜索
-  let seTouched = false, seFailed = false, seVerified = false;
+  let fatal = null;
   try {
     try { server = await startServer({ port: args.port }); }
     catch (e) { warn(`前置条件缺失：${e.message}`); return 2; }
@@ -100,13 +103,13 @@ async function main() {
     catch (e) { warn(`前置条件缺失：启动 Chrome 失败：${e.message}`); return 2; }
     const browser = rt.browser; // 初始浏览器（步骤开始前的准备都用它）
     watchExit(browser);
-    chromeVersion = (await browser.client.send("Browser.getVersion")).product;
-    log(`已启动 ${chromeVersion}${args.headless ? "（无头）" : ""}`);
+    s.chromeVersion = (await browser.client.send("Browser.getVersion")).product;
+    log(`已启动 ${s.chromeVersion}${args.headless ? "（无头）" : ""}`);
     try { rt.col = await collectConsole(browser); }
     catch (e) { notes.push(`控制台收集未启用：${e.message}`); }
     // 网站搜索的遗留快照与扩展无关，启动后立刻恢复（早于安装引导等可能提前退出的环节）
     if (existsSync(se.SE_SNAPSHOT_FILE)) {
-      seTouched = true;
+      s.seTouched = true;
       const r = await se.restore(browser, { keepFile: true });
       log("发现上次遗留的网站搜索快照，已先恢复（默认引擎改回运行前、删除 sse2e 条目）");
       notes.push("启动时发现上次遗留的网站搜索快照，已先恢复");
@@ -145,8 +148,8 @@ async function main() {
     } else if (grants.requested) log("一次性授权已完成");
     if (abort.signal.aborted) return signalName ? (signalName === "SIGINT" ? 130 : 143) : 1;
     const snap = await ext.snapshotStorage(browser, ext.SNAPSHOT_FILE);
-    snapshotTaken = true;
-    storage = { before: snap.digest, after: null, equal: false };
+    s.snapshotTaken = true;
+    s.storage = { before: snap.digest, after: null, equal: false };
     log(`storage 快照已保存（${Object.keys(snap.data).length} 个键，摘要 ${snap.digest}）`);
     await ext.configureMocks(browser, args.port);
     log("已写入模拟引擎与默认组合 ea | eb");
@@ -169,112 +172,28 @@ async function main() {
       waitExtension: b => b.waitFor(async () => (await b.evalExt("chrome.runtime.id", { timeoutMs: 3000 })) === EXT_ID,
         { timeoutMs: 30000, intervalMs: 500 }),
     });
-    results = await runSteps(steps, ctx, { timeoutMs: args.timeoutMs });
+    s.results = await runSteps(steps, ctx, { timeoutMs: args.timeoutMs, results: s.partial });
     if (install?.b1 && !steps.some(s => s.id === "B1")) notes.push(`B1（未选入本次运行）：${install.b1.status}——${install.b1.detail}`);
     // 收尾提示：只有 T8(d) 在 assist 回退路径里改过的“站点访问”要用户改回；其余搜索设置留在测试配置里复用
     if (!args.autoOnly && !abort.signal.aborted && !rt.stopReason) {
-      const r = await cleanupPrompt({ ...ctx, browser: rt.browser }, rt.started, results).catch(e => ({ note: `收尾提示出错：${e.message}` }));
+      const r = await cleanupPrompt({ ...ctx, browser: rt.browser }, rt.started, s.results).catch(e => ({ note: `收尾提示出错：${e.message}` }));
       if (r?.note) notes.push(r.note);
-      cleanupConfirmed = !!r?.confirmed;
+      s.cleanupConfirmed = !!r?.confirmed;
     }
   } catch (e) {
     fatal = e;
     warn(`运行出错：${e.message}`);
     notes.push(`运行出错：${e.message}`);
   } finally {
-    // T5/T10 重启浏览器期间被中断：有上限地等重启结束（新浏览器会登记到 rt.browser，用它恢复后关掉）
-    if (rt.restarting) {
-      let t;
-      await Promise.race([rt.restarting, new Promise(r => { t = setTimeout(r, 30000); })]);
-      clearTimeout(t);
-    }
-    if (snapshotTaken) {
-      if (rt.browserDead || !rt.browser) {
-        const why = rt.browserDead ? (rt.restartFailed ? "浏览器重启失败" : "浏览器已退出") : "浏览器不可用（重启期间运行被中断）";
-        notes.push(`${why}，无法恢复 storage；快照保留在 ${ext.SNAPSHOT_FILE}，下次启动会自动恢复`);
-        warn(notes.at(-1));
-      } else {
-        try {
-          const r = await ext.restoreStorage(rt.browser, ext.SNAPSHOT_FILE);
-          Object.assign(storage, { after: r.digest, equal: r.equal });
-          log(`storage 已恢复（摘要 ${r.digest}，与运行前${r.equal ? "一致" : "不一致"}）`);
-        } catch (e) {
-          const dead = !(await extAlive(rt.browser).catch(() => false)) ? "（扩展当前不可用，可能处于停用状态）" : "";
-          notes.push(`恢复 storage 失败${dead}：${e.message}；快照保留在 ${ext.SNAPSHOT_FILE}，下次启动会自动恢复`);
-          warn(notes.at(-1));
-        }
-      }
-    }
-    // 网站搜索：有快照（启动恢复失败或步骤里改过）就恢复；浏览器不在了则保留快照，下次启动先恢复
-    if (existsSync(se.SE_SNAPSHOT_FILE)) {
-      if (rt.browserDead || !rt.browser) {
-        seFailed = true;
-        notes.push(`浏览器不可用，无法恢复网站搜索；快照保留在 ${se.SE_SNAPSHOT_FILE}，下次启动会自动恢复`);
-        warn(notes.at(-1));
-      } else {
-        seTouched = true;
-        try {
-          const r = await se.restore(rt.browser, { keepFile: true });
-          seVerified = true;
-          log(`网站搜索已恢复：默认引擎 ${r.defaultKeyword}，删除 ${r.removed.join(", ") || "（无）"}`);
-          if (r.warning) { warn(r.warning); notes.push(r.warning); }
-        } catch (e) {
-          seFailed = true;
-          notes.push(`恢复网站搜索失败：${e.message}；快照保留在 ${se.SE_SNAPSHOT_FILE}，下次启动会自动恢复`);
-          warn(notes.at(-1));
-        }
-      }
-    }
-    // 恢复清单：引导式运行里只要开始过带 cleanup 的步骤，无论正常结束、中断、出错还是浏览器退出，都打印并写进报告
-    const cleanup = args && !args.autoOnly ? cleanupItems(rt.started, results) : [];
-    const keep = args && !args.autoOnly ? cleanupNote(rt.started) : null;
-    if (keep) { log(`\n收尾：${keep}`); notes.push(keep); }
-    if (cleanup.length) {
-      const text = cleanupText(cleanup);
-      if (cleanupConfirmed) log(`\n收尾：已由用户确认恢复这些设置：\n${text}`);
-      else {
-        log(`\n收尾：请在测试浏览器里恢复这些设置（只影响测试配置，下次运行 npm run e2e 时也可以再做）：\n${text}`);
-        notes.push(`需要恢复的测试浏览器设置：\n${text}`);
-      }
-    }
-    // 中断时可能正处在 B4/T8 撤销授权或停用扩展的中途（不论是否 --auto-only，B4/T8 都不是 auto，只在引导式里开始）
-    if ((signalName || abort.signal.aborted) && rt.started.some(st => st.restores)) {
-      const msg = "若中断时扩展处于停用状态或授权被撤销，下次请先运行 npm run e2e（引导式），它会带你重新启用扩展并恢复授权。";
-      warn(msg);
-      notes.push(msg);
-    }
-    // 先关浏览器再写报告：网站搜索快照删不删取决于浏览器是否正常退出，结果要写进报告
-    await rt.col?.stop().catch(() => {});
-    rt.closing = true;
-    const closed = await rt.browser?.close({ graceful: seTouched }).catch(() => ({ graceful: false }));
-    if (seVerified && closed?.graceful) se.dropSnapshot();
-    else if (seVerified) {
-      notes.push(`测试浏览器没有正常退出，网站搜索的恢复可能没写进磁盘；快照保留在 ${se.SE_SNAPSHOT_FILE}，下次启动会再核对一遍`);
-      warn(notes.at(-1));
-    }
-    if (snapshotTaken || results) {
-      if (!results) results = steps.map(s => ({ id: s.id, title: s.title, kind: s.kind, status: "skip", detail: "未执行（运行提前结束）", durationMs: 0 }));
-      if (signalName) notes.push(`运行被 ${signalName} 中断，报告不完整`);
-      if (rt.browserDead && !rt.restartFailed && !signalName) notes.push("测试浏览器在运行中途退出");
-      writeReport({ startedAt, args, results, consoleErrors: rt.col?.errors ?? rt.orphanErrors ?? [], chromeVersion, storage, notes });
-    }
+    await teardown(rt, s, {
+      ext, extAlive, se, exists: existsSync, cleanupItems, cleanupNote, cleanupText, ...reportDeps,
+    }).catch(e => warn(`收尾出错：${e?.stack || e}`));
     await server?.close().catch(() => {});
   }
 
   if (signalName) return signalName === "SIGINT" ? 130 : 143;
-  const failed = fatal || seFailed || rt.browserDead || rt.stopReason || !storage?.equal || results.some(r => r.status === "fail");
+  const failed = fatal || s.seFailed || rt.browserDead || rt.stopReason || !s.storage?.equal || s.results.some(r => r.status === "fail");
   return failed ? 1 : 0;
-}
-
-function writeReport(data) {
-  const { md, json } = renderReport({ ...data, finishedAt: new Date() });
-  mkdirSync(ext.OUT_DIR, { recursive: true });
-  const base = join(ext.OUT_DIR, reportBaseName(data.startedAt));
-  writeFileSync(`${base}.md`, md);
-  writeFileSync(`${base}.json`, JSON.stringify(json, null, 2));
-  const s = json.summary;
-  log(`\n汇总：共 ${s.total} 步，通过 ${s.pass}，失败 ${s.fail}，跳过 ${s.skip}；[split-search] 控制台错误 ${data.consoleErrors.length} 条`);
-  log(`报告：${base}.md`);
 }
 
 main().then(code => process.exit(code ?? 1), e => { warn(`未预期的错误：${e?.stack || e}`); process.exit(1); });

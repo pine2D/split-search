@@ -51,8 +51,8 @@ function withTimeout(p, ms, msg) {
 // 不能让下一步（或 run.mjs 的快照恢复）与它并发，否则恢复后的用户配置会被模拟数据覆盖
 export const SETTLE_MS = 15000;
 
-export async function runSteps(steps, ctx, { timeoutMs, settleMs = SETTLE_MS } = {}) {
-  const results = [];
+// results：可传入一个数组，运行器边跑边往里写（第二次 Ctrl+C 时 run.mjs 用它同步写部分报告）
+export async function runSteps(steps, ctx, { timeoutMs, settleMs = SETTLE_MS, results = [] } = {}) {
   const total = steps.length;
   const log = ctx.log || (() => {});
   const abortSignal = ctx.abortSignal;

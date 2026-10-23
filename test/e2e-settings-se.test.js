@@ -119,7 +119,7 @@ test("makeDefault + restore: 默认改回运行前的条目、删除全部专用
   await makeDefault(null, "sse2e", opts(f, file));
   assert.equal(f.entries.find(e => e.default).keyword, "sse2e");
   const r = await restore(null, opts(f, file));
-  assert.deepEqual(r, { defaultKeyword: "google.com", removed: ["sse2e"], warning: null });
+  assert.deepEqual(r, { defaultKeyword: "google.com", defaultChanged: true, removed: ["sse2e"], warning: null });
   assert.deepEqual(f.entries, base());
   assert.equal(existsSync(file), false);
   // 设默认在删除之前（默认引擎删不掉）
@@ -133,12 +133,12 @@ test("restore({keepFile}): 恢复并读回核对，但保留快照；再次 rest
   await ensure(null, MOCK, opts(f, file));
   await makeDefault(null, "sse2e", opts(f, file));
   const r = await restore(null, { ...opts(f, file), keepFile: true });
-  assert.deepEqual(r, { defaultKeyword: "google.com", removed: ["sse2e"], warning: null });
+  assert.deepEqual(r, { defaultKeyword: "google.com", defaultChanged: true, removed: ["sse2e"], warning: null });
   assert.equal(existsSync(file), true);
   assert.deepEqual(f.entries, base());
   f.calls.length = 0;
   const r2 = await restore(null, { ...opts(f, file), keepFile: true });
-  assert.deepEqual(r2, { defaultKeyword: "google.com", removed: [], warning: null });
+  assert.deepEqual(r2, { defaultKeyword: "google.com", defaultChanged: false, removed: [], warning: null });
   assert.equal(f.calls.some(c => /^(makeDefault|delete|add|edit)/.test(c)), false);
   assert.equal(await restorePending(null, { ...opts(f, file), keepFile: true }), true);
   assert.equal(existsSync(file), true);
@@ -156,7 +156,7 @@ test("轮询失败的报错带上原始错误（区分页面/CDP 故障与没生
   const f = fakeSettings([...base(), { id: 9, ...MOCK, default: false }], { ignoreMakeDefault: true });
   const orig = f.page.list;
   let n = 0;
-  f.page.list = async () => { if (++n > 1) throw new Error("CDP 会话已断开"); return orig(); };
+  f.page.list = async () => { if (++n > 2) throw new Error("CDP 会话已断开"); return orig(); }; // 前两次：切换前的读取与找目标
   await assert.rejects(makeDefault(null, "sse2e", opts(f, file)), /设为默认没有生效：sse2e.*CDP 会话已断开/);
   const g = fakeSettings(base(), { ignoreAdd: true });
   await assert.rejects(ensure(null, MOCK, opts(g, file)), /读回没有看到网站搜索 sse2e.*（/);
@@ -188,19 +188,36 @@ test("restorePending: 恢复失败时保留快照文件", () => withDir(async fi
 
 const SNAP_GONE = JSON.stringify({ defaultKeyword: "my.engine", defaultName: "我的引擎", ours: ["sse2e"] });
 
-test("restore: 快照里的默认引擎不在了、当前默认不是专用条目 → 不改默认，只删 sse2e，给出提示", () => withDir(async file => {
+test("restore: 当前默认不是专用条目 → 不改默认（不管快照里记的是什么），只删 sse2e", () => withDir(async file => {
   const f = fakeSettings([...base(), { id: 9, ...MOCK, default: false }]);
   writeFileSync(file, SNAP_GONE);
   const r = await restore(null, { ...opts(f, file), keepFile: true });
-  assert.equal(r.defaultKeyword, "google.com");
-  assert.deepEqual(r.removed, ["sse2e"]);
-  assert.match(r.warning, /已不存在/);
+  assert.deepEqual(r, { defaultKeyword: "google.com", defaultChanged: false, removed: ["sse2e"], warning: null });
   assert.equal(f.calls.some(c => c.startsWith("makeDefault")), false);
   assert.deepEqual(f.entries, base());
-  // 保留的快照已改成实际生效的默认引擎：下一次核对不再重复提示
-  const r2 = await restore(null, opts(f, file));
-  assert.equal(r2.warning, null);
-  assert.equal(existsSync(file), false);
+}));
+
+test("restore: 运行中用户把默认改成了 gb（assist 步骤）→ 收尾不撤销用户的改动", () => withDir(async file => {
+  const f = fakeSettings(base());
+  const se = bindSettings(() => null, opts(f, file));
+  await se.ensure(MOCK); // 快照：默认 google.com
+  for (const x of f.entries) x.default = x.keyword === "gb"; // 用户手动设 gb
+  const r = await restore(null, opts(f, file));
+  assert.equal(r.defaultChanged, false);
+  assert.equal(f.entries.find(e => e.default).keyword, "gb");
+  assert.equal(f.entries.some(e => isOurs(e.keyword)), false);
+}));
+
+test("makeDefault: 切换前把当前的用户默认记进快照，恢复时改回它（而不是拍快照时的默认）", () => withDir(async file => {
+  const f = fakeSettings(base());
+  const se = bindSettings(() => null, opts(f, file));
+  await se.ensure(MOCK); // 快照：默认 google.com
+  for (const x of f.entries) x.default = x.keyword === "gb"; // 之后用户设了 gb
+  await se.makeDefault("sse2e");
+  assert.equal(JSON.parse(readFileSync(file, "utf8")).defaultKeyword, "gb");
+  const r = await restore(null, opts(f, file));
+  assert.deepEqual([r.defaultKeyword, r.defaultChanged], ["gb", true]);
+  assert.equal(f.entries.find(e => e.default).keyword, "gb");
 }));
 
 test("restore: 快照里的默认引擎不在了、当前默认仍是 sse2e → 改为预置 Google，再删 sse2e", () => withDir(async file => {
@@ -235,7 +252,7 @@ test("bindSettings: ensure 前自动快照；每次调用都关闭页面", () =>
   assert.deepEqual(JSON.parse(readFileSync(file, "utf8")), { defaultKeyword: "google.com", defaultName: "Google", ours: ["sse2e"] });
   await se.makeDefault("sse2e");
   await se.restore();
-  assert.equal(existsSync(file), false);
+  assert.equal(existsSync(file), true, "ctx.se.restore 与收尾同样保留快照，正常关闭浏览器后才删");
   assert.equal(f.calls.filter(c => c === "close").length, 4);
 }));
 
@@ -250,5 +267,5 @@ test("bindSettings.makeDefault: 只允许切到 sse2e 条目；先自动快照�
   assert.equal(f.entries.find(e => e.default).keyword, "sse2e");
   await se.restore();
   assert.deepEqual(f.entries, base());
-  assert.equal(existsSync(file), false);
+  assert.equal(existsSync(file), true);
 }));
