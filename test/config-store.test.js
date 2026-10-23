@@ -32,3 +32,24 @@ test("loadRaw 原样返回 presetOverrides", async () => {
   const presetOverrides = { kagi: { name: "K" } };
   assert.deepEqual((await loadRaw(fakeArea({ presetOverrides }))).presetOverrides, presetOverrides);
 });
+test("单项上限按 键名 + JSON 值 计：恰好 8192 字节通过，8193 字节拒绝", async () => {
+  // "k" + JSON.stringify("a".repeat(n)) = 1 + n + 2 字节
+  const area = fakeArea();
+  await saveKeys({ k: "a".repeat(8189) }, area);
+  assert.equal(area.setCalls.length, 1);
+  await assert.rejects(saveKeys({ k: "a".repeat(8190) }, area), /配置过大/);
+  assert.equal(area.setCalls.length, 1);
+});
+test("多字节字符按 UTF-8 字节计", async () => {
+  const area = fakeArea();
+  const name = "中".repeat(2731); // 2731 个字符，8193 字节
+  const big = [{ id: "x", name, url: "https://e.com/?q=%s" }];
+  assert.ok(JSON.stringify(big).length < 8192);
+  await assert.rejects(saveKeys({ customEngines: big }, area), /配置过大/);
+  assert.equal(area.setCalls.length, 0);
+});
+test("loadConfig 按预置顺序返回引擎和默认组合", async () => {
+  const cfg = await loadConfig(fakeArea());
+  assert.deepEqual(cfg.engines.map(e => e.id), ["kagi", "google", "bing", "ddg", "perplexity"]);
+  assert.deepEqual(cfg.defaultPair, ["kagi", "google"]);
+});
