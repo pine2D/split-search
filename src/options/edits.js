@@ -4,7 +4,7 @@ import { PRESETS, ID_PATTERN, validateTemplate, mergeConfig, isIdTaken } from ".
 
 export const NAME_MAX = 40;
 export const LEFT_RULE =
-  "可作左侧的网址要求：小写 %s 恰好出现一次，并且是某个查询参数的完整值（如 ?q=%s），不含 # 和 _ss 参数";
+  "可作左侧的网址要求：小写 %s 恰好出现一次，并且是某个查询参数的完整值（如 ?q=%s），该参数名只出现一次，网址不含 #";
 
 const presetOf = (id) => PRESETS.find(p => p.id === id);
 export const isPresetId = (id) => presetOf(id) !== undefined;

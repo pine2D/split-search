@@ -35,8 +35,16 @@ export function notify(text, kind = "ok", { sticky = false } = {}) {
   if (!sticky) setTimeout(close, kind === "error" ? 8000 : 3500);
 }
 
+// chrome.storage.sync 的配额错误是英文常量名，翻译成用户看得懂的说明
+const QUOTA_ERRORS = [
+  [/MAX_WRITE_OPERATIONS_PER_(MINUTE|HOUR)/, "保存过于频繁，请稍后再试"],
+  [/QUOTA_BYTES/, "同步存储空间已满，请删除一些自定义引擎或缩短名称和网址后再试"],
+];
+
 export function errorText(err) {
-  return err?.message || String(err);
+  const text = err?.message || String(err);
+  for (const [re, zh] of QUOTA_ERRORS) if (re.test(text)) return zh;
+  return text;
 }
 
 export function copyButton(getText, label = "复制") {
@@ -55,9 +63,11 @@ export function copyButton(getText, label = "复制") {
 
 // ---- host 权限 ----
 
+// 只为精确 origin 申请；含 * 的模式等于宽泛权限，一律不生成
 export function originPattern(engine) {
   try {
-    return engineOrigin(engine) + "/*";
+    const origin = engineOrigin(engine);
+    return origin.includes("*") ? null : origin + "/*";
   } catch {
     return null;
   }
@@ -69,7 +79,8 @@ export async function isGranted(engine) {
   if (!pattern) return false;
   try {
     return await chrome.permissions.contains({ origins: [pattern] });
-  } catch {
+  } catch (err) {
+    console.warn("[split-search]", err);
     return false;
   }
 }

@@ -4,7 +4,7 @@ import { canBeLeft, describeTemplate, isPresetId } from "./edits.js";
 import { PRESETS } from "../lib/engines.js";
 
 const SITE_SEARCH_HINT =
-  "如果 Chrome 里有以它为左侧的网站搜索，请到 chrome://settings/searchEngines 一并删除，否则那条网站搜索会退化为普通搜索。";
+  "删除或隐藏前，请先删掉 Chrome 里用到它的网站搜索：它作左侧的会退化为普通搜索，作右侧的会停在“未知引擎”错误页。";
 
 // ctx: { cfg, granted: Map<id, boolean>, attention: Set<id>, actions, refresh }
 export function renderEngineList(ctx) {
