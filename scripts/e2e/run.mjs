@@ -82,8 +82,9 @@ async function main() {
   // stopReason：浏览器不可用时设置，运行器据此跳过剩余步骤
   const rt = { browser: null, col: null, closing: false, browserDead: false, restartFailed: false, stopReason: null, orphanErrors: null, notes, ctx: null, started: [] };
   let results = null, storage = null, snapshotTaken = false, chromeVersion = null, fatal = null, cleanupConfirmed = false;
-  // seTouched：本次运行改过网站搜索（含启动时恢复遗留快照），关浏览器时要正常退出，否则最后几秒的改动可能没写进磁盘
-  let seTouched = false, seFailed = false;
+  // 网站搜索：Chrome 要正常退出才保证改动写进磁盘（实测 SIGTERM 会丢最后几秒）。所以恢复只做到“读回核对”并保留快照，
+  // 正常关闭浏览器之后才删快照；否则下次启动再核对一遍（restore 幂等）。seTouched：本次运行动过网站搜索
+  let seTouched = false, seFailed = false, seVerified = false;
   try {
     try { server = await startServer({ port: args.port }); }
     catch (e) { warn(`前置条件缺失：${e.message}`); return 2; }
@@ -104,10 +105,12 @@ async function main() {
     try { rt.col = await collectConsole(browser); }
     catch (e) { notes.push(`控制台收集未启用：${e.message}`); }
     // 网站搜索的遗留快照与扩展无关，启动后立刻恢复（早于安装引导等可能提前退出的环节）
-    if (await se.restorePending(browser)) {
+    if (existsSync(se.SE_SNAPSHOT_FILE)) {
       seTouched = true;
+      const r = await se.restore(browser, { keepFile: true });
       log("发现上次遗留的网站搜索快照，已先恢复（默认引擎改回运行前、删除 sse2e 条目）");
       notes.push("启动时发现上次遗留的网站搜索快照，已先恢复");
+      if (r.warning) { warn(r.warning); notes.push(r.warning); }
     }
     // 引导式运行：打开向导页（准备、assist、judge 步骤的说明都显示在这里）
     const setupCtx = { browser, guide: server.guide, port: args.port, timeoutMs: args.timeoutMs, abortSignal: abort.signal, log };
@@ -211,8 +214,10 @@ async function main() {
       } else {
         seTouched = true;
         try {
-          const r = await se.restore(rt.browser);
+          const r = await se.restore(rt.browser, { keepFile: true });
+          seVerified = true;
           log(`网站搜索已恢复：默认引擎 ${r.defaultKeyword}，删除 ${r.removed.join(", ") || "（无）"}`);
+          if (r.warning) { warn(r.warning); notes.push(r.warning); }
         } catch (e) {
           seFailed = true;
           notes.push(`恢复网站搜索失败：${e.message}；快照保留在 ${se.SE_SNAPSHOT_FILE}，下次启动会自动恢复`);
@@ -238,15 +243,21 @@ async function main() {
       warn(msg);
       notes.push(msg);
     }
+    // 先关浏览器再写报告：网站搜索快照删不删取决于浏览器是否正常退出，结果要写进报告
+    await rt.col?.stop().catch(() => {});
+    rt.closing = true;
+    const closed = await rt.browser?.close({ graceful: seTouched }).catch(() => ({ graceful: false }));
+    if (seVerified && closed?.graceful) se.dropSnapshot();
+    else if (seVerified) {
+      notes.push(`测试浏览器没有正常退出，网站搜索的恢复可能没写进磁盘；快照保留在 ${se.SE_SNAPSHOT_FILE}，下次启动会再核对一遍`);
+      warn(notes.at(-1));
+    }
     if (snapshotTaken || results) {
       if (!results) results = steps.map(s => ({ id: s.id, title: s.title, kind: s.kind, status: "skip", detail: "未执行（运行提前结束）", durationMs: 0 }));
       if (signalName) notes.push(`运行被 ${signalName} 中断，报告不完整`);
       if (rt.browserDead && !rt.restartFailed && !signalName) notes.push("测试浏览器在运行中途退出");
       writeReport({ startedAt, args, results, consoleErrors: rt.col?.errors ?? rt.orphanErrors ?? [], chromeVersion, storage, notes });
     }
-    await rt.col?.stop().catch(() => {});
-    rt.closing = true;
-    await rt.browser?.close({ graceful: seTouched }).catch(() => {});
     await server?.close().catch(() => {});
   }
 

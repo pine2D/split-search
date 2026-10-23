@@ -51,3 +51,36 @@ test("withSession: 成功与失败都会 detach 会话", async () => {
     ["Target.detachFromTarget", { sessionId: "S2" }],
   ]);
 });
+
+// 假 Chrome：在 fd 3 读、fd 4 写 \0 分帧的 CDP；收到 Browser.close 就应答并正常退出
+const FAKE_CHROME = `#!/usr/bin/env node
+const net = require("node:net");
+// 用 net.Socket 读写管道：fs 流在线程池里阻塞读 fd 3，会让 process.exit 卡住
+const out = new net.Socket({ fd: 4, readable: false, writable: true });
+let buf = "";
+new net.Socket({ fd: 3, readable: true, writable: false }).on("data", d => {
+  buf += d;
+  let i;
+  while ((i = buf.indexOf("\\0")) >= 0) {
+    const m = JSON.parse(buf.slice(0, i)); buf = buf.slice(i + 1);
+    out.write(JSON.stringify({ id: m.id, result: m.method === "Browser.getVersion" ? { product: "Fake/1" } : {} }) + "\\0");
+    if (m.method === "Browser.close") setTimeout(() => process.exit(0), 50);
+  }
+});
+setInterval(() => {}, 1000);
+`;
+test("close: 返回 { graceful }——Browser.close 后自行退出为 true，直接发信号为 false", async () => {
+  const { launch } = await import("../scripts/e2e/browser.mjs");
+  const { writeFileSync, chmodSync } = await import("node:fs");
+  const d = mkdtempSync(join(tmpdir(), "e2e-fakechrome-"));
+  try {
+    const bin = join(d, "chrome");
+    writeFileSync(bin, FAKE_CHROME);
+    chmodSync(bin, 0o755);
+    const b1 = await launch({ bin, profileDir: join(d, "p1") });
+    assert.deepEqual(await b1.close({ graceful: true }), { graceful: true });
+    const b2 = await launch({ bin, profileDir: join(d, "p2") });
+    assert.deepEqual(await b2.close(), { graceful: false });
+    assert.notEqual(b2.proc.signalCode, null);
+  } finally { rmSync(d, { recursive: true, force: true }); }
+});

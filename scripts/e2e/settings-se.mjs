@@ -12,7 +12,9 @@ export const SE_SNAPSHOT_FILE = join(OUT_DIR, "settings-snapshot.json");
 const SETTINGS_URL = "chrome://settings/searchEngines";
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-export const isOurs = kw => typeof kw === "string" && kw.startsWith(PREFIX);
+// sse2e 或 sse2e-<小写字母数字段>（段可多个，对应引擎 id 里的连字符）；sse2efoo 这类用户条目不算
+const OURS_RE = /^sse2e(-[a-z0-9]+)*$/;
+export const isOurs = kw => typeof kw === "string" && OURS_RE.test(kw);
 function assertOurs(kw) {
   if (!isOurs(kw)) throw new Error(`只允许操作 ${PREFIX} 前缀的快捷字词，拒绝：${kw}`);
 }
@@ -28,8 +30,10 @@ const DEEP = `const deepAll = (sel, root = document) => { const out = []; const 
 const LIST_EXPR = `(async () => {
   const m = await import("chrome://settings/settings.js");
   const l = await m.SearchEnginesBrowserProxyImpl.getInstance().getSearchEnginesList();
-  return [...(l.defaults || []), ...(l.actives || []), ...(l.others || [])].map(e => ({ id: e.id, name: e.name, keyword: e.keyword,
-    default: !!e.default, confirm: !!e.shouldConfirmRemoval, url: e.keyword.startsWith(${JSON.stringify(PREFIX)}) ? e.url : null }));
+  const ours = new RegExp(${JSON.stringify(OURS_RE.source)});
+  return ["defaults", "actives", "others"].flatMap(g => (l[g] || []).map(e => ({ id: e.id, name: e.name, keyword: e.keyword, group: g,
+    default: !!e.default, canBeDefault: e.canBeDefault !== false, prepopulated: !!e.isPrepopulated, confirm: !!e.shouldConfirmRemoval,
+    url: ours.test(e.keyword) ? e.url : null })));
 })()`;
 const ACTIONS = new Set(["makeDefault", "delete"]);
 
@@ -45,11 +49,14 @@ async function poll(fn, { timeoutMs = 8000, intervalMs = 250, msg = "等待超�
 
 export async function openSettingsPage(browser) {
   const { client, evaluate } = browser;
-  const { targetId } = await client.send("Target.createTarget", { url: SETTINGS_URL, background: true });
+  // 单独的后台窗口：不改动步骤用来测量标签的那个窗口的标签栏；关闭标签即关闭窗口
+  const { targetId } = await client.send("Target.createTarget", { url: SETTINGS_URL, newWindow: true, background: true });
   let sid;
   const close = async () => {
     if (sid) await client.send("Target.detachFromTarget", { sessionId: sid }).catch(() => {});
     await client.send("Target.closeTarget", { targetId }).catch(() => {});
+    // closeTarget 先于窗口真正消失返回；等它从目标列表里消失，免得调用方紧接着数窗口/标签时多算一个
+    await poll(async () => !(await browser.targets()).some(t => t.targetId === targetId), { timeoutMs: 3000, intervalMs: 100 }).catch(() => {});
   };
   try {
     sid = await browser.attach(targetId);
@@ -117,8 +124,8 @@ async function doMakeDefault(page, keyword, opts, name) {
   if (!t) throw new Error(`找不到快捷字词为 ${keyword} 的网站搜索`);
   if (t.default) return;
   await page.rowAction(t.id, "makeDefault");
-  await poll(async () => pickDefault(await page.list())?.id === t.id, pollOpts(opts, `设为默认没有生效：${keyword}`))
-    .catch(() => { throw new Error(`设为默认没有生效：${keyword}`); });
+  await poll(async () => pickDefault(await page.list())?.id === t.id, pollOpts(opts, "读回的默认引擎没变"))
+    .catch(e => { throw new Error(`设为默认没有生效：${keyword}（${e.message}）`); });
 }
 
 async function doRemove(page, keyword, opts) {
@@ -165,7 +172,7 @@ export async function ensure(browser, entry, opts = {}) {
     if (ex) await page.edit(ex.id, { keyword, name, url });
     else await page.add({ keyword, name, url });
     await poll(async () => (await page.list()).some(e => e.keyword === keyword && e.url === url && e.name === name),
-      pollOpts(opts, "")).catch(() => { throw new Error(`读回没有看到网站搜索 ${keyword}`); });
+      pollOpts(opts, "等待超时")).catch(e => { throw new Error(`读回没有看到网站搜索 ${keyword}（${e.message}）`); });
     return ex ? "updated" : "added";
   });
 }
@@ -177,24 +184,53 @@ export async function remove(browser, keyword, opts = {}) {
   return withPage(browser, opts, page => doRemove(page, keyword, opts));
 }
 
-// 先把默认改回运行前的条目，再删除全部 sse2e 条目；读回核对通过后才删快照文件，任何失败都保留它
+// 快照里的默认引擎不在了时选谁：当前默认不是专用条目就保持不动；仍是专用条目则改为预置 Google，
+// 没有就取 defaults 组里第一个可设为默认的非专用条目
+function fallbackDefault(list) {
+  const cur = pickDefault(list);
+  if (cur && !isOurs(cur.keyword)) return { entry: cur, change: false };
+  const ok = e => !isOurs(e.keyword) && e.canBeDefault !== false;
+  const e = list.find(x => ok(x) && x.prepopulated && x.keyword === "google.com") ?? list.find(x => ok(x) && x.group === "defaults");
+  if (!e) throw new Error("快照里的默认引擎已不存在，也找不到可以设为默认的其他条目");
+  return { entry: e, change: true };
+}
+
+// 先把默认改回运行前的条目，再删除全部 sse2e 条目，读回核对。幂等：状态已经对就只核对。
+// opts.keepFile：核对通过也保留快照（Chrome 要正常退出才保证写进磁盘，由调用方在正常关闭后删除），
+// 此时若默认引擎换成了兜底条目，快照改写为实际生效的那个，下次核对不再重复提示。任何失败都保留快照
 export async function restore(browser, opts = {}) {
   const file = opts.file ?? SE_SNAPSHOT_FILE;
   const snap = readSnap(file);
   return withPage(browser, opts, async page => {
-    await doMakeDefault(page, snap.defaultKeyword, opts, snap.defaultName);
+    const list = await page.list();
+    let def = findEntry(list, snap.defaultKeyword, snap.defaultName), warning = null;
+    if (def) await doMakeDefault(page, def.keyword, opts, def.name);
+    else {
+      const fb = fallbackDefault(list);
+      def = fb.entry;
+      if (fb.change) {
+        await doMakeDefault(page, def.keyword, opts, def.name);
+        warning = `快照里的默认引擎已不存在，已改为 ${def.name}`;
+      } else warning = `快照里的默认引擎 ${snap.defaultName}（${snap.defaultKeyword}）已不存在，保持当前默认 ${def.name}`;
+    }
     const now = (await page.list()).filter(e => isOurs(e.keyword)).map(e => e.keyword);
     const removed = [];
     for (const kw of [...new Set([...(snap.ours || []), ...now])].filter(isOurs)) {
       if (await doRemove(page, kw, opts)) removed.push(kw);
     }
     const after = await page.list();
-    if (pickDefault(after)?.keyword !== snap.defaultKeyword || after.some(e => isOurs(e.keyword))) {
+    if (pickDefault(after)?.keyword !== def.keyword || after.some(e => isOurs(e.keyword))) {
       throw new Error(`恢复后读回的网站搜索不符合快照，快照文件已保留：${file}`);
     }
-    unlinkSync(file);
-    return { defaultKeyword: snap.defaultKeyword, removed };
+    if (!opts.keepFile) unlinkSync(file);
+    else if (warning) writeSnap(file, { ...snap, defaultKeyword: def.keyword, defaultName: def.name });
+    return { defaultKeyword: def.keyword, removed, warning };
   });
+}
+
+// 正常关闭浏览器之后调用：删除已核对过的快照
+export function dropSnapshot(file = SE_SNAPSHOT_FILE) {
+  if (existsSync(file)) unlinkSync(file);
 }
 
 export async function restorePending(browser, opts = {}) {
@@ -203,16 +239,18 @@ export async function restorePending(browser, opts = {}) {
   return true;
 }
 
-// ctx.se：绑定当前浏览器（重启后 getBrowser 返回新的）。ensure 前没有快照就先拍一个，保证结束时能恢复
+// ctx.se：绑定当前浏览器（重启后 getBrowser 返回新的）。ensure / makeDefault 前没有快照就先拍一个，保证结束时能恢复。
+// 步骤只能把默认切到 sse2e 条目；切回用户条目只在 restore 里做
 export function bindSettings(getBrowser, opts = {}) {
   const file = opts.file ?? SE_SNAPSHOT_FILE;
+  const guarded = fn => async (keyword, ...rest) => {
+    assertOurs(keyword);
+    if (!existsSync(file)) await snapshot(getBrowser(), opts);
+    return fn(getBrowser(), keyword, ...rest);
+  };
   return {
-    ensure: async entry => {
-      assertOurs(entry.keyword);
-      if (!existsSync(file)) await snapshot(getBrowser(), opts);
-      return ensure(getBrowser(), entry, opts);
-    },
-    makeDefault: keyword => makeDefault(getBrowser(), keyword, opts),
+    ensure: entry => guarded((b, _kw, e) => ensure(b, e, opts))(entry?.keyword, entry),
+    makeDefault: guarded((b, kw) => makeDefault(b, kw, opts)),
     remove: keyword => remove(getBrowser(), keyword, opts),
     restore: () => restore(getBrowser(), opts),
     hasSnapshot: () => existsSync(file),

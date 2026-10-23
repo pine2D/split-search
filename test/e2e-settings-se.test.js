@@ -11,7 +11,7 @@ const KAGI_URL = "https://kagi.com/search?token=SECRET123abc&q=%s";
 const MOCK = { keyword: "sse2e", name: "sse2e 模拟 A|B", url: "http://engine-a.localhost:8765/search?q=%s&_ss=ea,eb" };
 
 // 假 settings 页：在内存里模拟条目列表（list 按真实页面的读回形状返回，含 Kagi 的私有网址）
-function fakeSettings(initial, { failMakeDefault = false, ignoreAdd = false } = {}) {
+function fakeSettings(initial, { failMakeDefault = false, ignoreAdd = false, ignoreMakeDefault = false } = {}) {
   let entries = structuredClone(initial);
   let nextId = 100;
   const calls = [];
@@ -23,6 +23,7 @@ function fakeSettings(initial, { failMakeDefault = false, ignoreAdd = false } = 
       calls.push(`${action}:${id}`);
       if (action === "makeDefault") {
         if (failMakeDefault) throw new Error("点不到设为默认");
+        if (ignoreMakeDefault) return;
         for (const x of entries) x.default = x.id === id;
       } else if (action === "delete") entries = entries.filter(x => x.id !== id);
     },
@@ -31,7 +32,8 @@ function fakeSettings(initial, { failMakeDefault = false, ignoreAdd = false } = 
   return { calls, page, get entries() { return entries; }, open: async () => page };
 }
 const base = () => [
-  { id: 2, name: "Google", keyword: "google.com", url: "https://www.google.com/search?q=%s", default: true },
+  { id: 2, name: "Google", keyword: "google.com", url: "https://www.google.com/search?q=%s", default: true, group: "defaults", prepopulated: true },
+  { id: 3, name: "Microsoft Bing", keyword: "bing.com", url: "https://www.bing.com/search?q=%s", default: false, group: "defaults", prepopulated: true },
   { id: 15, name: "Kagi", keyword: "kagi.com", url: KAGI_URL, default: false },
   { id: 16, name: "gb", keyword: "gb", url: "https://www.google.com/search?q=%s&_ss=google,bing", default: false },
 ];
@@ -45,14 +47,15 @@ test("isOurs: 只认 sse2e 前缀", () => {
   assert.equal(PREFIX, "sse2e");
   assert.equal(isOurs("sse2e"), true);
   assert.equal(isOurs("sse2e-kagi"), true);
-  for (const k of ["gb", "kagi.com", "google.com", "xsse2e", "", null]) assert.equal(isOurs(k), false);
+  assert.equal(isOurs("sse2e-my-engine"), true);
+  for (const k of ["gb", "kagi.com", "google.com", "xsse2e", "sse2efoo", "sse2e-", "sse2e-A", "sse2e_x", "", null]) assert.equal(isOurs(k), false);
 });
 
 test("remove: 拒绝非 sse2e 前缀，且不碰页面", () => withDir(async file => {
   const f = fakeSettings(base());
-  for (const k of ["gb", "kagi.com", "google.com"]) await assert.rejects(remove(null, k, opts(f, file)), /sse2e/);
+  for (const k of ["gb", "kagi.com", "google.com", "sse2efoo"]) await assert.rejects(remove(null, k, opts(f, file)), /sse2e/);
   assert.deepEqual(f.calls, []);
-  assert.equal(f.entries.length, 3);
+  assert.deepEqual(f.entries, base());
 }));
 
 test("remove: 默认引擎是专用条目时拒绝删除；否则删除并读回确认", () => withDir(async file => {
@@ -116,7 +119,7 @@ test("makeDefault + restore: 默认改回运行前的条目、删除全部专用
   await makeDefault(null, "sse2e", opts(f, file));
   assert.equal(f.entries.find(e => e.default).keyword, "sse2e");
   const r = await restore(null, opts(f, file));
-  assert.deepEqual(r, { defaultKeyword: "google.com", removed: ["sse2e"] });
+  assert.deepEqual(r, { defaultKeyword: "google.com", removed: ["sse2e"], warning: null });
   assert.deepEqual(f.entries, base());
   assert.equal(existsSync(file), false);
   // 设默认在删除之前（默认引擎删不掉）
@@ -124,10 +127,39 @@ test("makeDefault + restore: 默认改回运行前的条目、删除全部专用
   assert.deepEqual(acts, ["makeDefault:100", "makeDefault:2", "delete:100"]);
 }));
 
+test("restore({keepFile}): 恢复并读回核对，但保留快照；再次 restore 幂等（只核对、不再动页面）", () => withDir(async file => {
+  const f = fakeSettings(base());
+  await snapshot(null, opts(f, file));
+  await ensure(null, MOCK, opts(f, file));
+  await makeDefault(null, "sse2e", opts(f, file));
+  const r = await restore(null, { ...opts(f, file), keepFile: true });
+  assert.deepEqual(r, { defaultKeyword: "google.com", removed: ["sse2e"], warning: null });
+  assert.equal(existsSync(file), true);
+  assert.deepEqual(f.entries, base());
+  f.calls.length = 0;
+  const r2 = await restore(null, { ...opts(f, file), keepFile: true });
+  assert.deepEqual(r2, { defaultKeyword: "google.com", removed: [], warning: null });
+  assert.equal(f.calls.some(c => /^(makeDefault|delete|add|edit)/.test(c)), false);
+  assert.equal(await restorePending(null, { ...opts(f, file), keepFile: true }), true);
+  assert.equal(existsSync(file), true);
+  await restore(null, opts(f, file));
+  assert.equal(existsSync(file), false);
+}));
+
 test("makeDefault: 读回不是目标时报错", () => withDir(async file => {
   const f = fakeSettings([...base(), { id: 9, ...MOCK, default: false }], { failMakeDefault: true });
   await assert.rejects(makeDefault(null, "sse2e", opts(f, file)), /设为默认/);
   await assert.rejects(makeDefault(null, "nope", opts(f, file)), /找不到/);
+}));
+
+test("轮询失败的报错带上原始错误（区分页面/CDP 故障与没生效）", () => withDir(async file => {
+  const f = fakeSettings([...base(), { id: 9, ...MOCK, default: false }], { ignoreMakeDefault: true });
+  const orig = f.page.list;
+  let n = 0;
+  f.page.list = async () => { if (++n > 1) throw new Error("CDP 会话已断开"); return orig(); };
+  await assert.rejects(makeDefault(null, "sse2e", opts(f, file)), /设为默认没有生效：sse2e.*CDP 会话已断开/);
+  const g = fakeSettings(base(), { ignoreAdd: true });
+  await assert.rejects(ensure(null, MOCK, opts(g, file)), /读回没有看到网站搜索 sse2e.*（/);
 }));
 
 test("restorePending: 无快照返回 false 且不开页面；有遗留快照时先恢复再删文件", () => withDir(async file => {
@@ -154,11 +186,46 @@ test("restorePending: 恢复失败时保留快照文件", () => withDir(async fi
   assert.equal(f.entries.some(e => e.keyword === "sse2e"), true, "默认没改回之前不删条目");
 }));
 
-test("restore: 运行前的默认引擎不见了时报错并保留快照", () => withDir(async file => {
-  const f = fakeSettings(base().filter(e => e.id !== 2).concat({ id: 9, ...MOCK, default: true }));
-  writeFileSync(file, JSON.stringify({ defaultKeyword: "google.com", defaultName: "Google", ours: ["sse2e"] }));
-  await assert.rejects(restore(null, opts(f, file)), /找不到/);
+const SNAP_GONE = JSON.stringify({ defaultKeyword: "my.engine", defaultName: "我的引擎", ours: ["sse2e"] });
+
+test("restore: 快照里的默认引擎不在了、当前默认不是专用条目 → 不改默认，只删 sse2e，给出提示", () => withDir(async file => {
+  const f = fakeSettings([...base(), { id: 9, ...MOCK, default: false }]);
+  writeFileSync(file, SNAP_GONE);
+  const r = await restore(null, { ...opts(f, file), keepFile: true });
+  assert.equal(r.defaultKeyword, "google.com");
+  assert.deepEqual(r.removed, ["sse2e"]);
+  assert.match(r.warning, /已不存在/);
+  assert.equal(f.calls.some(c => c.startsWith("makeDefault")), false);
+  assert.deepEqual(f.entries, base());
+  // 保留的快照已改成实际生效的默认引擎：下一次核对不再重复提示
+  const r2 = await restore(null, opts(f, file));
+  assert.equal(r2.warning, null);
+  assert.equal(existsSync(file), false);
+}));
+
+test("restore: 快照里的默认引擎不在了、当前默认仍是 sse2e → 改为预置 Google，再删 sse2e", () => withDir(async file => {
+  const f = fakeSettings([...base().map(e => ({ ...e, default: false })), { id: 9, ...MOCK, default: true }]);
+  writeFileSync(file, SNAP_GONE);
+  const r = await restore(null, opts(f, file));
+  assert.equal(r.defaultKeyword, "google.com");
+  assert.equal(r.warning, "快照里的默认引擎已不存在，已改为 Google");
+  assert.deepEqual(f.entries, base());
+  assert.equal(existsSync(file), false);
+}));
+
+test("restore: 没有预置 Google 时改为 defaults 组里第一个非专用条目；一个都没有才报错并保留快照", () => withDir(async file => {
+  const noGoogle = base().filter(e => e.id !== 2).map(e => ({ ...e, default: false }));
+  const f = fakeSettings([...noGoogle, { id: 9, ...MOCK, default: true }]);
+  writeFileSync(file, SNAP_GONE);
+  const r = await restore(null, opts(f, file));
+  assert.equal(r.defaultKeyword, "bing.com");
+  assert.match(r.warning, /已改为 Microsoft Bing/);
+  const g = fakeSettings([{ id: 16, name: "gb", keyword: "gb", url: "x?q=%s", default: false, group: "actives", canBeDefault: false },
+    { id: 9, ...MOCK, default: true, group: "actives" }]);
+  writeFileSync(file, SNAP_GONE);
+  await assert.rejects(restore(null, opts(g, file)), /找不到/);
   assert.equal(existsSync(file), true);
+  assert.equal(g.entries.some(e => e.keyword === "sse2e"), true);
 }));
 
 test("bindSettings: ensure 前自动快照；每次调用都关闭页面", () => withDir(async file => {
@@ -170,4 +237,18 @@ test("bindSettings: ensure 前自动快照；每次调用都关闭页面", () =>
   await se.restore();
   assert.equal(existsSync(file), false);
   assert.equal(f.calls.filter(c => c === "close").length, 4);
+}));
+
+test("bindSettings.makeDefault: 只允许切到 sse2e 条目；先自动快照，只调用 makeDefault 也能在结束时恢复", () => withDir(async file => {
+  const f = fakeSettings([...base(), { id: 9, ...MOCK, default: false }]);
+  const se = bindSettings(() => null, opts(f, file));
+  await assert.rejects(se.makeDefault("google.com"), /sse2e/);
+  await assert.rejects(se.makeDefault("sse2efoo"), /sse2e/);
+  assert.equal(existsSync(file), false);
+  await se.makeDefault("sse2e");
+  assert.deepEqual(JSON.parse(readFileSync(file, "utf8")).defaultKeyword, "google.com");
+  assert.equal(f.entries.find(e => e.default).keyword, "sse2e");
+  await se.restore();
+  assert.deepEqual(f.entries, base());
+  assert.equal(existsSync(file), false);
 }));
