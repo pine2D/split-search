@@ -71,7 +71,7 @@ split-search/
 ├── package.json                  仅含 "test": "node --test" 脚本
 ├── docs/acceptance-v0.1.md       v0.1 手测验收清单（B 表 + T1–T15）
 ├── scripts/
-│   ├── gen-key.sh                生成或复用私钥，把公钥写入 src/manifest.json 的 key
+│   ├── gen-key.sh                打印扩展 ID；manifest 无 key 时才生成公钥写入（不保留私钥）
 │   └── sync-to-windows.sh        rsync src/ → D 盘镜像目录
 ├── src/                          扩展根目录（加载这个目录）
 │   ├── manifest.json
@@ -100,7 +100,7 @@ split-search/
 - `permissions` 只能是 `["declarativeNetRequest", "storage"]`。禁止 `tabs`，禁止必需的 `host_permissions`。
 - `optional_host_permissions: ["https://*/*", "http://*/*"]`。运行时只为引擎的精确 origin（`<origin>/*`）申请。
 - `web_accessible_resources: [{ "resources": ["go.html"], "matches": ["<all_urls>"], "use_dynamic_url": true }]`。
-- manifest 里固定 `key`。私钥放在仓库外：`~/.config/split-search/extension-key.pem`。
+- manifest 里固定 `key`（公钥），不得修改：扩展 ID 只由它决定，改了 ID 就变，已有授权和 `storage.sync` 数据都会对不上。不保留私钥：私钥只在自签 `.crx` 时才用得上，本项目走“加载已解压”和 CWS 上传，都不需要。
 - 无构建工具、无运行时依赖。`src/lib/` 不得引用 `chrome`。JS 单文件不超过 300 行。
 - 标记参数名为 `_ss`，值为 `<左id>,<右id>`，要兼容 `%2C`。引擎 id 必须匹配 `/^[a-z0-9-]{1,20}$/`，创建后不可修改。
 - DNR 规则 id 固定为 `1`。`regexSubstitution` 写死为 `chrome-extension://<chrome.runtime.id>/go.html?u=\0`，不得使用 `runtime.getURL()`。
@@ -113,7 +113,7 @@ split-search/
 
 - `npm test`：等价于 `node --test`，自动发现 `**/*.test.js`。Node 24 上不能写成 `node --test test/`（会报 MODULE_NOT_FOUND）。
 - `bash scripts/sync-to-windows.sh`：同步 `src/` 到 D 盘镜像目录。
-- `bash scripts/gen-key.sh`：生成或复用私钥 `~/.config/split-search/extension-key.pem`，把公钥写入 manifest 的 `key` 并打印扩展 ID。私钥丢了扩展 ID 就会变，所有授权和 sync 数据都会作废，务必备份。
+- `bash scripts/gen-key.sh`：打印扩展 ID（`alngkkgnobglnfbhcplhpaflcgfiajnj`）。只有 manifest 里没有 `key` 时才会生成一把一次性密钥并写入公钥；已有 `key` 时绝不改动。将来上架 CWS 时，商店用自己的密钥签名并分配商店 ID；如果要让开发版和商店版并存，参照 `~/projects/Pinboard-Bookmark-Enhanced/CLAUDE.md` 的“扩展 ID 分层”：源码保留开发公钥，打发布 ZIP 时再换成 CWS 后台给出的公钥。
 
 ## 测试纪律
 

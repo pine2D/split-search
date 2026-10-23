@@ -117,7 +117,7 @@ https://kagi.com/search?q=%s&_ss=kagi,google
 - `permissions.request` 只能由用户手势触发：`onInstalled` 只负责调用 `runtime.openOptionsPage()`，用户在设置页点“授权”按钮后才发起请求。授权状态每次都用 `permissions.contains` 实时查询，不缓存。
 - `web_accessible_resources: [{ resources: ["go.html"], matches: ["<all_urls>"], use_dynamic_url: true }]`。从网页拖拽文字时，导航带有来源页的 initiator，所以必须列入 WAR，`matches` 也不要收窄。`use_dynamic_url` 只能防止网页直接链接 go.html，防不住带 `_ss` 的引擎链接（见 5.5）。
 - `incognito: "not_allowed"`，`minimum_chrome_version: "155"`。
-- **`key`**：在 manifest 里固定公钥，保证扩展 ID 稳定。原因：已解压扩展的 ID 由加载路径决定，路径一变，已授权的权限和 `storage.sync` 就对不上了，换机器也无法互通。私钥不进仓库。
+- **`key`**：在 manifest 里固定公钥，保证扩展 ID 稳定。原因：已解压扩展的 ID 由加载路径决定，路径一变，已授权的权限和 `storage.sync` 就对不上了，换机器也无法互通。扩展 ID 只由这个公钥决定，私钥只在自签 `.crx` 时才需要，不保留。
 
 ## 5. 行为细节
 
