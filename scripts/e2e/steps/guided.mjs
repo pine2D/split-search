@@ -9,6 +9,8 @@ const FOREVER = 2 ** 31 - 1; // 答案的等待由本模块的截止时间控制
 export const GRANT_TIMEOUT_MS = 5 * 60 * 1000;
 
 const stoppedCtx = ctx => !!(ctx.signal?.aborted || ctx.abortSignal?.aborted);
+// 一次等待结束后向导页显示的空闲卡片（无按钮）：免得上一个说明和按钮留在页面上，用户以为还要操作
+export const IDLE = { title: "处理中…", instruction: "脚本正在处理刚才的结果，请稍候，下一步的说明马上出现。请先不要操作测试浏览器。", buttons: [] };
 
 // Google 人机验证页：只读 CDP 目标网址，不依赖扩展
 export async function sorryHint(ctx) {
@@ -20,7 +22,8 @@ export async function sorryHint(ctx) {
 
 // 显示说明并等待：probe() 返回真值即满足；用户的答案（skip/retry/pass/fail/done）也会结束等待（retry 除外）。
 // 返回 { kind: "met", value } | { kind: "answer", answer } | { kind: "timeout", last }。
-// o: { title, instruction, sampleText?, copyText?, buttons?, probe?, hint?, timeoutMs?, intervalMs?, onRetry?, what }
+// o: { title, instruction, sampleText?, copyText?, buttons?, probe?, hint?, timeoutMs?, intervalMs?, onRetry?, what, afterShow? }
+// afterShow：说明显示出来、停顿 afterShowMs（默认 1500）之后执行一次，例如把设置页切到前台（先让用户看到说明）
 export async function userWait(ctx, o) {
   const limit = o.timeoutMs ?? ctx.timeoutMs ?? 120000;
   const interval = o.intervalMs ?? 500;
@@ -39,6 +42,7 @@ export async function userWait(ctx, o) {
   show();
   let end = Date.now() + limit;
   try {
+    if (o.afterShow) { await sleep(o.afterShowMs ?? 1500); await o.afterShow(); }
     for (;;) {
       if (stoppedCtx(ctx)) throw new Error(`等待“${o.what}”时步骤被中断`);
       if (answer === "retry") {
@@ -62,6 +66,7 @@ export async function userWait(ctx, o) {
     }
   } finally {
     token++; // 之后到达的答案作废
+    ctx.guide.setStep(IDLE); // 也会结算等待中的答案（作废）
     ctx.guide.cancel?.();
   }
 }
@@ -123,7 +128,20 @@ export async function extAlive(browser) {
 
 export const contains = (browser, origins) => browser.evalExt(`chrome.permissions.contains({ origins: ${JSON.stringify(origins)} })`);
 
-// 由脚本发起授权申请（CDP 带用户手势），用户只需在弹框里点“允许”。返回是否已授权
+// 等 p 完成；运行或步骤被中断时立刻抛出（不必等满授权框的 5 分钟）
+export function abortable(ctx, p) {
+  const sigs = [ctx.signal, ctx.abortSignal].filter(Boolean);
+  if (sigs.some(s => s.aborted)) return Promise.reject(new Error("等待授权时运行被中断"));
+  let off = () => {};
+  const stop = new Promise((_, rej) => {
+    const on = () => rej(new Error("等待授权时运行被中断"));
+    for (const s of sigs) s.addEventListener("abort", on, { once: true });
+    off = () => { for (const s of sigs) s.removeEventListener("abort", on); };
+  });
+  return Promise.race([p, stop]).finally(off);
+}
+
+// 由脚本发起授权申请（CDP 带用户手势），用户只需在弹框里点“允许”。返回是否已授权；被中断时抛出
 export async function requestGrant(ctx, origins, { title = "授权", why = "" } = {}) {
   const hosts = [...new Set(origins.map(o => o.replace(/^\w+:\/\//, "").replace(/\/\*$/, "")))];
   ctx.guide.setStep({ title, instruction: `${why}即将弹出 Chrome 的授权框（${hosts.join("、")}），请点“允许”。允许后脚本自动继续。`, buttons: [] });
@@ -133,8 +151,8 @@ export async function requestGrant(ctx, origins, { title = "授权", why = "" } 
   if (opt) await activate(ctx, opt.targetId); // 授权框挂在设置页所在的标签上
   let ok = false;
   try {
-    ok = await ctx.browser.evalExt(`chrome.permissions.request({ origins: ${JSON.stringify(origins)} })`,
-      { userGesture: true, timeoutMs: GRANT_TIMEOUT_MS });
+    ok = await abortable(ctx, ctx.browser.evalExt(`chrome.permissions.request({ origins: ${JSON.stringify(origins)} })`,
+      { userGesture: true, timeoutMs: GRANT_TIMEOUT_MS }));
   } finally { await focusGuide(ctx).catch(() => {}); }
   return ok === true && (await contains(ctx.browser, origins)) === true;
 }

@@ -32,3 +32,7 @@ h3 { font-size: 14px; margin: 0 0 8px; color: var(--muted); }
 .st { font-weight: 600; min-width: 3.5em; }
 .st.pass { color: var(--ok); } .st.fail { color: var(--bad); } .st.skip, .st.retry { color: var(--warn); }
 .detail { color: var(--muted); }
+/* 深色下 --ok/--bad 是亮色底，白字对比度不足（约 1.9:1），改用深色字；放在最后以覆盖上面的 #fff */
+@media (prefers-color-scheme: dark) {
+  .btn.pass, .btn.done, .btn.fail, .btn.nosplit { color: #0b0f14; }
+}

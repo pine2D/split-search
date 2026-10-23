@@ -19,9 +19,10 @@ const T12 = {
     const split = await assist(ctx, {
       title: "T12 自动发现的条目", what: "Kagi ｜ Bing 分屏（关键词“联想测试”）", copyText: "&_ss=kagi,bing", timeoutMs: ctx.timeoutMs * 2,
       instruction: [
-        `1. 打开 ${SETTINGS}，找到 Chrome 自动发现的 Kagi 条目（在“网站搜索”或“非活动的快捷方式”里；没有就先在 kagi.com 搜索一次再刷新）；`,
-        "2. 点它右侧的“修改”（铅笔或 ⋮ → 修改），在网址末尾追加下面这段（可复制），保存；",
-        "3. 在它右侧 ⋮ 里点“设为默认”；",
+        `1. 按 Ctrl+T 新开一个标签打开 ${SETTINGS}，找到 Chrome 自动发现的 Kagi 条目（快捷字词通常是 kagi.com）：在“网站搜索”或下方“未使用的快捷字词”里`
+          + "（可能要先点“更多无效网站”展开；没有就先在 kagi.com 搜索一次再刷新）。在“未使用的快捷字词”里的条目，先点它右侧的“启用”；",
+        "2. 点它右侧的铅笔图标（修改），在网址末尾追加下面这段（可复制），保存；",
+        "3. 在它右侧 ⋮ 里点“设为默认选项”；",
         "4. 在地址栏直接输入“联想测试”（不用快捷字词），先留意下拉框里有没有 Kagi 的搜索联想，再回车。",
         "期望：Kagi ｜ Bing 分屏。之后会问你联想的情况。（默认改回 Google、删掉追加的 _ss 放在全部步骤后的收尾提示里。）",
       ].join("\n"),
@@ -32,8 +33,10 @@ const T12 = {
     await focusGuide(ctx);
     const plain = await ask(ctx, "T12 联想（直接输入）", "刚才直接输入“联想测试”时，地址栏下拉框里有 Kagi 的搜索联想吗？");
     const kw = await ask(ctx, "T12 联想（快捷字词模式）",
-      "再试一次：在地址栏输入 Kagi 条目的快捷字词，按空格进入快捷字词模式，再输入“联想测试”（先别回车）。下拉框里有 Kagi 的搜索联想吗？看完按 Esc。");
-    return { status: split.status, detail: `${split.detail}；直接输入时联想：${plain}；快捷字词模式联想：${kw}` };
+      "再试一次：在地址栏输入 Kagi 条目的快捷字词（通常是 kagi.com，以设置页里该条目显示的为准），按空格进入快捷字词模式，再输入“联想测试”（先别回车）。"
+        + "下拉框里有 Kagi 的搜索联想吗？看完按 Esc。");
+    // 联想回答写在最前面：报告表格只显示第一行的前 120 个字符，分屏网址很长
+    return { status: split.status, detail: `直接输入时联想：${plain}；快捷字词模式联想：${kw}；${split.detail}` };
   },
 };
 
@@ -80,7 +83,7 @@ const T14 = {
         title: `T14 ${e.name} 作左侧`, label: `T14 ${e.name}`, what: `左侧为 ${e.host} 的新分屏`, sampleText: q, copyText: trig,
         timeoutMs: ctx.timeoutMs * 2,
         instruction: `1. 在 ${SETTINGS} 的“网站搜索”里添加：名称和快捷字词都填 ${e.kw}，网址粘贴下面的网址，保存；\n`
-          + `2. 在 ${e.kw} 右侧 ⋮ 里点“设为默认”；\n3. 回到向导页，选中下面的文字，拖到标签栏上两个标签之间。\n`
+          + `2. 在 ${e.kw} 右侧 ⋮ 里点“设为默认选项”；\n3. 回到向导页，选中下面的文字，拖到标签栏上两个标签之间。\n`
           + `期望：${e.name} ｜ Google 分屏。若只打开了普通的 ${e.name} 搜索（没分屏），可能是该引擎的 Service Worker 绕过了 DNR：`
           + "点“没分屏”（记为失败，脚本会记下那个标签的网址）；做不了这一项才点“跳过”。",
         buttons: ["nosplit", "skip", "retry"],
@@ -95,14 +98,14 @@ const T14 = {
       items.push({ name: `${e.name} 作左侧`, ...r });
     }
     const res = summarize(items);
-    return { ...res, detail: `已先打开五个引擎首页注册 Service Worker\n${res.detail}` };
+    return { ...res, detail: `${res.detail}\n（开始前已打开五个引擎首页注册 Service Worker）` };
   },
 };
 
 const DARK = { media: "", features: [{ name: "prefers-color-scheme", value: "dark" }] };
 
 const B14 = {
-  id: "B14", title: "深色模式：设置页与向导页配色跟随", kind: "judge", needs: [], timeoutFactor: 2,
+  id: "B14", title: "深色模式：设置页与向导页配色跟随", kind: "judge", needs: [], timeoutFactor: 3,
   async run(ctx) {
     const { client } = ctx.browser;
     const page = await openOptions(ctx.browser);
@@ -112,10 +115,11 @@ const B14 = {
       if (g) gsid = await ctx.browser.attach(g.targetId);
       await client.send("Emulation.setEmulatedMedia", DARK, page.sid);
       if (gsid) await client.send("Emulation.setEmulatedMedia", DARK, gsid);
-      await activate(ctx, page.targetId);
+      // 先在向导页显示说明，停顿一下再切到设置页
       return await judge(ctx, {
-        title: "B14 深色模式", timeoutMs: ctx.timeoutMs,
-        instruction: "脚本已把设置页和向导页切到深色模式（只模拟这两个页面，不改系统设置）。\n"
+        title: "B14 深色模式", timeoutMs: ctx.timeoutMs * 2, afterShow: () => activate(ctx, page.targetId),
+        instruction: "即将切到设置页（约 2 秒后），请先记住下面的步骤，看完回到本页作答。\n"
+          + "脚本已把设置页和向导页切到深色模式（只模拟这两个页面，不改系统设置）。\n"
           + "1. 看当前设置页：背景、文字、按钮、横幅、对话框（可点“添加引擎”看一眼）是否都是深色配色、清晰可读；\n"
           + "2. 切回向导页（这一页）：是否也是深色。\n都正常点“通过”。",
       });

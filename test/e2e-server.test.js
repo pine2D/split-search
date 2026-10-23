@@ -25,9 +25,9 @@ async function withServer(fn) {
   try { return await fn({ srv, port, get }); } finally { await srv.close(); }
 }
 const title = async r => (await r.text()).match(/<title>(.*?)<\/title>/s)[1];
-const post = (port, body) => fetch(`http://127.0.0.1:${port}/api/answer`, {
-  method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body),
-});
+// 向导页同源 fetch 会带 Origin；这里显式带上（Node 的 fetch 默认不带）
+const post = (port, body, headers = { origin: `http://127.0.0.1:${port}`, "content-type": "application/json" }) =>
+  fetch(`http://127.0.0.1:${port}/api/answer`, { method: "POST", headers, body: JSON.stringify(body) });
 
 test("引擎 A: /search?q=a+b%26c -> 'A · a b&amp;c'", () => withServer(async ({ get }) => {
   assert.equal(await title(await get("/search?q=a+b%26c", HOSTS.a)), "A · a b&amp;c");
@@ -89,3 +89,18 @@ test("端口被占用 -> 中文错误", async () => {
     await assert.rejects(startServer({ port }), { message: `端口 ${port} 已被占用；可用 --port 换端口，但需要重新授权` });
   } finally { blocker.close(); }
 });
+
+test("answer: Origin 不是向导页本身或不是 JSON → 403，答案不被接受", () => withServer(async ({ srv, port, get }) => {
+  srv.guide.setStep({ id: "a", title: "", kind: "", instruction: "", buttons: ["pass"] });
+  const seq = (await (await get("/api/state")).json()).seq;
+  const w = srv.guide.waitAnswer({ timeoutMs: 300 });
+  assert.equal((await post(port, { seq, answer: "pass" }, { "content-type": "application/json" })).status, 403, "没有 Origin");
+  assert.equal((await post(port, { seq, answer: "pass" }, { origin: "http://evil.example", "content-type": "application/json" })).status, 403);
+  assert.equal((await post(port, { seq, answer: "pass" }, { origin: `http://localhost:${port}`, "content-type": "application/json" })).status, 403);
+  assert.equal((await post(port, { seq, answer: "pass" }, { origin: `http://127.0.0.1:${port}`, "content-type": "text/plain" })).status, 403);
+  assert.equal(await w, "timeout");
+  const w2 = srv.guide.waitAnswer({ timeoutMs: 2000 });
+  assert.equal((await post(port, { seq, answer: "pass" })).status, 200);
+  assert.equal(await w2, "pass");
+  assert.equal((await fetch(`http://127.0.0.1:${port}/api/answer`, { method: "POST", headers: { origin: `http://127.0.0.1:${port}`, "content-type": "application/json" }, body: "null" })).status, 409, "null 不再是 500");
+}));

@@ -22,7 +22,7 @@ export const gbPair = (st, q) => splitPairs(st).find(([l, r]) =>
 export const fmt = p => `${p[0].id}｜${p[1].id}：${p[0].url} ｜ ${p[1].url}`;
 const gbProbe = (ctx, q) => async () => gbPair(await ctx.ext.state(), q);
 
-export const NEED_GB = `（前提：默认搜索引擎是网站搜索 gb。还不是的话，在 ${SETTINGS} 按 T1 添加 gb（网址见下），再在它右侧 ⋮ 里点“设为默认”。）`;
+export const NEED_GB = `（前提：默认搜索引擎是网站搜索 gb。还不是的话，在 ${SETTINGS} 按 T1 添加 gb（网址见下），再在它右侧 ⋮ 里点“设为默认选项”。）`;
 
 // 每个 assist 步骤开头：清理现场、把向导页切到前台
 export async function prepare(ctx) { const base = await resetTabs(ctx); await focusGuide(ctx); return base; }
@@ -40,10 +40,11 @@ const B4 = {
         if (!label) return { status: "fail", detail: "撤销 Google、Bing 授权后，设置页没有出现授权横幅" };
         const problems = [];
         if (!label.includes("Google") || !label.includes("Bing")) problems.push(`横幅按钮应同时提到 Google 和 Bing，实际“${label}”`);
-        await activate(ctx, page.targetId);
+        // 先在向导页显示说明，停顿一下再把设置页切到前台（否则说明落在后台的向导页上）
         const r = await assist(ctx, {
-          title: "B4 横幅授权", what: "Google 和 Bing 都已授权", hint: null,
-          instruction: `脚本已撤销 Google、Bing 的授权，并打开了设置页（已切到前台）。\n1. 点设置页顶部黄色横幅里的“${label}”；\n`
+          title: "B4 横幅授权", what: "Google 和 Bing 都已授权", hint: null, afterShow: () => activate(ctx, page.targetId),
+          instruction: `即将切到设置页（约 2 秒后），请先记住下面的步骤，做完回到本页。\n脚本已撤销 Google、Bing 的授权，并打开了设置页。\n`
+            + `1. 点设置页顶部黄色横幅里的“${label}”；\n`
             + "2. 确认弹出的权限框里同时列出 www.google.com 和 www.bing.com，点“允许”；\n3. 回到向导页。",
           probe: () => contains(ctx.browser, GB_ORIGINS),
         });
@@ -66,7 +67,7 @@ const T1 = {
     return assist(ctx, {
       title: "T1 地址栏快捷字词", what: "Google ｜ Bing 分屏，两侧关键词都是“测试”", copyText: GB_TRIGGER,
       timeoutMs: ctx.timeoutMs * 3,
-      instruction: `1. 新开一个标签，打开 ${SETTINGS}；\n2. “网站搜索”旁点“添加”：名称 gb，快捷字词 gb，网址粘贴下面的网址，保存（已有 gb 条目就跳过添加，直接设为默认）；\n`
+      instruction: `1. 按 Ctrl+T 新开一个标签，在它的地址栏打开 ${SETTINGS}（不要在向导页里打开）；\n2. “网站搜索”旁点“添加”：名称 gb，快捷字词 gb，网址粘贴下面的网址，保存（已有 gb 条目就跳过添加）；\n`
         + "3. 在地址栏输入 gb，按空格（进入 gb 搜索），再输入“测试”回车。\n期望：打开 Google ｜ Bing 原生分屏，左侧 Google 为当前焦点。",
       probe: gbProbe(ctx, "测试"),
       verdict: p => (p[0].active ? { status: "pass", detail: `Google ｜ Bing 分屏，左侧为焦点：${fmt(p)}` }
@@ -81,8 +82,9 @@ const T2 = {
     await prepare(ctx);
     const a = await assist(ctx, {
       title: "T2(a) 默认引擎", what: "Google ｜ Bing 分屏（关键词“默认引擎测试”）", copyText: GB_TRIGGER, timeoutMs: ctx.timeoutMs * 2,
-      instruction: `1. 打开 ${SETTINGS}，在“网站搜索”里 gb 右侧 ⋮ 点“设为默认”（没有 gb 先按 T1 添加，网址见下）；\n`
-        + "2. 在地址栏直接输入“默认引擎测试”（不加快捷字词）回车。\n期望：Google ｜ Bing 分屏。",
+      instruction: `1. 按 Ctrl+T 新开一个标签，在它的地址栏打开 ${SETTINGS}（不要在向导页里打开，否则这些说明就看不到了）；`
+        + "在“网站搜索”里 gb 右侧 ⋮ 点“设为默认选项”（没有 gb 先按 T1 添加，网址见下）；\n"
+        + "2. 在这个新标签的地址栏（不要在向导页里）直接输入“默认引擎测试”（不加快捷字词）回车。\n期望：Google ｜ Bing 分屏。",
       probe: gbProbe(ctx, "默认引擎测试"), verdict: p => ({ status: "pass", detail: fmt(p) }),
     });
     await prepare(ctx);
@@ -205,7 +207,7 @@ const T11 = {
     const q = "右键搜索测试";
     return assist(ctx, {
       title: "T11 右键搜索", what: `Google ｜ Bing 分屏（关键词“${q}”）`, sampleText: q, copyText: GB_TRIGGER,
-      instruction: `选中下面虚线框里的文字，右键，选以 gb 命名的搜索项（形如“使用 gb 搜索“${q}””）。\n`
+      instruction: `选中下面虚线框里的文字，右键，选以 gb 命名的搜索项（文字因版本而异，形如“使用 gb 搜索“${q}””或“在 gb 中搜索…”）。\n`
         + `期望：Google ｜ Bing 分屏。\n${NEED_GB}`,
       probe: gbProbe(ctx, q), verdict: p => ({ status: "pass", detail: fmt(p) }),
     });

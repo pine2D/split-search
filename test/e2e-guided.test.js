@@ -23,7 +23,9 @@ test("assist: 条件满足判通过，并在向导页记一条结果", async () 
   const r = await assist(ctxOf(guide), { title: "T3", what: "分屏", instruction: "拖", intervalMs: 10, hint: null, probe: async () => ++n >= 3 && "ok" });
   assert.equal(r.status, "pass");
   assert.equal(guide.state().results.at(-1).id, "T3");
-  assert.deepEqual(guide.state().step.buttons, ["skip", "retry"]);
+  // 等待结束后换成无按钮的“处理中”卡片，不留着上一步的说明和按钮
+  assert.equal(guide.state().step.title, "处理中…");
+  assert.deepEqual(guide.state().step.buttons, []);
 }));
 
 test("assist: 点跳过判跳过；超时判失败并写明在等什么", async () => withGuide(async guide => {
@@ -119,25 +121,41 @@ const kagiCtx = () => {
     browser: { client: { send: async (m, p) => { sent.push([m, p]); return m === "Target.createTarget" ? { targetId: "t1" } : { targetInfos: [] }; } } } } };
 };
 
-test("ensureKagi: 已登录直接返回 null；未登录引导登录，按同一规则复测", async () => {
+test("ensureKagi: 已登录直接返回 null；未登录只看现有标签网址等待（不再开探测标签），点“我已完成”后探测一次", async () => {
   const a = kagiCtx();
   assert.equal(await ensureKagi(a.ctx, { probe: async () => "https://kagi.com/settings", wait: async () => assert.fail("不应等待") }), null);
 
+  // 等待期间的检查只走 tabLoggedIn（不导航）；探测只在开始时做一次
   const b = kagiCtx();
-  const urls = ["https://account.kagi.com/loginname", "https://kagi.com/turnstile", "https://kagi.com/settings"];
-  let waited = null;
+  let probes = 0, checks = 0, waited = null;
   const r = await ensureKagi(b.ctx, {
-    probe: async () => urls.shift(),
-    wait: async (ctx, o) => { waited = o; for (;;) { if (await o.probe()) return { status: "pass" }; await sleep(5100); } },
+    probe: async () => { probes++; return "https://account.kagi.com/loginname"; },
+    tabLoggedIn: async (ctx, id) => { assert.equal(id, "t1", "看的是给用户打开的登录标签"); return ++checks >= 3 && "https://kagi.com/settings"; },
+    wait: async (ctx, o) => { waited = o; for (;;) { const v = await o.probe(); if (v) return { kind: "met", value: v }; } },
   });
   assert.equal(r, null);
+  assert.equal(probes, 1, "登录等待期间不再开后台标签走登录跳转");
   assert.match(waited.instruction, /登录/);
+  assert.deepEqual(waited.buttons, ["done", "skip"]);
   assert.ok(b.sent.some(([m, p]) => m === "Target.createTarget" && p.url === "https://kagi.com/settings"), "应给用户打开登录页");
 
+  // 点“我已完成”：探测一次；仍未登录 → 再等，说明前写明复查结果；第二次完成后登录了 → 通过
   const c = kagiCtx();
-  const r2 = await ensureKagi(c.ctx, { probe: async () => "https://kagi.com/", wait: async () => ({ status: "skip", detail: "用户点了跳过" }) });
-  assert.equal(r2.status, "skip");
-  assert.match(r2.detail, /Kagi 未登录/);
+  const seen = ["https://kagi.com/", "https://account.kagi.com/x", "https://kagi.com/settings"];
+  const shown = [];
+  const r2 = await ensureKagi(c.ctx, { probe: async () => seen.shift(), tabLoggedIn: async () => false,
+    wait: async (ctx, o) => { shown.push(o.instruction); return { kind: "answer", answer: "done" }; } });
+  assert.equal(r2, null);
+  assert.equal(shown.length, 2);
+  assert.match(shown[1], /^⚠ 复查仍未登录.*account\.kagi\.com/);
+
+  const d = kagiCtx();
+  const r3 = await ensureKagi(d.ctx, { probe: async () => "https://kagi.com/", wait: async () => ({ kind: "answer", answer: "skip" }) });
+  assert.equal(r3.status, "skip");
+  assert.match(r3.detail, /Kagi 未登录/);
+  const e = kagiCtx();
+  const r4 = await ensureKagi(e.ctx, { probe: async () => "https://kagi.com/", wait: async () => ({ kind: "timeout" }) });
+  assert.equal(r4.status, "fail");
 });
 
 test("cleanupItems: 只写 --only T3 时也提示删 gb、改回默认（让用户添加过 gb 的步骤都登记了）", () => {

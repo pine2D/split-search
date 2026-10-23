@@ -13,6 +13,10 @@ export async function ensureRecovered(ctx, deps = {}) {
   const { alive = () => extAlive(ctx.browser), has = o => contains(ctx.browser, o), request = requestGrant, wait = userWait,
     focus = () => focusGuide(ctx).catch(() => {}) } = deps;
   const origins = GRANT_ORIGINS(ctx.port);
+  // 运行被中断（Ctrl+C）时立即返回，不再等授权框；下次运行的一次性授权检查会兜底
+  const stopped = () => !!(ctx.abortSignal?.aborted || ctx.signal?.aborted);
+  const INTERRUPTED = { ok: false, reason: "中断", detail: "运行被中断，未完成恢复检查（下次运行 npm run e2e 会重新检查并申请授权）" };
+  if (stopped()) return INTERRUPTED;
   if (!(await alive())) {
     await focus();
     const r = await wait(ctx, {
@@ -21,15 +25,18 @@ export async function ensureRecovered(ctx, deps = {}) {
     });
     if (r.kind !== "met") return { ok: false, reason: "扩展未恢复", detail: "扩展没有重新启用" };
   }
+  if (stopped()) return INTERRUPTED;
   if ((await has(origins).catch(() => false)) === true) return { ok: true, detail: "扩展可用，授权齐全" };
   const attempts = [
     "上一步结束后一次性授权不完整，后面的步骤需要这些网站的授权。",
     "上一次没有允许（被拒绝或超时）。后面的步骤都需要这些授权，这是最后一次申请；再不允许，剩余步骤会全部跳过。",
   ];
   for (const [i, why] of attempts.entries()) {
+    if (stopped()) return INTERRUPTED;
     const ok = await request(ctx, origins, { title: `恢复授权（第 ${i + 1} 次）`, why }).catch(() => false);
     if (ok) return { ok: true, detail: `授权已恢复（第 ${i + 1} 次申请）` };
   }
+  if (stopped()) return INTERRUPTED;
   return { ok: false, reason: "授权未恢复", detail: "两次申请都没有得到授权" };
 }
 
@@ -38,8 +45,10 @@ export function makeAfterStep(rt, { log = () => {}, warn = () => {} } = {}, deps
   return async step => {
     if (!step.restores) return;
     const c = rt.ctx;
-    const r = await ensureRecovered(c, deps);
+    const r = await ensureRecovered(c, deps).catch(e => (c.abortSignal?.aborted ? { ok: false, reason: "中断", detail: e.message } : Promise.reject(e)));
     if (r.ok) { log(`  ${step.id} 之后：${r.detail}`); return; }
+    // 中断由 run.mjs 统一收尾（含“扩展可能仍停用”的提示），这里不记“授权未恢复”这类误导性的原因
+    if (r.reason === "中断") { log(`  ${step.id} 之后：${r.detail}`); return; }
     const msg = `${step.id} 之后：${r.detail}，剩余步骤跳过（${r.reason}）`;
     rt.notes.push(msg);
     warn(msg);

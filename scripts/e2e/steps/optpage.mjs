@@ -40,7 +40,12 @@ export async function openOptions(browser) {
     }
   };
   page.ready = () => browser.waitFor(() => page.ev(READY, { timeoutMs: 3000 }), { timeoutMs: 15000 });
-  page.reload = async () => { await client.send("Page.reload", {}, sid); await sleep(300); await page.ready(); };
+  // 刷新前在旧页面上做标记，等到没有标记的新页面就绪：否则可能在刷新提交前读到旧 DOM（B13 会因此假通过）
+  page.reload = async () => {
+    await page.ev("globalThis.__e2eOld = 1");
+    await client.send("Page.reload", {}, sid);
+    await browser.waitFor(() => page.ev(`!globalThis.__e2eOld && (${READY})`, { timeoutMs: 3000 }), { timeoutMs: 15000 });
+  };
   page.close = async () => {
     client.off("Page.javascriptDialogOpening", onDialog);
     await client.send("Target.detachFromTarget", { sessionId: sid }).catch(() => {});

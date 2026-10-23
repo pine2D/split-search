@@ -73,3 +73,35 @@ test("restart: 扩展页等待失败 → ctx 已指向新浏览器、原因写�
   assert.equal(rs[1].status, "skip");
   assert.match(rs[1].detail, /重启后扩展不可用/);
 });
+
+test("restart: 启动期间被中断 → 新浏览器仍登记到 rt.browser（由 run.mjs 恢复后关闭），抛出中断；rt.restarting 期间可等待、结束后清空", async () => {
+  const ac = new AbortController();
+  const nb = { name: "新" };
+  let release;
+  const { rt, restart, watched } = setup({ launch: () => new Promise(r => { release = () => r(nb); }) });
+  rt.ctx.abortSignal = ac.signal;
+  const p = restart();
+  await new Promise(r => setTimeout(r, 10));
+  assert.ok(rt.restarting, "重启进行中");
+  assert.equal(rt.browser, null);
+  ac.abort("收到 SIGINT");
+  release();
+  await assert.rejects(p, /重启浏览器期间运行被中断/);
+  assert.equal(rt.browser, nb, "新浏览器登记在 rt.browser 上，不会成为孤儿");
+  assert.deepEqual(watched, [nb]);
+  assert.equal(rt.browserDead, false);
+  await new Promise(r => setTimeout(r, 0));
+  assert.equal(rt.restarting, null);
+});
+
+test("restart: 关闭旧浏览器后发现已中断 → 不再启动新浏览器", async () => {
+  const ac = new AbortController();
+  let launched = false;
+  const { rt, restart, closed } = setup({ launch: async () => { launched = true; return {}; } });
+  rt.ctx.abortSignal = ac.signal;
+  ac.abort("收到 SIGINT");
+  await assert.rejects(restart(), /中断/);
+  assert.deepEqual(closed, [{ graceful: true }]);
+  assert.equal(launched, false);
+  assert.equal(rt.browser, null, "run.mjs 据此写“浏览器不可用、快照保留”，不调用 restoreStorage(null)");
+});

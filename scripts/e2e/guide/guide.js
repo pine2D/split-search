@@ -29,13 +29,17 @@ async function answer(seq, value) {
   if (answering) return;
   answering = true;
   document.querySelectorAll("#buttons button").forEach(b => { b.disabled = true; });
+  let ok = false;
   try {
-    await fetch("/api/answer", {
+    const r = await fetch("/api/answer", {
       method: "POST", headers: { "content-type": "application/json" },
       body: JSON.stringify({ seq, answer: value }),
     });
+    ok = r.ok;
   } catch {}
   answering = false;
+  // 没送达（网络错误、服务端拒绝）：按钮恢复可点，免得卡死；送达后等下一个步骤（新 seq）重绘
+  if (!ok && renderedSeq === seq) document.querySelectorAll("#buttons button").forEach(b => { b.disabled = false; });
 }
 
 function renderStep(state) {

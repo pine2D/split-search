@@ -14,6 +14,7 @@ import { makeRestart } from "./restart.mjs";
 import { renderReport, reportBaseName, redact } from "./report.mjs";
 import { openGuide, installGuide, ensureGrants, cleanupPrompt, cleanupItems, cleanupText } from "./steps/setup.mjs";
 import { makeAfterStep } from "./steps/recover.mjs";
+import { extAlive } from "./steps/guided.mjs";
 
 // 终端输出一律脱敏（网址里的 token/session 等参数值）
 const log = m => console.log(redact(m));
@@ -78,7 +79,7 @@ async function main() {
   // 运行时状态（重启会替换 browser/col）。orphanErrors：重启后收集器没能启用时，保留重启前的错误；
   // stopReason：浏览器不可用时设置，运行器据此跳过剩余步骤
   const rt = { browser: null, col: null, closing: false, browserDead: false, restartFailed: false, stopReason: null, orphanErrors: null, notes, ctx: null, started: [] };
-  let results = null, storage = null, snapshotTaken = false, chromeVersion = null, fatal = null;
+  let results = null, storage = null, snapshotTaken = false, chromeVersion = null, fatal = null, cleanupConfirmed = false;
   try {
     try { server = await startServer({ port: args.port }); }
     catch (e) { warn(`前置条件缺失：${e.message}`); return 2; }
@@ -157,17 +158,25 @@ async function main() {
     if (install?.b1 && !steps.some(s => s.id === "B1")) notes.push(`B1（未选入本次运行）：${install.b1.status}——${install.b1.detail}`);
     // 收尾提示：恢复 T1/T2/T11/T12/T14 等步骤让用户改过的搜索设置（只在测试配置里）
     if (!args.autoOnly && !abort.signal.aborted && !rt.stopReason) {
-      const note = await cleanupPrompt({ ...ctx, browser: rt.browser }, rt.started).catch(e => `收尾提示出错：${e.message}`);
-      if (note) notes.push(note);
+      const r = await cleanupPrompt({ ...ctx, browser: rt.browser }, rt.started).catch(e => ({ note: `收尾提示出错：${e.message}` }));
+      if (r?.note) notes.push(r.note);
+      cleanupConfirmed = !!r?.confirmed;
     }
   } catch (e) {
     fatal = e;
     warn(`运行出错：${e.message}`);
     notes.push(`运行出错：${e.message}`);
   } finally {
+    // T5/T10 重启浏览器期间被中断：有上限地等重启结束（新浏览器会登记到 rt.browser，用它恢复后关掉）
+    if (rt.restarting) {
+      let t;
+      await Promise.race([rt.restarting, new Promise(r => { t = setTimeout(r, 30000); })]);
+      clearTimeout(t);
+    }
     if (snapshotTaken) {
-      if (rt.browserDead) {
-        notes.push(`${rt.restartFailed ? "浏览器重启失败" : "浏览器已退出"}，无法恢复 storage；快照保留在 ${ext.SNAPSHOT_FILE}，下次启动会自动恢复`);
+      if (rt.browserDead || !rt.browser) {
+        const why = rt.browserDead ? (rt.restartFailed ? "浏览器重启失败" : "浏览器已退出") : "浏览器不可用（重启期间运行被中断）";
+        notes.push(`${why}，无法恢复 storage；快照保留在 ${ext.SNAPSHOT_FILE}，下次启动会自动恢复`);
         warn(notes.at(-1));
       } else {
         try {
@@ -175,7 +184,8 @@ async function main() {
           Object.assign(storage, { after: r.digest, equal: r.equal });
           log(`storage 已恢复（摘要 ${r.digest}，与运行前${r.equal ? "一致" : "不一致"}）`);
         } catch (e) {
-          notes.push(`恢复 storage 失败：${e.message}；快照保留在 ${ext.SNAPSHOT_FILE}，下次启动会自动恢复`);
+          const dead = !(await extAlive(rt.browser).catch(() => false)) ? "（扩展当前不可用，可能处于停用状态）" : "";
+          notes.push(`恢复 storage 失败${dead}：${e.message}；快照保留在 ${ext.SNAPSHOT_FILE}，下次启动会自动恢复`);
           warn(notes.at(-1));
         }
       }
@@ -184,8 +194,17 @@ async function main() {
     const cleanup = args && !args.autoOnly ? cleanupItems(rt.started) : [];
     if (cleanup.length) {
       const text = cleanupText(cleanup);
-      log(`\n收尾：请在测试浏览器里恢复这些设置（只影响测试配置，下次运行 npm run e2e 时也可以再做）：\n${text}`);
-      notes.push(`需要恢复的测试浏览器设置：\n${text}`);
+      if (cleanupConfirmed) log(`\n收尾：已由用户确认恢复这些设置：\n${text}`);
+      else {
+        log(`\n收尾：请在测试浏览器里恢复这些设置（只影响测试配置，下次运行 npm run e2e 时也可以再做）：\n${text}`);
+        notes.push(`需要恢复的测试浏览器设置：\n${text}`);
+      }
+    }
+    // 中断时可能正处在 B4/T8 撤销授权或停用扩展的中途（不论是否 --auto-only，B4/T8 都不是 auto，只在引导式里开始）
+    if ((signalName || abort.signal.aborted) && rt.started.some(st => st.restores)) {
+      const msg = "若中断时扩展处于停用状态或授权被撤销，下次请先运行 npm run e2e（引导式），它会带你重新启用扩展并恢复授权。";
+      warn(msg);
+      notes.push(msg);
     }
     if (snapshotTaken || results) {
       if (!results) results = steps.map(s => ({ id: s.id, title: s.title, kind: s.kind, status: "skip", detail: "未执行（运行提前结束）", durationMs: 0 }));

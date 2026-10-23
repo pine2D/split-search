@@ -94,10 +94,16 @@ export function startServer({ port }) {
         }
         if (req.method === "GET" && path === "/api/state") return send(res, 200, "application/json", JSON.stringify(guide.state()));
         if (req.method === "POST" && path === "/api/answer") {
+          // 只接受向导页自己（同源 fetch）发来的 JSON：本机其他浏览器里的网页不能伪造“通过”。
+          // 跨源的简单请求不能带 application/json，带了就要预检，而这里不响应预检
+          const own = `http://127.0.0.1:${server.address().port}`;
+          if (req.headers.origin !== own || !/^application\/json\b/.test(req.headers["content-type"] || "")) {
+            return send(res, 403, "text/plain; charset=utf-8", "forbidden");
+          }
           let raw = "";
           for await (const c of req) { raw += c; if (raw.length > 4096) break; }
           let body = {};
-          try { body = JSON.parse(raw); } catch { return send(res, 400, "text/plain", "bad json"); }
+          try { body = JSON.parse(raw) ?? {}; } catch { return send(res, 400, "text/plain", "bad json"); }
           return guide.answer(body.seq, body.answer) ? send(res, 200, "application/json", "{}") : send(res, 409, "text/plain", "stale");
         }
       }

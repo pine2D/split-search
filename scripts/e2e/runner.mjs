@@ -4,6 +4,18 @@ import { redact, redactDeep } from "./report.mjs";
 const STATUSES = new Set(["pass", "fail", "skip"]);
 const ABORTED = "中断";
 
+// 每步开始时向导页显示的卡片（无按钮）：auto 步骤提示别动浏览器（restarts 的步骤预告重启），
+// 等人的步骤先显示“准备中”，说明由步骤自己随后给出。否则向导页会停在上一个人工步骤的说明和按钮上
+export function startCard(step) {
+  const title = `${step.id} ${step.title}`;
+  if (step.kind === "auto") {
+    return { title: `${title}（自动执行中）`, buttons: [],
+      instruction: "脚本正在自动操作测试浏览器，请不要点击或切换标签，等这一步结束。"
+        + (step.restarts ? "\n这一步会关闭并重新打开测试浏览器（恢复上次会话），窗口消失再出现属正常现象，不要按 Ctrl+C。" : "") };
+  }
+  return { title, buttons: [], instruction: "脚本正在准备这一步（整理标签），说明马上出现在这里。请先不要操作测试浏览器。" };
+}
+
 export function formatDiag(state) {
   const lines = ["诊断（当前浏览器状态）："];
   for (const w of state.windows || []) lines.push(`窗口 ${w.id} ${w.type}${w.focused ? " 聚焦" : ""}`);
@@ -61,6 +73,7 @@ export async function runSteps(steps, ctx, { timeoutMs, settleMs = SETTLE_MS } =
     const started = Date.now();
     log(`▶ ${step.id} ${step.title}`);
     ctx.onStepStart?.(step);
+    ctx.guide?.setStep?.(startCard(step));
 
     let timer, onAbort;
     const running = Promise.resolve()
@@ -99,7 +112,8 @@ export async function runSteps(steps, ctx, { timeoutMs, settleMs = SETTLE_MS } =
 
     const result = { ...base, status, detail, durationMs: Date.now() - started };
     // assist 步骤被跳过（用户点“跳过”或条件不满足）也附上当时的状态，便于事后判断为什么做不下去
-    const wantDiag = status === "fail" || (status === "skip" && step.kind === "assist");
+    // noDiag：跳过是正常情况的步骤（B1 在扩展早已安装时），不附诊断
+    const wantDiag = status === "fail" || (status === "skip" && step.kind === "assist" && !step.noDiag);
     if (wantDiag && !abortSignal?.aborted && !stopped()) {
       const d = await diagnose(ctx);
       result.detail = `${detail}\n${d.text}`;

@@ -3,7 +3,7 @@
 import { EXT_ID, GRANT_ORIGINS } from "../config.mjs";
 import { SRC_DIR } from "../ext.mjs";
 import { evalIn } from "./util.mjs";
-import { userWait, assist, guideUrl, extTargets, extAlive, contains, requestGrant, focusGuide } from "./guided.mjs";
+import { userWait, guideUrl, extTargets, extAlive, contains, requestGrant, focusGuide } from "./guided.mjs";
 
 const OPT_URL = `chrome-extension://${EXT_ID}/options/options.html`;
 
@@ -61,7 +61,9 @@ export async function ensureGrants(ctx, { autoOnly }) {
   if ((await contains(ctx.browser, origins)) === true) return { ok: true, requested: false, detail: "授权已齐全" };
   if (autoOnly) return { ok: false, requested: false, detail: "测试配置缺少一次性授权（模拟引擎与五个预置引擎的网站）" };
   await focusGuide(ctx);
-  const ok = await requestGrant(ctx, origins, { title: "准备：一次性授权", why: "需要授权模拟引擎和五个预置引擎的网站（授权保存在测试配置里，只需一次）。" });
+  // 授权框 5 分钟没人点（或运行被中断）不抛出，按“授权未完成”提示并写进备注
+  const ok = await requestGrant(ctx, origins, { title: "准备：一次性授权", why: "需要授权模拟引擎和五个预置引擎的网站（授权保存在测试配置里，只需一次）。" })
+    .catch(() => false);
   return { ok, requested: true, detail: ok ? "已授权" : "授权未完成（被拒绝或超时），相关步骤会失败" };
 }
 
@@ -75,7 +77,9 @@ export function kagiLoggedIn(href) {
   catch { return false; }
 }
 
-// 开一个后台标签打开 /settings，等它加载完（新目标先是 about:blank，跳过），返回最终网址后关掉
+// 开一个后台标签打开 /settings，等它加载完（新目标先是 about:blank，跳过），返回最终网址后关掉。
+// 只在开始时和用户点“我已完成”之后各做一次：未登录时这条跳转链会重写 Kagi 的会话 cookie（OAuth state），
+// 用户登录期间反复探测可能让登录失败
 async function probeKagi(ctx) {
   const { client } = ctx.browser;
   const { targetId } = await client.send("Target.createTarget", { url: KAGI_PROBE, background: true });
@@ -87,28 +91,50 @@ async function probeKagi(ctx) {
   } finally { await client.send("Target.closeTarget", { targetId }).catch(() => {}); }
 }
 
-export async function ensureKagi(ctx, { probe = probeKagi, wait = assist } = {}) {
+// 登录等待期间的检查：不发起任何导航，只看现有页面的网址（Target.getTargets）。
+// 优先看给用户打开的登录标签，用户换了标签登录也认。目标网址可能是尚未提交的导航网址，
+// 所以看起来已登录时再读一次页面里的 location.href（已提交的网址）确认
+async function kagiTabLoggedIn(ctx, loginTargetId) {
+  const pages = (await ctx.browser.client.send("Target.getTargets")).targetInfos.filter(t => t.type === "page");
+  const hits = pages.filter(t => kagiLoggedIn(t.url)).sort((a, b) => (b.targetId === loginTargetId) - (a.targetId === loginTargetId));
+  for (const t of hits) {
+    const h = await evalIn(ctx, t.targetId, `document.readyState === "complete" ? location.href : ""`).catch(() => "");
+    if (kagiLoggedIn(h)) return h;
+  }
+  return false;
+}
+
+const KAGI_TEXT = "这一步要用到已登录的 Kagi。请切到刚打开的 Kagi 登录页登录（只登录 Kagi，不要登录 Chrome 账号）。\n"
+  + "登录信息只保存在测试配置里，下次运行不用再登。登录后页面回到 Kagi 设置页时脚本自动继续；"
+  + "如果登录后停在了别的页面，回到这里点“我已完成”，脚本再检查一次。";
+
+// deps 可注入，便于单测：probe（开后台标签探测，最终网址）、tabLoggedIn（只看现有标签）、wait（userWait）
+export async function ensureKagi(ctx, { probe = probeKagi, tabLoggedIn = kagiTabLoggedIn, wait = userWait } = {}) {
   let first;
   try { first = await probe(ctx); }
   catch (e) { return { status: "fail", detail: `打不开 ${KAGI_PROBE}：${e.message}` }; }
   if (kagiLoggedIn(first)) return null;
   const { client } = ctx.browser;
   const { targetId } = await client.send("Target.createTarget", { url: KAGI_PROBE }).catch(() => ({}));
-  let lastAt = 0;
+  const limit = (ctx.timeoutMs ?? 120000) * 3;
+  const end = Date.now() + limit;
+  let note = "";
   try {
-    const r = await wait(ctx, {
-      title: "准备：登录 Kagi", what: "Kagi 登录完成", hint: null, label: "Kagi 登录",
-      instruction: "这一步要用到已登录的 Kagi。请切到刚打开的 Kagi 登录页登录（只登录 Kagi，不要登录 Chrome 账号）。\n"
-        + "登录信息只保存在测试配置里，下次运行不用再登。脚本每隔几秒在后台检查一次，登录完成后自动继续。",
-      timeoutMs: (ctx.timeoutMs ?? 120000) * 3,
-      // 后台探测会开关标签，限频：最多 5 秒一次
-      probe: async () => {
-        if (Date.now() - lastAt < 5000) return false;
-        lastAt = Date.now();
-        return kagiLoggedIn(await probe(ctx));
-      },
-    });
-    return r.status === "pass" ? null : { status: r.status, detail: `Kagi 未登录：${r.detail}` };
+    for (;;) {
+      const r = await wait(ctx, {
+        title: "准备：登录 Kagi", what: "Kagi 登录完成", hint: null, buttons: ["done", "skip"], intervalMs: 1000,
+        instruction: note + KAGI_TEXT, timeoutMs: Math.max(1000, end - Date.now()),
+        probe: () => tabLoggedIn(ctx, targetId),
+      });
+      if (r.kind === "met") { ctx.guide.setResult?.("Kagi 登录", "pass", "已登录"); return null; }
+      if (r.kind === "timeout") return { status: "fail", detail: `Kagi 未登录：${Math.round(limit / 1000)} 秒内未等到登录完成` };
+      if (r.answer !== "done") return { status: "skip", detail: "Kagi 未登录：用户点了“跳过”" };
+      // 用户说做完了：探测一次（这时开后台标签不会打断登录）
+      const href = await probe(ctx).catch(e => `（打不开：${e.message}）`);
+      if (kagiLoggedIn(href)) { ctx.guide.setResult?.("Kagi 登录", "pass", "已登录（用户确认后复查）"); return null; }
+      if (Date.now() >= end) return { status: "fail", detail: `Kagi 未登录：用户点了“我已完成”，但复查时 ${KAGI_PROBE} 最终停在 ${href}` };
+      note = `⚠ 复查仍未登录：${KAGI_PROBE} 最终停在 ${href}。请在登录页完成登录后再点“我已完成”。\n\n`;
+    }
   } finally {
     if (targetId) await client.send("Target.closeTarget", { targetId }).catch(() => {});
     await focusGuide(ctx).catch(() => {});
@@ -124,7 +150,7 @@ export function withNeeds(step) {
 
 // ---- 收尾：恢复测试浏览器的搜索设置（只在测试配置里，但保持整洁）----
 const CLEANUP = {
-  default: "把默认搜索引擎改回 Google：chrome://settings/searchEngines →“搜索引擎”里 Google 右侧 ⋮ →“设为默认”（不能删除正在用作默认的条目，所以先做这一步）",
+  default: "把默认搜索引擎改回 Google：chrome://settings/searchEngines →“搜索引擎”里 Google 右侧 ⋮ →“设为默认选项”（不能删除正在用作默认的条目，所以先做这一步）",
   gb: "删除网站搜索 gb：“网站搜索”里 gb 右侧 ⋮ →“删除”",
   t14: "删除网站搜索 bg、dg、px、kg（T14 添加的）",
   t12: "编辑 Chrome 自动发现的 Kagi 条目，把网址末尾追加的 &_ss=kagi,bing 删掉后保存",
@@ -137,7 +163,8 @@ export function cleanupItems(steps) {
 
 export const cleanupText = items => items.map((t, i) => `${i + 1}. ${t}`).join("\n");
 
-// 交互式确认（只在正常结束时）。清单本身由 run.mjs 在 finally 里无论如何都打印并写进报告备注
+// 交互式确认（只在正常结束时）。返回 { confirmed, note } 或 null（没有要恢复的项）。
+// 清单本身由 run.mjs 在 finally 里打印并写进报告备注（用户已确认时改写成“已由用户确认恢复”）
 export async function cleanupPrompt(ctx, steps) {
   const items = cleanupItems(steps);
   if (!items.length) return null;
@@ -148,11 +175,12 @@ export async function cleanupPrompt(ctx, steps) {
     instruction: `这些改动只在测试配置里，但请恢复原样，免得影响下次运行：\n${text}\n\n做完点“我已完成”。`,
     copyText: "chrome://settings/searchEngines", timeoutMs: (ctx.timeoutMs ?? 120000) * 3,
   });
-  return r.kind === "answer" && r.answer === "done" ? "收尾：用户已确认恢复搜索设置" : `收尾：用户未确认恢复搜索设置（${items.length} 项，见终端）`;
+  const confirmed = r.kind === "answer" && r.answer === "done";
+  return { confirmed, note: confirmed ? "收尾：用户已确认恢复搜索设置" : `收尾：用户未确认恢复搜索设置（${items.length} 项，见终端）` };
 }
 
 export const B1 = {
-  id: "B1", title: "首次加载：自动打开设置页，扩展 ID 正确", kind: "assist", needs: [],
+  id: "B1", title: "首次加载：自动打开设置页，扩展 ID 正确", kind: "assist", needs: [], noDiag: true,
   async run(ctx) {
     if (ctx.install?.b1) return ctx.install.b1;
     return { status: "skip", detail: "本次运行前扩展已安装，B1 只在首次“加载已解压”时验证（删掉测试配置里的扩展后重跑可复测）" };

@@ -68,7 +68,7 @@ async function steady(ctx, want, ms = 2000) {
 }
 
 const T10 = {
-  id: "T10", title: "左侧后退/前进不重复分屏；恢复会话不重新执行 go.html", kind: "auto", needs: [], timeoutMs: 180000,
+  id: "T10", title: "左侧后退/前进不重复分屏；恢复会话不重新执行 go.html", kind: "auto", needs: [], timeoutMs: 180000, restarts: true,
   async run(ctx) {
     const { port } = ctx;
     const base = await resetTabs(ctx);

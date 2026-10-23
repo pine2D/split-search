@@ -86,7 +86,7 @@ const onClick = ctx => sub("(d) 站点访问“点击时”", async () => {
   await resetTabs(ctx);
   await focusGuide(ctx);
   const has = await judge(ctx, {
-    title: "T8(d) 站点访问“点击时”", copyText: DETAILS, timeoutMs: ctx.timeoutMs * 2,
+    title: "T8(d) 站点访问“点击时”", copyText: DETAILS, timeoutMs: ctx.timeoutMs * 2, buttons: ["pass", "skip"],
     instruction: "1. 新开一个标签打开下面的扩展详情页；\n2. 看“网站访问权限”（站点访问）里有没有“点击时”这个选项；\n"
       + "3. 有：选“点击时”，然后回来点“通过”，脚本会自己触发一次；没有：点“跳过”（记为不适用）。",
     passDetail: "有“点击时”选项，已选中", skipDetail: "扩展详情页没有“点击时”选项，不适用",
@@ -121,7 +121,7 @@ async function noWildcard(ctx) {
   const r = await assist(ctx, {
     title: "T8(d) 去掉“在所有网站上”", what: "授权里不再有 https://*/* 等通配", copyText: DETAILS, hint: null,
     instruction: "扩展现在拥有“在所有网站上”的授权（https://*/*）。请在扩展详情页把“网站访问权限”改成“在特定网站上”。\n"
-      + "改好后脚本自动继续（如果改完缺了某些网站的授权，步骤结束后脚本会弹框请你允许）。",
+      + "改好后脚本自动继续（如果改完缺了某些网站的授权，稍后脚本会弹框请你允许）。",
     probe: async () => !(await wildcards(ctx)).length,
   });
   return r.status === "pass" ? r : { status: "fail", detail: `授权里仍有通配：${(await wildcards(ctx).catch(() => [])).join("、")}` };
@@ -134,9 +134,14 @@ export const T8 = {
     const items = [await incognito(ctx), await disabled(ctx)];
     items.push(...await revoke(ctx));
     items.push(await onClick(ctx));
-    // 收尾核对：后面的步骤依赖扩展启用且授权齐全
+    // 收尾核对：后面的步骤依赖扩展启用且授权齐全。授权不全时先按 noWildcard 的说明弹框请用户允许一次再判
     const alive = await extAlive(ctx.browser);
-    const full = alive && (await contains(ctx.browser, GRANT_ORIGINS(ctx.port)).catch(() => false)) === true;
+    const has = async () => (await contains(ctx.browser, GRANT_ORIGINS(ctx.port)).catch(() => false)) === true;
+    let full = alive && await has();
+    if (alive && !full && !ctx.signal?.aborted) {
+      await requestGrant(ctx, GRANT_ORIGINS(ctx.port), { title: "T8 恢复授权", why: "T8 各项做完后一次性授权不完整。" }).catch(() => false);
+      full = await has();
+    }
     if (!full) items.push({ name: "收尾核对", status: "fail", detail: alive ? "一次性授权不完整" : "扩展不可用（未启用？）" });
     // 顺序与清单一致：(a)(b)(c)(d)(e)
     const order = n => "abcde".indexOf(n[1]) + (n.startsWith("(") ? 0 : 10);
