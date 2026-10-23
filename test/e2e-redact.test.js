@@ -65,3 +65,19 @@ test("runSteps: timeoutFactor 按单步超时的倍数放宽", async () => {
   assert.equal(r.status, "pass");
 });
 
+
+// 首次验收报告里的原样形状（ID、IP、S 换成假的）：Google 验证通过后网址带 google_abuse，含用户 IP
+const ABUSE_RAW = "https://www.google.com/search?q=t5&google_abuse=GOOGLE_ABUSE_EXEMPTION%3DID%3Dd7f00fake:TM%3D1792753264:C%3DR:IP%3D2602:fea7:dead:beef::1-:S%3DDbxSfake%3B+path%3D/%3B+domain%3Dgoogle.com%3B+expires%3DFri,+23-Oct-2026+18:01:04+GMT&sei=x";
+test("redact: google_abuse 与 *_abuse、含 exemption 的参数，原样与百分号嵌套（一次、两次）都换掉", () => {
+  const r = redact(ABUSE_RAW);
+  assert.ok(!r.includes("2602:fea7") && !r.includes("d7f00fake") && !r.includes("DbxSfake"), r);
+  assert.match(r, /google_abuse=\*\*\*/);
+  assert.match(r, /&sei=x$/, "后面的参数不动");
+  const nested = "https://www.google.com/sorry/index?continue=https://www.google.com/search%3Fq%3Dt5%26google_abuse%3DGOOGLE_ABUSE_EXEMPTION%253DID%253Dfake:IP%253D10.1.2.3%26sei%3Dk&q=Eg";
+  assert.equal(redact(nested), "https://www.google.com/sorry/index?continue=https://www.google.com/search%3Fq%3Dt5%26google_abuse%3D***%26sei%3Dk&q=Eg");
+  assert.equal(redact("?Google_Abuse=x&q=1"), "?Google_Abuse=***&q=1");
+  assert.equal(redact("?yt_abuse=1.2.3.4&abuse_exemption_token=z&q=1"), "?yt_abuse=***&abuse_exemption_token=***&q=1");
+  assert.equal(redact("x?a=1%2526token%253Dsecret%2526b%253D2"), "x?a=1%2526token%253D***%2526b%253D2");
+  assert.equal(redact("cookie GOOGLE_ABUSE_EXEMPTION=ID=a:TM=1:IP=203.0.113.9-:S=zz; path=/"), "cookie GOOGLE_ABUSE_EXEMPTION=***; path=/");
+  assert.equal(redact("?abuse=1&monkey=2&q=token=4"), "?abuse=1&monkey=2&q=token=4", "不是 *_abuse 的参数不动");
+});

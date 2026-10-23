@@ -2,13 +2,20 @@
 const KIND = { auto: "自动", assist: "协助", judge: "判断" };
 const STATUS = { pass: "✅ 通过", fail: "❌ 失败", skip: "⏭ 跳过" };
 
-// 隐私：网址里名为 token/session/sid/auth/key/code、access_token 等 *_token、session_id/sessionid（不区分大小写）
-// 的查询参数，值一律换成 ***。参数名前须是 ? & ; # 或开头（含 HTML 转义后的 &amp;），或它们的百分号编码 %3F %26 %23
-// （嵌套在 next=、r= 等参数里的网址）；名后是 = 或 %3D。所以 monkey=1、keyword=x、q=token=4 不受影响
-const NAME = "(?:[a-z0-9]*_token|token|session_id|sessionid|session|sid|auth|key|code)";
-const VALUE = "(?:(?!%26|%23|%3B)[^&#;\\s；，。、）)\\]|\"'<>])*";
-const SECRET = new RegExp(`(^|[?&;#]|%3F|%26|%23)(${NAME})(=|%3D)(${VALUE})`, "gi");
-export const redact = s => (typeof s === "string" ? s.replace(SECRET, (_, pre, name, eq) => `${pre}${name}${eq}***`) : s);
+// 隐私：网址里名为 token/session/sid/auth/key/code、access_token 等 *_token、session_id/sessionid、
+// google_abuse 等 *_abuse、含 exemption 的（不区分大小写）查询参数，值一律换成 ***。参数名前须是 ? & ; # 或开头
+// （含 HTML 转义后的 &amp;），或它们的一次、两次百分号编码 %3F %26 %23 / %253F %2526 %2523（嵌套在 next=、r=、continue= 里的网址）；
+// 名后是 = 或 %3D / %253D。所以 monkey=1、keyword=x、q=token=4 不受影响。
+// Google 人机验证通过后的 google_abuse=GOOGLE_ABUSE_EXEMPTION%3DID%3D…:IP%3D<用户 IP>… 整段换掉；
+// 不带参数名单独出现的 …ABUSE_EXEMPTION=…（含 IP）同样换掉
+const NAME = "(?:[a-z0-9_]*_abuse|[a-z0-9_]*exemption[a-z0-9_]*|[a-z0-9]*_token|token|session_id|sessionid|session|sid|auth|key|code)";
+const STOP = "%26|%23|%3B|%2526|%2523|%253B";
+const VALUE = `(?:(?!${STOP})[^&#;\\s；，。、（）)\\]|"'<>])*`;
+const SECRET = new RegExp(`(^|[?&;#]|%3F|%26|%23|%253F|%2526|%2523)(${NAME})(=|%3D|%253D)(${VALUE})`, "gi");
+const EXEMPTION = new RegExp(`([a-z0-9_]*ABUSE_EXEMPTION)(=|%3D|%253D)(?!\\*\\*\\*)(${VALUE})`, "gi");
+export const redact = s => (typeof s === "string"
+  ? s.replace(SECRET, (_, pre, name, eq) => `${pre}${name}${eq}***`).replace(EXEMPTION, (_, name, eq) => `${name}${eq}***`)
+  : s);
 export function redactDeep(v) {
   if (typeof v === "string") return redact(v);
   if (Array.isArray(v)) return v.map(redactDeep);
