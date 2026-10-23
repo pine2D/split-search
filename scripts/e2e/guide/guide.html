@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Split Search 验收向导</title>
+<link rel="stylesheet" href="/guide/guide.css">
+</head>
+<body>
+<main>
+  <header>
+    <h1>Split Search 验收向导</h1>
+    <div id="progress" class="progress">等待开始…</div>
+  </header>
+  <section id="step" class="card" hidden>
+    <div id="step-no" class="step-no"></div>
+    <h2 id="step-title"></h2>
+    <p id="step-instruction" class="instruction"></p>
+    <div id="sample" class="sample" hidden></div>
+    <div id="copy-row" class="copy-row" hidden>
+      <code id="copy-text"></code>
+      <button id="copy-btn" type="button" class="btn">复制</button>
+    </div>
+    <div id="buttons" class="buttons"></div>
+  </section>
+  <section class="card">
+    <h3>最近结果</h3>
+    <ul id="results" class="results"></ul>
+  </section>
+</main>
+<script src="/guide/guide.js"></script>
+</body>
+</html>
