@@ -40,10 +40,16 @@ export async function runSteps(steps, ctx, { timeoutMs, settleMs = SETTLE_MS } =
 
   // run.mjs 以字符串作为中断原因（如“收到 SIGINT”“测试浏览器已退出”），写进说明
   const why = () => (typeof abortSignal?.reason === "string" ? abortSignal.reason : "");
+  // ctx.stopReason()：浏览器已不可用（如重启失败）时返回原因；当前步骤照常记失败，剩余步骤跳过
+  const stopped = () => ctx.stopReason?.() || null;
   for (const step of steps) {
     const base = { id: step.id, title: step.title, kind: step.kind };
     if (abortSignal?.aborted) {
       results.push({ ...base, status: "skip", detail: why() ? `${ABORTED}（${why()}）` : ABORTED, durationMs: 0 });
+      continue;
+    }
+    if (stopped()) {
+      results.push({ ...base, status: "skip", detail: `${ABORTED}（${stopped()}）`, durationMs: 0 });
       continue;
     }
     const limit = step.timeoutMs ?? timeoutMs ?? ctx.timeoutMs ?? 120000;
@@ -86,7 +92,7 @@ export async function runSteps(steps, ctx, { timeoutMs, settleMs = SETTLE_MS } =
     if (unsettled) detail += `；步骤在 ${settleMs} ms 收尾期限内仍未结束，已不再等待`;
 
     const result = { ...base, status, detail, durationMs: Date.now() - started };
-    if (status === "fail" && !abortSignal?.aborted) {
+    if (status === "fail" && !abortSignal?.aborted && !stopped()) {
       const d = await diagnose(ctx);
       result.detail = `${detail}\n${d.text}`;
       if (d.state) result.diag = d.state;
