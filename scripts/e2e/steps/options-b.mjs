@@ -2,7 +2,7 @@
 import { EXT_ID } from "../config.mjs";
 import {
   OPTIONS_URL, withOptions, fillDialog, dialogState, closeDialog,
-  readKeys, BAIDU, hasEngine, addCustom, removeCustom,
+  readKeys, BAIDU, hasEngine, addCustom, guarded,
 } from "./optpage.mjs";
 
 const optionsTargets = async browser =>
@@ -86,7 +86,7 @@ const B7 = {
         if (problems.length) return { status: "fail", detail: problems.join("；") };
         return { status: "pass", detail: "百度出现在列表末尾，授权按钮高亮，右下角有未授权提示；已通过界面删除" };
       });
-    } finally { await removeCustom(ext, "baidu").catch(() => {}); }
+    } finally { /* 清理由 guarded 统一恢复 */ }
   },
 };
 
@@ -110,7 +110,7 @@ const B8 = {
         const err = await page.run(`return [...document.querySelectorAll("#notices .notice-text")].map(n => n.textContent).find(t => t.startsWith("复制失败")) || ""`);
         return { status: "fail", detail: `网址正确，但按钮没有变为“已复制”；${err ? "页面提示：" + err : "也没有出现复制失败提示"}` };
       });
-    } finally { await removeCustom(ext, "baidu").catch(() => {}); }
+    } finally { /* 清理由 guarded 统一恢复 */ }
   },
 };
 
@@ -124,7 +124,6 @@ const B10 = {
         out[id] = !rw ? "无此行" : !b ? "无按钮" : b.disabled ? "禁用" : "可用";
       }
       return out;`;
-    const before = (await readKeys(ext, ["defaultPair"])).defaultPair;
     return withOptions(browser, async page => {
       try {
         const cur = await page.run(probe(["ea", "eb", "ec", "ddg"]));
@@ -141,9 +140,7 @@ const B10 = {
         for (const id of ["ddg", "ea"]) if (gb[id] !== "可用") problems.push(`默认组合为 Google ｜ Bing 时 ${id} 应可用，实际 ${gb[id]}`);
         if (problems.length) return { status: "fail", detail: problems.join("；") };
         return { status: "pass", detail: `当前默认组合 ea｜eb：ea、eb 禁用，ec、ddg 可用；切到 Google｜Bing 后：google、bing 的“隐藏”禁用，ddg、ea 可用（已还原默认组合）` };
-      } finally {
-        if (before) await ext.eval(`chrome.storage.sync.set({ defaultPair: ${JSON.stringify(before)} })`);
-      }
+      } finally { /* 默认组合由 guarded 恢复 */ }
     });
   },
 };
@@ -170,4 +167,7 @@ const B11 = {
   },
 };
 
-export const B_STEPS_1 = [B2, B3, B6, B7, B8, B10, B11];
+// 每个步骤涉及的存储键：无论成败都恢复成步骤前的值
+const wrap = (step, keys) => ({ ...step, run: ctx => guarded(ctx, keys, () => step.run(ctx)) });
+export const B_STEPS_1 = [B2, B3, wrap(B6, ["customEngines", "order"]), wrap(B7, ["customEngines", "order"]),
+  wrap(B8, ["customEngines", "order"]), wrap(B10, ["defaultPair"]), wrap(B11, ["customEngines"])];

@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { runSteps } from "../scripts/e2e/runner.mjs";
-import { STEPS, selectSteps, compareStepIds } from "../scripts/e2e/steps/index.mjs";
+import { STEPS, selectSteps, compareStepIds, sortSteps } from "../scripts/e2e/steps/index.mjs";
 
 const fakeState = {
   tabs: [{ id: 11, index: 0, windowId: 1, splitViewId: 7, pinned: false, groupId: -1, url: "http://engine-a.localhost:8765/search?q=x", status: "complete" }],
@@ -166,4 +166,12 @@ test("runSteps: 中断原因写进说明", async () => {
   const { ctx } = makeCtx({ abortSignal: ac.signal });
   const [r] = await runSteps([step("B5", async () => ({ status: "pass" }))], ctx, { timeoutMs: 100 });
   assert.equal(r.detail, "中断（测试浏览器已退出）");
+});
+
+test("STEPS: B15 标记 last 且排在最后，后注册的 T 步骤仍在它之前", () => {
+  assert.equal(STEPS.at(-1).id, "B15");
+  assert.equal(STEPS.at(-1).last, true);
+  const all = sortSteps([...STEPS, { id: "T9", title: "t", kind: "auto", needs: [], run: async () => ({ status: "pass" }) }]);
+  assert.equal(all.at(-1).id, "B15");
+  assert.equal(all.at(-2).id, "T9");
 });

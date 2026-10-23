@@ -108,7 +108,7 @@ async function main() {
 
     const ctx = {
       browser, guide: server.guide, ext: ext.bindExt(browser, { port: args.port }), port: args.port,
-      timeoutMs: args.timeoutMs, abortSignal: abort.signal, log, consoleErrors: col?.errors ?? [],
+      timeoutMs: args.timeoutMs, abortSignal: abort.signal, log, consoleErrors: col?.errors ?? [], consoleCollector: col ?? undefined,
     };
     results = await runSteps(steps, ctx, { timeoutMs: args.timeoutMs });
   } catch (e) {

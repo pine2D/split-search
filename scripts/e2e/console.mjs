@@ -13,6 +13,7 @@ export async function collectConsole(browser) {
   const seen = new Set();
   const extPrefix = `chrome-extension://${EXT_ID}/`;
   const sessions = new Set();
+  let attached = 0, extAttached = 0; // 历次附着的会话数（会话 detach 后 sessions 会减少）
   const push = e => {
     const k = `${e.text}|${e.url}|${e.ts}`;
     if (seen.has(k)) return;
@@ -37,6 +38,8 @@ export async function collectConsole(browser) {
   const onAttached = ({ sessionId, targetInfo }) => {
     if (!TYPES.has(targetInfo.type)) return;
     sessions.add(sessionId);
+    attached++;
+    if ((targetInfo.url || "").startsWith(extPrefix)) extAttached++;
     client.send("Runtime.enable", {}, sessionId).catch(() => {});
   };
   const onDetached = ({ sessionId }) => sessions.delete(sessionId);
@@ -50,6 +53,7 @@ export async function collectConsole(browser) {
   return {
     errors,
     sessionCount: () => sessions.size,
+    stats: () => ({ attached, extAttached }),
     stop: async () => {
       client.off("Runtime.consoleAPICalled", onConsole);
       client.off("Runtime.exceptionThrown", onException);

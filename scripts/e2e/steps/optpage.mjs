@@ -88,9 +88,28 @@ export const addCustom = (ext, eng) => ext.eval(`(async () => {
   if (!customEngines.some(e => e.id === ${JSON.stringify(eng.id)})) customEngines.push(${JSON.stringify(eng)});
   await chrome.storage.sync.set({ customEngines }); return true; })()`);
 
-export const removeCustom = (ext, id) => ext.eval(`(async () => {
-  const { customEngines = [], order } = await chrome.storage.sync.get(["customEngines", "order"]);
-  const patch = { customEngines: customEngines.filter(e => e.id !== ${JSON.stringify(id)}) };
-  await chrome.storage.sync.set(patch);
-  if (order?.includes(${JSON.stringify(id)})) await chrome.storage.sync.set({ order: order.filter(x => x !== ${JSON.stringify(id)}) });
-  return true; })()`);
+// 把某个键恢复成步骤前的值：undefined 表示原本不存在，直接删除
+export const restoreKey = (ext, key, value) => ext.eval(value === undefined
+  ? `chrome.storage.sync.remove(${JSON.stringify(key)}).then(() => true)`
+  : `chrome.storage.sync.set({ ${JSON.stringify(key)}: ${JSON.stringify(value)} }).then(() => true)`);
+
+// 步骤包装：记下涉及的键，fn 结束（无论成败）后恢复到原值并读回核对。
+// 清理失败：记日志、追加到说明；步骤本来通过则改判失败；步骤抛异常则把清理失败附在异常上。
+export async function guarded(ctx, keys, fn) {
+  const saved = await readKeys(ctx.ext, keys);
+  let res, thrown;
+  try { res = await fn(); } catch (e) { thrown = e; }
+  const errs = [];
+  for (const k of keys) {
+    try {
+      await restoreKey(ctx.ext, k, saved[k]);
+      const now = (await readKeys(ctx.ext, [k]))[k];
+      if (JSON.stringify(now) !== JSON.stringify(saved[k])) errs.push(`${k} 读回与原值不一致`);
+    } catch (e) { errs.push(`${k}：${e.message}`); }
+  }
+  const msg = errs.join("；");
+  if (msg) ctx.log?.(`清理失败：${msg}`);
+  if (thrown) { if (msg) thrown.message += `；清理失败：${msg}`; throw thrown; }
+  if (msg) return { status: "fail", detail: `${res?.detail ?? ""}；清理失败：${msg}` };
+  return res;
+}

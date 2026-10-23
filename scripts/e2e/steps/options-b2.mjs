@@ -1,11 +1,10 @@
 // 设置页自动步骤（二）：B12 B13 B15
-import { openOptions, withOptions, readKeys, sleep } from "./optpage.mjs";
+import { openOptions, withOptions, guarded, sleep } from "./optpage.mjs";
 
 const B12 = {
   id: "B12", title: "隐藏/恢复预置引擎（确认框含网站搜索提示）", kind: "auto", needs: [],
   async run({ browser, ext }) {
-    const before = (await readKeys(ext, ["presetOverrides"])).presetOverrides;
-    try {
+    {
       return await withOptions(browser, async page => {
         await page.run(`btn(row("ddg"), "隐藏").click(); return true;`);
         await page.until(`return !row("ddg") && [...document.querySelectorAll("#hidden-engines .hidden-row")].some(r => r.querySelector(".engine-id").textContent === "ddg")`);
@@ -19,9 +18,6 @@ const B12 = {
         if (problems.length) return { status: "fail", detail: problems.join("；") };
         return { status: "pass", detail: `确认框（${msg.split("\n")[0]}）含“网站搜索”；ddg 隐藏后出现在“已隐藏的预置引擎”，点“恢复”后回到列表` };
       });
-    } finally {
-      await ext.eval(`(async () => { const v = ${JSON.stringify(before ?? null)};
-        if (v) await chrome.storage.sync.set({ presetOverrides: v }); else await chrome.storage.sync.remove("presetOverrides"); })()`).catch(() => {});
     }
   },
 };
@@ -32,7 +28,6 @@ const click = (page, id, label) => page.run(`btn(row(${JSON.stringify(id)}), ${J
 const B13 = {
   id: "B13", title: "排序防抖保存、刷新后保持、另一页自动刷新", kind: "auto", needs: [],
   async run({ browser, ext }) {
-    const saved = (await readKeys(ext, ["order"])).order;
     let p1 = null, p2 = null;
     try {
       p1 = await openOptions(browser);
@@ -69,23 +64,26 @@ const B13 = {
     } finally {
       await p2?.close();
       await p1?.close();
-      await ext.eval(`(async () => { const v = ${JSON.stringify(saved ?? null)};
-        if (v) await chrome.storage.sync.set({ order: v }); else await chrome.storage.sync.remove("order"); })()`).catch(() => {});
     }
   },
 };
 
 // 由运行器汇总的控制台错误：此步骤放在最后（编号最大），以便覆盖此前所有步骤
 const B15 = {
-  id: "B15", title: "无 [split-search] 控制台错误", kind: "auto", needs: [],
-  async run({ consoleErrors }) {
-    if (!Array.isArray(consoleErrors)) return { status: "fail", detail: "控制台收集器未启用，无法判断" };
+  id: "B15", last: true, title: "无 [split-search] 控制台错误", kind: "auto", needs: [],
+  async run({ consoleCollector: col }) {
+    if (!col) return { status: "fail", detail: "控制台收集器未启用，无法判断（不能当作没有错误）" };
+    const consoleErrors = col.errors;
+    const st = col.stats();
+    if (st.attached === 0) return { status: "fail", detail: "控制台收集器没有附着到任何页面或 worker，结果不可信" };
+    if (st.extAttached === 0) return { status: "fail", detail: `收集器附着了 ${st.attached} 个会话，但没有一个属于本扩展（SW 或扩展页），结果不可信` };
     if (consoleErrors.length) {
       const lines = consoleErrors.slice(0, 10).map(e => `- ${e.text}${e.url ? `（${e.url}）` : ""}`);
       return { status: "fail", detail: `收集到 ${consoleErrors.length} 条 [split-search] 错误：\n${lines.join("\n")}` };
     }
-    return { status: "pass", detail: "本次运行至此没有收集到 [split-search] 控制台错误" };
+    return { status: "pass", detail: `本次运行至此没有收集到 [split-search] 控制台错误（收集器共附着 ${st.attached} 个会话，其中扩展 ${st.extAttached} 个）` };
   },
 };
 
-export const B_STEPS_2 = [B12, B13, B15];
+const wrap = (step, keys) => ({ ...step, run: ctx => guarded(ctx, keys, () => step.run(ctx)) });
+export const B_STEPS_2 = [wrap(B12, ["presetOverrides"]), wrap(B13, ["order"]), B15];

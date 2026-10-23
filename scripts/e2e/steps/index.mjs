@@ -15,7 +15,9 @@ export function compareStepIds(a, b) {
   return ga - gb || na - nb || (a < b ? -1 : a > b ? 1 : 0);
 }
 
-export const STEPS = [...OPTIONS_STEPS].sort((a, b) => compareStepIds(a.id, b.id));
+// last: true 的步骤（B15 汇总控制台错误）无论编号都排在最后，以覆盖此前所有步骤
+export const sortSteps = steps => [...steps].sort((a, b) => (a.last ? 1 : 0) - (b.last ? 1 : 0) || compareStepIds(a.id, b.id));
+export const STEPS = sortSteps(OPTIONS_STEPS);
 
 export function selectSteps(steps, { autoOnly = false, only = null } = {}) {
   if (only) {
