@@ -15,7 +15,7 @@ export function extractOriginalUrl(search) {
   return typeof search === "string" && search.startsWith("?u=") ? search.slice(3) : null;
 }
 
-// 纯字符串操作删除 _ss 参数及紧邻的一个分隔符，其余原样保留
+// 纯字符串操作删除全部 _ss 参数及各自紧邻的一个分隔符，其余原样保留
 export function stripMarker(originalUrl) {
   const q = originalUrl.indexOf("?");
   if (q === -1) return originalUrl;
@@ -25,10 +25,9 @@ export function stripMarker(originalUrl) {
   const h = rest.indexOf("#");
   if (h !== -1) { hash = rest.slice(h); rest = rest.slice(0, h); }
   const parts = rest.split("&");
-  const i = parts.findIndex(p => p === MARKER || p.startsWith(MARKER + "="));
-  if (i === -1) return originalUrl;
-  parts.splice(i, 1);
-  const kept = parts.join("&");
+  const isMarker = (p) => p === MARKER || p.startsWith(MARKER + "=");
+  if (!parts.some(isMarker)) return originalUrl;
+  const kept = parts.filter(p => !isMarker(p)).join("&");
   return head + (kept ? "?" + kept : "") + hash;
 }
 

@@ -1,4 +1,4 @@
-// 分屏动作判定：纯函数，不依赖 chrome.*。
+// 分屏动作判定：纯函数，不依赖扩展 API。
 export function sideOf(tabIndex, peerIndex) {
   return tabIndex < peerIndex ? "left" : "right";
 }
@@ -6,7 +6,7 @@ export function sideOf(tabIndex, peerIndex) {
 export function decideSplit({ windowType, splitViewId, peer, recordedPeerId, engineOrigins }) {
   if (windowType !== "normal") return "other-window";
   if (splitViewId === -1) return "new";
-  if (peer === null) return "foreign";
+  if (peer == null) return "foreign";
   if (recordedPeerId !== undefined && recordedPeerId === peer.id) return "reuse";
   if (typeof peer.url === "string") {
     try {

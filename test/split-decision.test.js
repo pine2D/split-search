@@ -14,3 +14,6 @@ test("origin 不是已配置引擎", () => assert.equal(decideSplit({ ...base, p
 test("在分屏中却找不到另一侧", () => assert.equal(decideSplit({ ...base, peer: null }), "foreign"));
 test("记录的 peer 已不是当前的另一侧", () => assert.equal(decideSplit({ ...base, recordedPeerId: 99, peer: { id: 2 } }), "foreign"));
 test("url 无法解析时不抛错，当作其他分屏", () => assert.equal(decideSplit({ ...base, peer: { id: 2, url: "not a url" } }), "foreign"));
+test("peer 为 undefined 时当作其他分屏", () => assert.equal(decideSplit({ ...base, peer: undefined }), "foreign"));
+test("记录对不上，但另一侧 url 属于已配置引擎时仍复用（Task 5 裁定）", () =>
+  assert.equal(decideSplit({ ...base, recordedPeerId: 99 }), "reuse"));
