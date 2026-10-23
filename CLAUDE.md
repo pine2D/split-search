@@ -68,11 +68,13 @@ split-search/
 ├── CLAUDE.md                     项目约定
 ├── README.md                     面向用户的简介与安装
 ├── .gitignore
-├── package.json                  仅含 "test": "node --test" 脚本
-├── docs/acceptance-v0.1.md       v0.1 手测验收清单（B 表 + T1–T15）
+├── package.json                  "test": "node --test"、"e2e": "node scripts/e2e/run.mjs"
+├── docs/acceptance-v0.1.md       v0.1 验收：先跑 e2e，再做 Windows 冒烟；B/T 表注明覆盖方式
 ├── scripts/
 │   ├── gen-key.sh                打印扩展 ID；manifest 无 key 时才生成公钥写入（不保留私钥）
-│   └── sync-to-windows.sh        rsync src/ → D 盘镜像目录
+│   ├── sync-to-windows.sh        rsync src/ → D 盘镜像目录
+│   └── e2e/                      引导式端到端验收（Node 24，无依赖）：run.mjs 入口、cdp/browser 管道 CDP、
+│                                 server.mjs 模拟引擎与向导页、runner/report、steps/*.mjs 各步骤（setup.mjs 安装/授权/Kagi 登录/收尾）
 ├── src/                          扩展根目录（加载这个目录）
 │   ├── manifest.json
 │   ├── background.js             SW：重建 DNR 规则、打开设置页
@@ -89,7 +91,7 @@ split-search/
 │   ├── lib/split-decision.js     分屏动作判定
 │   ├── chrome/config-store.js    storage.sync 读写封装
 │   └── chrome/split-actions.js   分屏动作执行（tabs / windows / storage.session 薄封装）
-└── test/                         node --test（每个 lib 一个文件，另有 manifest、config-store、split-actions、options-edits、options-ui）
+└── test/                         node --test（每个 lib 一个文件，另有 manifest、config-store、split-actions、options-edits、options-ui；e2e-*.test.js 测 e2e 脚本）
 ```
 
 纯逻辑放 `src/lib/`（不碰 `chrome.*`），`src/chrome/` 是对 `chrome.*` 的薄封装，页面脚本只负责编排。
@@ -112,13 +114,24 @@ split-search/
 ## 命令
 
 - `npm test`：等价于 `node --test`，自动发现 `**/*.test.js`。Node 24 上不能写成 `node --test test/`（会报 MODULE_NOT_FOUND）。
+- `npm run e2e`：引导式端到端验收（带界面，需要人在场），见下节。`npm run e2e -- --auto-only` 只跑自动步骤（无头、无人值守）；`--only B5,T7` 只跑指定步骤；`--timeout <毫秒>` 单步等待时长（默认 120000）；`--headed` 让 auto-only 也显示窗口。
 - `bash scripts/sync-to-windows.sh`：同步 `src/` 到 D 盘镜像目录。
 - `bash scripts/gen-key.sh`：打印扩展 ID（`alngkkgnobglnfbhcplhpaflcgfiajnj`）。只有 manifest 里没有 `key` 时才会生成一把一次性密钥并写入公钥；已有 `key` 时绝不改动。将来上架 CWS 时，商店用自己的密钥签名并分配商店 ID；如果要让开发版和商店版并存，参照 `~/projects/Pinboard-Bookmark-Enhanced/CLAUDE.md` 的“扩展 ID 分层”：源码保留开发公钥，打发布 ZIP 时再换成 CWS 后台给出的公钥。
 
 ## 测试纪律
 
 - `src/lib/` 新增逻辑先写 node 测试，再写实现。
-- 涉及分屏、DNR、权限的行为，按 spec 第 7 节（T1–T15）手测，清单见 `docs/acceptance-v0.1.md`。拖拽到标签栏和真实配置（已登录、已同步的 profile）下的表现必须在用户的 Windows Chrome 155+ 里测。WSL 里的 Google Chrome 是 155.0.8059.84，可用于不涉及拖拽的检查。
+- 涉及分屏、DNR、权限的行为，先跑 `npm run e2e`，再按 `docs/acceptance-v0.1.md` 第 2 节做 Windows 冒烟。WSL 里的 Google Chrome 155（155.0.8059.84）经 WSLg 可以验证除“从外部 Windows 应用拖入”（T3b）以外的全部项目，包括真实拖拽、地址栏、右键、授权框；涉及 Windows 环境本身的问题仍以 Windows Chrome 为准。
+
+## 端到端验收（scripts/e2e）
+
+- 设计：`docs/superpowers/specs/2026-10-23-e2e-and-default-pair-design.md`。步骤分 auto / assist（向导指导用户操作、脚本判定）/ judge（用户点通过/不通过）。
+- 测试配置固定为 `~/.cache/split-search-e2e/profile`：全新、独立，`--disable-sync`、不登录 Chrome 账号；绝不读写 `~/.config/google-chrome`、`~/.chrome-debug-profile` 或任何 Windows 配置。运行前要关掉占用这个配置的 Chrome。
+- 一次性准备（首次 `npm run e2e` 时由向导带着做，结果保存在测试配置里）：在 `chrome://extensions` 开发者模式下“加载已解压”仓库的 `src/`（CDP `Extensions.loadUnpacked` 的扩展重启就没了，所以必须手动加载；这一步也验证 B1）；点一次授权框（`config.mjs` 的 `GRANT_ORIGINS`：四个模拟 host + 五个预置引擎）；需要 Kagi 的步骤前在 kagi.com 登录（只登录网站）。
+- `--auto-only` 的前提：上面的一次性准备已完成（扩展已安装、授权齐全），否则报“前置条件缺失”退出码 2。它不需要 Kagi 登录。
+- 向导页 `http://127.0.0.1:8765/guide`（端口固定，改端口要重新授权）。`chrome://settings` 只能由用户手动改（扩展 API 和 CDP 都写不了），向导给出可复制的网址和步骤，全部步骤后提示恢复（默认引擎改回 Google、删掉添加的网站搜索）。
+- 运行前快照 `chrome.storage.sync` 到 `.e2e/storage-snapshot.json`，结束（含中断）后恢复；遗留快照下次启动先恢复。报告在 `.e2e/report-*.md|json`，网址里的 token/session/sid/auth/key/code 参数值脱敏为 `***`。
+- 已知事实：扩展 SW 空闲约 30 秒就被回收，扩展 API 一律在扩展页（设置页）里经 CDP 执行（`browser.evalExt`），不要 attach SW；必须直接 spawn `/opt/google/chrome/google-chrome`，`~/.local/bin/google-chrome` 包装脚本会 nohup 后台化、破坏调试管道；启动参数不得含 `--enable-automation`；正式版 Chrome 忽略 `--load-extension`。
 
 ## 提交
 

@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { HOSTS, mockEngines } from "./config.mjs";
 
 const GUIDE_DIR = fileURLToPath(new URL("./guide/", import.meta.url));
-const ANSWERS = new Set(["pass", "fail", "skip", "retry"]);
+const ANSWERS = new Set(["pass", "fail", "skip", "retry", "done"]);
 const STATIC = {
   "/guide": ["guide.html", "text/html; charset=utf-8"],
   "/guide/guide.js": ["guide.js", "text/javascript; charset=utf-8"],

@@ -11,12 +11,14 @@ import { collectConsole } from "./console.mjs";
 import { STEPS, selectSteps } from "./steps/index.mjs";
 import { runSteps } from "./runner.mjs";
 import { makeRestart } from "./restart.mjs";
-import { renderReport, reportBaseName } from "./report.mjs";
+import { renderReport, reportBaseName, redact } from "./report.mjs";
+import { openGuide, installGuide, ensureGrants, cleanupPrompt } from "./steps/setup.mjs";
 
-const log = m => console.log(m);
-const warn = m => console.error(m);
+// 终端输出一律脱敏（网址里的 token/session 等参数值）
+const log = m => console.log(redact(m));
+const warn = m => console.error(redact(m));
 
-// Task 8 会把未安装分支换成安装引导，这里只给出说明
+// 引导式运行在未安装时进入安装引导（setup.mjs）；这里是 --auto-only 或引导失败时的说明
 function preconditionMessage(ens, args) {
   if (ens.reason === "wrong-id") {
     return `前置条件缺失：测试配置里的 Split Search 扩展 ID 是 ${ens.ids.join(", ")}，不是 ${EXT_ID}。\n` +
@@ -95,9 +97,21 @@ async function main() {
     log(`已启动 ${chromeVersion}${args.headless ? "（无头）" : ""}`);
     try { rt.col = await collectConsole(browser); }
     catch (e) { notes.push(`控制台收集未启用：${e.message}`); }
+    // 引导式运行：打开向导页（准备、assist、judge 步骤的说明都显示在这里）
+    const setupCtx = { browser, guide: server.guide, port: args.port, timeoutMs: args.timeoutMs, abortSignal: abort.signal, log };
+    if (!args.autoOnly) await openGuide(browser, args.port);
 
     const ens = await ext.ensureExtension(browser, { autoOnly: args.autoOnly });
-    if (!ens.ok) { warn(preconditionMessage(ens, args)); return 2; }
+    let install = null;
+    if (!ens.ok && ens.reason === "not-installed" && !args.autoOnly) {
+      log("扩展未安装：请按向导页的说明加载（一次性）");
+      install = await installGuide(setupCtx, ens);
+      if (!install.ok) {
+        warn(`前置条件缺失：${install.detail}\n也可以手动安装：\n${preconditionMessage(ens, args)}`);
+        if (!abort.signal.aborted) return 2;
+      }
+      else log(`扩展已就绪；B1：${install.b1.detail}`);
+    } else if (!ens.ok) { warn(preconditionMessage(ens, args)); return 2; }
     if (abort.signal.aborted) return signalName ? (signalName === "SIGINT" ? 130 : 143) : 1;
 
     await ext.reloadExtension(browser);
@@ -106,6 +120,13 @@ async function main() {
       log("发现上次遗留的 storage 快照，已先恢复");
       notes.push("启动时发现上次遗留的 storage 快照，已先恢复");
     }
+    const grants = await ensureGrants(setupCtx, { autoOnly: args.autoOnly });
+    if (!grants.ok) {
+      if (args.autoOnly) { warn(`前置条件缺失：${grants.detail}。请先完成一次引导式运行（npm run e2e）。`); return 2; }
+      warn(grants.detail);
+      notes.push(`一次性授权：${grants.detail}`);
+    } else if (grants.requested) log("一次性授权已完成");
+    if (abort.signal.aborted) return signalName ? (signalName === "SIGINT" ? 130 : 143) : 1;
     const snap = await ext.snapshotStorage(browser, ext.SNAPSHOT_FILE);
     snapshotTaken = true;
     storage = { before: snap.digest, after: null, equal: false };
@@ -117,7 +138,7 @@ async function main() {
     const ctx = rt.ctx = {
       browser, guide: server.guide, ext: ext.bindExt(browser, { port: args.port }), port: args.port,
       timeoutMs: args.timeoutMs, abortSignal: abort.signal, log, consoleErrors: col?.errors ?? [], consoleCollector: col ?? undefined,
-      stopReason: () => rt.stopReason,
+      stopReason: () => rt.stopReason, install,
     };
     // 步骤内重启浏览器（T5/T10），见 restart.mjs
     ctx.restartBrowser = makeRestart(rt, {
@@ -126,6 +147,12 @@ async function main() {
         { timeoutMs: 30000, intervalMs: 500 }),
     });
     results = await runSteps(steps, ctx, { timeoutMs: args.timeoutMs });
+    if (install?.b1 && !steps.some(s => s.id === "B1")) notes.push(`B1（未选入本次运行）：${install.b1.status}——${install.b1.detail}`);
+    // 收尾提示：恢复 T1/T2/T11/T12/T14 等步骤让用户改过的搜索设置（只在测试配置里）
+    if (!args.autoOnly && !abort.signal.aborted && !rt.stopReason) {
+      const note = await cleanupPrompt({ ...ctx, browser: rt.browser }, steps).catch(e => `收尾提示出错：${e.message}`);
+      if (note) notes.push(note);
+    }
   } catch (e) {
     fatal = e;
     warn(`运行出错：${e.message}`);
