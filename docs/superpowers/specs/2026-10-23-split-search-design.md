@@ -69,7 +69,7 @@
 触发网址 = **左侧引擎的真实搜索网址 + 标记参数 `_ss=<左id>,<右id>`**，例如：
 
 ```
-https://kagi.com/search?q=%s&_ss=kagi,google
+https://www.google.com/search?q=%s&_ss=google,bing
 ```
 
 - 所有引擎模板（无论左右）都必须满足：
@@ -123,7 +123,7 @@ https://kagi.com/search?q=%s&_ss=kagi,google
 
 ### 5.1 数据模型（`chrome.storage.sync`）
 
-- 预置引擎（Kagi、Google、Bing、DuckDuckGo、Perplexity）**只写在代码里**，读取时与存储合并，不写入存储。这样可以避免新设备在 `onInstalled` 时写入的预置值覆盖从其他设备同步过来的配置。
+- 预置引擎（按顺序：Google、Bing、DuckDuckGo、Perplexity、Kagi；默认组合为 Google ｜ Bing）**只写在代码里**，读取时与存储合并，不写入存储。这样可以避免新设备在 `onInstalled` 时写入的预置值覆盖从其他设备同步过来的配置。
 - 存储内容只包括用户的改动：`customEngines`、`presetOverrides`（改名、改模板、隐藏）、`order`、`defaultPair`。单项不能超过 8192 字节；排序要防抖，一次写入，避开每分钟 120 次的写入上限。
 - `id` 只能由小写字母、数字和 `-` 组成，创建后**不可修改**，因为它会写进已保存的网站搜索网址。默认组合正在引用的引擎不能删除。
 - 修改某个引擎的模板后，设置页要提示：已存进 Chrome 的、以它为左侧的网站搜索网址需要重新复制。
@@ -227,3 +227,4 @@ https://kagi.com/search?q=%s&_ss=kagi,google
 | 所有模板禁用 `_ss`、通配符域名和 IPv6 字面量 | Claude | 防止自引用循环、宽泛 host 授权和整条 DNR 规则失效 |
 | 预置引擎只写在代码里；manifest 固定 `key` | Claude | 防止同步覆盖；扩展 ID 稳定，授权才不会丢 |
 | 不用构建工具、用 `node --test`、单文件不超过 300 行、镜像到 D 盘 | Claude | 与用户现有扩展项目保持一致 |
+| 默认组合改为 Google ｜ Bing，Kagi 排最后 | 用户 | Kagi 用户群小 |

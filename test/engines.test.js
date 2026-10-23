@@ -49,8 +49,8 @@ test("validateTemplate: 不合格", () => {
 });
 test("mergeConfig: 空存储返回预置引擎和默认组合", () => {
   const c = mergeConfig({});
-  assert.deepEqual(c.engines.map(e => e.id), ["kagi", "google", "bing", "ddg", "perplexity"]);
-  assert.deepEqual(c.defaultPair, ["kagi", "google"]);
+  assert.deepEqual(c.engines.map(e => e.id), ["google", "bing", "ddg", "perplexity", "kagi"]);
+  assert.deepEqual(c.defaultPair, ["google", "bing"]);
 });
 test("mergeConfig: 覆盖、隐藏、自定义、排序", () => {
   const c = mergeConfig({
@@ -58,13 +58,13 @@ test("mergeConfig: 覆盖、隐藏、自定义、排序", () => {
     customEngines: [{ id: "baidu", name: "百度", url: "https://www.baidu.com/s?wd=%s" }],
     order: ["baidu", "google"],
   });
-  assert.deepEqual(c.engines.map(e => e.id), ["baidu", "google", "kagi", "ddg", "perplexity"]);
+  assert.deepEqual(c.engines.map(e => e.id), ["baidu", "google", "ddg", "perplexity", "kagi"]);
   assert.equal(c.engines.find(e => e.id === "google").name, "G");
 });
 test("mergeConfig: defaultPair 引用了不存在、隐藏的引擎，或左侧不能作左侧时，回退到 DEFAULT_PAIR", () => {
-  assert.deepEqual(mergeConfig({ defaultPair: ["kagi", "nope"] }).defaultPair, ["kagi", "google"]);
-  assert.deepEqual(mergeConfig({ presetOverrides: { bing: { hidden: true } }, defaultPair: ["bing", "kagi"] }).defaultPair, ["kagi", "google"]);
-  assert.deepEqual(mergeConfig({ customEngines: [{ id: "wiki", name: "Wiki", url: "https://en.wikipedia.org/wiki/%s" }], defaultPair: ["wiki", "kagi"] }).defaultPair, ["kagi", "google"]);
+  assert.deepEqual(mergeConfig({ defaultPair: ["kagi", "nope"] }).defaultPair, ["google", "bing"]);
+  assert.deepEqual(mergeConfig({ presetOverrides: { ddg: { hidden: true } }, defaultPair: ["ddg", "kagi"] }).defaultPair, ["google", "bing"]);
+  assert.deepEqual(mergeConfig({ customEngines: [{ id: "wiki", name: "Wiki", url: "https://en.wikipedia.org/wiki/%s" }], defaultPair: ["wiki", "kagi"] }).defaultPair, ["google", "bing"]);
 });
 test("mergeConfig: 合法的 defaultPair 原样保留", () => {
   assert.deepEqual(mergeConfig({ defaultPair: ["google", "kagi"] }).defaultPair, ["google", "kagi"]);
@@ -91,9 +91,9 @@ test("isIdTaken: 已隐藏的预置引擎 id 也算已占用", () => {
   assert.equal(isIdTaken("sogou", {}), false);
 });
 test("engineOrigin", () => {
-  assert.equal(engineOrigin(PRESETS[0]), "https://kagi.com");
+  assert.equal(engineOrigin(PRESETS[0]), "https://www.google.com");
 });
 test("常量", () => {
-  assert.deepEqual(DEFAULT_PAIR, ["kagi", "google"]);
+  assert.deepEqual(DEFAULT_PAIR, ["google", "bing"]);
   assert.ok(ID_PATTERN.test("a-1") && !ID_PATTERN.test("A") && !ID_PATTERN.test("a".repeat(21)));
 });

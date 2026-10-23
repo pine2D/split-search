@@ -50,6 +50,6 @@ test("多字节字符按 UTF-8 字节计", async () => {
 });
 test("loadConfig 按预置顺序返回引擎和默认组合", async () => {
   const cfg = await loadConfig(fakeArea());
-  assert.deepEqual(cfg.engines.map(e => e.id), ["kagi", "google", "bing", "ddg", "perplexity"]);
-  assert.deepEqual(cfg.defaultPair, ["kagi", "google"]);
+  assert.deepEqual(cfg.engines.map(e => e.id), ["google", "bing", "ddg", "perplexity", "kagi"]);
+  assert.deepEqual(cfg.defaultPair, ["google", "bing"]);
 });

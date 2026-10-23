@@ -1,14 +1,14 @@
 // 预置引擎、模板校验、配置合并。纯逻辑，不得引用 chrome。
 
 export const PRESETS = [
-  { id: "kagi", name: "Kagi", url: "https://kagi.com/search?q=%s" },
   { id: "google", name: "Google", url: "https://www.google.com/search?q=%s" },
   { id: "bing", name: "Bing", url: "https://www.bing.com/search?q=%s" },
   { id: "ddg", name: "DuckDuckGo", url: "https://duckduckgo.com/?q=%s" },
   { id: "perplexity", name: "Perplexity", url: "https://www.perplexity.ai/search?q=%s" },
+  { id: "kagi", name: "Kagi", url: "https://kagi.com/search?q=%s" },
 ];
 
-export const DEFAULT_PAIR = ["kagi", "google"];
+export const DEFAULT_PAIR = ["google", "bing"];
 export const ID_PATTERN = /^[a-z0-9-]{1,20}$/;
 
 const PLACEHOLDER = "__SS__";

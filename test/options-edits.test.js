@@ -9,7 +9,7 @@ const preset = (id) => PRESETS.find(p => p.id === id);
 const baidu = { id: "baidu", name: "百度", url: "https://www.baidu.com/s?wd=%s" };
 
 test("默认组合引用的预置引擎不能隐藏", () => {
-  for (const id of ["kagi", "google"]) assert.equal(hideEngine({}, id).ok, false, id);
+  for (const id of ["google", "bing"]) assert.equal(hideEngine({}, id).ok, false, id);
   const raw = { defaultPair: ["bing", "ddg"] };
   assert.equal(hideEngine(raw, "bing").ok, false);
   assert.equal(hideEngine(raw, "ddg").ok, false);
@@ -26,12 +26,12 @@ test("预置引擎不能删除、自定义引擎不能隐藏", () => {
   assert.equal(hideEngine({ customEngines: [baidu] }, "baidu").ok, false);
 });
 test("默认左侧引擎改成不能作左侧的网址时拒绝保存", () => {
-  const r = editEngine({}, "kagi", { name: "Kagi", url: "https://kagi.com/search/%s" });
+  const r = editEngine({}, "google", { name: "Google", url: "https://www.google.com/search/%s" });
   assert.equal(r.ok, false); assert.match(r.errors.url, /默认组合的左侧/);
   const custom = { customEngines: [baidu], defaultPair: ["baidu", "google"] };
   assert.equal(editEngine(custom, "baidu", { name: "百度", url: "https://www.baidu.com/s/%s" }).ok, false);
   // 默认右侧可以改成仅右侧的网址
-  assert.equal(editEngine({}, "google", { name: "Google", url: "https://www.google.com/s/%s" }).ok, true);
+  assert.equal(editEngine({}, "bing", { name: "Bing", url: "https://www.bing.com/s/%s" }).ok, true);
 });
 test("编辑预置引擎改名时保留 hidden", () => {
   const raw = { presetOverrides: { bing: { hidden: true } } };
@@ -40,10 +40,10 @@ test("编辑预置引擎改名时保留 hidden", () => {
   assert.deepEqual(r.patch.presetOverrides.bing, { hidden: true, name: "B" });
 });
 test("隐藏预置引擎时保留已改的 url", () => {
-  const url = "https://www.bing.com/search?q=%s&setlang=zh";
-  const r = hideEngine({ presetOverrides: { bing: { url } } }, "bing");
+  const url = "https://duckduckgo.com/?q=%s&kl=cn-zh";
+  const r = hideEngine({ presetOverrides: { ddg: { url } } }, "ddg");
   assert.equal(r.ok, true);
-  assert.deepEqual(r.patch.presetOverrides.bing, { url, hidden: true });
+  assert.deepEqual(r.patch.presetOverrides.ddg, { url, hidden: true });
 });
 test("改回预置值时删除对应字段，全部改回时删除整项", () => {
   const raw = { presetOverrides: { google: { name: "G", url: "https://www.google.com/search?q=%s&hl=en" }, bing: { hidden: true } } };
