@@ -1,4 +1,6 @@
-// 步骤执行器：逐个执行，异常/超时记为 fail 并附诊断，收到中断后剩余步骤记为 skip
+// 步骤执行器：逐个执行，异常/超时记为 fail 并附诊断（assist 步骤被跳过时也附），收到中断后剩余步骤记为 skip。
+// 说明与诊断里的网址先脱敏（report.mjs 的 redact），再写进结果、终端和向导页
+import { redact, redactDeep } from "./report.mjs";
 const STATUSES = new Set(["pass", "fail", "skip"]);
 const ABORTED = "中断";
 
@@ -6,7 +8,7 @@ export function formatDiag(state) {
   const lines = ["诊断（当前浏览器状态）："];
   for (const w of state.windows || []) lines.push(`窗口 ${w.id} ${w.type}${w.focused ? " 聚焦" : ""}`);
   for (const t of state.tabs || []) {
-    lines.push(`  标签 ${t.id} 窗口=${t.windowId} 位置=${t.index} split=${t.splitViewId ?? "-"} 固定=${t.pinned ? "是" : "否"} 组=${t.groupId} ${t.status ?? ""} ${t.url || "(网址不可读)"}`);
+    lines.push(`  标签 ${t.id} 窗口=${t.windowId} 位置=${t.index} split=${t.splitViewId ?? "-"} 固定=${t.pinned ? "是" : "否"} 组=${t.groupId} ${t.status ?? ""} ${redact(t.url) || "(网址不可读)"}`);
   }
   lines.push(`  DNR 规则 ${(state.rules || []).length} 条`);
   return lines.join("\n");
@@ -52,7 +54,8 @@ export async function runSteps(steps, ctx, { timeoutMs, settleMs = SETTLE_MS } =
       results.push({ ...base, status: "skip", detail: `${ABORTED}（${stopped()}）`, durationMs: 0 });
       continue;
     }
-    const limit = step.timeoutMs ?? timeoutMs ?? ctx.timeoutMs ?? 120000;
+    // timeoutFactor：assist/judge 步骤要等人（可能有多个子项、会重试），上限按单步超时的倍数放宽
+    const limit = step.timeoutMs ?? (timeoutMs ?? ctx.timeoutMs ?? 120000) * (step.timeoutFactor ?? 1);
     const stepAbort = new AbortController();
     const started = Date.now();
     log(`▶ ${step.id} ${step.title}`);
@@ -90,12 +93,15 @@ export async function runSteps(steps, ctx, { timeoutMs, settleMs = SETTLE_MS } =
       } else { status = v.status; detail = String(v.detail ?? ""); }
     }
     if (unsettled) detail += `；步骤在 ${settleMs} ms 收尾期限内仍未结束，已不再等待`;
+    detail = redact(detail);
 
     const result = { ...base, status, detail, durationMs: Date.now() - started };
-    if (status === "fail" && !abortSignal?.aborted && !stopped()) {
+    // assist 步骤被跳过（用户点“跳过”或条件不满足）也附上当时的状态，便于事后判断为什么做不下去
+    const wantDiag = status === "fail" || (status === "skip" && step.kind === "assist");
+    if (wantDiag && !abortSignal?.aborted && !stopped()) {
       const d = await diagnose(ctx);
       result.detail = `${detail}\n${d.text}`;
-      if (d.state) result.diag = d.state;
+      if (d.state) result.diag = redactDeep(d.state);
     }
     results.push(result);
     log(`  ${status === "pass" ? "✔ 通过" : status === "fail" ? "✘ 失败" : "↷ 跳过"}（${(result.durationMs / 1000).toFixed(1)}s）${detail ? "：" + detail.split("\n")[0] : ""}`);

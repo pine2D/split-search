@@ -99,13 +99,23 @@ test("runSteps: 开始前已中断则全部 skip", async () => {
   assert.match(rs[0].detail, /中断/);
 });
 
-test("runSteps: assist 步骤 resolve 为 skip 时如实记录，不附诊断", async () => {
+test("runSteps: assist 步骤被跳过时如实记录，并附当时的诊断", async () => {
   const { ctx } = makeCtx();
   const [r] = await runSteps([step("T9", async () => ({ status: "skip", detail: "用户点了跳过" }), "assist")], ctx, { timeoutMs: 1000 });
   assert.equal(r.status, "skip");
   assert.equal(r.kind, "assist");
-  assert.equal(r.detail, "用户点了跳过");
-  assert.equal(r.diag, undefined);
+  assert.match(r.detail, /^用户点了跳过\n诊断/);
+  assert.match(r.detail, /engine-a\.localhost/);
+  assert.deepEqual(r.diag, fakeState);
+});
+
+test("runSteps: auto / judge 步骤跳过不附诊断", async () => {
+  const { ctx } = makeCtx();
+  const rs = await runSteps([
+    step("B3", async () => ({ status: "skip", detail: "不适用" })),
+    step("B14", async () => ({ status: "skip", detail: "用户跳过" }), "judge"),
+  ], ctx, { timeoutMs: 1000 });
+  assert.deepEqual(rs.map(r => [r.detail, r.diag]), [["不适用", undefined], ["用户跳过", undefined]]);
 });
 
 test("runSteps: 返回值不合法记为 fail", async () => {
