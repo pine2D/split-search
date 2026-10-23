@@ -5,7 +5,7 @@ import { collectCdp, formatCdp, tabSuffix } from "./diag.mjs";
 const STATUSES = new Set(["pass", "fail", "skip"]);
 const ABORTED = "中断";
 
-// 每步开始时向导页显示的卡片（无按钮）：auto 步骤提示别动浏览器（restarts 的步骤预告重启），
+// 每步开始时向导页显示的卡片（无按钮）：auto 步骤提示别动浏览器（restarts 的步骤预告重启），xauto 提示把光标停在窗口里，
 // 等人的步骤先显示“准备中”，说明由步骤自己随后给出。否则向导页会停在上一个人工步骤的说明和按钮上
 export function startCard(step) {
   const title = `${step.id} ${step.title}`;
@@ -13,6 +13,11 @@ export function startCard(step) {
     return { title: `${title}（自动执行中）`, buttons: [],
       instruction: "脚本正在自动操作测试浏览器，请不要点击或切换标签，等这一步结束。"
         + (step.restarts ? "\n这一步会关闭并重新打开测试浏览器（恢复上次会话），窗口消失再出现属正常现象，不要按 Ctrl+C。" : "") };
+  }
+  if (step.kind === "xauto") {
+    return { title: `${title}（自动操作中）`, buttons: [],
+      instruction: "脚本正在用真实的鼠标和键盘自动操作测试浏览器（会新开窗口、拖动文字、右键、在地址栏输入）。\n"
+        + "请把鼠标光标停在测试浏览器窗口里，然后不要动鼠标键盘，等这一步结束。光标不在窗口里时这里会提示，等不到就跳过这一步。" };
   }
   return { title, buttons: [], instruction: "脚本正在准备这一步（整理标签），说明马上出现在这里。请先不要操作测试浏览器。" };
 }

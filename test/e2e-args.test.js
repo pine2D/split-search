@@ -3,7 +3,9 @@ import assert from "node:assert/strict";
 import { parseArgs, USAGE } from "../scripts/e2e/args.mjs";
 
 test("parseArgs: 默认值", () => {
-  assert.deepEqual(parseArgs([]), { autoOnly: false, headless: false, only: null, port: 8765, timeoutMs: 120000 });
+  assert.deepEqual(parseArgs([]), { autoOnly: false, headless: false, only: null, port: 8765, timeoutMs: 120000, noXinput: false });
+  assert.equal(parseArgs(["--no-xinput"]).noXinput, true);
+  assert.match(USAGE, /--no-xinput/);
 });
 
 test("parseArgs: --auto-only 隐含 headless", () => {

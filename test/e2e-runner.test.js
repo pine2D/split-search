@@ -150,7 +150,8 @@ test("STEPS: 已注册 B5 且按编号排序、形状正确", () => {
   assert.deepEqual(plain, [...plain].sort(compareStepIds));
   assert.equal(new Set(ids).size, ids.length);
   for (const s of STEPS) {
-    assert.ok(["auto", "assist", "judge"].includes(s.kind), s.id);
+    assert.ok(["auto", "assist", "judge", "xauto"].includes(s.kind), s.id);
+    if (s.kind === "xauto") assert.equal(s.fallback?.id, s.id, `${s.id} 的回退步骤`);
     assert.equal(typeof s.run, "function");
     assert.ok(Array.isArray(s.needs) && s.title);
   }

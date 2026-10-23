@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { cssToScreen, scanTabSegments, rowBackground, uniqueSegment, newFocusedWindow } from "../scripts/e2e/screen.mjs";
+import { cssToScreen, scanTabSegments, rowBackground, uniqueSegment, newFocusedWindow, stripGeometry } from "../scripts/e2e/screen.mjs";
 
 // spike 实测（dpr 1.5）：screenX 8、screenY 36、outer/inner 1754/1754、1048/961
 const M = { screenX: 8, screenY: 36, outerWidth: 1754, innerWidth: 1754, outerHeight: 1048, innerHeight: 961, dpr: 1.5 };
@@ -115,4 +115,32 @@ test("newFocusedWindow: 前台不是新窗口 -> 抛“新窗口未获得前台�
   const xi = { listWindows: async () => (b.sent.length ? ["10", "20"] : ["10"]), activeWindow: async () => null };
   await assert.rejects(newFocusedWindow(b, "http://x/", { xi, timeoutMs: 60, intervalMs: 5 }), { message: "新窗口未获得前台" });
   assert.ok(b.sent.some(([m, p]) => m === "Target.closeTarget" && p.targetId === "T1"));
+});
+
+test("scanTabSegments: 宽于 maxWidth 的区段不算标签", () => {
+  const b = canvas(W, H);
+  paint(b, W, [10, 380], [10, 30], WHITE);
+  assert.deepEqual(scanTabSegments(b, W, ROWS, BG), [[10, 380]]);
+  assert.deepEqual(scanTabSegments(b, W, ROWS, BG, { maxWidth: 260 }), []);
+});
+
+test("stripGeometry: 按 dpr 换算（dpr 1.5 与 spike 实测一致）", () => {
+  assert.deepEqual(stripGeometry(1.5), { rows: [5, 41], height: 81, bgRow: 8, mid: 30, maxWidth: 390 });
+  assert.deepEqual(stripGeometry(1), { rows: [3, 27], height: 54, bgRow: 6, mid: 20, maxWidth: 260 });
+});
+
+test("newFocusedWindow: 新出现两个窗口时，前台是其中之一即可；失败时等新窗口消失", async () => {
+  const b = fakeBrowser();
+  const xi = { listWindows: async () => (b.sent.length ? ["10", "20", "30"] : ["10"]), activeWindow: async () => "30" };
+  assert.equal((await newFocusedWindow(b, "http://x/", { xi, timeoutMs: 500, intervalMs: 1 })).wid, "30");
+  const b2 = fakeBrowser();
+  let closed = false, polls = 0;
+  const xi2 = {
+    listWindows: async () => { if (closed) polls++; return !b2.sent.length ? ["10"] : closed && polls > 2 ? ["10"] : ["10", "20"]; },
+    activeWindow: async () => "10",
+  };
+  const orig = b2.client.send;
+  b2.client.send = async (m, p) => { if (m === "Target.closeTarget") closed = true; return orig(m, p); };
+  await assert.rejects(newFocusedWindow(b2, "http://x/", { xi: xi2, timeoutMs: 30, intervalMs: 1 }), /未获得前台/);
+  assert.ok(polls >= 3, "关闭后一直等到新窗口从列表里消失");
 });

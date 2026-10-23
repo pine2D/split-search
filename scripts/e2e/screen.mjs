@@ -18,7 +18,7 @@ export function cssToScreen(m, x, y) {
   };
 }
 
-const MIN_SEGMENT = 90;   // 去掉 tab search 按钮等窄区段（spike：按钮约 35 px，标签约 345 px）
+const MIN_SEGMENT = 90;   // 去掉 tab search 按钮等窄区段（spike：按钮约 35 px，标签约 345 px；X 像素）
 const LIGHTER_BY = 30;    // 比背景亮（RGB 之和）至少这么多才算
 
 function checkBuf(rgb, width, rowsNeeded) {
@@ -41,7 +41,7 @@ export function rowBackground(rgb, width, y) {
   return [(best >> 16) & 255, (best >> 8) & 255, best & 255];
 }
 
-function rowSegments(rgb, width, y, bg, bgSum) {
+function rowSegments(rgb, width, y, bg, bgSum, maxWidth) {
   const segs = [];
   let s = -1;
   for (let x = 0; x <= width; x++) {
@@ -52,20 +52,20 @@ function rowSegments(rgb, width, y, bg, bgSum) {
       light = !(r === bg[0] && g === bg[1] && b === bg[2]) && r + g + b > bgSum + LIGHTER_BY;
     }
     if (light && s < 0) s = x;
-    else if (!light && s >= 0) { if (x - s >= MIN_SEGMENT) segs.push([s, x - 1]); s = -1; }
+    else if (!light && s >= 0) { if (x - s >= MIN_SEGMENT && x - s <= maxWidth) segs.push([s, x - 1]); s = -1; }
   }
   return segs;
 }
 
-// 在 rows=[from,to]（含两端）里逐行找比 bg 亮的连续区段，去掉宽度 <90 的；
+// 在 rows=[from,to]（含两端）里逐行找比 bg 亮的连续区段，去掉宽度 <90 的和宽于 maxWidth 的（整条变亮、地址栏等不是标签）；
 // 取“最宽区段最宽”的那一行（当前标签圆角处较窄），返回该行的区段（窗口内 X 坐标）
-export function scanTabSegments(rgb, width, rows, bg) {
+export function scanTabSegments(rgb, width, rows, bg, { maxWidth = Infinity } = {}) {
   const [from, to] = rows;
   checkBuf(rgb, width, to + 1);
   const bgSum = bg[0] + bg[1] + bg[2];
   let best = [], bestW = 0;
   for (let y = from; y <= to; y++) {
-    const segs = rowSegments(rgb, width, y, bg, bgSum);
+    const segs = rowSegments(rgb, width, y, bg, bgSum, maxWidth);
     const w = Math.max(0, ...segs.map(([l, r]) => r - l + 1));
     if (w > bestW) { bestW = w; best = segs; }
   }
@@ -88,7 +88,7 @@ export function metrics(browser, targetId) {
   return inPage(browser, targetId, `({ screenX, screenY, outerWidth, innerWidth, outerHeight, innerHeight, dpr: devicePixelRatio })`);
 }
 
-// 在页面顶部插入一段大号文字并选中它，返回选区中心的屏幕坐标
+// 在页面顶部插入一段大号文字并选中它，返回选区中心的屏幕坐标 { x, y } 与选区大小 { w, h }
 export async function selectionCenter(browser, targetId, text) {
   const r = await inPage(browser, targetId, `(() => {
     const text = ${JSON.stringify(String(text))};
@@ -107,14 +107,19 @@ export async function selectionCenter(browser, targetId, text) {
   if (r.sel !== String(text)) throw new Error(`选区内容不符：${JSON.stringify(r.sel)}`);
   const cx = r.x + r.w / 2, cy = r.y + r.h / 2;
   if (!(r.w > 0 && r.h > 0 && cx > 0 && cy > 0 && cx < r.iw && cy < r.ih)) throw new Error("选区不在可视区域内");
-  return cssToScreen(await metrics(browser, targetId), cx, cy);
+  const m = await metrics(browser, targetId);
+  // w/h：选区在屏幕上的大小（X 像素），拖拽时用来认出 Chrome 的拖拽图像窗口
+  return { ...cssToScreen(m, cx, cy), w: Math.round(r.w * m.dpr), h: Math.round(r.h * m.dpr) };
 }
 
-const STRIP_ROWS = [4, 40];   // 标签栏所在的窗口内行（X 像素）
-const STRIP_HEIGHT = 80;
-const BG_ROW = 8;
+// 标签栏几何（CSS px，按 dpr 换算成 X 像素；spike 在 dpr 1.5 下实测：扫描行 4–40、截 80 行、背景取第 8 行、中线 30）
+const STRIP_CSS = { rows: [3, 27], height: 54, bgRow: 5.5, mid: 20, maxTab: 260 };
+export const stripGeometry = dpr => ({
+  rows: STRIP_CSS.rows.map(v => Math.round(v * dpr)), height: Math.round(STRIP_CSS.height * dpr),
+  bgRow: Math.round(STRIP_CSS.bgRow * dpr), mid: Math.round(STRIP_CSS.mid * dpr), maxWidth: Math.round(STRIP_CSS.maxTab * dpr),
+});
 
-// 激活标签，截窗口顶部 80 行 RGB，测当前标签在屏幕上的 [L,R]。
+// 激活标签，截窗口顶部的标签栏 RGB，测当前标签在屏幕上的 [L,R]。窗口必须是 normal（最大化/全屏时标签栏位置不同）。
 // 返回 { rect: [L,R]|null, segments（窗口内）, originX, y（标签栏中线的屏幕 Y）, bg }。
 export async function measureTab(browser, ext, wid, tabId, { xi = defaultXi, settleMs = 350 } = {}) {
   if (!Number.isInteger(tabId)) throw new Error(`标签 id 不合法：${tabId}`);
@@ -122,45 +127,57 @@ export async function measureTab(browser, ext, wid, tabId, { xi = defaultXi, set
     await chrome.tabs.update(${tabId}, { active: true });
     const t = await chrome.tabs.get(${tabId});
     const w = await chrome.windows.get(t.windowId);
-    return { left: w.left, top: w.top, width: w.width, state: w.state, dpr: devicePixelRatio };
+    return { left: w.left, top: w.top, width: w.width, state: w.state, type: w.type, dpr: devicePixelRatio };
   })()`);
+  if (w.state !== "normal" || w.type !== "normal") throw new Error(`标签所在窗口不是普通窗口（${w.type}/${w.state}），不测量`);
   await sleep(settleMs);
   const { width } = await xi.windowSize(wid);
   // 核对 wid 就是这个标签所在的窗口（chrome.windows 的宽度是 CSS px）
   if (Math.abs(width - w.width * w.dpr) > 2) throw new Error(`窗口 ${wid} 宽 ${width}，与标签所在窗口（${w.width}×${w.dpr}）不符`);
-  const rgb = await xi.captureRgb(wid, { width, height: STRIP_HEIGHT });
-  const bg = rowBackground(rgb, width, BG_ROW);
-  const segments = scanTabSegments(rgb, width, STRIP_ROWS, bg);
+  const g = stripGeometry(w.dpr);
+  const rgb = await xi.captureRgb(wid, { width, height: g.height });
+  const bg = rowBackground(rgb, width, g.bgRow);
+  const segments = scanTabSegments(rgb, width, g.rows, bg, { maxWidth: g.maxWidth });
   const originX = Math.round(w.left * w.dpr);
   const originY = Math.round(w.top * w.dpr);
-  return { rect: uniqueSegment(segments, originX), segments, originX, y: originY + Math.round(20 * w.dpr), bg, state: w.state };
+  return { rect: uniqueSegment(segments, originX), segments, originX, y: originY + g.mid, bg, state: w.state };
 }
 
 export async function tabRect(browser, ext, wid, tabId, opts) {
   return (await measureTab(browser, ext, wid, tabId, opts)).rect;
 }
 
-// 新开窗口（Windows 前台随之切过来），断言 getactivewindow 就是它；否则关掉它并抛错。
+// 新开窗口（Windows 前台随之切过来），断言 getactivewindow 是新出现的窗口之一（只出现一个时就是它）；
+// 否则关掉它、等它的 X 窗口消失，再抛错（免得调用方紧接着找窗口时多算一个）。
 // WSLg 下 windowactivate 无效，键盘手势只能在这样的窗口里做（spike §1.4：184–267ms 内拿到前台）。
 export async function newFocusedWindow(browser, url, { xi = defaultXi, profileDir = PROFILE_DIR, timeoutMs = 5000, intervalMs = 100 } = {}) {
   const pid = browser.proc.pid;
   const before = new Set(await xi.listWindows(pid, profileDir));
   const t0 = Date.now();
   const { targetId } = await browser.client.send("Target.createTarget", { url, newWindow: true });
-  let wid = null, act = null;
+  let fresh = [], act = null;
+  const closeIt = async () => {
+    await browser.client.send("Target.closeTarget", { targetId }).catch(() => {});
+    const end = Date.now() + 3000;
+    while (fresh.length && Date.now() < end) {
+      const now = new Set(await xi.listWindows(pid, profileDir).catch(() => []));
+      if (!fresh.some(w => now.has(w))) break;
+      await sleep(intervalMs);
+    }
+  };
   try {
     while (Date.now() - t0 < timeoutMs) {
-      wid = (await xi.listWindows(pid, profileDir)).find(w => !before.has(w)) ?? null;
+      fresh = (await xi.listWindows(pid, profileDir)).filter(w => !before.has(w));
       act = await xi.activeWindow();
-      if (wid && act === wid) return { targetId, wid, focusMs: Date.now() - t0 };
+      if (act && fresh.includes(act)) return { targetId, wid: act, focusMs: Date.now() - t0 };
       await sleep(intervalMs);
     }
   } catch (e) {
-    await browser.client.send("Target.closeTarget", { targetId }).catch(() => {});
+    await closeIt();
     throw e;
   }
-  await browser.client.send("Target.closeTarget", { targetId }).catch(() => {});
+  await closeIt();
   const err = new Error("新窗口未获得前台");
-  err.detail = { wid, active: act };
+  err.detail = { fresh, active: act };
   throw err;
 }

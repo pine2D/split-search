@@ -43,7 +43,7 @@ const T12 = {
 };
 
 // T14：每个引擎各当一次左侧（Google 作左侧已在 T1–T5 覆盖）。右侧统一用 Google
-const LEFTS = [
+export const LEFTS = [
   { id: "bing", name: "Bing", host: BING, kw: "bg", url: "https://www.bing.com/search?q=%s" },
   { id: "ddg", name: "DuckDuckGo", host: "duckduckgo.com", kw: "dg", url: "https://duckduckgo.com/?q=%s" },
   { id: "perplexity", name: "Perplexity", host: "www.perplexity.ai", kw: "px", url: "https://www.perplexity.ai/search?q=%s" },
@@ -52,7 +52,7 @@ const LEFTS = [
 const HOMES = ["https://www.google.com/", "https://www.bing.com/", "https://duckduckgo.com/", "https://www.perplexity.ai/", "https://kagi.com/"];
 
 // 先把五个引擎首页各打开一遍，让它们有机会注册 Service Worker（T14 要看 SW 会不会绕过 DNR）
-async function warmUp(ctx) {
+export async function warmUp(ctx) {
   const ids = [];
   for (const url of HOMES) ids.push((await ctx.browser.client.send("Target.createTarget", { url, background: true })).targetId);
   await sleep(8000);
@@ -69,10 +69,10 @@ export async function engineTabs(ctx, host) {
 }
 
 // 引擎收到了带 _ss 的触发网址（DNR 没生效）：普通左侧搜索、不在分屏里
-const hasSs = url => { try { return [...new URL(url).searchParams.keys()].some(k => k === "_ss" || k === "amp;_ss"); } catch { return false; } };
+export const hasSs = url => { try { return [...new URL(url).searchParams.keys()].some(k => k === "_ss" || k === "amp;_ss"); } catch { return false; } };
 const PLAIN_STABLE_MS = 3000; // 同一个标签连续这么久都是“带 _ss、未分屏”才判降级，避开导航中间态
 
-const swNow = async ctx => readServiceWorkers(ctx.browser, { prefer: t => t.url.startsWith(guideUrl(ctx.port)) })
+export const swNow = async ctx => readServiceWorkers(ctx.browser, { prefer: t => t.url.startsWith(guideUrl(ctx.port)) })
   .catch(e => ({ map: new Map(), error: e.message }));
 
 async function leftItem(ctx, e) {

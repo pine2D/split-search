@@ -129,3 +129,15 @@ test("teardown: 顺序为 storage → 网站搜索 → 关浏览器 → 报告�
   assert.deepEqual(s.results.map(r => r.status), ["skip"]);
   assert.match(rt.notes.join("\n"), /SIGINT 中断，报告不完整/);
 }));
+
+test("closeStep: 关闭浏览器后处理仍按着的鼠标键，结果写进备注", async () => {
+  const rt = mkRt();
+  await closeStep(rt, mkS(), { se: {}, afterClose: async () => "released" });
+  assert.match(rt.notes[0], /已在浏览器关闭后.*松开/);
+  const rt2 = mkRt();
+  await closeStep(rt2, mkS(), { se: {}, afterClose: async () => "stuck" });
+  assert.match(rt2.notes[0], /可能仍按着/);
+  const rt3 = mkRt();
+  await closeStep(rt3, mkS(), { se: {}, afterClose: async () => "none" });
+  assert.deepEqual(rt3.notes, []);
+});

@@ -160,9 +160,12 @@ test("ensureKagi: 已登录直接返回 null；未登录只看现有标签网址
 
 test("收尾：不再列删除 gb/bg/dg/px/kg、改回默认引擎、编辑 Kagi 条目；只给一句保留说明", () => {
   const byId = Object.fromEntries(STEPS.map(s => [s.id, s]));
+  // xauto 步骤的人工回退版本（xinput 不可用时）：用户自己加的条目保留复用；xauto 版本自己清理，不出收尾说明
   for (const id of ["T1", "T2", "T3", "T4", "T5-DRAG", "T6-NTP", "T11", "T12", "T14"]) {
-    assert.deepEqual(cleanupItems([byId[id]]), [], id);
-    assert.match(cleanupNote([byId[id]]), /保留即可，下次运行会复用/, id);
+    const manual = byId[id].fallback ?? byId[id];
+    assert.deepEqual(cleanupItems([manual]), [], id);
+    assert.match(cleanupNote([manual]), /保留即可，下次运行会复用/, id);
+    if (byId[id].kind === "xauto") assert.equal(cleanupNote([byId[id]]), null, id);
   }
   assert.equal(cleanupNote([byId.T7]), null);
   assert.deepEqual(cleanupItems([byId.T7]), []);
@@ -239,13 +242,16 @@ const KINDS = {
 
 test("STEPS: assist/judge 步骤都已登记、类型正确，排在对应编号处，B15 仍最后", () => {
   const byId = Object.fromEntries(STEPS.map(s => [s.id, s]));
-  for (const [id, kind] of Object.entries(KINDS)) assert.equal(byId[id]?.kind, kind, id);
+  // xauto 步骤登记的是真实输入版本，人工版本在 fallback 里
+  const XA = ["T1", "T2", "T3", "T4", "T5-DRAG", "T6-NTP", "T11", "T14"];
+  for (const id of XA) assert.equal(byId[id]?.kind, "xauto", id);
+  for (const [id, kind] of Object.entries(KINDS)) assert.equal((byId[id]?.fallback ?? byId[id])?.kind, kind, id);
   const ids = STEPS.map(s => s.id);
   assert.equal(ids.at(-1), "B15");
   assert.equal(ids[0], "B1");
   assert.ok(ids.indexOf("T5") < ids.indexOf("T5-DRAG") && ids.indexOf("T5-DRAG") < ids.indexOf("T6"));
   assert.ok(ids.indexOf("B4") < ids.indexOf("B5"));
-  for (const id of ["T9", "T12", "T14"]) assert.ok(byId[id].needs.includes("kagi"), id);
+  for (const id of ["T9", "T12", "T14"]) assert.ok((byId[id].fallback ?? byId[id]).needs.includes("kagi"), id);
 });
 
 test("selectSteps: --auto-only 排除全部 assist/judge 步骤", () => {

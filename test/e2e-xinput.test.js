@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { createXinput, parsePointer, parseGeometry, classRegex } from "../scripts/e2e/xinput.mjs";
+import { createXinput, parsePointer, parseGeometry, parseRoot, parseRect, classRegex } from "../scripts/e2e/xinput.mjs";
 
 const PROFILE = "/home/u/.cache/split-search-e2e/profile";
 
@@ -151,10 +151,11 @@ test("key/typeAscii 带 expectWindow：前台窗口不符 -> 抛错且不按键"
   assert.deepEqual(calls.at(-1), ["xdotool", "key", "--clearmodifiers", "Return"]);
 });
 
-test("run: 用 exec 传参数组并带超时与 DISPLAY 环境", async () => {
+test("debugRun: 用 exec 传参数组并带超时与 DISPLAY 环境", async () => {
   let seen;
   const xi = createXinput({ exec: async (cmd, args, opts) => { seen = { cmd, args, opts }; return " 5 \n"; }, env: { DISPLAY: ":9" }, timeoutMs: 1234 });
-  assert.equal(await xi.run(["getactivewindow"]), "5");
+  assert.equal(await xi.debugRun(["getactivewindow"]), "5");
+  assert.equal(xi.run, undefined, "不暴露原始 run");
   assert.equal(seen.cmd, "xdotool");
   assert.deepEqual(seen.args, ["getactivewindow"]);
   assert.equal(seen.opts.timeout, 1234);
@@ -198,4 +199,40 @@ test("available: 缺命令 / 无 XTEST -> 不可用并写明原因", async () =>
   ]);
   const r2 = await createXinput({ exec: noX.exec, env: { DISPLAY: ":0" } }).available();
   assert.equal(r2.ok, false); assert.match(r2.reason, /XTEST/);
+});
+
+test("parsePointer: 只认纯数字的 X/Y/WINDOW", () => {
+  for (const bad of ["X=1.5\nY=2\nWINDOW=3", "X=-1\nY=2\nWINDOW=3", "X=1\nY=2\nWINDOW=0x10", "X=\nY=2\nWINDOW=3", "X=1 \nY=2e3\nWINDOW=3"]) {
+    assert.throws(() => parsePointer(bad), /读不懂/, bad);
+  }
+});
+
+test("parseRoot / parseRect / rootWindow", async () => {
+  assert.equal(parseRoot("screen #0:\n  root window id:    0x438\n"), "1080");
+  assert.throws(() => parseRoot("nothing"), /root window id/);
+  assert.deepEqual(parseRect("Window 5\n  Position: 325,219 (screen: 0)\n  Geometry: 650x470\n"), { width: 650, height: 470, x: 325, y: 219 });
+  const { exec, calls } = fakeExec([[is("xdpyinfo"), "  root window id:    0x438\n"]]);
+  assert.equal(await createXinput({ exec, env: { DISPLAY: ":0" } }).rootWindow(), "1080");
+  assert.deepEqual(calls[0], ["xdpyinfo"]);
+});
+
+test("findWindowByTitle: 标题命中且属于测试配置 -> wid；token 不合法 -> 抛错；不唯一 -> null", async () => {
+  const { exec, calls } = fakeExec([
+    [has("xdotool", "--classname"), "11\n22\n"],
+    [has("xdotool", "--class"), "11\n22\n"],
+    [has("xdotool", "--name"), "22\n99\n"],
+  ]);
+  const xi = createXinput({ exec, env: { DISPLAY: ":0" } });
+  assert.equal(await xi.findWindowByTitle(42, "sse2e-win-abc123", PROFILE), "22");
+  assert.deepEqual(calls.at(-1), ["xdotool", "search", "--all", "--pid", "42", "--onlyvisible", "--name", "sse2e-win-abc123"]);
+  await assert.rejects(xi.findWindowByTitle(42, "a.*", PROFILE), /token/);
+  const two = createXinput({ exec: fakeExec([[is("xdotool", "search"), "1\n2\n"]]).exec, env: { DISPLAY: ":0" } });
+  assert.equal(await two.findWindowByTitle(42, "sse2e-win-abc123", PROFILE), null);
+});
+
+test("releaseModifiers: keyup 全部修饰键", async () => {
+  const { exec, calls } = fakeExec([[is("xdotool", "keyup"), ""]]);
+  await createXinput({ exec, env: { DISPLAY: ":0" } }).releaseModifiers();
+  assert.deepEqual(calls[0].slice(0, 3), ["xdotool", "keyup", "Control_L"]);
+  assert.ok(calls[0].includes("Alt_L") && calls[0].includes("Shift_L"));
 });

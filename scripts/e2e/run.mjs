@@ -13,10 +13,13 @@ import { runSteps } from "./runner.mjs";
 import { makeRestart } from "./restart.mjs";
 import { redact } from "./report.mjs";
 import { teardown, writePartialReportSync } from "./teardown.mjs";
+import xinput from "./xinput.mjs";
+import { releaseHeldSync, releaseAfterClose } from "./gesture.mjs";
 import { openGuide, installGuide, ensureGrants, cleanupPrompt, cleanupItems, cleanupNote, cleanupText } from "./steps/setup.mjs";
 import { makeAfterStep } from "./steps/recover.mjs";
 import { extAlive } from "./steps/guided.mjs";
 import { L } from "./steps/labels.mjs";
+import { fixWindow } from "./steps/xauto-lib.mjs";
 
 // 终端输出一律脱敏（网址里的 token/session 等参数值）
 const log = m => console.log(redact(m));
@@ -43,16 +46,17 @@ function preconditionMessage(ens, args) {
 }
 
 async function main() {
-  let args, steps;
+  let args, steps, xa = { ok: false, reason: "未检查" };
   try {
     args = parseArgs(process.argv.slice(2));
-    steps = selectSteps(STEPS, args);
+    xa = await xinput.available({ headless: args.headless, noXinput: args.noXinput });
+    steps = selectSteps(STEPS, { ...args, xinput: xa.ok });
   } catch (e) {
     if (e.code === "HELP") { log(e.message); return 0; }
     warn(e.message);
     return 2;
   }
-  if (!steps.length) { warn("没有可执行的步骤：检查 --only 与 --auto-only 的组合（--auto-only 只保留自动步骤）。"); return 2; }
+  if (!steps.length) { warn("没有可执行的步骤：检查 --only 与 --auto-only 的组合（--auto-only 只保留自动步骤，以及 xinput 可用时的 xauto 步骤）。"); return 2; }
 
   const lock = checkProfileLock(PROFILE_DIR);
   if (lock.locked) {
@@ -76,6 +80,7 @@ async function main() {
   const onSignal = sig => {
     if (signalName) {
       warn(`\n再次收到 ${sig}，立即退出。若已做快照，它保留在 ${ext.SNAPSHOT_FILE}（网站搜索：${se.SE_SNAPSHOT_FILE}），下次启动会自动恢复。`);
+      if (releaseHeldSync() === "stuck") warn("真实输入的鼠标左键可能仍按着：请把光标移到测试浏览器窗口里点一下左键。");
       try { writePartialReportSync(rt, s, reportDeps); } catch (e) { warn(`写部分报告失败：${e.message}`); }
       process.exit(sig === "SIGINT" ? 130 : 143);
     }
@@ -92,6 +97,8 @@ async function main() {
     try { server = await startServer({ port: args.port }); }
     catch (e) { warn(`前置条件缺失：${e.message}`); return 2; }
     log(`模拟服务与向导页：http://127.0.0.1:${args.port}/guide`);
+    log(xa.ok ? "真实输入（xinput）：可用，xauto 步骤用真实鼠标/键盘自动执行——测试期间请把光标停在测试浏览器窗口里、不要动鼠标键盘"
+      : `真实输入（xinput）：不可用（${xa.reason}），xauto 步骤改用人工协助版本`);
 
     // 只认当前这一个浏览器进程的退出：重启时旧进程的退出不算“中途退出”
     const watchExit = b => b.proc.once("exit", () => {
@@ -154,11 +161,18 @@ async function main() {
     await ext.configureMocks(browser, args.port);
     log("已写入模拟引擎与默认组合 ea | eb");
 
+    // 真实输入：读一次 X 根窗口 id（判断光标是否在任何 X 窗口上），窗口固定为 normal 1600×1000（xauto 步骤每次也会再核对）
+    let gx = null;
+    if (xa.ok && steps.some(st => st.kind === "xauto")) {
+      gx = { xi: xinput, root: await xinput.rootWindow(), profileDir: PROFILE_DIR, stop: null };
+      const page = (await browser.targets()).find(t => t.type === "page");
+      if (page) await fixWindow({ browser }, page.targetId).catch(e => notes.push(`固定窗口尺寸失败：${e.message}`));
+    }
     const col = rt.col;
     const ctx = rt.ctx = {
       browser, guide: server.guide, ext: ext.bindExt(browser, { port: args.port }), port: args.port,
       timeoutMs: args.timeoutMs, abortSignal: abort.signal, log, consoleErrors: col?.errors ?? [], consoleCollector: col ?? undefined,
-      stopReason: () => rt.stopReason, install,
+      stopReason: () => rt.stopReason, install, gx,
       // 网站搜索（sse2e 专用条目）：ensure 前自动快照，结束时在 finally 里恢复
       se: se.bindSettings(() => rt.browser),
       // 记下真正开始过的步骤：收尾清单只列它们让用户改过的设置
@@ -187,6 +201,7 @@ async function main() {
   } finally {
     await teardown(rt, s, {
       ext, extAlive, se, exists: existsSync, cleanupItems, cleanupNote, cleanupText, ...reportDeps,
+      afterClose: async () => (rt.ctx?.gx ? releaseAfterClose(xinput, rt.ctx.gx.root) : "none"),
     }).catch(e => warn(`收尾出错：${e?.stack || e}`));
     await server?.close().catch(() => {});
   }

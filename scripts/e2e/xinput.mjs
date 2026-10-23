@@ -20,14 +20,27 @@ const reEscape = s => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 // WM_CLASS instance 形如 "google-chrome (/home/u/.cache/split-search-e2e/profile)"；锚定结尾，防止前缀相同的配置误中
 export const classRegex = profileDir => `\\(${reEscape(profileDir)}\\)$`;
 
+const DIGITS = /^\d+$/;
 export function parsePointer(out) {
   const kv = Object.fromEntries(String(out).trim().split("\n").map(l => {
     const i = l.indexOf("=");
     return [l.slice(0, i).trim(), l.slice(i + 1).trim()];
   }));
-  const x = Number(kv.X), y = Number(kv.Y);
-  if (!Number.isInteger(x) || !Number.isInteger(y) || !kv.WINDOW) throw new Error(`读不懂指针位置：${String(out).slice(0, 80)}`);
-  return { x, y, window: kv.WINDOW };
+  if (![kv.X, kv.Y, kv.WINDOW].every(v => DIGITS.test(v ?? ""))) throw new Error(`读不懂指针位置：${String(out).slice(0, 80)}`);
+  return { x: Number(kv.X), y: Number(kv.Y), window: kv.WINDOW };
+}
+
+// xdpyinfo 的 "root window id:    0x438" → 十进制字符串（与 xdotool 报的窗口 id 同一写法）
+export function parseRoot(out) {
+  const m = /root window id:\s*0x([0-9a-f]+)/i.exec(String(out));
+  if (!m) throw new Error("xdpyinfo 输出里找不到 root window id");
+  return String(parseInt(m[1], 16));
+}
+
+// 只给 override-redirect 窗口（右键菜单）用：它们没有 _NET_FRAME_EXTENTS，Position 才可信
+export function parseRect(out) {
+  const p = /Position:\s*(-?\d+),(-?\d+)/.exec(String(out));
+  return { ...parseGeometry(out), ...(p ? { x: Number(p[1]), y: Number(p[2]) } : {}) };
 }
 
 // 只取 Geometry；Position 把窗口装饰（_NET_FRAME_EXTENTS）算了进去，不可信
@@ -41,6 +54,7 @@ const BUTTONS = new Set([1, 2, 3]);
 const COMBO_RE = /^[A-Za-z0-9_]+(\+[A-Za-z0-9_]+)*$/;
 const ASCII_RE = /^[\x20-\x7e]*$/;
 const isWid = w => typeof w === "string" && /^\d+$/.test(w);
+const MODIFIERS = ["Control_L", "Control_R", "Alt_L", "Alt_R", "Shift_L", "Shift_R", "Super_L", "Super_R"];
 const lines = s => String(s).split("\n").map(x => x.trim()).filter(Boolean);
 
 export function createXinput({ exec = defaultExec, env = process.env, timeoutMs = DEFAULT_TIMEOUT } = {}) {
@@ -66,6 +80,23 @@ export function createXinput({ exec = defaultExec, env = process.env, timeoutMs 
     return ok;
   }
 
+  // 标题里带 token 的测试窗口（页面先把 document.title 设成 token；token 只含小写字母、数字、连字符）
+  async function findWindowByTitle(pid, token, profileDir = PROFILE_DIR) {
+    if (!/^[a-z0-9-]{6,40}$/.test(token)) throw new Error(`标题 token 不合法：${token}`);
+    const ok = new Set(await listWindows(pid, profileDir));
+    const hits = (await search(["--all", "--pid", pid, "--onlyvisible", "--name", token])).filter(w => ok.has(w));
+    return hits.length === 1 ? hits[0] : null;
+  }
+
+  // 该进程全部可见窗口（含右键菜单这类 override-redirect 窗口，它们没有 WM_CLASS）
+  async function pidWindows(pid) {
+    if (!Number.isInteger(pid) || pid <= 0) throw new Error(`pid 不合法：${pid}`);
+    return search(["--all", "--pid", pid, "--onlyvisible", "--name", ""]);
+  }
+
+  // 屏幕上全部可见窗口（任何进程）：拖拽中核对有没有别的应用新冒出来的窗口
+  const visibleWindows = () => search(["--onlyvisible", "--name", ""]);
+
   async function findWindow(pid, profileDir = PROFILE_DIR) {
     const ws = await listWindows(pid, profileDir);
     if (!ws.length) throw new Error(`找不到测试 Chrome（pid ${pid}）的可见窗口`);
@@ -82,6 +113,12 @@ export function createXinput({ exec = defaultExec, env = process.env, timeoutMs 
     if (!isWid(wid)) throw new Error(`窗口 id 不合法：${wid}`);
     return parseGeometry(await run(["getwindowgeometry", wid]));
   };
+
+  const windowRect = async wid => {
+    if (!isWid(wid)) throw new Error(`窗口 id 不合法：${wid}`);
+    return parseRect(await run(["getwindowgeometry", wid]));
+  };
+  const rootWindow = async () => parseRoot(await call("xdpyinfo", []));
 
   async function assertPointerIn(wid) {
     const p = await pointer();
@@ -110,6 +147,9 @@ export function createXinput({ exec = defaultExec, env = process.env, timeoutMs 
     if (expectWindow !== undefined) await assertActive(expectWindow);
     await run(["key", ...(clearModifiers ? ["--clearmodifiers"] : []), combo]);
   }
+
+  // 松开所有修饰键（type/key 超时或出错后调用，防止 Ctrl/Alt 卡在按下状态）
+  const releaseModifiers = () => run(["keyup", ...MODIFIERS]);
 
   async function typeAscii(s, { expectWindow, delayMs = 8 } = {}) {
     if (typeof s !== "string" || !ASCII_RE.test(s)) throw new Error(`xauto 只支持 ASCII：${JSON.stringify(String(s)).slice(0, 60)}`);
@@ -145,15 +185,17 @@ export function createXinput({ exec = defaultExec, env = process.env, timeoutMs 
     return { ok: true };
   }
 
+  // 不暴露原始的 run（任意 xdotool 子命令）：调用方只能用带检查的原语。debugRun 仅供单测核对参数传递
   return {
-    run, available, listWindows, findWindow, pointer, activeWindow, windowSize, assertPointerIn, assertActive,
-    move, down: mouseOp("mousedown"), up: mouseOp("mouseup"), click: mouseOp("click"), key, typeAscii, captureRgb,
+    available, listWindows, findWindow, findWindowByTitle, pidWindows, visibleWindows, rootWindow, pointer, activeWindow, windowSize, windowRect,
+    assertPointerIn, assertActive, move, down: mouseOp("mousedown"), up: mouseOp("mouseup"), click: mouseOp("click"),
+    key, typeAscii, releaseModifiers, captureRgb, debugRun: run,
   };
 }
 
 const xi = createXinput();
 export const {
-  run, available, listWindows, findWindow, pointer, activeWindow, windowSize, assertPointerIn, assertActive,
-  move, down, up, click, key, typeAscii, captureRgb,
+  available, listWindows, findWindow, findWindowByTitle, pidWindows, visibleWindows, rootWindow, pointer, activeWindow, windowSize, windowRect,
+  assertPointerIn, assertActive, move, down, up, click, key, typeAscii, releaseModifiers, captureRgb,
 } = xi;
 export default xi;

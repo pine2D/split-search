@@ -99,6 +99,13 @@ export async function closeStep(rt, s, d) {
   await rt.col?.stop().catch(() => {});
   rt.closing = true;
   const closed = await rt.browser?.close({ graceful: !!s.seTouched }).catch(() => ({ graceful: false }));
+  // 真实输入：手势中止后鼠标左键仍按着（光标一直没回到测试窗口），浏览器关掉后再处理（见 gesture.releaseAfterClose）
+  const held = await d.afterClose?.().catch(e => `出错：${e.message}`);
+  if (held && held !== "none") {
+    rt.notes.push(held === "released" ? "真实输入：之前卡住的鼠标左键已在浏览器关闭后、指针停在桌面时松开"
+      : `真实输入：鼠标左键可能仍按着（${held}）。请把光标移到桌面空白处（不在任何 Linux 窗口上）后运行 xdotool mouseup 1`);
+    warn(rt.notes.at(-1));
+  }
   if (!s.seVerified) return closed;
   if (closed?.graceful) {
     try { d.se.dropSnapshot(); }
@@ -139,7 +146,7 @@ const reportData = (rt, s, results) => ({
 // 第二次 Ctrl+C：来不及恢复，同步写出部分报告后由调用方立即退出（writeFileSync 全程同步）
 export function writePartialReportSync(rt, s, d) {
   if (s.reportWritten || (!s.snapshotTaken && !s.partial?.length)) return null;
-  rt.notes.push(`再次收到 ${s.signalName ?? "中断"}，强制退出：没有恢复 storage 与网站搜索（快照保留，下次启动自动恢复），报告不完整`);
+  rt.notes.push(`再次收到 ${s.signalName ?? "中断"}，强制退出：收尾没有做完（没恢复完的 storage / 网站搜索快照保留，下次启动自动恢复），报告不完整`);
   const results = fillResults(s.steps ?? [], s.results ?? s.partial ?? [], "未执行（强制退出）");
   const base = writeReport(reportData(rt, s, results), d);
   s.reportWritten = true;

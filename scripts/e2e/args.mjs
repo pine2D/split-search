@@ -7,12 +7,13 @@ export const USAGE = `用法：npm run e2e -- [选项]
   --only <编号,...>  只跑指定步骤，例如 --only B5,T7
   --port <端口>      模拟服务端口，默认 ${DEFAULT_PORT}（改端口后需要重新授权）
   --timeout <毫秒>   单步超时，默认 120000
+  --no-xinput        不用真实鼠标/键盘（xdotool）：xauto 步骤改用人工协助版本
   --help             显示本说明`;
 
 const fail = msg => { throw new Error(`${msg}\n\n${USAGE}`); };
 
 export function parseArgs(argv) {
-  const out = { autoOnly: false, headless: false, only: null, port: DEFAULT_PORT, timeoutMs: 120000 };
+  const out = { autoOnly: false, headless: false, only: null, port: DEFAULT_PORT, timeoutMs: 120000, noXinput: false };
   let headed = false;
   for (let i = 0; i < argv.length; i++) {
     const raw = argv[i];
@@ -27,6 +28,7 @@ export function parseArgs(argv) {
     switch (name) {
       case "--auto-only": out.autoOnly = true; break;
       case "--headed": headed = true; break;
+      case "--no-xinput": out.noXinput = true; break;
       case "--only": {
         const ids = value().split(",").map(s => s.trim().toUpperCase()).filter(Boolean);
         if (!ids.length) fail("--only 需要至少一个步骤编号");
