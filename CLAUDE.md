@@ -159,6 +159,20 @@ split-search/
 - 已知事实：扩展 SW 空闲约 30 秒就被回收，扩展 API 一律在扩展页（设置页）里经 CDP 执行（`browser.evalExt`），不要 attach SW；控制台收集器 attach 了 SW，调试会话让它一直存活，所以 e2e 测不到 SW 回收后冷启动的问题（靠 Windows 冒烟或手测）；必须直接 spawn `/opt/google/chrome/google-chrome`，`~/.local/bin/google-chrome` 包装脚本会 nohup 后台化、破坏调试管道；启动参数不得含 `--enable-automation`；正式版 Chrome 忽略 `--load-extension`。
 - 已知事实：WSL 的 `/etc/fonts/local.conf` 把 `/mnt/c/Windows/Fonts`（9P）列为字体目录时，Chrome 浏览器进程匹配字体要对候选字体文件逐个 `access()`（每次一趟 9P 往返），渲染进程主线程在同步字体请求上等它，期间该页的 CDP `Runtime.evaluate` 全部没有回复（平时约 2 秒，Windows 侧忙时十几秒以上，表现为启动时“Runtime.evaluate 超时”、设置页“没有加载出来”）。所以 `launch()` 经 `FONTCONFIG_FILE` 给测试浏览器一份生成的配置（`~/.cache/split-search-e2e/fonts.conf`：include 原配置 + `rejectfont` 排除所有 9p/drvfs 挂载点下的字体），不改系统配置；测试浏览器里只有 Linux 侧字体（中文用 Noto Sans CJK）。复现：并行跑几个只读的 `find /mnt/c/Windows/System32 /mnt/c/Windows/WinSxS -maxdepth 3` 让 9P 变慢，修复前 `--only B5` 12 次失败 10 次，修复后 37 次全过。
 
+## 文案
+
+适用于所有面向用户的文字：扩展界面（设置页、go.html 出错页）、README、商店详情与隐私政策（`docs/store/`）、宣传图文字（`assets/templates/i18n/*.json`）。v0.2 起支持 en、zh_CN、zh_TW、es（见 `docs/superpowers/specs/2026-10-24-i18n-design.md`），之前界面仍只有简体中文。
+
+- 术语用 Chrome 官方界面在该语言里的叫法（分屏/Split View、地址栏、标签栏、网站搜索、设为默认等），从 `/opt/google/chrome/locales/<语言>.pak` 或 Chrome 官方帮助页核实，不自造译名。
+- 产品名所有语言都是 `Split Search`，不翻译、不加本地副标题。
+- 每种语言按本语言的习惯写，去掉翻译腔和 AI 味，分别过一遍：
+  - zh_CN：lieflat-less-ai-tone + humanizer-zh；
+  - zh_TW：humanizer-zh，再按台湾用语审校（不得有简体字和大陆用语）；
+  - en：humanizer；
+  - es：content-l10n 做本地化质检（翻译腔、机器腔），再按母语标准审校（中性国际西语，用 tú）。
+- 顺序：中文源文案先润色定稿 → 各语言按市场转写（不逐字直译）→ 每种语言单独润色一轮。改了中文源文案，其他语言跟着重做这一流程。
+- 宣传图文字改完要重新出图（`node scripts/store/render-assets.mjs --locale all`），渲染器会报出溢出和超行。
+
 ## 提交
 
 使用 git-commit skill（Conventional Commits）。仓库没有 git 身份配置时，用内联身份：`git -c user.name=pine2D -c user.email=oumu323@gmail.com commit`。
