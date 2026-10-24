@@ -13,7 +13,7 @@
 - [x] ~~按 4 种语言重拍截图~~ 宣传截图暂时只做英文（2026-10-24 用户决定）：`assets/raw/en/` 已用带新图标的 v0.2 扩展、英文 Chrome 界面重拍，`--locale en` 已重渲（见 `assets-spec.md` 第 4 节）。
 - [ ] 上传截图、小宣传图、顶部宣传图时只用 `assets/store/en/`。CWS 对所有语言显示同一组截图，除非为某种语言另行上传本地化截图；其他语言（zh_CN、zh_TW、es）的截图暂不维护，`assets/store/zh_CN|zh_TW|es/` 里仍是中文浏览器界面，不要上传。
 - [x] manifest 简介：v0.2 起是各语言的 `ext_description`（`__MSG_ext_description__`），4 种语言已定稿（各 ≤132 字符）。
-- [x] 详细说明【使用限制】已把“界面仅提供简体中文”改为一句“设置页可以切换语言”；`listing.en.md` 的两处同改。
+- [x] “界面仅提供简体中文”的旧说法已删除；精简版详细说明（2026-10-24）不提界面语言，4 种语言的商店说明都一样。
 - [x] `listing.en.md`、`listing.zh-TW.md`、`listing.es.md` 已按精炼版中文写好（2026-10-24 用户确认）。
 - [x] 隐私政策已托管（2026-10-24）：公开仓库 `pine2D/split-search`，GitHub Pages 发布 main 分支的 `/docs`；`https://pine2d.github.io/split-search/privacy`、`…/privacy.zh-CN.html` 和仓库 Issues 页均已确认可访问，内部文档（superpowers、store、验收文档）返回 404。
 - [ ] 上架后在 `docs/index.md` 末尾加商店链接（`[Install from the Chrome Web Store](https://chromewebstore.google.com/detail/<商店 ID>)`）。
