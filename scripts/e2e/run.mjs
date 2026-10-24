@@ -7,7 +7,7 @@ import { startServer } from "./server.mjs";
 import { PROFILE_DIR, CHROME_BIN, EXT_ID } from "./config.mjs";
 import { join } from "node:path";
 import * as ext from "./ext.mjs";
-import { useSourceDir, verifySourceDir } from "./ext-source.mjs";
+import { switchSource, restoreHome, readSourceState, verifySourceDir } from "./ext-source.mjs";
 import * as se from "./settings-se.mjs";
 import { useKagi } from "./settings-kagi.mjs";
 import { collectConsole } from "./console.mjs";
@@ -27,6 +27,9 @@ import { fixWindow } from "./steps/xauto-lib.mjs";
 import { ensureEnabled, waitAlive } from "./ext-webui.mjs";
 
 const DISPLAY_PID_FILE = join(ext.OUT_DIR, "display.pid");
+// 测试配置里的扩展装自哪个检出的记录（ext-source.mjs）：运行前的目录 home、改装是否进行到一半 switching
+const SOURCE_STATE_FILE = join(ext.OUT_DIR, "ext-source.json");
+const SWITCH_CUT = "上次运行在改装扩展目录时被强制退出，临时装载的扩展已被 Chrome 移除（授权随之丢失）";
 // 经 chrome://extensions 详情页启用扩展，再等扩展页能执行脚本（extAlive 失败时会关掉停用期间打开、停在错误页的扩展页）
 const enableExt = async b => (await ensureEnabled(b)) && waitAlive(() => extAlive(b));
 // 终端输出一律脱敏（网址里的 token/session 等参数值）
@@ -103,6 +106,9 @@ async function main() {
         warn(disp.mode !== "host" ? `真实输入的鼠标左键可能仍按着：只在嵌套显示 ${disp.display} 里，它随嵌套显示服务器一起停止，不影响你的桌面。`
           : "真实输入的鼠标左键可能仍按着（测试浏览器也会随之退出）：请把光标移到桌面空白处（不在任何 Linux 窗口上），再运行 xdotool mouseup 1。");
       }
+      if (readSourceState(SOURCE_STATE_FILE).switching) {
+        warn("强制退出时扩展正在改装目录：它可能仍是临时装载，下次启动会被 Chrome 移除（授权随之丢失），届时需重新做一次性准备。");
+      }
       try { writePartialReportSync(rt, s, reportDeps); } catch (e) { warn(`写部分报告失败：${e.message}`); }
       if (stopDisplaySync(s)) warn(`已停止嵌套显示服务器 ${disp.display}`);
       process.exit(sig === "SIGINT" ? 130 : 143);
@@ -157,6 +163,9 @@ async function main() {
       notes.push("启动时扩展处于停用状态（多半是上次运行在 T8(b) 停用期间被强制退出），已经经 chrome://extensions 详情页重新启用");
       log(notes.at(-1));
     }
+    if (!ens.ok && ens.reason === "not-installed" && readSourceState(SOURCE_STATE_FILE).switching) {
+      ens.hint = ens.hint ? `${ens.hint}；${SWITCH_CUT}` : SWITCH_CUT;
+    }
     let install = null;
     if (!ens.ok && ens.reason === "not-installed" && !args.autoOnly) {
       log("扩展未安装：请按向导页的说明加载（一次性）");
@@ -169,14 +178,17 @@ async function main() {
     } else if (!ens.ok) { warn(preconditionMessage(ens, args)); return 2; }
     if (abort.signal.aborted) return signalName ? (signalName === "SIGINT" ? 130 : 143) : 1;
 
-    // 测试配置里的扩展可能装自另一个检出：改为本检出的 src/，紧接着的 reload 让改动持久（ext-source.mjs）
-    const src = await useSourceDir(browser, { srcDir: ext.SRC_DIR });
-    if (!src.ok) { warn(preconditionMessage(src, args)); return 2; }
-    try { await ext.reloadExtension(browser); }
+    // 测试配置里的扩展可能装自另一个检出：改为本检出的 src/，紧接着的 reload 让改动持久，收尾再改回（ext-source.mjs）。
+    // 改装到 reload 完成约 1 秒，期间第一次 Ctrl+C 只置 abort，这段照常走完
+    let src;
+    try { src = await switchSource(browser, { srcDir: ext.SRC_DIR, file: SOURCE_STATE_FILE, reload: ext.reloadExtension }); }
     catch (e) {
-      if (src.switched) warn(`改装目录后重新加载失败：扩展可能仍是临时装载，下次启动会被 Chrome 移除（授权随之丢失），届时需重新做一次性准备`);
+      if (readSourceState(SOURCE_STATE_FILE).switching) warn(`改装目录后重新加载失败：扩展可能仍是临时装载，下次启动会被 Chrome 移除（授权随之丢失），届时需重新做一次性准备`);
       throw e;
     }
+    if (!src.ok) { warn(preconditionMessage(src, args)); return 2; }
+    s.sourceSwitched = true; // 只有走到这里，收尾才改回运行前的目录（restoreSourceStep）
+    if (!src.switched) await ext.reloadExtension(browser);
     if (src.switched) { notes.push(`测试配置里的扩展原来装自 ${src.from ?? "（未知）"}，已改为本检出的 ${ext.SRC_DIR}`); log(notes.at(-1)); }
     log(`扩展已重新加载（使用磁盘上的最新代码：${await verifySourceDir(browser, { srcDir: ext.SRC_DIR })}）`);
     if (await ext.restorePendingSnapshot(browser, ext.SNAPSHOT_FILE)) {
@@ -241,7 +253,9 @@ async function main() {
     notes.push(`运行出错：${e.message}`);
   } finally {
     await teardown(rt, s, {
-      ext, extAlive, se, exists: existsSync, enableExt, cleanupItems, cleanupNote, cleanupText, ...reportDeps,
+      ext, extAlive, se, exists: existsSync,
+      sourceHome: () => (s.sourceSwitched ? readSourceState(SOURCE_STATE_FILE).home : null),
+      restoreSource: b => restoreHome(b, { file: SOURCE_STATE_FILE, reload: ext.reloadExtension }), enableExt, cleanupItems, cleanupNote, cleanupText, ...reportDeps,
       afterClose: async () => (rt.ctx?.gx ? releaseAfterClose(xinput, rt.ctx.gx.root) : "none"),
       stopDisplay: disp.stop,
     }).catch(e => warn(`收尾出错：${e?.stack || e}`));

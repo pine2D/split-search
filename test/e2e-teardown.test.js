@@ -4,7 +4,7 @@ import { mkdtempSync, rmSync, readdirSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
-  restoreStorageStep, restoreSettingsStep, closeStep, reenableStep, cleanupStep, fillResults, writePartialReportSync, teardown, stopDisplaySync,
+  restoreStorageStep, restoreSettingsStep, restoreSourceStep, closeStep, reenableStep, cleanupStep, fillResults, writePartialReportSync, teardown, stopDisplaySync,
 } from "../scripts/e2e/teardown.mjs";
 
 const mkRt = (o = {}) => ({ browser: { close: async () => ({ graceful: true }) }, col: null, browserDead: false, restartFailed: false,
@@ -200,4 +200,40 @@ test("teardown: 中断时扩展仍停用 → 先启用再恢复 storage", () => 
   });
   assert.deepEqual(order, ["enable", "storage:true"]);
   assert.equal(s.storage.equal, true);
+}));
+
+test("restoreSourceStep: 有 home 才改回并记备注；浏览器不在了或失败只记备注说明仍登记在本检出", async () => {
+  const calls = [];
+  const d = { sourceHome: () => "/main/src", restoreSource: async b => { calls.push(b); return { restored: true, home: "/main/src" }; } };
+  const rt = mkRt();
+  await restoreSourceStep(rt, mkS(), d);
+  assert.equal(calls.length, 1);
+  assert.match(rt.notes[0], /已改回运行前的 \/main\/src/);
+  const none = mkRt();
+  await restoreSourceStep(none, mkS(), { ...d, sourceHome: () => null, restoreSource: () => assert.fail("不该调用") });
+  assert.deepEqual(none.notes, []);
+  const dead = mkRt({ browserDead: true });
+  await restoreSourceStep(dead, mkS(), { ...d, restoreSource: () => assert.fail("不该调用") });
+  assert.match(dead.notes[0], /浏览器已退出.*没改回运行前的 \/main\/src.*测到本检出的代码/);
+  const bad = mkRt();
+  await restoreSourceStep(bad, mkS(), { ...d, restoreSource: async () => { throw new Error("boom"); } });
+  assert.match(bad.notes[0], /改回扩展目录失败：boom.*临时装载/);
+  const gone = mkRt();
+  await restoreSourceStep(gone, mkS(), { ...d, restoreSource: async () => ({ restored: false, missing: "/main/src" }) });
+  assert.match(gone.notes[0], /已不存在/);
+});
+
+test("teardown: 改回扩展目录在恢复网站搜索之后、关浏览器之前", () => withOut(async dir => {
+  const order = [];
+  const rt = mkRt({ browser: { close: async () => { order.push("close"); return { graceful: true }; } } });
+  const s = mkS({ snapshotTaken: true, storage: { before: "a" } });
+  await teardown(rt, s, {
+    ext: { SNAPSHOT_FILE: "/x", restoreStorage: async () => { order.push("storage"); return { digest: "a", equal: true }; } },
+    extAlive: async () => true,
+    se: { SE_SNAPSHOT_FILE: SE_FILE, restore: async () => { order.push("se"); return { defaultKeyword: "g", defaultChanged: false, removed: [], warning: null }; },
+      dropSnapshot: () => order.push("drop") },
+    sourceHome: () => "/main/src", restoreSource: async () => { order.push("source"); return { restored: true, home: "/main/src" }; },
+    exists: () => true, cleanupItems: () => [], cleanupNote: () => null, cleanupText: () => "", outDir: dir,
+  });
+  assert.deepEqual(order, ["storage", "se", "source", "close", "drop"]);
 }));
