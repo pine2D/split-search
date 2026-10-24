@@ -39,13 +39,13 @@ Chrome MV3 扩展：用户在地址栏搜索，或把文字拖到标签栏时，
 ## 开发与安装
 
 1. 运行 `bash scripts/sync-to-windows.sh`，把 `src/` 同步到 `/mnt/d/APP/Chrome-Extensions/split-search`。
-2. 在 Windows Chrome 中“加载已解压的扩展程序”，选 `D:\APP\Chrome-Extensions\split-search`。
+2. 在 Windows Chrome 中“加载未打包的扩展程序”，选 `D:\APP\Chrome-Extensions\split-search`。
 3. 之后只用 `chrome://extensions` 的“重新加载”，不要移除重装，否则授权会丢失。
 
 ## 机制速览
 
 ```
-地址栏 / 拖拽 / 右键“在 X 中搜索”
+地址栏 / 拖拽 / 右键“使用X搜索“…””
   → Chrome 用默认引擎或网站搜索拼出触发网址
   → DNR 动态规则在请求发出前把它重定向到 chrome-extension://<静态id>/go.html?u=<原始网址>
   → go.html 依次执行：
@@ -110,7 +110,7 @@ split-search/
 - `permissions` 只能是 `["declarativeNetRequest", "storage"]`。禁止 `tabs`，禁止必需的 `host_permissions`。
 - `optional_host_permissions: ["https://*/*", "http://*/*"]`。运行时只为引擎的精确 origin（`<origin>/*`）申请。
 - `web_accessible_resources: [{ "resources": ["go.html"], "matches": ["<all_urls>"], "use_dynamic_url": true }]`。
-- manifest 里固定 `key`（公钥），不得修改：扩展 ID 只由它决定，改了 ID 就变，已有授权和 `storage.sync` 数据都会对不上。不保留私钥：私钥只在自签 `.crx` 时才用得上，本项目走“加载已解压”和 CWS 上传，都不需要。
+- manifest 里固定 `key`（公钥），不得修改：扩展 ID 只由它决定，改了 ID 就变，已有授权和 `storage.sync` 数据都会对不上。不保留私钥：私钥只在自签 `.crx` 时才用得上，本项目走“加载未打包的扩展程序”和 CWS 上传，都不需要。
 - 无构建工具、无运行时依赖。`src/lib/` 不得引用 `chrome`。JS 单文件不超过 300 行（`test/` 下的测试文件不受此限）。
 - 标记参数名为 `_ss`，值为 `<左id>,<右id>`，要兼容 `%2C`。引擎 id 必须匹配 `/^[a-z0-9-]{1,20}$/`，创建后不可修改。
 - DNR 规则 id 固定为 `1`。`regexSubstitution` 写死为 `chrome-extension://<chrome.runtime.id>/go.html?u=\0`，不得使用 `runtime.getURL()`。
@@ -136,7 +136,7 @@ split-search/
 - 设计：`docs/superpowers/specs/2026-10-23-e2e-and-default-pair-design.md`。步骤分 auto / xauto（真实鼠标键盘自动操作并判定，见下文 xinput）/ assist（向导指导用户操作、脚本判定）/ judge（用户点通过/不通过）。
 - 目标（2026-10-24 用户决定）：整次运行除了偶尔重新登录 Kagi 不需要人。B4、B14、T8、T9 是 auto，T12 是 xauto（--auto-only 都会跑）；剩下需要人的只有首次安装（B1，一次性准备）、Kagi 登录，以及各步骤的回退路径：`--no-xinput`/xinput 不可用时 xauto 换回 assist/judge 版本；自动版本遇到测试设施问题（详情页打不开、结构认不出、找不到 Kagi 条目，错误 kind `infra`/`missing`）时，引导式运行回退到人工版本，`--auto-only` 判跳过并写明原因。
 - 测试配置固定为 `~/.cache/split-search-e2e/profile`：全新、独立，`--disable-sync`、不登录 Chrome 账号；绝不读写 `~/.config/google-chrome`、`~/.chrome-debug-profile` 或任何 Windows 配置。运行前要关掉占用这个配置的 Chrome。
-- 一次性准备（首次 `npm run e2e` 时由向导带着做，结果保存在测试配置里）：在 `chrome://extensions` 开发者模式下“加载已解压”仓库的 `src/`（CDP `Extensions.loadUnpacked` 单独装的是临时扩展、重启就没了，所以首次必须手动加载；这一步也验证 B1）；点一次授权框（`config.mjs` 的 `GRANT_ORIGINS`：四个模拟 host + 五个预置引擎）；需要 Kagi 的步骤前在 kagi.com 登录（只登录网站）。
+- 一次性准备（首次 `npm run e2e` 时由向导带着做，结果保存在测试配置里）：在 `chrome://extensions` 开发者模式下“加载未打包的扩展程序”加载仓库的 `src/`（CDP `Extensions.loadUnpacked` 单独装的是临时扩展、重启就没了，所以首次必须手动加载；这一步也验证 B1）；点一次授权框（`config.mjs` 的 `GRANT_ORIGINS`：四个模拟 host + 五个预置引擎）；需要 Kagi 的步骤前在 kagi.com 登录（只登录网站）。
 - 测的是哪份代码（`ext-source.mjs`）：测试配置只能登记一个本扩展，可能装自另一个检出（主检出或别的 worktree）。每次启动后，登记路径不是本检出的 `src/` 时，先用 CDP `Extensions.loadUnpacked` 就地改装本检出的 `src/`（同一 id，授权、storage、Kagi 登录和网站搜索都保留），紧接着的 `chrome.runtime.reload()` 把这个临时装载转成持久登记，再经 `Extensions.getExtensions` 核对装载路径，不一致即中止；收尾时（恢复 storage 和网站搜索之后、关浏览器之前）用同样的办法改回运行前的目录。运行前的目录记在本检出的 `.e2e/ext-source.json`，改回后才删；没改回成的，下次从本检出运行时由收尾接着改回。所以从哪个检出运行就测哪个检出，别的检出（不论带不带这套逻辑）之后运行，测的仍是它自己。改装到 reload 完成之间约 1 秒，若此时被强制退出，扩展停在临时装载，下次启动会被 Chrome 移除；状态文件会记下这件事，启动时据此提示重新做一次性准备。
 - `--auto-only` 的前提：上面的一次性准备已完成（扩展已安装、授权齐全），否则报“前置条件缺失”退出码 2。它不等 Kagi 登录：T9、T12 开头经 `kagiGate`（setup.mjs）探测一次，没登录就跳过并写明原因；引导式运行仍由向导带着登录。
 - 显示（设计 `docs/superpowers/specs/2026-10-24-e2e-nested-display-design.md`，代码 `display.mjs`）：`--display <xephyr|xvfb|host>` 决定测试 Chrome 跑在哪个 X 服务器上。测试配置、登录态、授权在三种显示下通用。
@@ -150,7 +150,7 @@ split-search/
   - 报告头写 `- 显示：xvfb :90（2400x1500）`、`xephyr :N（2400x1500）` 或 `host :0`；退回时写成 `host :0（退回 host：<原因>）`。
   - 剪贴板：Windows 剪贴板和 Xephyr 不通。assist 回退路径要复制的网址（触发网址、`&_ss=kagi,bing` 等），从 Xephyr 窗口内向导页的“复制”按钮复制，再在窗口里粘贴；不要从 Windows 侧复制后往窗口里粘。如果 WSL 的 localhost 转发可用，用户也可以在自己的浏览器里打开 `http://127.0.0.1:8765/guide` 只看进度（未实测；server 只监听 WSL 内的 127.0.0.1）；复制网址仍然要用 Xephyr 窗口里的向导页。
   - 嵌套显示里不装窗口管理器：Chrome 顶层窗口直接是根窗口的子窗口；`getactivewindow` 报错（没有 `_NET_ACTIVE_WINDOW`），焦点改用 `getwindowfocus`；`xwininfo -root -children` 照常可用。
-- 向导页 `http://127.0.0.1:8765/guide`（端口固定，改端口要重新授权）。`chrome://settings` 扩展 API 写不了，但 CDP 可以：attach 到 `chrome://settings/searchEngines` 页面目标，经 WebUI 的 shadow DOM 点击、给 `cr-input` 赋值并派发 `input` 事件就能添加网站搜索、设默认、删除（实测可行，细节见 spike-xdotool.md §1.6）。xauto 步骤用这条路自动管理 `sse2e` 专用条目（`settings-se.mjs`，见下一条）；只有 assist 回退路径（无真实输入）里，向导仍给出可复制的网址和步骤让用户手动添加。回退路径里用户加的网站搜索（gb/bg/dg/px/kg），以及 T12 给 Kagi 条目追加的 `_ss`，只存在于隔离的测试配置里，收尾**不要求恢复**，保留供下次运行复用；默认引擎：脚本改过默认（sse2e 条目，或 xauto 的 T12 把 Kagi 条目设为默认）时，收尾的 `settings-se.restore` 恢复为运行前的默认；人工回退路径里用户自己设的默认保留；只有 T8(d) 在人工回退路径里改过“站点访问”才提示改回。T8(a) 的人工回退让用户在无痕窗口粘贴触发网址，不依赖 gb（xauto 的 T1 不建 gb，全新配置里可能没有它）。
+- 向导页 `http://127.0.0.1:8765/guide`（端口固定，改端口要重新授权）。`chrome://settings` 扩展 API 写不了，但 CDP 可以：attach 到 `chrome://settings/searchEngines` 页面目标，经 WebUI 的 shadow DOM 点击、给 `cr-input` 赋值并派发 `input` 事件就能添加网站搜索、设默认、删除（实测可行，细节见 spike-xdotool.md §1.6）。xauto 步骤用这条路自动管理 `sse2e` 专用条目（`settings-se.mjs`，见下一条）；只有 assist 回退路径（无真实输入）里，向导仍给出可复制的网址和步骤让用户手动添加。回退路径里用户加的网站搜索（gb/bg/dg/px/kg），以及 T12 给 Kagi 条目追加的 `_ss`，只存在于隔离的测试配置里，收尾**不要求恢复**，保留供下次运行复用；默认引擎：脚本改过默认（sse2e 条目，或 xauto 的 T12 把 Kagi 条目设为默认）时，收尾的 `settings-se.restore` 恢复为运行前的默认；人工回退路径里用户自己设的默认保留；只有 T8(d) 在人工回退路径里改过“有权访问的网站”才提示改回。T8(a) 的人工回退让用户在无痕窗口粘贴触发网址，不依赖 gb（xauto 的 T1 不建 gb，全新配置里可能没有它）。
 - xinput 真实输入（设计 `docs/superpowers/specs/2026-10-23-e2e-xinput-design.md`，代码 `xinput.mjs`、`gesture*.mjs`、`steps/xauto*.mjs`）：可用时默认开启，T1、T2、T3、T4、T5-DRAG、T6-NTP、T11、T12、T14 以 xauto 步骤用 XTEST 真实鼠标键盘执行并自动判定；`--no-xinput` 或不可用时换回对应的 assist/judge 版本，不算失败。可用 = DISPLAY 存在、`xdotool`、`import`、`xdpyinfo`、`xwininfo` 可执行（`xprop` 可选，只作叠放顺序的后备来源）、`xdpyinfo -queryExtensions` 含 XTEST、非 headless。嵌套模式下 DISPLAY 指向嵌套显示号，Chrome 总是带界面，所以 `--auto-only` 在 Xvfb 上就跑 xauto；只有 host 模式的 `--auto-only` 要加 `--headed` 才跑 xauto。`gx.nested` 在 host 模式下是 `false`，嵌套模式下是模式名 `"xephyr"` 或 `"xvfb"`，手势层和提示文案按它分支。
   - 光标规则按显示分开：
     - 嵌套模式（xephyr、xvfb）：嵌套服务器的指针不是用户的光标。脚本不读用户光标、不等待、不出提示，自己用 `getwindowgeometry` 读测试窗口位置（没有窗口管理器就没有装饰，Position 可信），把指针移到窗口中心并读回；读回不在测试窗口上就判 env，不按下。xvfb 下用户什么都不用管。xephyr 下用户只要别把光标停在 Xephyr 窗口上：光标在窗口上移动时，Xephyr 会把真实移动转发进嵌套显示。所以静止采样、“move 后读回不符 → 中止（env）”、“两次读回不符落在同一点”这几道防护都保留，同一点时的原因写成“指针被用户光标带走（请把光标移出测试窗口 Xephyr）”。xvfb 下两次落在同一点，原因写成“不是你的光标造成的，多半是坐标在屏幕外”，不叫用户做任何事。xauto 开始卡片同样按模式写：xephyr 写“自动操作中，请不要把光标停在 Xephyr 窗口上”，xvfb 写可以照常使用电脑。
@@ -164,7 +164,7 @@ split-search/
   - `chrome.permissions.remove` 撤销的可选 host 权限只是从“生效中”拿掉，仍留在配置的“已授予”记录里；再 `permissions.request` 同样的 origin，Chrome 直接批准、不弹框（实测 12 ms）。一次性授权检查保证这些 origin 运行前都生效，所以 B4、T8(c)(e) 的恢复、步骤后的恢复检查都不需要点授权框。`requestGrant`（guided.mjs）只申请一次，从独占一个新窗口的设置页发起；15 秒内没批准才说明弹了原生框：`--auto-only` 关掉这个窗口（对话框随之关闭）、返回 false；引导式运行换成“请点允许”的说明，继续等同一个对话框（不关掉重弹，开头的说明也已写明“万一弹框请点允许”），中断时同样关掉窗口。
   - 真正弹框时（从没授予过的 origin），授权框画在浏览器窗口内部，不是单独的 X 窗口，CDP 也看不到；初始焦点在“拒绝”，Tab 一次到“允许”，Escape = 拒绝。内容读不到、焦点位置是实现细节，**不做原生对话框点击器**。授权框挂在浏览器窗口上、不是标签上：只关掉发起申请的设置页标签，对话框还留在那个窗口里（请求也不结算）；关掉它所在的窗口，对话框才随之消失。所以 `requestGrant` 和 B4 的设置页都开在单独的新窗口里（`openOptions(browser, { newWindow: true })`）。
   - B4（`steps/b4.mjs`）：在设置页里包一层 `chrome.permissions.request` 记录调用，用 CDP `Input.dispatchMouseEvent`（可信事件，带用户激活，headless 也可用）点横幅按钮，断言恰好一次申请且同时含 www.google.com 与 www.bing.com、授权生效、横幅消失。
-  - chrome://extensions 详情页（`ext-webui.mjs`）：后台新窗口打开 `chrome://extensions/?id=<扩展>`，shadow DOM 里 `extensions-detail-view` 的 `#enableToggle` 点一下即停用/启用，读回 `data.state`（`DISABLED`/`ENABLED`）；重新启用点开关不生效时用页面里的 `chrome.management.setEnabled` 兜底。T8(b) 在 finally 里一定重新启用，再等扩展页能执行脚本。停用期间只读 CDP 目标（扩展的页面和 SW 目标应随停用消失），不新开扩展页（停用时新开的扩展页要等满 10 秒才知道不可用），整段可被中断：中断后立刻进 finally 重新启用、不再等扩展页，停用窗口约 5 秒，落在运行器的收尾期限（15 秒）以内。兜底还有两道：收尾（`teardown.mjs` 的 `reenableStep`，开始过 B4/T8 且扩展不可用时，先经详情页启用再恢复 storage）和下次启动（`ext.ensureExtensionUp`：扩展已登记但设置页打不开，稍等重试仍不行就经详情页启用；第二次 Ctrl+C 强制退出留下的停用状态靠它）。“已登记”按扩展 id 读测试配置的 Preferences，不论装自哪个目录（启动时可能还登记在别的检出的 `src/`，随后才改装本检出，见上文“测的是哪份代码”）。T8(a) 先读详情页的 `data.incognitoAccess`：“在无痕模式下启用”打开了就判失败（测的不是用户看到的行为），读不到只在说明里注明。本扩展只有可选 host 权限，“站点访问”渲染成逐站开关列表（`extensions-host-permissions-toggle-list`），没有带“点击时”的下拉（`extensions-runtime-host-permissions`），T8(d) 据此自动记“不适用”（跳过）。
+  - chrome://extensions 详情页（`ext-webui.mjs`）：后台新窗口打开 `chrome://extensions/?id=<扩展>`，shadow DOM 里 `extensions-detail-view` 的 `#enableToggle` 点一下即停用/启用，读回 `data.state`（`DISABLED`/`ENABLED`）；重新启用点开关不生效时用页面里的 `chrome.management.setEnabled` 兜底。T8(b) 在 finally 里一定重新启用，再等扩展页能执行脚本。停用期间只读 CDP 目标（扩展的页面和 SW 目标应随停用消失），不新开扩展页（停用时新开的扩展页要等满 10 秒才知道不可用），整段可被中断：中断后立刻进 finally 重新启用、不再等扩展页，停用窗口约 5 秒，落在运行器的收尾期限（15 秒）以内。兜底还有两道：收尾（`teardown.mjs` 的 `reenableStep`，开始过 B4/T8 且扩展不可用时，先经详情页启用再恢复 storage）和下次启动（`ext.ensureExtensionUp`：扩展已登记但设置页打不开，稍等重试仍不行就经详情页启用；第二次 Ctrl+C 强制退出留下的停用状态靠它）。“已登记”按扩展 id 读测试配置的 Preferences，不论装自哪个目录（启动时可能还登记在别的检出的 `src/`，随后才改装本检出，见上文“测的是哪份代码”）。T8(a) 先读详情页的 `data.incognitoAccess`：“在无痕模式下启用”打开了就判失败（测的不是用户看到的行为），读不到只在说明里注明。本扩展只有可选 host 权限，“有权访问的网站”渲染成逐站开关列表（`extensions-host-permissions-toggle-list`），没有带“点击时”的下拉（`extensions-runtime-host-permissions`），T8(d) 据此自动记“不适用”（跳过）。
   - T8(a)：`Target.createBrowserContext` 建的是 off-the-record（无痕）上下文，扩展（`incognito: "not_allowed"`）不在里面运行；在新窗口里打开模拟触发网址，断言网址原样（带 `_ss`）、`Page.getNavigationHistory` 里没有 go.html、没有右侧引擎页面，最后 `disposeBrowserContext`。
   - B14（`steps/b14.mjs`）：`Emulation.setEmulatedMedia` 依次模拟 dark、light，期望值从页面样式表源码里读（body 引用的颜色变量在 `:root` 与 `@media (prefers-color-scheme: dark)` 里的取值），经探针元素换算成计算值后与 body 的背景色、文字色比较；深色截图存 `.e2e/b14-options-dark.png`、`b14-guide-dark.png`。`--auto-only` 不打开向导页，B14 自己开一个、用完关掉（`focusGuide` 在 auto-only 下不新开向导页）。
 - 已知事实：扩展 SW 空闲约 30 秒就被回收，扩展 API 一律在扩展页（设置页）里经 CDP 执行（`browser.evalExt`），不要 attach SW；控制台收集器 attach 了 SW，调试会话让它一直存活，所以 e2e 测不到 SW 回收后冷启动的问题（靠 Windows 冒烟或手测）；必须直接 spawn `/opt/google/chrome/google-chrome`，`~/.local/bin/google-chrome` 包装脚本会 nohup 后台化、破坏调试管道；启动参数不得含 `--enable-automation`；正式版 Chrome 忽略 `--load-extension`。
@@ -174,7 +174,7 @@ split-search/
 
 适用于所有面向用户的文字：扩展界面（设置页、go.html 出错页）、README、商店详情与隐私政策（`docs/store/`）、宣传图文字（`assets/templates/i18n/*.json`）。v0.2 起支持 en、zh_CN、zh_TW、es（见 `docs/superpowers/specs/2026-10-24-i18n-design.md`），之前界面仍只有简体中文。
 
-- 术语用 Chrome 官方界面在该语言里的叫法（分屏/Split View、地址栏、标签栏、网站搜索、设为默认等），从 `/opt/google/chrome/locales/<语言>.pak` 或 Chrome 官方帮助页核实，不自造译名。
+- 术语用 Chrome 官方界面在该语言里的叫法（拆分视图/Split view、地址栏、标签栏、网站搜索、设为默认等），从 `/opt/google/chrome/locales/<语言>.pak` 或 Chrome 官方帮助页核实，不自造译名。
 - 产品名所有语言都是 `Split Search`，不翻译、不加本地副标题。
 - 每种语言按本语言的习惯写，去掉翻译腔和 AI 味，分别过一遍：
   - zh_CN：lieflat-less-ai-tone + humanizer-zh；

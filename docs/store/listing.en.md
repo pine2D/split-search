@@ -29,7 +29,7 @@ Search from the address bar or drag text to the tab strip to see two search engi
 ## Description
 
 ```text
-Split Search shows one search in two search engines at once. Type in the address bar, or drag selected text onto the tab strip, and Chrome opens both result pages side by side in its native Split View.
+Split Search shows one search in two search engines at once. Type in the address bar, or drag selected text onto the tab strip, and Chrome opens both result pages side by side in its native Split view.
 
 Note: the extension's settings page is available in Simplified Chinese only.
 
@@ -51,7 +51,7 @@ ON OTHER DEVICES AND IN INCOGNITO
 A trigger URL is the left engine's real search URL plus one marker parameter, _ss. Wherever the extension isn't active (other computers and phones that sync your search settings, Incognito windows, or when the extension is disabled or not granted access), it simply runs a normal search on the left engine. Nothing breaks.
 
 LIMITATIONS
-• Requires Chrome 155 or later (native Split View API)
+• Requires Chrome 155 or later (native Split view API)
 • Two engines at a time: a Chrome split holds two tabs
 • No split in Incognito windows; searches run normally there
 • Custom site searches have no suggestions, so the address bar stops showing search suggestions while one is your default

@@ -17,7 +17,7 @@
 - 形状沿用方案 3（两块实心圆角窗格 + 白色搜索框横条），配色 c6 “pine-fog”：左格松针绿 `#507665`，右格暖雾灰 `#8C8881`。对比度等数据见 `notes.md`。
 - 来源：`assets/icon-proposals/v3-colors/c6-pine-fog/`（`icon.svg` 是 128 母版，16/32 是按像素网格调整的版本）。`assets/icon-proposals/` 其余方案留作历史。
 - 接入：`src/icons/icon-{16,32,48,128}.png`，在 manifest 的 `icons`（16/32/48/128）和 `action.default_icon`（16/32）中声明；`test/manifest.test.js` 核对文件存在且 PNG 尺寸与声明一致。`render-assets.mjs` 的默认图标已改为 c6 的 `icon.svg`，小宣传图、顶部宣传图和 README 首图已用它重渲。
-- **提交前必做（v0.3 上架前）**：`assets/raw/` 的真实截图是装上图标之前拍的，设置页标签的图标是 Chrome 生成的灰底字母“S”，地址栏扩展标识和授权框里是默认拼图图标。凡是画面里带“Split Search 设置”标签、设置页地址栏或授权框的图都受影响（至少 `screenshot-1`、`screenshot-4`、marquee 和 README 首图）。上架前要用带新图标的扩展重拍，再重渲全部图片。
+- **提交前必做（v0.3 上架前）**：`assets/raw/` 的真实截图是装上图标之前拍的，设置页标签页的图标是 Chrome 生成的灰底字母“S”，地址栏扩展标识和授权框里是默认拼图图标。凡是画面里带“Split Search 设置”标签页、设置页地址栏或授权框的图都受影响（至少 `screenshot-1`、`screenshot-4`、marquee 和 README 首图）。上架前要用带新图标的扩展重拍，再重渲全部图片。
 - ~~提交前待定：宣传图紫色渐变与橙色标注和 c6 不成一套~~ 已解决（2026-10-24）：定稿方向 d1「纸白 · 精排」，强调色就是图标左格的松针绿 `#507665`，见第 4 节。
 
 ## 2. 商店图片与 README 图片的区别
@@ -32,7 +32,7 @@
 | 明暗主题 | 商店页是浅色为主，按一套设计即可 | GitHub 有浅色和深色主题：用 `<picture>` 加 `prefers-color-scheme` 提供两套，或使用在两种背景上都清楚的透明底图 |
 | 本地化 | 截图可按语言分别上传，宣传图不行 | 跟着 README 的语言走（当前为简体中文） |
 | 可访问性 | 控制台不提供替代文字字段，信息要在详细说明里写全 | 每张图都写 `alt`，说清图里在演示什么 |
-| 目的 | 营销：一眼看出“两个引擎、左右分屏” | 说明：讲清机制、设置步骤和降级行为 |
+| 目的 | 营销：一眼看出“两个引擎、拆分视图” | 说明：讲清机制、设置步骤和降级行为 |
 
 ## 3. 文件清单（已生成）
 
@@ -50,13 +50,13 @@ node scripts/store/render-assets.mjs --icon assets/icon-proposals/<方案目录>
 
 | 文件 | 尺寸 | 模板 | 内容 |
 |---|---|---|---|
-| `screenshot-1.png` | 1280×800 | `store-1-split` | “一次搜索，两个引擎左右对比”：DuckDuckGo ｜ Bing（预置组合）分屏整窗 |
-| `screenshot-2.png` | 1280×800 | `store-2-omnibox` | “地址栏照常搜索，回车就分屏”：上方是输入“rust ownership”时的下拉建议（只取下拉框，框出“DuckDuckGo ｜ 百度 搜索”），下方是回车后的分屏整窗（同一查询词）；右下角注明“百度”为自行添加的引擎 |
-| `screenshot-3.png` | 1280×800 | `store-3-drag` | “选中文字，拖到标签栏”（副标题写明前提“触发网址设为默认后”）：拖拽中的真实画面加箭头，右下角小图是松手后的分屏；Xvfb 下黑底的插入箭头用修补图盖掉（见 `assets/raw/captions.md`“修补”） |
+| `screenshot-1.png` | 1280×800 | `store-1-split` | “一次搜索，两个引擎左右对比”：DuckDuckGo ｜ Bing（预置组合）拆分视图整窗 |
+| `screenshot-2.png` | 1280×800 | `store-2-omnibox` | “地址栏照常搜索，回车就打开拆分视图”：上方是输入“rust ownership”时的下拉建议（只取下拉框，框出“DuckDuckGo ｜ 百度 搜索”），下方是回车后的拆分视图整窗（同一查询词）；右下角注明“百度”为自行添加的引擎 |
+| `screenshot-3.png` | 1280×800 | `store-3-drag` | “选中文字，拖到标签栏”（副标题写明前提“触发网址设为默认后”）：拖拽中的真实画面加箭头，右下角小图是松手后的拆分视图；Xvfb 下黑底的插入箭头用修补图盖掉（见 `assets/raw/captions.md`“修补”） |
 | `screenshot-4.png` | 1280×800 | `store-4-engines` | “引擎自己选，组合随意配”：设置页的引擎列表，叠一张放大到约 0.67 的“添加到 Chrome”默认组合块（触发网址 + 复制） |
-| `screenshot-5.png` | 1280×800 | `store-5-fallback` | “其他设备与无痕窗口：自动退化为普通搜索”：同一个触发网址，装了扩展是分屏，没生效时是普通 DuckDuckGo 结果页（左图只取两个窗格上半部分，缩放约 0.31；右图只取网页区域，约 0.51） |
-| `small-promo-440x280.png` | 440×280 | `promo-small` | 图标、产品名、“双引擎分屏搜索” |
-| `marquee-1400x560.png` | 1400×560 | `promo-marquee` | 图标、产品名、“一次搜索 两个引擎左右对比”，右侧 DuckDuckGo ｜ Bing 分屏截图出血 |
+| `screenshot-5.png` | 1280×800 | `store-5-fallback` | “其他设备与无痕窗口：自动退化为普通搜索”：同一个触发网址，装了扩展是拆分视图，没生效时是普通 DuckDuckGo 结果页（左图只取两个窗格上半部分，缩放约 0.31；右图只取网页区域，约 0.51） |
+| `small-promo-440x280.png` | 440×280 | `promo-small` | 图标、产品名、“双引擎拆分视图搜索” |
+| `marquee-1400x560.png` | 1400×560 | `promo-marquee` | 图标、产品名、“一次搜索 两个引擎左右对比”，右侧 DuckDuckGo ｜ Bing 拆分视图截图出血 |
 
 商店图标 128×128 直接上传 `src/icons/icon-128.png`。
 
@@ -64,8 +64,8 @@ node scripts/store/render-assets.mjs --icon assets/icon-proposals/<方案目录>
 
 | 文件 | 尺寸 | 模板 | 内容 |
 |---|---|---|---|
-| `hero.png` | 1760×880（显示 880 宽） | `readme-hero` | 一句话价值主张加 DuckDuckGo ｜ Bing 分屏截图。整张不透明的紫色底，GitHub 浅色和深色主题下都是一张完整卡片，所以不需要 `<picture>` 两套 |
-| `how-it-works.png` | 1760×760（显示 880 宽） | `readme-how-it-works` | 地址栏或拖拽 → 触发网址（真实搜索网址 + `_ss`）→ 原生分屏，下方是“扩展未生效时”的降级支线。浅色不透明底 |
+| `hero.png` | 1760×880（显示 880 宽） | `readme-hero` | 一句话价值主张加 DuckDuckGo ｜ Bing 拆分视图截图。整张不透明的紫色底，GitHub 浅色和深色主题下都是一张完整卡片，所以不需要 `<picture>` 两套 |
+| `how-it-works.png` | 1760×760（显示 880 宽） | `readme-how-it-works` | 地址栏或拖拽 → 触发网址（真实搜索网址 + `_ss`）→ Chrome 拆分视图，下方是“扩展未生效时”的降级支线。浅色不透明底 |
 
 演示 GIF 暂缺：`assets/raw/` 里拖拽流程只有“拖拽中”和“松手后”两张静态图，没有连续帧，拼成 GIF 只是幻灯片，所以没有做。以后要做，先用屏幕录制拍下真实的拖拽过程，再用 ffmpeg（palettegen）转成 3 MB 以内的 GIF，放在 `assets/readme/demo.gif`。
 
