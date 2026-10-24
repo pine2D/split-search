@@ -24,6 +24,11 @@ body { position: relative; font-family: var(--font); color: var(--ink); backgrou
    所以 .icon 的宽度 = 想要的图形宽 ÷ 0.75。这套模板不用 .tile 底板，--no-tile 对它不起作用。 */
 .icon { display: block; }
 .icon > img { width: 100%; height: 100%; display: block; }
+/* 纸白圆角底板（小宣传图、顶部宣传图）：.icon 往往比底板大（透明边要溢出），
+   溢出的 grid / flex 子项用 place-items:center 不会居中（会贴着起点、偏右下），所以这里用绝对定位 + translate 居中，
+   与 .icon 和底板的大小关系无关。底板尺寸、圆角在各模板里写。 */
+.plate { position: relative; flex: none; background: var(--paper); }
+.plate > .icon { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
 
 /* 截图片段：data-crop="x,y,w,h" 是原图像素坐标，容器宽度决定缩放（见 crop.js）。
    .bleed：上缘 148，高度铺到画布底边（data-h="fill"），切口位置在模板注释里写明。 */
