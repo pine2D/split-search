@@ -1,6 +1,6 @@
 {
   "ext_description": {
-    "message": "地址栏或拖拽搜索，一键用两个搜索引擎打开原生分屏对比",
+    "message": "在地址栏搜索，或把文字拖到标签栏，用两个搜索引擎打开 Chrome 拆分视图，左右对比结果。",
     "description": "Extension description shown in the Chrome Web Store and chrome://extensions."
   },
   "ext_action_title": {
@@ -8,19 +8,19 @@
     "description": "Tooltip of the toolbar button."
   },
   "go_status_opening": {
-    "message": "正在打开分屏…",
+    "message": "正在打开拆分视图…",
     "description": "Status line on the trigger page while the split view is being opened (shown only for a moment)."
   },
   "go_status_failed": {
-    "message": "无法打开分屏",
+    "message": "无法打开拆分视图",
     "description": "Status line on the trigger page when the split view could not be opened; an error box with the reason follows."
   },
   "go_status_kept": {
-    "message": "已在右侧新分屏中打开搜索结果，可以关闭本页。",
+    "message": "搜索结果已在右侧新的拆分视图中打开，可以关闭本页。",
     "description": "Status line on the trigger page after the results were opened in a new split view next to the current one and this tab could not close itself; tells the user they may close the page."
   },
   "go_status_no_repeat": {
-    "message": "本页不会自动重复打开分屏。",
+    "message": "本页不会自动重复打开拆分视图。",
     "description": "Status line when the user comes back to the trigger page via Back, Forward or reload: the page does not open the split view again by itself (a Run again button is offered)."
   },
   "go_btn_rerun": {
@@ -196,7 +196,7 @@
     "description": "Settings page title: browser tab title and the page heading. Keep the product name Split Search untranslated."
   },
   "options_tagline": {
-    "message": "在地址栏搜索或把文字拖到标签栏，一次用两个搜索引擎打开 Chrome 原生分屏。",
+    "message": "在地址栏搜索或把文字拖到标签栏，一次用两个搜索引擎打开 Chrome 拆分视图。",
     "description": "One-line summary under the settings page heading."
   },
   "options_pair_title": {
@@ -228,7 +228,7 @@
     "description": "Setup step 2. \"Site search\" and \"Add\" must match Chrome's own labels on chrome://settings/searchEngines in this language."
   },
   "guide_step_fields": {
-    "message": "名称随意（例如“Google ｜ Bing”）；快捷字词自定（例如 $KEYWORD$）；网址粘贴上面复制的触发网址。保存。",
+    "message": "名称随意（例如“Google ｜ Bing”）；快捷字词自定（例如 $KEYWORD$）；网址格式一栏粘贴上面复制的触发网址。保存。",
     "description": "Setup step 3: what to type into Chrome's site search dialog. \"Shortcut\" must match Chrome's label. The placeholder becomes the example shortcut (guide_example_keyword) shown as code.",
     "placeholders": {
       "KEYWORD": {
@@ -242,7 +242,7 @@
     "description": "Example site search shortcut for a Google | Bing pair, shown as code in setup step 3. Pick a short, natural shortcut for this language; ASCII letters only."
   },
   "guide_step_default": {
-    "message": "默认组合：在刚添加的条目右侧 ⋮ 菜单里选“设为默认”。其他组合不用设为默认，在地址栏输入“快捷字词 + 空格 + 关键词”即可。",
+    "message": "默认组合：在刚添加的条目右侧 ⋮ 菜单里选“设为默认选项”。其他组合不用设为默认，在地址栏输入“快捷字词 + 空格 + 关键词”即可。",
     "description": "Setup step 4. \"Make default\" and \"shortcut\" must match Chrome's labels; ⋮ is the More actions menu icon."
   },
   "guide_step_grant": {
@@ -254,7 +254,7 @@
     "description": "Subheading above the list of caveats."
   },
   "guide_caveat_degrade": {
-    "message": "以下情况触发网址会降级为一次普通的左侧引擎搜索，不分屏：同步了这套搜索设置的其他电脑和手机、无痕窗口、扩展被停用、撤销了授权、引擎网站自己的 Service Worker 接管了导航。",
+    "message": "以下情况触发网址会降级为一次普通的左侧引擎搜索，不会打开拆分视图：同步了这套搜索设置的其他电脑和手机、无痕式窗口、扩展被停用、撤销了授权、引擎网站自己的 Service Worker 接管了导航。",
     "description": "Caveat: cases where the trigger URL falls back to a plain search with the left engine. Keep Service Worker untranslated."
   },
   "guide_caveat_no_suggest": {
@@ -262,7 +262,7 @@
     "description": "Caveat: a user-added site search has no suggestion URL, so the address bar shows no search suggestions once it is the default."
   },
   "guide_caveat_context_menu": {
-    "message": "右键菜单里的“在 X 中搜索”同样会走触发网址，同样会分屏。",
+    "message": "右键菜单里的“使用X搜索‘…’”同样会走触发网址，打开拆分视图。",
     "description": "Caveat: the right-click menu item \"Search X for …\" also uses the trigger URL and opens the split view. Match Chrome's wording of that menu item; X stands for the search engine name."
   },
   "guide_caveat_sync": {
@@ -356,7 +356,7 @@
     }
   },
   "options_dlg_edit_hint": {
-    "message": "修改网址后，已存进 Chrome、以该引擎为左侧的网站搜索网址需要重新复制。",
+    "message": "修改网址后，Chrome 里以该引擎为左侧的网站搜索需要重新复制网址。",
     "description": "Hint in the edit dialog: after changing the URL, site searches saved in Chrome that use this engine on the left must be copied again."
   },
   "common_cancel": {
@@ -486,7 +486,7 @@
     "description": "Button on a hidden preset engine that shows it again."
   },
   "engine_left_discouraged_hint": {
-    "message": "建议仅作右侧：该站点的 Service Worker 可能接管导航，作左侧时分屏可能不触发。",
+    "message": "建议仅作右侧：该站点的 Service Worker 可能接管导航，作左侧时可能不会打开拆分视图。",
     "description": "Warning on an engine row (e.g. Perplexity): its site's Service Worker may take over navigation, so as the left engine the split view may not open. Keep Service Worker untranslated."
   },
   "engine_move_up": {
@@ -578,7 +578,7 @@
     "description": "Error on the trigger URL card when no trigger URL can be built for the default pair."
   },
   "guide_default_hint": {
-    "message": "按下方步骤添加为网站搜索后，在该条目的 ⋮ 菜单里选“设为默认”。之后地址栏直接搜索、拖拽文字到标签栏都会分屏。",
+    "message": "按下方步骤添加为网站搜索后，在该条目的 ⋮ 菜单里选“设为默认选项”。之后地址栏直接搜索、拖拽文字到标签栏都会打开拆分视图。",
     "description": "Hint on the default pair card. \"Make default\" must match Chrome's label; ⋮ is the More actions menu icon."
   },
   "guide_other_pairs_title": {
@@ -614,7 +614,7 @@
     }
   },
   "guide_left_not_granted": {
-    "message": "左侧 $NAME$ 还没授权，这个组合不会分屏，只会打开普通的 $NAME$ 搜索。",
+    "message": "左侧 $NAME$ 还没授权，这个组合不会打开拆分视图，只会打开普通的 $NAME$ 搜索。",
     "description": "Warning in the pair generator: the left engine's site is not granted, so this pair opens a plain search instead of a split view.",
     "placeholders": {
       "NAME": {
@@ -624,7 +624,7 @@
     }
   },
   "guide_left_discouraged": {
-    "message": "$NAME$ 建议只作右侧：它的网站用 Service Worker 接管页面跳转，作左侧时通常只会打开普通的 $NAME$ 搜索、不分屏。作右侧不受影响。",
+    "message": "$NAME$ 建议只作右侧：它的网站用 Service Worker 接管页面跳转，作左侧时通常只会打开普通的 $NAME$ 搜索，不会打开拆分视图。作右侧不受影响。",
     "description": "Warning when an engine like Perplexity is the left side of a pair. Keep Service Worker untranslated.",
     "placeholders": {
       "NAME": {
@@ -740,7 +740,7 @@
     "description": "Title of the first-run banner asking for site access."
   },
   "options_banner_text": {
-    "message": "分屏靠拦截发往左侧引擎 $LEFT$ 的搜索请求实现，必须授权它的网站；右侧引擎授权后，再次搜索时能识别并就地更新本扩展打开的分屏。授权只针对这两个网站。",
+    "message": "打开拆分视图要靠拦截发往左侧引擎 $LEFT$ 的搜索请求，必须授权它的网站；右侧引擎授权后，再次搜索时能识别并就地更新本扩展打开的拆分视图。授权只针对这两个网站。",
     "description": "Body of the first-run banner: why access to the left (required) and right (recommended) engine sites is needed.",
     "placeholders": {
       "LEFT": {
@@ -774,7 +774,7 @@
     }
   },
   "options_left_not_granted": {
-    "message": "左侧 $NAME$ 还没授权，目前搜索不会分屏，只会打开普通的 $NAME$ 搜索。",
+    "message": "左侧 $NAME$ 还没授权，目前搜索不会打开拆分视图，只会打开普通的 $NAME$ 搜索。",
     "description": "Warning in the default pair card: the left engine's site is not granted, so searches open a plain search instead of a split view.",
     "placeholders": {
       "NAME": {
@@ -798,7 +798,7 @@
     }
   },
   "lang_note": {
-    "message": "扩展简介、工具栏按钮的提示、chrome://extensions 里的说明和 Chrome 网上应用店详情页始终跟随浏览器语言，不受这里的选择影响。",
+    "message": "工具栏按钮的提示，以及 chrome://extensions 和 Chrome 应用商店详情页里的扩展简介，始终跟随浏览器语言，不受这里的选择影响。",
     "description": "Note under the language drop-down: the extension description, the toolbar button tooltip, the description on chrome://extensions and the Chrome Web Store listing always follow the browser language, not this choice. Keep chrome://extensions as is."
   },
   "lang_name_en": {
