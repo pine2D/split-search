@@ -5,7 +5,7 @@ import { mkdtempSync, rmSync, existsSync, writeFileSync, readFileSync, mkdirSync
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
-  snapshotStorage, restoreStorage, restorePendingSnapshot, configureMocks,
+  snapshotStorage, restoreStorage, restorePendingSnapshot, configureMocks, mockBaseline, bindExt,
   ensureExtension, ensureExtensionUp, registeredEntry, storageDigest, installedIds,
 } from "../scripts/e2e/ext.mjs";
 import { EXT_ID, mockEngines } from "../scripts/e2e/config.mjs";
@@ -80,10 +80,25 @@ test("restorePendingSnapshot: 无快照返回 false；有遗留快照则恢复�
   assert.equal(existsSync(file), false);
 }));
 
-test("configureMocks: 从干净基线写入模拟引擎与默认组合", async () => {
+test("configureMocks: 从干净基线写入模拟引擎、默认组合与界面语言", async () => {
   const b = fakeBrowser(sample);
   await configureMocks(b, 9000);
-  assert.deepEqual(b.store, { customEngines: mockEngines(9000), defaultPair: ["ea", "eb"] });
+  assert.deepEqual(b.store, { customEngines: mockEngines(9000), defaultPair: ["ea", "eb"], uiLocale: "zh_CN" });
+});
+
+test("mockBaseline: 基线对象含 uiLocale: zh_CN", () => {
+  assert.deepEqual(mockBaseline(9000), { customEngines: mockEngines(9000), defaultPair: ["ea", "eb"], uiLocale: "zh_CN" });
+});
+
+test("ctx.ext.configureMocks: 步骤内重置基线后，存储里仍是 uiLocale: zh_CN", async () => {
+  const b = fakeBrowser({ uiLocale: "en", customEngines: [], defaultPair: ["google", "bing"] });
+  const ext = bindExt(b, { port: 8765 });
+  await ext.configureMocks();
+  assert.equal(b.store.uiLocale, "zh_CN");
+  b.store.uiLocale = "es";
+  await ext.configureMocks();
+  assert.deepEqual(b.calls.slice(-2), ["clear", "set"]);
+  assert.deepEqual(b.store, mockBaseline(8765));
 });
 
 test("storageDigest: 与键顺序无关", () => {

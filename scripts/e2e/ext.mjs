@@ -5,6 +5,7 @@ import { dirname, join, resolve } from "node:path";
 import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { EXT_ID, PROFILE_DIR, mockEngines } from "./config.mjs";
+import { E2E_LOCALE } from "./i18n.mjs";
 
 export const SRC_DIR = resolve(fileURLToPath(new URL("../../src/", import.meta.url)));
 export const OUT_DIR = resolve(fileURLToPath(new URL("../../.e2e/", import.meta.url)));
@@ -65,9 +66,15 @@ export async function restorePendingSnapshot(browser, file = SNAPSHOT_FILE) {
   return true;
 }
 
-// 从干净基线开始：只保留模拟引擎和默认组合（原始配置在快照里，结束后恢复）
+// e2e 的基线配置：模拟引擎、默认组合，界面语言固定为 E2E_LOCALE（期望文字按它的目录算，见 i18n.mjs）。
+// 凡是整份写基线的地方都用它，不要另外单独 set uiLocale：基线重置会先 clear，单独写的键会被清掉
+export function mockBaseline(port) {
+  return { customEngines: mockEngines(port), defaultPair: MOCK_PAIR, uiLocale: E2E_LOCALE };
+}
+
+// 从干净基线开始（原始配置在快照里，结束后恢复）
 export async function configureMocks(browser, port) {
-  await syncReplace(browser, { customEngines: mockEngines(port), defaultPair: MOCK_PAIR });
+  await syncReplace(browser, mockBaseline(port));
 }
 
 // ---- 安装检查与 reload ----

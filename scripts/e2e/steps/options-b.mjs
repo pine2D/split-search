@@ -2,8 +2,9 @@
 import { EXT_ID } from "../config.mjs";
 import {
   OPTIONS_URL, withOptions, fillDialog, dialogState, closeDialog,
-  readKeys, BAIDU, hasEngine, addCustom, guarded,
+  readKeys, BAIDU, hasEngine, addCustom, guarded, keySel,
 } from "./optpage.mjs";
+import { msg } from "../i18n.mjs";
 
 const optionsTargets = async browser =>
   (await browser.targets()).filter(t => t.type === "page" && t.url.startsWith(OPTIONS_URL.replace("options.html", "")));
@@ -53,7 +54,7 @@ const B6 = {
       const stored = (await hasEngine(ext, "Baidu")) || (await hasEngine(ext, "baidu"));
       await closeDialog(page);
       const problems = [];
-      if (!/只能由|格式|小写/.test(st.id)) problems.push(`id 旁没有格式错误提示：${JSON.stringify(st.id)}`);
+      if (st.id !== msg("err_id_format")) problems.push(`id 旁应提示“${msg("err_id_format")}”，实际 ${JSON.stringify(st.id)}`);
       if (!st.open) problems.push("对话框被关闭了");
       if (stored) problems.push("引擎被错误地保存了");
       if (problems.length) return { status: "fail", detail: problems.join("；") };
@@ -71,8 +72,8 @@ const B7 = {
         await fillDialog(page, BAIDU);
         await page.until(`return !document.getElementById("engine-dialog").open && !!row("baidu")`);
         const r = await page.run(`
-          const last = ids().at(-1), rw = row("baidu"), b = btn(rw, "授权");
-          const notice = [...document.querySelectorAll("#notices .notice-text")].map(n => n.textContent).find(t => t.includes("没授权"));
+          const last = ids().at(-1), rw = row("baidu"), b = rw.querySelector(${keySel("engine_grant")});
+          const notice = [...document.querySelectorAll("#notices .notice-text")].map(n => n.textContent).find(t => t.includes(${JSON.stringify(msg("notice_needs_grant"))}));
           return { last, hasAuth: !!b, attention: !!b && b.classList.contains("btn-attention"), name: rw.querySelector(".engine-name").textContent, notice: notice || "" };`);
         const problems = [];
         if (r.last !== "baidu") problems.push(`列表末尾应是 baidu，实际 ${r.last}`);
@@ -81,7 +82,7 @@ const B7 = {
         else if (!r.attention) problems.push("授权按钮没有高亮（btn-attention）");
         if (!r.notice) problems.push("没有“尚未授权”的提示");
         // 顺带验证 UI 删除：删掉自己新建的引擎
-        await page.run(`btn(row("baidu"), "删除").click(); return true;`);
+        await page.run(`row("baidu").querySelector(${keySel("engine_delete")}).click(); return true;`);
         await page.until(`return !row("baidu")`);
         if (problems.length) return { status: "fail", detail: problems.join("；") };
         return { status: "pass", detail: "百度出现在列表末尾，授权按钮高亮，右下角有未授权提示；已通过界面删除" };
@@ -105,10 +106,12 @@ const B8 = {
           return document.querySelector(".gen-output .url-box")?.textContent ?? "";`);
         if (url !== want) return { status: "fail", detail: `触发网址应为 ${want}，实际 ${url || "(空)"}` };
         await page.ev(`document.querySelector(".gen-output .url-line button").click(); true`, { userGesture: true });
-        const copied = await page.until(`return document.querySelector(".gen-output .url-line button").textContent === "已复制"`, 3000).catch(() => false);
-        if (copied) return { status: "pass", detail: `网址 ${url}；点“复制”后按钮变为“已复制”` };
-        const err = await page.run(`return [...document.querySelectorAll("#notices .notice-text")].map(n => n.textContent).find(t => t.startsWith("复制失败")) || ""`);
-        return { status: "fail", detail: `网址正确，但按钮没有变为“已复制”；${err ? "页面提示：" + err : "也没有出现复制失败提示"}` };
+        const copiedText = msg("common_copied");
+        const copied = await page.until(`return document.querySelector(".gen-output .url-line button").textContent === ${JSON.stringify(copiedText)}`, 3000).catch(() => false);
+        if (copied) return { status: "pass", detail: `网址 ${url}；点“复制”后按钮变为“${copiedText}”` };
+        const failPrefix = msg("notice_copy_failed", "\0").split("\0")[0]; // 提示里错误详情之前的部分
+        const err = await page.run(`return [...document.querySelectorAll("#notices .notice-text")].map(n => n.textContent).find(t => t.startsWith(${JSON.stringify(failPrefix)})) || ""`);
+        return { status: "fail", detail: `网址正确，但按钮没有变为“${copiedText}”；${err ? "页面提示：" + err : "也没有出现复制失败提示"}` };
       });
     } finally { /* 清理由 guarded 统一恢复 */ }
   },
@@ -120,7 +123,7 @@ const B10 = {
     const probe = ids => `
       const out = {};
       for (const id of ${JSON.stringify(ids)}) {
-        const rw = row(id), b = rw && (btn(rw, "隐藏") || btn(rw, "删除"));
+        const rw = row(id), b = rw && (rw.querySelector(${keySel("engine_hide")}) || rw.querySelector(${keySel("engine_delete")}));
         out[id] = !rw ? "无此行" : !b ? "无按钮" : b.disabled ? "禁用" : "可用";
       }
       return out;`;
@@ -134,7 +137,7 @@ const B10 = {
         await page.run(`
           const set = (id, v) => { const s = document.getElementById(id); s.value = v; s.dispatchEvent(new Event("change")); };
           set("pair-left", "google"); set("pair-right", "bing"); return true;`);
-        await page.until(`return document.getElementById("pair-left").value === "google" && btn(row("google"), "隐藏")?.disabled === true`);
+        await page.until(`return document.getElementById("pair-left").value === "google" && row("google")?.querySelector(${keySel("engine_hide")})?.disabled === true`);
         const gb = await page.run(probe(["google", "bing", "ddg", "ea"]));
         for (const id of ["google", "bing"]) if (gb[id] !== "禁用") problems.push(`默认组合为 Google ｜ Bing 时 ${id} 的隐藏应禁用，实际 ${gb[id]}`);
         for (const id of ["ddg", "ea"]) if (gb[id] !== "可用") problems.push(`默认组合为 Google ｜ Bing 时 ${id} 应可用，实际 ${gb[id]}`);
@@ -151,14 +154,14 @@ const B11 = {
     const bad = `http://engine-a.localhost:${port}/wiki/%s`;
     const before = (await readKeys(ext, ["customEngines"])).customEngines;
     return withOptions(browser, async page => {
-      await page.run(`btn(row("ea"), "编辑").click(); return true;`);
+      await page.run(`row("ea").querySelector(${keySel("engine_edit")}).click(); return true;`);
       await fillDialog(page, { url: bad });
       await page.until(`return !!document.querySelector('.field-error[data-for="url"]:not([hidden])')`);
       const st = await dialogState(page);
       await closeDialog(page);
       const after = (await readKeys(ext, ["customEngines"])).customEngines;
       const problems = [];
-      if (!/默认组合的左侧/.test(st.url)) problems.push(`没有说明原因（默认组合的左侧）：${JSON.stringify(st.url)}`);
+      if (st.url !== msg("err_default_left_url")) problems.push(`url 旁应说明原因（${msg("err_default_left_url").slice(0, 30)}…），实际 ${JSON.stringify(st.url)}`);
       if (!st.open) problems.push("对话框被关闭了");
       if (JSON.stringify(before) !== JSON.stringify(after)) problems.push("存储被修改了");
       if (problems.length) return { status: "fail", detail: problems.join("；") };
