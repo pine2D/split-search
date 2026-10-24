@@ -72,7 +72,8 @@ export async function contextMenuPick(ctx, { at, itemIndex, expectItems, wid, me
 
 // 地址栏：新开窗口拿前台（断言 getactivewindow；嵌套显示没有窗口管理器，用 getwindowfocus，焦点没过去就在新窗口页面中心点一下），Ctrl+L → 输入 ASCII → Delete（去掉行内自动补全）→ 回车 / Alt+回车。
 // 每次按键前断言前台仍是这个窗口。设置页（后台窗口）会抢走前台，所以网站搜索要在调用本手势之前改好
-export async function omnibox(ctx, { text, altEnter = false, url }) {
+// beforeEnter({ wid })：输完、按 Delete 之后、回车之前调用一次（T12 在这里截地址栏下拉框，只读屏幕、不发输入）
+export async function omnibox(ctx, { text, altEnter = false, url, beforeEnter = null }) {
   const { xi, sleep, profileDir, nested } = deps(ctx);
   if ((await idle(xi, { sleep, ...ctx.gx.idleOpts })) === "busy") throw gestureError("skip", REASON_BUSY);
   let nf;
@@ -88,6 +89,7 @@ export async function omnibox(ctx, { text, altEnter = false, url }) {
     await xi.typeAscii(text, { expectWindow: wid });
     await sleep(150);
     await xi.key("Delete", { expectWindow: wid });
+    if (beforeEnter) await beforeEnter({ wid });
     await xi.key(altEnter ? "alt+Return" : "Return", { expectWindow: wid });
   } catch (e) {
     await xi.releaseModifiers().catch(() => {});

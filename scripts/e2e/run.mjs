@@ -8,6 +8,7 @@ import { PROFILE_DIR, CHROME_BIN, EXT_ID } from "./config.mjs";
 import { join } from "node:path";
 import * as ext from "./ext.mjs";
 import * as se from "./settings-se.mjs";
+import { useKagi } from "./settings-kagi.mjs";
 import { collectConsole } from "./console.mjs";
 import { STEPS, selectSteps } from "./steps/index.mjs";
 import { runSteps } from "./runner.mjs";
@@ -22,8 +23,11 @@ import { makeAfterStep } from "./steps/recover.mjs";
 import { extAlive } from "./steps/guided.mjs";
 import { L } from "./steps/labels.mjs";
 import { fixWindow } from "./steps/xauto-lib.mjs";
+import { ensureEnabled, waitAlive } from "./ext-webui.mjs";
 
 const DISPLAY_PID_FILE = join(ext.OUT_DIR, "display.pid");
+// 经 chrome://extensions 详情页启用扩展，再等扩展页能执行脚本（extAlive 失败时会关掉停用期间打开、停在错误页的扩展页）
+const enableExt = async b => (await ensureEnabled(b)) && waitAlive(() => extAlive(b));
 // 终端输出一律脱敏（网址里的 token/session 等参数值）
 const log = m => console.log(redact(m));
 const warn = m => console.error(redact(m));
@@ -146,9 +150,12 @@ async function main() {
     const setupCtx = { browser, guide: server.guide, port: args.port, timeoutMs: args.timeoutMs, abortSignal: abort.signal, log };
     if (!args.autoOnly) await openGuide(browser, args.port);
 
-    let ens = await ext.ensureExtension(browser, { autoOnly: args.autoOnly });
-    // 已登记但设置页一时打不开：多半是冷启动慢，稍等再试一次，别直接进入“启用扩展”引导
-    if (!ens.ok && ens.hint) { await new Promise(r => setTimeout(r, 3000)); ens = await ext.ensureExtension(browser, { autoOnly: args.autoOnly }); }
+    // 已登记但设置页打不开：先稍等重试（冷启动慢），仍不行多半是上次中断留下的停用状态，经扩展详情页启用后再查
+    const ens = await ext.ensureExtensionUp(() => ext.ensureExtension(browser), { enable: () => enableExt(browser) });
+    if (ens.reenabled) {
+      notes.push("启动时扩展处于停用状态（多半是上次运行在 T8(b) 停用期间被强制退出），已经经 chrome://extensions 详情页重新启用");
+      log(notes.at(-1));
+    }
     let install = null;
     if (!ens.ok && ens.reason === "not-installed" && !args.autoOnly) {
       log("扩展未安装：请按向导页的说明加载（一次性）");
@@ -195,8 +202,11 @@ async function main() {
       browser, guide: server.guide, ext: ext.bindExt(browser, { port: args.port }), port: args.port,
       timeoutMs: args.timeoutMs, abortSignal: abort.signal, log, consoleErrors: col?.errors ?? [], consoleCollector: col ?? undefined,
       stopReason: () => rt.stopReason, install, gx,
+      // autoOnly：没人看着。授权申请不等人（requestGrant 的 auto）、恢复检查不请用户启用扩展、需要人的回退一律跳过
+      autoOnly: !!args.autoOnly,
       // 网站搜索（sse2e 专用条目）：ensure 前自动快照，结束时在 finally 里恢复
-      se: se.bindSettings(() => rt.browser),
+      // useKagi：T12 把自动发现的 Kagi 条目带上 _ss 并设为默认（settings-kagi.mjs，默认引擎记进快照，收尾改回）
+      se: { ...se.bindSettings(() => rt.browser), useKagi: () => useKagi(rt.browser) },
       // 记下真正开始过的步骤：收尾清单只列它们让用户改过的设置
       onStepStart: step => { rt.started.push(step); },
       // B4、T8 这类会撤销授权/停用扩展的步骤之后，确认扩展可用、授权齐全（见 recover.mjs）
@@ -222,7 +232,7 @@ async function main() {
     notes.push(`运行出错：${e.message}`);
   } finally {
     await teardown(rt, s, {
-      ext, extAlive, se, exists: existsSync, cleanupItems, cleanupNote, cleanupText, ...reportDeps,
+      ext, extAlive, se, exists: existsSync, enableExt, cleanupItems, cleanupNote, cleanupText, ...reportDeps,
       afterClose: async () => (rt.ctx?.gx ? releaseAfterClose(xinput, rt.ctx.gx.root) : "none"),
       stopDisplay: disp.stop,
     }).catch(e => warn(`收尾出错：${e?.stack || e}`));

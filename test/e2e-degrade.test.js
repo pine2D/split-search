@@ -241,3 +241,46 @@ test("withAttempts: 指针被拉回时向导页提示把手拿开，按环境问
   assert.match(steps[0].instruction, /把手从鼠标\/触摸板上拿开/);
   assert.match(startCard({ id: "T3", title: "拖拽", kind: "xauto" }).instruction, /把手从鼠标\/触摸板上拿开/);
 });
+
+// ---- T8(b) 中断时的重新启用、T8(a) 的前提核对 ----
+import { disabledAuto, incognitoPrecondition } from "../scripts/e2e/steps/t8.mjs";
+
+const t8ctx = signal => ({ signal, port: 8765, browser: { client: { send: async m => (m === "Target.getTargets" ? { targetInfos: [] } : {}) },
+  targets: async () => [], waitFor: async fn => fn(), evalExt: async () => true }, ext: { state: async () => ({ tabs: [], windows: [] }) }, log: () => {} });
+const detailsPage = calls => ({ setEnabled: async on => { calls.push(on ? "enable" : "disable"); return on ? "toggle" : "toggle"; }, close: async () => { calls.push("close"); } });
+
+test("disabledAuto: 停用期间被中断 → 立刻重新启用、不等扩展页（收尾期限内结束），判跳过", async () => {
+  const ac = new AbortController();
+  const calls = [];
+  let waited = 0;
+  const p = disabledAuto(t8ctx(ac.signal), { open: async () => detailsPage(calls), check: () => new Promise(() => {}), reset: async () => {},
+    alive: async () => { waited++; return true; }, enable: async () => true });
+  setTimeout(() => ac.abort("收到 SIGINT"), 50);
+  const t0 = Date.now();
+  const r = await p;
+  assert.ok(Date.now() - t0 < 1000, "不等停用期间的检查跑完");
+  assert.deepEqual(calls, ["disable", "enable", "close"]);
+  assert.equal(r.status, "skip");
+  assert.match(r.detail, /停用期间运行被中断；已重新启用（详情页开关）/);
+  assert.equal(waited, 0);
+});
+
+test("disabledAuto: 正常完成 → finally 重新启用并等扩展页可用；检查出错（非中断）照样重新启用再抛出", async () => {
+  const calls = [];
+  const r = await disabledAuto(t8ctx(new AbortController().signal), { open: async () => detailsPage(calls),
+    check: async () => ({ status: "pass", detail: "普通左侧搜索" }), reset: async () => {}, alive: async () => true, enable: async () => true });
+  assert.equal(r.status, "pass");
+  assert.match(r.detail, /读回 DISABLED.*普通左侧搜索；已重新启用（详情页开关）/);
+  const calls2 = [];
+  await assert.rejects(disabledAuto(t8ctx(new AbortController().signal), { open: async () => detailsPage(calls2),
+    check: async () => { throw new Error("boom"); }, reset: async () => {}, alive: async () => true }), /boom/);
+  assert.deepEqual(calls2, ["disable", "enable", "close"]);
+});
+
+test("incognitoPrecondition: 无痕开关已打开判失败；未打开/打不开写进说明；读不到只注明", () => {
+  assert.match(incognitoPrecondition({ isActive: true, isEnabled: true }).fail, /打开了扩展的“在无痕模式下启用”/);
+  assert.match(incognitoPrecondition({ isActive: false, isEnabled: false }).note, /未打开，也打不开：manifest incognito: not_allowed/);
+  assert.doesNotMatch(incognitoPrecondition({ isActive: false, isEnabled: true }).note, /打不开/);
+  assert.match(incognitoPrecondition({ error: "详情页没有加载出来" }).note, /未能读取.*详情页没有加载出来/);
+  assert.equal(incognitoPrecondition(null).fail, undefined);
+});

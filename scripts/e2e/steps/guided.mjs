@@ -3,9 +3,9 @@
 import { EXT_ID } from "../config.mjs";
 import { sleep, pageTargets } from "./util.mjs";
 import { isSorry } from "./captcha.mjs";
+import { openOptions } from "./optpage.mjs";
 
 const EXT_PREFIX = `chrome-extension://${EXT_ID}/`;
-const OPT_PREFIX = `${EXT_PREFIX}options/`;
 const FOREVER = 2 ** 31 - 1; // 答案的等待由本模块的截止时间控制，guide 自己的计时器只作兜底
 export const GRANT_TIMEOUT_MS = 5 * 60 * 1000;
 
@@ -126,6 +126,7 @@ export async function activate(ctx, targetId) {
 export async function focusGuide(ctx) {
   const t = (await pageTargets(ctx.browser)).find(x => x.url.startsWith(guideUrl(ctx.port)));
   if (t) return activate(ctx, t.targetId);
+  if (ctx.autoOnly) return; // --auto-only 不打开向导页（没人看）
   await ctx.browser.client.send("Target.createTarget", { url: guideUrl(ctx.port) });
 }
 
@@ -157,18 +158,41 @@ export function abortable(ctx, p) {
   return Promise.race([p, stop]).finally(off);
 }
 
-// 由脚本发起授权申请（CDP 带用户手势），用户只需在弹框里点“允许”。返回是否已授权；被中断时抛出
+// 由脚本发起授权申请（CDP 带用户手势）。返回是否已授权；被中断时抛出。
+// 测试配置里这些网站都授权过（permissions.remove 只是暂时撤销，“已授予”记录还在），Chrome 直接批准、不弹框（perm-dialog spike）。
+// 申请只发一次，从独占一个新窗口的设置页发起：授权框挂在浏览器窗口上，关掉这个窗口它才随之消失（只关标签不行，spike 第 4 条）。
+// AUTO_GRANT_MS 内没有结果说明弹出了原生授权框：--auto-only 不点原生对话框，关掉窗口（对话框随之关闭）返回 false；
+// 引导式运行换成“请点允许”的说明，继续等同一个对话框（不关掉重弹），总共最多 GRANT_TIMEOUT_MS。中断时同样关掉窗口。
+// 单测注入：ctx.openGrantPage（打开申请用的设置页，返回 { targetId, ev(expr, opts), close() }）、ctx.autoGrantMs
+export const AUTO_GRANT_MS = 15000;
+const PENDING = Symbol("pending");
+function within(p, ms, value) {
+  let t;
+  return Promise.race([p, new Promise(r => { t = setTimeout(() => r(value), ms); })]).finally(() => clearTimeout(t));
+}
 export async function requestGrant(ctx, origins, { title = "授权", why = "" } = {}) {
-  const hosts = [...new Set(origins.map(o => o.replace(/^\w+:\/\//, "").replace(/\/\*$/, "")))];
-  ctx.guide.setStep({ title, instruction: `${why}即将弹出 Chrome 的授权框（${hosts.join("、")}），请点“允许（Allow）”。允许后脚本自动继续。`, buttons: [] });
-  await sleep(1500);
-  await ctx.browser.evalExt("true"); // 确保有设置页
-  const opt = (await pageTargets(ctx.browser)).find(t => t.url.startsWith(OPT_PREFIX));
-  if (opt) await activate(ctx, opt.targetId); // 授权框挂在设置页所在的标签上
-  let ok = false;
+  const open = ctx.openGrantPage ?? (b => openOptions(b, { newWindow: true }));
+  const autoMs = ctx.autoGrantMs ?? AUTO_GRANT_MS;
+  const hosts = [...new Set(origins.map(o => o.replace(/^\w+:\/\//, "").replace(/\/\*$/, "")))].join("、");
+  ctx.guide?.setStep?.({ title, buttons: [], instruction: `${why}脚本重新申请授权（${hosts}；之前授权过的网站 Chrome 直接批准，不弹框）。`
+    + (ctx.autoOnly ? "" : "万一弹出了 Chrome 的授权框，请点“允许（Allow）”，脚本自动继续。") });
+  if (stoppedCtx(ctx)) throw new Error("等待授权时运行被中断");
+  const page = await open(ctx.browser);
   try {
-    ok = await abortable(ctx, ctx.browser.evalExt(`chrome.permissions.request({ origins: ${JSON.stringify(origins)} })`,
-      { userGesture: true, timeoutMs: GRANT_TIMEOUT_MS }));
-  } finally { await focusGuide(ctx).catch(() => {}); }
-  return ok === true && (await contains(ctx.browser, origins)) === true;
+    await activate(ctx, page.targetId);
+    const req = page.ev(`chrome.permissions.request({ origins: ${JSON.stringify(origins)} })`,
+      { userGesture: true, timeoutMs: GRANT_TIMEOUT_MS + 5000 }).catch(() => false);
+    let ok = await abortable(ctx, within(req, autoMs, PENDING));
+    if (ok === PENDING && ctx.autoOnly) {
+      ctx.log?.(`  ${title}：${autoMs / 1000} 秒内没有批准（多半弹出了原生授权框：测试配置里没有这些网站的已授予记录），关掉申请窗口（对话框随之关闭），不点原生对话框`);
+      ok = false;
+    } else if (ok === PENDING) {
+      ctx.guide.setStep({ title, buttons: [], instruction: `${why}Chrome 弹出了授权框（${hosts}，在单独的“Split Search 设置”窗口里），请点“允许（Allow）”。允许后脚本自动继续。` });
+      ok = await abortable(ctx, within(req, GRANT_TIMEOUT_MS - autoMs, false));
+    }
+    return ok === true && (await contains(ctx.browser, origins)) === true;
+  } finally {
+    await page.close().catch(() => {});
+    await focusGuide(ctx).catch(() => {});
+  }
 }

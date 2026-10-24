@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { mapTargets, collectCdp, formatCdp } from "../scripts/e2e/diag.mjs";
 import { formatDiag, runSteps } from "../scripts/e2e/runner.mjs";
 import { swByOrigin, swText, t14Verdict } from "../scripts/e2e/steps/sw.mjs";
-import { INCOGNITO_TEXT, INCOGNITO_URL } from "../scripts/e2e/steps/t8.mjs";
+import { INCOGNITO_TEXT, INCOGNITO_URL } from "../scripts/e2e/steps/t8-manual.mjs";
 
 const EXT = "chrome-extension://alngkkgnobglnfbhcplhpaflcgfiajnj";
 const GUIDE = "http://127.0.0.1:8765/guide";

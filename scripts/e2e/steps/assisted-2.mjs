@@ -1,7 +1,6 @@
-// 需要人参与的步骤（二）：T12 编辑自动发现的条目（judge）、T14 各引擎作左侧（assist）、B14 深色模式（judge）。
-import { splitPairs, sleep, pageTargets, summarize, nonce } from "./util.mjs";
-import { openOptions } from "./optpage.mjs";
-import { assist, judge, focusGuide, activate, guideUrl } from "./guided.mjs";
+// 需要人参与的步骤（二）：T12 编辑自动发现的条目（judge）、T14 各引擎作左侧（assist）。两者都是 xauto 版本的回退。
+import { splitPairs, sleep, summarize, nonce } from "./util.mjs";
+import { assist, judge, focusGuide, guideUrl } from "./guided.mjs";
 import { prepare, hostOf, fmt, SETTINGS, G, BING } from "./assisted.mjs";
 import { L } from "./labels.mjs";
 import { readServiceWorkers, swText, t14Verdict, originOf, findPlain, plainTracker, plainLine, tabChains, strayRight, takeoverEvidence } from "./sw.mjs";
@@ -161,36 +160,4 @@ const T14 = {
   },
 };
 
-const DARK = { media: "", features: [{ name: "prefers-color-scheme", value: "dark" }] };
-
-const B14 = {
-  id: "B14", title: "深色模式：设置页与向导页配色跟随", kind: "judge", needs: [], timeoutFactor: 3,
-  async run(ctx) {
-    const { client } = ctx.browser;
-    const page = await openOptions(ctx.browser);
-    let gsid = null;
-    try {
-      const g = (await pageTargets(ctx.browser)).find(t => t.url.startsWith(guideUrl(ctx.port)));
-      if (g) gsid = await ctx.browser.attach(g.targetId);
-      await client.send("Emulation.setEmulatedMedia", DARK, page.sid);
-      if (gsid) await client.send("Emulation.setEmulatedMedia", DARK, gsid);
-      // 先在向导页显示说明，停顿一下再切到设置页
-      return await judge(ctx, {
-        title: "B14 深色模式", timeoutMs: ctx.timeoutMs * 2, afterShow: () => activate(ctx, page.targetId),
-        instruction: "即将切到设置页（约 2 秒后），请先记住下面的步骤，看完回到本页作答。\n"
-          + "脚本已把设置页和向导页切到深色模式（只模拟这两个页面，不改系统设置）。\n"
-          + "1. 看当前设置页：背景、文字、按钮、横幅、对话框（可点“添加引擎”看一眼）是否都是深色配色、清晰可读；\n"
-          + "2. 切回向导页（这一页）：是否也是深色。\n都正常点“通过”。",
-      });
-    } finally {
-      if (gsid) {
-        await client.send("Emulation.setEmulatedMedia", { media: "", features: [] }, gsid).catch(() => {});
-        await client.send("Target.detachFromTarget", { sessionId: gsid }).catch(() => {});
-      }
-      await page.close();
-      await focusGuide(ctx).catch(() => {});
-    }
-  },
-};
-
-export const ASSISTED_2 = [B14, T12, T14];
+export const ASSISTED_2 = [T12, T14]; // B14 已改为 auto（b14.mjs）
