@@ -71,13 +71,17 @@ const hangingBrowser = () => ({
   client: { send: async m => (m === "Target.getTargets" ? { targetInfos: [] } : {}) },
 });
 
-test("requestGrant: 等授权框时运行被中断立即抛出，不等满 5 分钟", async () => {
+test("requestGrant: 等授权框时运行被中断立即抛出（不等满 5 分钟），并关掉申请窗口让授权框随之关闭", async () => {
   const ac = new AbortController();
-  const p = requestGrant({ browser: hangingBrowser(), guide: recGuide(), port: 8765, abortSignal: ac.signal }, ["http://a/*"]);
-  setTimeout(() => ac.abort("收到 SIGINT"), 1700); // requestGrant 先停顿 1.5 秒让用户看到说明
+  let closed = 0;
+  const page = { targetId: "w", ev: () => new Promise(() => {}), close: async () => { closed++; } };
+  const p = requestGrant({ browser: hangingBrowser(), guide: recGuide(), port: 8765, abortSignal: ac.signal, openGrantPage: async () => page },
+    ["http://a/*"]);
+  setTimeout(() => ac.abort("收到 SIGINT"), 300);
   const t0 = Date.now();
   await assert.rejects(p, /中断/);
-  assert.ok(Date.now() - t0 < 4000);
+  assert.ok(Date.now() - t0 < 2000);
+  assert.equal(closed, 1);
 });
 
 test("ensureGrants: 授权申请抛出（超时/中断）时返回“授权未完成”，不让整次运行出错", async () => {

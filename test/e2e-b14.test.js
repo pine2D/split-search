@@ -1,0 +1,39 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { schemeTokens, schemeVerdict, topRules } from "../scripts/e2e/steps/b14.mjs";
+
+const read = p => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
+
+test("schemeTokens: 从真实样式表读出 body 引用的变量与浅色/深色取值", () => {
+  assert.deepEqual(schemeTokens(read("src/options/options.css")),
+    { bgVar: "--bg", fgVar: "--text", light: { bg: "#f5f6f8", fg: "#1c1f25" }, dark: { bg: "#141619", fg: "#e5e7eb" } });
+  const g = schemeTokens(read("scripts/e2e/guide/guide.css"));
+  assert.equal(g.fgVar, "--fg");
+  assert.notEqual(g.light.bg, g.dark.bg);
+});
+
+test("schemeTokens: 注释、background-color、var() 带回退值；别的 @media 不算深色", () => {
+  const css = `/* :root { --bg: red } */ :root { --b: #fff; --f: #000 }
+    @media (max-width: 600px) { :root { --b: #111 } }
+    @media (prefers-color-scheme: dark) { :root { --b: #000; --f: #eee } .x { color: red } }
+    body { background-color: var(--b, white); color: var( --f ) }`;
+  assert.deepEqual(schemeTokens(css), { bgVar: "--b", fgVar: "--f", light: { bg: "#fff", fg: "#000" }, dark: { bg: "#000", fg: "#eee" } });
+});
+
+test("schemeTokens: 不是“变量 + 深色覆盖”的写法时说明原因", () => {
+  assert.throws(() => schemeTokens(":root{--b:#fff} body{background:#fff;color:var(--b)}"), /var\(--…\)/);
+  assert.throws(() => schemeTokens(":root{--b:#fff;--f:#000} body{background:var(--b);color:var(--f)}"), /没有覆盖 --b/);
+  assert.throws(() => schemeTokens("body{background:var(--b);color:var(--f)} @media (prefers-color-scheme: dark){:root{--b:#000;--f:#fff}}"), /浅色 :root 里没有定义 --b/);
+  assert.throws(() => schemeTokens(":root{--b:#000;--f:#000} body{background:var(--b);color:var(--f)} @media (prefers-color-scheme: dark){:root{--b:#000;--f:#fff}}"), /取值相同/);
+  assert.throws(() => topRules("a { b: c"), /不配对/);
+});
+
+test("schemeVerdict: 颜色与 matchMedia 都对才通过，否则逐项说明", () => {
+  const ok = { bg: "rgb(0, 0, 0)", fg: "rgb(1, 1, 1)", wantBg: "rgb(0, 0, 0)", wantFg: "rgb(1, 1, 1)", matches: true };
+  assert.equal(schemeVerdict("设置页", "dark", ok), null);
+  assert.match(schemeVerdict("设置页", "light", ok), /设置页（light）：prefers-color-scheme/);
+  const bad = schemeVerdict("向导页", "dark", { ...ok, bg: "rgb(9, 9, 9)" });
+  assert.match(bad, /背景色 rgb\(9, 9, 9\)，应为 rgb\(0, 0, 0\)/);
+  assert.doesNotMatch(bad, /文字色/);
+});

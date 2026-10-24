@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   snapshotStorage, restoreStorage, restorePendingSnapshot, configureMocks,
-  ensureExtension, storageDigest, installedIds,
+  ensureExtension, ensureExtensionUp, registeredEntry, storageDigest, installedIds,
 } from "../scripts/e2e/ext.mjs";
 import { EXT_ID, mockEngines } from "../scripts/e2e/config.mjs";
 
@@ -122,3 +122,36 @@ test("ensureExtension: 页面里 id 不符 -> wrong-id", async () => {
   assert.equal(r.ok, false);
   assert.equal(r.reason, "wrong-id");
 });
+
+test("ensureExtensionUp: 已登记但打不开 → 稍等重试，仍不行经详情页启用再查（reenabled）；未登记、wrong-id 不启用", async () => {
+  const seq = list => { let i = 0; return async () => list[Math.min(i++, list.length - 1)]; };
+  const DIS = { ok: false, reason: "not-installed", hint: "扩展已登记但设置页打不开，可能被停用" };
+  const wait = async () => {};
+  let enables = 0;
+  const enable = async () => { enables++; return true; };
+  assert.deepEqual(await ensureExtensionUp(seq([{ ok: true }]), { enable, wait }), { ok: true });
+  assert.deepEqual(await ensureExtensionUp(seq([DIS, { ok: true }]), { enable, wait }), { ok: true }, "冷启动慢：重试即可");
+  assert.equal(enables, 0);
+  assert.deepEqual(await ensureExtensionUp(seq([DIS, DIS, { ok: true }]), { enable, wait }), { ok: true, reenabled: true });
+  assert.equal(enables, 1);
+  assert.deepEqual(await ensureExtensionUp(seq([DIS, DIS, DIS]), { enable: async () => false, wait }), DIS, "启用失败：原样返回");
+  assert.deepEqual(await ensureExtensionUp(seq([DIS, DIS, DIS]), { enable: async () => { throw new Error("x"); }, wait }), DIS);
+  enables = 0;
+  await ensureExtensionUp(seq([{ ok: false, reason: "not-installed" }]), { enable, wait });
+  await ensureExtensionUp(seq([{ ok: false, reason: "wrong-id", ids: ["x"] }]), { enable, wait });
+  assert.equal(enables, 0);
+});
+
+test("ensureExtension: 本扩展已登记（不论装自哪个目录）但打不开 → not-installed 带 hint；停用的写明停用", () => withDir(async d => {
+  const dead = { evalExt: () => new Promise(() => {}) };
+  profileWith(d, { [EXT_ID]: { path: "/main/src", disable_reasons: [1] } });
+  assert.deepEqual(registeredEntry(d), { path: "/main/src", disabled: true });
+  assert.deepEqual(await ensureExtension(dead, { timeoutMs: 50, profileDir: d, srcDir: "/worktree/src" }),
+    { ok: false, reason: "not-installed", hint: "扩展已登记但处于停用状态" });
+  profileWith(d, { [EXT_ID]: { path: "/main/src", disable_reasons: [] } });
+  assert.equal(registeredEntry(d).disabled, false);
+  assert.match((await ensureExtension(dead, { timeoutMs: 50, profileDir: d, srcDir: "/worktree/src" })).hint, /可能被停用/);
+  profileWith(d, { [EXT_ID]: { path: "/main/src", disable_reasons: 1 } });
+  assert.equal(registeredEntry(d).disabled, true, "旧版位掩码");
+  assert.equal(registeredEntry(join(d, "nope")), null);
+}));

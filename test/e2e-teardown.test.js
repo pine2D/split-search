@@ -4,7 +4,7 @@ import { mkdtempSync, rmSync, readdirSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
-  restoreStorageStep, restoreSettingsStep, closeStep, cleanupStep, fillResults, writePartialReportSync, teardown, stopDisplaySync,
+  restoreStorageStep, restoreSettingsStep, closeStep, reenableStep, cleanupStep, fillResults, writePartialReportSync, teardown, stopDisplaySync,
 } from "../scripts/e2e/teardown.mjs";
 
 const mkRt = (o = {}) => ({ browser: { close: async () => ({ graceful: true }) }, col: null, browserDead: false, restartFailed: false,
@@ -168,3 +168,36 @@ test("stopDisplaySync: 第二次 Ctrl+C 时同步停掉服务器；没有服务�
   assert.equal(stopDisplaySync({}), false);
   assert.equal(stopDisplaySync({ display: { stopSync: () => { throw new Error("x"); } } }), false);
 });
+
+test("reenableStep: 开始过 restores 步骤且扩展不可用 → 经详情页启用并记备注；可用、没开始过、浏览器不在了 → 不动", async () => {
+  const T8 = { id: "T8", restores: true };
+  let enables = 0;
+  const d = (alive, ok = true) => ({ extAlive: async () => alive, enableExt: async () => { enables++; return ok; } });
+  const rt = mkRt({ started: [T8] });
+  await reenableStep(rt, mkS(), d(false));
+  assert.equal(enables, 1);
+  assert.match(rt.notes[0], /已经经 chrome:\/\/extensions 详情页重新启用/);
+  const rtFail = mkRt({ started: [T8] });
+  await reenableStep(rtFail, mkS(), d(false, false));
+  assert.match(rtFail.notes[0], /重新启用也没成功；下次启动会再尝试启用/);
+  enables = 0;
+  await reenableStep(mkRt({ started: [T8] }), mkS(), d(true));
+  await reenableStep(mkRt({ started: [{ id: "T1" }] }), mkS(), d(false));
+  await reenableStep(mkRt({ started: [T8], browserDead: true }), mkS(), d(false));
+  await reenableStep(mkRt({ started: [T8] }), mkS(), { extAlive: async () => false });
+  assert.equal(enables, 0);
+});
+
+test("teardown: 中断时扩展仍停用 → 先启用再恢复 storage", () => withOut(async dir => {
+  const order = [];
+  let alive = false;
+  const rt = mkRt({ started: [{ id: "T8", restores: true }] });
+  const s = mkS({ snapshotTaken: true, signalName: "SIGINT", storage: { before: "a" }, steps: [] });
+  await teardown(rt, s, {
+    ext: { SNAPSHOT_FILE: "/x", restoreStorage: async () => { order.push(`storage:${alive}`); return { digest: "a", equal: true }; } },
+    extAlive: async () => alive, enableExt: async () => { order.push("enable"); alive = true; return true; },
+    se: { SE_SNAPSHOT_FILE: SE_FILE }, exists: () => false, cleanupItems: () => [], cleanupNote: () => null, cleanupText: () => "", outDir: dir,
+  });
+  assert.deepEqual(order, ["enable", "storage:true"]);
+  assert.equal(s.storage.equal, true);
+}));

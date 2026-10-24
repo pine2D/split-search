@@ -20,7 +20,7 @@ function assertOurs(kw) {
 }
 
 // ---- 页面驱动（真实 chrome://settings）----
-const DEEP = `const deepAll = (sel, root = document) => { const out = []; const walk = r => { out.push(...r.querySelectorAll(sel));
+export const DEEP = `const deepAll = (sel, root = document) => { const out = []; const walk = r => { out.push(...r.querySelectorAll(sel));
   for (const el of r.querySelectorAll("*")) if (el.shadowRoot) walk(el.shadowRoot); }; walk(root); return out; };
   const deep = (sel, root) => deepAll(sel, root)[0];
   const row = id => { const r = deepAll("settings-search-engine-entry").find(x => x.engine && x.engine.id === id);
@@ -37,7 +37,7 @@ const LIST_EXPR = `(async () => {
 })()`;
 const ACTIONS = new Set(["makeDefault", "delete"]);
 
-async function poll(fn, { timeoutMs = 8000, intervalMs = 250, msg = "等待超时" } = {}) {
+export async function poll(fn, { timeoutMs = 8000, intervalMs = 250, msg = "等待超时" } = {}) {
   const end = Date.now() + timeoutMs;
   for (;;) {
     const v = await fn();
@@ -83,6 +83,7 @@ export async function openSettingsPage(browser) {
       await poll(() => ev(`(() => { ${DEEP} return !dialog(); })()`), { timeoutMs: 5000, msg: "编辑对话框没有关闭" });
     };
     return {
+      ev, // 页面里执行任意脚本（settings-kagi.mjs 用它在页面内改 Kagi 条目的网址，网址不传回 Node）
       list: () => ev(LIST_EXPR),
       add: async e => { await ev(`(() => { ${DEEP} deep("#addSearchEngine").click(); return true; })()`); await fill(e); },
       edit: async (id, e) => { await ev(`(() => { ${DEEP} row(${id}).shadowRoot.getElementById("editIconButton").click(); return true; })()`); await fill(e); },
@@ -106,13 +107,13 @@ async function withPage(browser, opts, fn) {
   try { return await fn(page); } finally { await page.close(); }
 }
 const pollOpts = (opts, msg) => ({ timeoutMs: opts.timeoutMs ?? 8000, intervalMs: opts.intervalMs ?? 250, msg });
-const readSnap = file => JSON.parse(readFileSync(file, "utf8"));
-function writeSnap(file, snap) {
+export const readSnap = file => JSON.parse(readFileSync(file, "utf8"));
+export function writeSnap(file, snap) {
   mkdirSync(dirname(file), { recursive: true });
   writeFileSync(`${file}.tmp`, JSON.stringify(snap, null, 2));
   renameSync(`${file}.tmp`, file);
 }
-const pickDefault = list => list.find(e => e.default);
+export const pickDefault = list => list.find(e => e.default);
 function findEntry(list, keyword, name) {
   const all = list.filter(e => e.keyword === keyword);
   return all.find(e => e.name === name) ?? all[0];
@@ -184,7 +185,10 @@ export const makeDefault = (browser, keyword, opts = {}) => withPage(browser, op
   const cur = pickDefault(await page.list());
   if (cur && !isOurs(cur.keyword) && cur.keyword !== keyword && existsSync(file)) {
     const snap = readSnap(file);
-    if (snap.defaultKeyword !== cur.keyword || snap.defaultName !== cur.name) writeSnap(file, { ...snap, defaultKeyword: cur.keyword, defaultName: cur.name });
+    // scriptDefaults：脚本自己设成默认的用户条目（T12 的 Kagi），不是“切换之前的默认”
+    if (!(snap.scriptDefaults ?? []).includes(cur.keyword) && (snap.defaultKeyword !== cur.keyword || snap.defaultName !== cur.name)) {
+      writeSnap(file, { ...snap, defaultKeyword: cur.keyword, defaultName: cur.name });
+    }
   }
   await doMakeDefault(page, keyword, opts);
 });
@@ -214,7 +218,9 @@ export async function restore(browser, opts = {}) {
     const list = await page.list();
     const cur = pickDefault(list);
     let def = cur, warning = null;
-    const changed = !cur || isOurs(cur.keyword);
+    // 当前默认是专用条目，或是本次运行由脚本设成默认的用户条目（snap.scriptDefaults，T12 的 Kagi）且不是运行前的默认，才改回
+    const byScript = cur && (snap.scriptDefaults ?? []).includes(cur.keyword) && !(cur.keyword === snap.defaultKeyword && cur.name === snap.defaultName);
+    const changed = !cur || isOurs(cur.keyword) || byScript;
     if (changed) {
       def = findEntry(list, snap.defaultKeyword, snap.defaultName);
       if (!def) {

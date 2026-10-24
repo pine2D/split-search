@@ -84,6 +84,19 @@ export function installedIds(profileDir = PROFILE_DIR, srcDir = SRC_DIR) {
   return [...ids];
 }
 
+// 测试配置里登记的本扩展，不论装自哪个目录（在 worktree 里跑时，测试配置装的可能是主检出的 src/）。
+// 返回 { path, disabled } | null；disable_reasons 新版是数组、旧版是位掩码数字
+export function registeredEntry(profileDir = PROFILE_DIR, id = EXT_ID) {
+  for (const f of ["Preferences", "Secure Preferences"]) {
+    let s;
+    try { s = JSON.parse(readFileSync(join(profileDir, "Default", f), "utf8"))?.extensions?.settings?.[id]; } catch { continue; }
+    if (!s) continue;
+    const r = s.disable_reasons;
+    return { path: s.path ?? null, disabled: Array.isArray(r) ? r.length > 0 : !!r };
+  }
+  return null;
+}
+
 // 返回 { ok: true } | { ok: false, reason: "not-installed" | "wrong-id", ids?, hint? }。
 // 与 brief 的差异：不返回 swSession（SW 会被回收，扩展 API 一律经 evalExt）。
 export async function ensureExtension(browser, { timeoutMs = 12000, profileDir = PROFILE_DIR, srcDir = SRC_DIR } = {}) {
@@ -95,8 +108,24 @@ export async function ensureExtension(browser, { timeoutMs = 12000, profileDir =
   const ids = installedIds(profileDir, srcDir);
   const others = ids.filter(x => x !== EXT_ID);
   if (others.length) return { ok: false, reason: "wrong-id", ids: others };
-  if (ids.includes(EXT_ID)) return { ok: false, reason: "not-installed", hint: "扩展已登记但设置页打不开，可能被停用" };
+  const reg = registeredEntry(profileDir);
+  if (reg?.disabled) return { ok: false, reason: "not-installed", hint: "扩展已登记但处于停用状态" };
+  if (ids.includes(EXT_ID) || reg) return { ok: false, reason: "not-installed", hint: "扩展已登记但设置页打不开，可能被停用" };
   return { ok: false, reason: "not-installed" };
+}
+
+// 启动时用：扩展已登记但设置页打不开（hint）时，先稍等重试一次（冷启动慢）；仍不行多半是被停用了
+// （例如上次运行在 T8(b) 停用期间被第二次 Ctrl+C 强制退出），经 enable()（chrome://extensions 详情页）启用后再查。
+// check() 即 ensureExtension；返回它的结果，经启用恢复的另带 reenabled: true
+export async function ensureExtensionUp(check, { enable, wait = ms => new Promise(r => setTimeout(r, ms)) } = {}) {
+  let ens = await check();
+  if (ens.ok || !ens.hint) return ens;
+  await wait(3000);
+  ens = await check();
+  if (ens.ok || !ens.hint || !enable) return ens;
+  if (!(await enable().catch(() => false))) return ens;
+  const again = await check();
+  return again.ok ? { ...again, reenabled: true } : again;
 }
 
 // 让扩展重新读取磁盘上的代码。chrome.runtime.reload() 会关闭扩展页面，所以：

@@ -232,6 +232,14 @@ export function createXinput({ exec = defaultExec, env = process.env, timeoutMs 
     return buf;
   }
 
+  // 截图存成 PNG（只读）：target 为窗口 id 或 "root"（整个屏幕——调用方只在嵌套显示上用 root，host 模式会截到用户桌面）
+  async function capturePng(target, file) {
+    if (target !== "root" && !isWid(target)) throw new Error(`窗口 id 不合法：${target}`);
+    if (typeof file !== "string" || !file.endsWith(".png") || file.startsWith("-")) throw new Error(`截图文件名不合法：${file}`);
+    await call("import", ["-silent", "-window", target, file], { timeout: 10000 });
+    return file;
+  }
+
   // xinput 可用 = DISPLAY 存在、四个命令（xdotool、import、xdpyinfo、xwininfo）可执行、XTEST 扩展在、非 headless、未传 --no-xinput
   async function available({ headless = false, noXinput = false } = {}) {
     if (noXinput) return { ok: false, reason: "已传 --no-xinput" };
@@ -253,13 +261,13 @@ export function createXinput({ exec = defaultExec, env = process.env, timeoutMs 
   return {
     available, listWindows, findWindow, findWindowByTitle, pidWindows, visibleWindows, stacking, rootChildren, windowTree, mapState, rootWindow, pointer, activeWindow, windowSize, windowRect,
     focusMode: () => (focus.noEwmh ? "getwindowfocus" : "getactivewindow"), assertPointerIn, assertActive, move, down: mouseOp("mousedown"), up: mouseOp("mouseup"), click: mouseOp("click"),
-    key, typeAscii, releaseModifiers, captureRgb, ...(debug ? { debugRun: run } : {}),
+    key, typeAscii, releaseModifiers, captureRgb, capturePng, ...(debug ? { debugRun: run } : {}),
   };
 }
 
 const xi = createXinput();
 export const {
   available, listWindows, findWindow, findWindowByTitle, pidWindows, visibleWindows, stacking, rootChildren, windowTree, mapState, rootWindow, pointer, activeWindow, windowSize, windowRect,
-  assertPointerIn, assertActive, move, down, up, click, key, typeAscii, releaseModifiers, captureRgb,
+  assertPointerIn, assertActive, move, down, up, click, key, typeAscii, releaseModifiers, captureRgb, capturePng,
 } = xi;
 export default xi;
