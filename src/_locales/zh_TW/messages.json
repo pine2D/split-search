@@ -228,7 +228,7 @@
     "description": "Setup step 2. \"Site search\" and \"Add\" must match Chrome's own labels on chrome://settings/searchEngines in this language."
   },
   "guide_step_fields": {
-    "message": "「姓名」隨意填（例如「Google ｜ Bing」）；「搜尋捷徑」自訂（例如 $KEYWORD$）；把上方複製的觸發網址貼到「以 %s 取代查詢的網址」欄位，最後點選「儲存」。",
+    "message": "「姓名」隨意填（例如「Google ｜ Bing」）；「搜尋捷徑」自訂（例如 $KEYWORD$）；把上方複製的觸發網址貼到「以 %s 取代查詢的網址」欄位，最後點選「新增」。",
     "description": "Setup step 3: what to type into Chrome's site search dialog. \"Shortcut\" must match Chrome's label. The placeholder becomes the example shortcut (guide_example_keyword) shown as code.",
     "placeholders": {
       "KEYWORD": {
@@ -386,6 +386,10 @@
   "common_right": {
     "message": "右側",
     "description": "Label of the right engine picker."
+  },
+  "common_pair_separator": {
+    "message": "｜",
+    "description": "Decorative separator between the left and right engine pickers; same mark as in guide_pair_label. Hidden from screen readers."
   },
   "notice_copy_failed": {
     "message": "複製失敗，請手動選取文字複製（$DETAIL$）",

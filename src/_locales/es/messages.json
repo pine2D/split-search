@@ -228,7 +228,7 @@
     "description": "Setup step 2. \"Site search\" and \"Add\" must match Chrome's own labels on chrome://settings/searchEngines in this language."
   },
   "guide_step_fields": {
-    "message": "En «Nombre», pon lo que quieras (p. ej. «Google | Bing»); en «Atajo», el que prefieras (p. ej. $KEYWORD$); en «URL con %s en el lugar de la consulta» («URL con %s en lugar de la consulta»), pega la URL de activación copiada arriba. Por último, haz clic en «Guardar».",
+    "message": "En «Nombre», pon lo que quieras (p. ej. «Google | Bing»); en «Atajo», el que prefieras (p. ej. $KEYWORD$); en «URL con %s en el lugar de la consulta» («URL con %s en lugar de la consulta»), pega la URL de activación copiada arriba. Por último, haz clic en «Añadir» («Agregar»).",
     "description": "Setup step 3: what to type into Chrome's site search dialog. \"Shortcut\" must match Chrome's label. The placeholder becomes the example shortcut (guide_example_keyword) shown as code.",
     "placeholders": {
       "KEYWORD": {
@@ -386,6 +386,10 @@
   "common_right": {
     "message": "Derecha",
     "description": "Label of the right engine picker."
+  },
+  "common_pair_separator": {
+    "message": "|",
+    "description": "Decorative separator between the left and right engine pickers; same mark as in guide_pair_label. Hidden from screen readers."
   },
   "notice_copy_failed": {
     "message": "No se pudo copiar; selecciona el texto y cópialo manualmente ($DETAIL$)",

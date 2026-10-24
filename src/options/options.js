@@ -161,6 +161,7 @@ async function render() {
     [raw] = await Promise.all([loadRaw(), i18nReady]);
   } catch (err) {
     await i18nReady;
+    await localeSwitch;
     applyStatic();
     notify(t("notice_load_failed", errorText(err)), "error");
     document.body.classList.remove("loading");
@@ -217,7 +218,7 @@ function pairSection(cfg, byId, granted) {
 
   const nodes = [h("div", { class: "pair-pickers" },
     h("label", null, ht("span", null, "common_left"), leftSel),
-    h("span", { class: "pair-sep", "aria-hidden": "true" }, "｜"),
+    ht("span", { class: "pair-sep", "aria-hidden": "true" }, "common_pair_separator"),
     h("label", null, ht("span", null, "common_right"), rightSel))];
   const left = byId.get(l);
   if (left && !granted.get(left.id)) {

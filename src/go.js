@@ -123,7 +123,7 @@ async function main() {
 
   const parsed = parseTrigger(original, engines);
   if (!parsed.ok) {
-    showError(...errorKey(parsed.error)).catch(log);
+    showError(...(errorKey(parsed.error) ?? ["go_status_failed"])).catch(log);
     offerLeftOnly(original).catch(log);
     return;
   }

@@ -129,6 +129,7 @@ async function inPageSwitch(ctx, opt) {
   await pick(opt, ["es"]);
   await waitPage(opt, showsLocale("es", notReloaded), "不刷新、2 秒内切到 es", 2000);
   const ms = Date.now() - t0;
+  if (ms > 2000) return { status: "fail", detail: `切到 es 用了 ${ms} ms，超过 2 秒` };
   const go = await openGo(ctx, "es");
   await go.close();
   return { status: "pass", detail: `${ms} ms 内 lang 变为 es、标题为“${msgIn("es", "options_title")}”，页面未刷新；新开的 go.html 出错页是西语` };
@@ -146,8 +147,11 @@ async function rapidSwitch(ctx, opt) {
 }
 
 async function secondPageFollows(ctx, first) {
+  await setPref(ctx, "zh_TW"); // 前一项失败时也保证起点不是 en，否则“跟随”会空过
   const second = await openOptions(ctx.browser);
   try {
+    await waitPage(second, showsLocale("zh_TW"), "第二个设置页先显示 zh_TW");
+    await waitPage(first, showsLocale("zh_TW"), "第一个设置页先显示 zh_TW");
     await markNoReload(second);
     await pick(first, ["en"]);
     await waitPage(second, showsLocale("en", notReloaded), "第二个设置页不刷新也变成 en");

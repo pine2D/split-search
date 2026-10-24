@@ -70,7 +70,7 @@ export function renderTriggers(ctx) {
     lefts.length
       ? h("div", { class: "pair-pickers" },
           h("label", null, ht("span", null, "common_left"), leftSel),
-          h("span", { class: "pair-sep", "aria-hidden": "true" }, "｜"),
+          ht("span", { class: "pair-sep", "aria-hidden": "true" }, "common_pair_separator"),
           h("label", null, ht("span", null, "common_right"), rightSel))
       : ht("p", { class: "hint hint-error" }, "guide_no_left"),
     out));

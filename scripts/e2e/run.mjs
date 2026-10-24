@@ -183,7 +183,11 @@ async function main() {
     let src;
     try { src = await switchSource(browser, { srcDir: ext.SRC_DIR, file: SOURCE_STATE_FILE, reload: ext.reloadExtension }); }
     catch (e) {
-      if (readSourceState(SOURCE_STATE_FILE).switching) warn(`改装目录后重新加载失败：扩展可能仍是临时装载，下次启动会被 Chrome 移除（授权随之丢失），届时需重新做一次性准备`);
+      // loadUnpacked 已成功、reload 失败：让收尾（restoreSourceStep）再试一次改回运行前的目录并 reload
+      if (readSourceState(SOURCE_STATE_FILE).switching) {
+        s.sourceSwitched = true;
+        warn(`改装目录后重新加载失败：扩展可能仍是临时装载，收尾会再试一次改回；仍不成功时下次启动会被 Chrome 移除（授权随之丢失），届时需重新做一次性准备`);
+      }
       throw e;
     }
     if (!src.ok) { warn(preconditionMessage(src, args)); return 2; }

@@ -387,6 +387,10 @@
     "message": "Right",
     "description": "Label of the right engine picker."
   },
+  "common_pair_separator": {
+    "message": "|",
+    "description": "Decorative separator between the left and right engine pickers; same mark as in guide_pair_label. Hidden from screen readers."
+  },
   "notice_copy_failed": {
     "message": "Couldn’t copy. Select the text and copy it yourself ($DETAIL$)",
     "description": "Error notice when copying to the clipboard failed. The placeholder is the browser's error message.",
