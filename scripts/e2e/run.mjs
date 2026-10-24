@@ -1,5 +1,5 @@
 // CLI 入口：解析参数 → 前置检查 → 启动 → 确认扩展 → 快照并配置模拟引擎 → 执行步骤 → 恢复 → 写报告
-// 退出码：0 全部通过或跳过；1 有失败（含恢复失败、浏览器中途退出）；2 前置条件缺失；130/143 被 SIGINT/SIGTERM 中断
+// 退出码：0 全部通过、跳过或预期降级；1 有失败（含恢复失败、浏览器中途退出）；2 前置条件缺失；130/143 被 SIGINT/SIGTERM 中断
 import { existsSync } from "node:fs";
 import { parseArgs } from "./args.mjs";
 import { checkProfileLock, launch } from "./browser.mjs";
@@ -12,7 +12,7 @@ import { STEPS, selectSteps } from "./steps/index.mjs";
 import { runSteps } from "./runner.mjs";
 import { makeRestart } from "./restart.mjs";
 import { redact } from "./report.mjs";
-import { teardown, writePartialReportSync } from "./teardown.mjs";
+import { teardown, writePartialReportSync, exitCodeOf } from "./teardown.mjs";
 import xinput from "./xinput.mjs";
 import { releaseHeldSync, releaseAfterClose } from "./gesture.mjs";
 import { openGuide, installGuide, ensureGrants, cleanupPrompt, cleanupItems, cleanupNote, cleanupText } from "./steps/setup.mjs";
@@ -207,8 +207,7 @@ async function main() {
   }
 
   if (signalName) return signalName === "SIGINT" ? 130 : 143;
-  const failed = fatal || s.seFailed || rt.browserDead || rt.stopReason || !s.storage?.equal || s.results.some(r => r.status === "fail");
-  return failed ? 1 : 0;
+  return exitCodeOf(s, rt, fatal);
 }
 
 main().then(code => process.exit(code ?? 1), e => { warn(`未预期的错误：${e?.stack || e}`); process.exit(1); });

@@ -44,7 +44,7 @@ export async function waitState(ctx, pred, what, { timeoutMs = 15000 } = {}) {
   let st, last;
   for (;;) {
     if (ctx.signal?.aborted) throw new Error(`等待“${what}”时步骤被中断`);
-    try { st = await ctx.ext.state(); const v = pred(st); if (v) return v; } catch (e) { last = e; }
+    try { st = await ctx.ext.state(); const v = await pred(st); if (v) return v; } catch (e) { last = e; }
     if (Date.now() >= end) {
       const urls = (st?.tabs || []).map(t => `${t.id}@${t.windowId}:${t.index} split=${t.splitViewId} ${t.url ?? "(不可读)"}`).join("；");
       throw new Error(`${timeoutMs / 1000} 秒内未等到：${what}${last ? `（${last.message}）` : ""}；当前标签：${urls}`);

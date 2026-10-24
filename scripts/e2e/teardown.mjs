@@ -133,9 +133,16 @@ export function writeReport(data, { outDir, log = noop }) {
   writeFileSync(`${base}.md`, md);
   writeFileSync(`${base}.json`, JSON.stringify(json, null, 2));
   const sum = json.summary;
-  log(`\n汇总：共 ${sum.total} 步，通过 ${sum.pass}，失败 ${sum.fail}，跳过 ${sum.skip}；[split-search] 控制台错误 ${data.consoleErrors.length} 条`);
+  log(`\n汇总：共 ${sum.total} 步，通过 ${sum.pass}，失败 ${sum.fail}，跳过 ${sum.skip}，预期降级 ${sum.degrade}；[split-search] 控制台错误 ${data.consoleErrors.length} 条`);
   log(`报告：${base}.md`);
   return base;
+}
+
+// 退出码（不含信号中断）：有失败（步骤失败、运行出错、恢复失败、浏览器中途退出、xauto 被停掉、存储没恢复）→ 1；
+// 其余（通过、跳过、预期降级）→ 0
+export function exitCodeOf(s, rt, fatal) {
+  const failed = fatal || s.seFailed || rt.browserDead || rt.stopReason || !s.storage?.equal || s.results.some(r => r.status === "fail");
+  return failed ? 1 : 0;
 }
 
 const reportData = (rt, s, results) => ({

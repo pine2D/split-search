@@ -76,8 +76,9 @@ async function stuckGuide(ctx) {
 // 抛错 kind：skip（光标不在、用户在动鼠标）不重试；env（环境不支持、拿不到前台、被别的窗口干扰）重试；stuck → 停掉剩余 xauto 步骤。
 // 裁定 I2：只要有一次尝试是真实失败（不是 env），这一步就判失败——之后的 env/skip 不能把它吞成跳过；
 // 只有全部失败都是 env（或在任何真实失败之前就 skip）才判跳过。之后某次通过仍判通过（detail 记下之前的失败，作为不稳定信号）。
-// status degrade（T14 的预期降级：触发前有 SW、没分屏、左侧停在引擎上带着查询词）是确定结论，不重试，之前有真实失败也按它判
-// （它本身就解释了没分屏）。final(r)：返回 true 的失败同样是确定结论，不再重试。detail 第一行写明第几次尝试。
+// status degrade（T14 的预期降级：触发前有 SW、没分屏、左侧停在引擎上带着查询词）是确定结论，不重试；但之前有真实失败时
+// 不享受通过那样的例外，仍判失败（例如第 1 次 SW 还没注册、没分屏判失败，第 1 次访问引擎后 SW 才注册，第 2 次的降级不能把它盖掉）。
+// final(r)：返回 true 的失败同样是确定结论，不再重试。detail 第一行写明第几次尝试。
 // 指针被拉回真实光标位置（REASON_SNAP）时向导页提示把手从鼠标上拿开，再重试
 export async function withAttempts(ctx, attempt, { max = 3, final = () => false } = {}) {
   const fails = [];
@@ -104,6 +105,7 @@ export async function withAttempts(ctx, attempt, { max = 3, final = () => false 
       r = { status: "fail", detail: e.message, env: e.kind === "env" };
     }
     if (r.status === "skip" && real) return realFail(n, `跳过（${r.detail}）`);
+    if (r.status === "degrade" && real) return realFail(n, `判为预期降级（${String(r.detail).split("\n")[0]}）`);
     if (r.status === "pass" || r.status === "skip" || r.status === "degrade" || final(r)) {
       const verb = { pass: "通过", skip: "跳过", fail: "失败", degrade: "预期降级" }[r.status];
       return { ...r, detail: `第 ${n} 次尝试${verb}${prev()}：${r.detail}`, attempt: n };

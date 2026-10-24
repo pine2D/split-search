@@ -1,10 +1,10 @@
 // 需要人参与的步骤（二）：T12 编辑自动发现的条目（judge）、T14 各引擎作左侧（assist）、B14 深色模式（judge）。
-import { splitPairs, sleep, pageTargets, summarize } from "./util.mjs";
+import { splitPairs, sleep, pageTargets, summarize, nonce } from "./util.mjs";
 import { openOptions } from "./optpage.mjs";
 import { assist, judge, focusGuide, activate, guideUrl } from "./guided.mjs";
 import { prepare, hostOf, fmt, SETTINGS, G, BING } from "./assisted.mjs";
 import { L } from "./labels.mjs";
-import { readServiceWorkers, swText, t14Verdict, originOf, findPlain, plainTracker, plainLine } from "./sw.mjs";
+import { readServiceWorkers, swText, t14Verdict, originOf, findPlain, plainTracker, plainLine, tabChains, strayRight, takeoverEvidence } from "./sw.mjs";
 
 // 联想只记录、不判失败（清单里是“建议”）：通过=有，不通过=没有
 async function ask(ctx, title, question) {
@@ -68,8 +68,21 @@ export async function engineTabs(ctx, host) {
   return `${host} 上的标签：${tabs.slice(0, 3).map(t => `${t.id}${(t.splitViewId ?? -1) !== -1 ? `（分屏 ${t.splitViewId}）` : "（未分屏）"} ${t.url}`).join("；")}`;
 }
 
-// 主框架跳转链（控制台收集器记的，没有则空）：认“普通左侧搜索”时用（Perplexity 的 SPA 可能改写网址、丢掉 _ss）
-export const navChains = ctx => ctx.consoleCollector?.navChains?.() ?? [];
+// 全部页面的主框架跳转链（控制台收集器记的；没有收集器为 null）：只用来找“扩展接管过”的反证
+export const navChains = ctx => ctx.consoleCollector?.navChains?.() ?? null;
+// 每个标签自己的跳转链：认“普通左侧搜索”用（Perplexity 的 SPA 可能改写网址、丢掉 _ss），不用全局的链
+export async function chainsByTab(ctx, st) {
+  const col = ctx.consoleCollector;
+  if (!col?.navChain) return new Map();
+  return tabChains(st?.tabs, await ctx.browser.targets(), col.navChain);
+}
+export const errCount = ctx => ctx.consoleCollector?.errors?.length ?? 0;
+// 触发后扩展接管过这次触发的反证（sw.mjs takeoverEvidence）；err0：触发前的控制台错误数
+export async function takeoverNow(ctx, { text, err0, beforeTabs }) {
+  const st = await ctx.ext.state().catch(() => null);
+  const errors = (ctx.consoleCollector?.errors ?? []).slice(err0);
+  return takeoverEvidence({ text, chains: navChains(ctx), errors, stray: strayRight(st, beforeTabs) });
+}
 
 export const swNow = async ctx => readServiceWorkers(ctx.browser, { prefer: t => t.url.startsWith(guideUrl(ctx.port)) })
   .catch(e => ({ map: new Map(), error: e.message }));
@@ -79,19 +92,22 @@ async function leftItem(ctx, e) {
   const sw0 = await swNow(ctx);
   const swBefore = sw0.error ? `未知（${sw0.error}）` : swText(sw0.map, origin);
   await focusGuide(ctx);
-  let before, beforeTabs;
+  let before, beforeTabs, q, err0;
   const plain = plainTracker();
+  // 每次（含“重试”）重新记下现有标签、控制台错误数，并换一个带 nonce 的查询词（上一次尝试留下的标签和跳转链不会被认成这一次的）
   const snap = async () => {
     const st = await ctx.ext.state();
     before = new Set(splitPairs(st).map(p => p[0].splitViewId));
     beforeTabs = new Set(st.tabs.map(t => t.id));
+    q = `左侧 ${e.name} 测试 ${nonce()}`;
+    err0 = errCount(ctx);
     plain.reset();
   };
   await snap();
-  const q = `左侧 ${e.name} 测试`;
   const trig = `${e.url}&_ss=${e.id},google`;
+  const takeover = () => takeoverNow(ctx, { text: q, err0, beforeTabs });
   const r = await assist(ctx, {
-    title: `T14 ${e.name} 作左侧`, label: `T14 ${e.name}`, what: `左侧为 ${e.host} 的新分屏`, sampleText: q, copyText: trig,
+    title: `T14 ${e.name} 作左侧`, label: `T14 ${e.name}`, what: `左侧为 ${e.host} 的新分屏`, get sampleText() { return q; }, copyText: trig,
     timeoutMs: ctx.timeoutMs * 2,
     instruction: `1. 在 ${SETTINGS} 的${L.siteSearch}里点${L.add}：名称和快捷字词都填 ${e.kw}，网址粘贴下面的网址，保存；\n`
       + `2. 在 ${e.kw} 右侧 ${L.more} 里点${L.makeDefault}；\n3. 回到向导页，选中下面的文字，拖到标签栏上两个标签之间。\n`
@@ -103,12 +119,12 @@ async function leftItem(ctx, e) {
       const st = await ctx.ext.state();
       const p = splitPairs(st).find(x => !before.has(x[0].splitViewId) && hostOf(x[0].url) === e.host && hostOf(x[1].url) === G);
       if (p) return { split: p };
-      const hit = plain.see(findPlain(st, { host: e.host, text: q, beforeTabs, chains: navChains(ctx) }));
+      const hit = plain.see(findPlain(st, { host: e.host, text: q, beforeTabs, chains: await chainsByTab(ctx, st) }));
       return hit && { plain: hit };
     },
     verdict: async v => {
       const sw1 = await swNow(ctx);
-      return t14Verdict({ name: e.name, split: !!v.split, plain: !!v.plain, swBefore, swAfter: sw1.error ? `未知（${sw1.error}）` : swText(sw1.map, origin),
+      return t14Verdict({ name: e.name, split: !!v.split, plain: !!v.plain, takeover: v.plain ? await takeover() : null, swBefore, swAfter: sw1.error ? `未知（${sw1.error}）` : swText(sw1.map, origin),
         splitText: v.split ? fmt(v.split) : "", plainText: v.plain ? plainLine(v.plain) : "" });
     },
     onAnswer: async a => {
@@ -116,8 +132,8 @@ async function leftItem(ctx, e) {
       if (a !== "nosplit") return { status: "skip", detail: `用户点了“跳过”；SW 注册：触发前${swBefore}；${seen}` };
       const sw1 = await swNow(ctx);
       const st = await ctx.ext.state().catch(() => null);
-      const hit = st && findPlain(st, { host: e.host, text: q, beforeTabs, chains: navChains(ctx) });
-      return t14Verdict({ name: e.name, split: false, plain: !!hit, swBefore, swAfter: sw1.error ? `未知（${sw1.error}）` : swText(sw1.map, origin),
+      const hit = st && findPlain(st, { host: e.host, text: q, beforeTabs, chains: await chainsByTab(ctx, st) });
+      return t14Verdict({ name: e.name, split: false, plain: !!hit, takeover: hit ? await takeover() : null, swBefore, swAfter: sw1.error ? `未知（${sw1.error}）` : swText(sw1.map, origin),
         plainText: `用户报告没分屏；${hit ? `${plainLine(hit)}；` : ""}${seen}` });
     },
   });

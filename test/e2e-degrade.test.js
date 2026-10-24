@@ -1,12 +1,16 @@
 // Task 5 补充：T14 预期降级（degrade）、Perplexity 普通左侧搜索的认定、指针被拉回真实光标、混合子项的“未覆盖”
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { carriesQuery, plainEvidence, findPlain, plainTracker, t14Verdict } from "../scripts/e2e/steps/sw.mjs";
+import { carriesQuery, plainEvidence, findPlain, plainTracker, t14Verdict, goCarries, tabChains, strayRight, takeoverEvidence } from "../scripts/e2e/steps/sw.mjs";
 import { summarize } from "../scripts/e2e/steps/util.mjs";
 import { withAttempts } from "../scripts/e2e/steps/xauto-lib.mjs";
 import { moveTo, snap, snapBack, REASON_SNAP, gestureError } from "../scripts/e2e/gesture.mjs";
 import { runSteps, startCard } from "../scripts/e2e/runner.mjs";
 import { renderReport } from "../scripts/e2e/report.mjs";
+import { exitCodeOf, writeReport } from "../scripts/e2e/teardown.mjs";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 const PX = "www.perplexity.ai";
 const ctx0 = () => ({ gx: { stop: null, xi: {}, sleep: async () => {} }, log: () => {} });
@@ -22,16 +26,16 @@ test("carriesQuery: 原文、+ 还原空格、百分号解码任一处包含都�
   assert.equal(carriesQuery("x", ""), false);
 });
 
-test("plainEvidence: Perplexity 的 SPA 把网址改写成 /search/<slug>、丢掉 _ss——标题或跳转链带查询词仍认得出", () => {
+test("plainEvidence: Perplexity 的 SPA 把网址改写成 /search/<slug>、丢掉 _ss——标题或它自己的跳转链带查询词仍认得出", () => {
   const text = "xleft perplexity ab12cd";
   const tab = { id: 9, url: "https://www.perplexity.ai/search/xleft-ab12cd-Zx9", title: "Perplexity", splitViewId: -1 };
   assert.equal(plainEvidence(tab, { host: PX, text }), null, "网址、标题都没有查询词、也没有跳转链");
   assert.equal(plainEvidence({ ...tab, title: `${text} - Perplexity` }, { host: PX, text }), "标题带查询词");
   const trig = "https://www.perplexity.ai/search?q=xleft+perplexity+ab12cd&_ss=perplexity,google";
-  assert.equal(plainEvidence(tab, { host: PX, text, chains: [["http://site-x.localhost:8765/start"], [trig, tab.url]] }), "跳转链经过触发网址");
+  assert.equal(plainEvidence(tab, { host: PX, text, chain: [trig, tab.url] }), "跳转链经过触发网址");
   // 跳转链里只有别的查询（上一次尝试的 nonce）、或者没有 _ss 的网址，不算
-  assert.equal(plainEvidence(tab, { host: PX, text, chains: [[trig.replace("ab12cd", "zz99zz")]] }), null);
-  assert.equal(plainEvidence(tab, { host: PX, text, chains: [["https://www.perplexity.ai/search?q=xleft+perplexity+ab12cd"]] }), null);
+  assert.equal(plainEvidence(tab, { host: PX, text, chain: [trig.replace("ab12cd", "zz99zz")] }), null);
+  assert.equal(plainEvidence(tab, { host: PX, text, chain: ["https://www.perplexity.ai/search?q=xleft+perplexity+ab12cd"] }), null);
   assert.equal(plainEvidence({ ...tab, url: "https://www.perplexity.ai/search?q=xleft+perplexity+ab12cd" }, { host: PX, text }), "网址带查询词");
   assert.equal(plainEvidence({ ...tab, url: trig }, { host: PX, text }), "网址带查询词");
 });
@@ -62,6 +66,58 @@ test("findPlain 只看新出现的标签；plainTracker 同一个标签连续 3 
   tr.reset();
 });
 
+// ---- 扩展接管过的反证：go.js 分屏失败后 location.replace(左侧) 的形状不能算预期降级 ----
+const TEXT = "xleft perplexity ab12cd";
+const TRIG = "https://www.perplexity.ai/search?q=xleft+perplexity+ab12cd&_ss=perplexity,google";
+const GO = `chrome-extension://alngkkgnobglnfbhcplhpaflcgfiajnj/go.html?u=${TRIG}`; // \0 未经编码
+const LEFT = "https://www.perplexity.ai/search?q=xleft+perplexity+ab12cd"; // stripMarker 后的左侧网址
+const HAS = "有（注册 https://www.perplexity.ai/）";
+
+test("goCarries: go.html?u= 之后的原网址带这次的查询词才算；GUID 网址也认；别的查询、别的页面不算", () => {
+  assert.ok(goCarries(GO, TEXT));
+  assert.ok(goCarries(GO.replace("alngkkgnobglnfbhcplhpaflcgfiajnj", "6f1c2a8e-0b7d-4c55-9f3e-1d2a3b4c5d6e"), TEXT));
+  assert.ok(goCarries(`chrome-extension://x/go.html?u=${encodeURI("https://x/?q=左侧 Bing 测试 ab12&_ss=bing,google")}`, "左侧 Bing 测试 ab12"));
+  assert.equal(goCarries(GO.replace("ab12cd", "zz99zz"), TEXT), false);
+  assert.equal(goCarries(TRIG, TEXT), false);
+  assert.equal(goCarries("chrome-extension://x/options/options.html?u=" + TRIG, TEXT), false);
+  assert.equal(goCarries(undefined, TEXT), false);
+});
+
+test("go.js 退回左侧的形状（引擎网址带查询词、无 _ss，链里有 go.html?u=…）：plainEvidence 不认，takeoverEvidence 有反证，t14Verdict 判 fail", () => {
+  const tab = { id: 7, url: LEFT, title: "Perplexity", splitViewId: -1 };
+  assert.equal(plainEvidence(tab, { host: PX, text: TEXT, chain: [TRIG, GO, LEFT] }), null, "它自己的链经过 go.html");
+  assert.equal(plainEvidence(tab, { host: PX, text: TEXT, chain: [] }), "网址带查询词", "单看网址和退回左侧分不开");
+  const tk = takeoverEvidence({ text: TEXT, chains: [["http://site-x.localhost:8765/start"], [TRIG, GO, LEFT]] });
+  assert.match(tk, /go\.html/);
+  const v = t14Verdict({ name: "Perplexity", split: false, plain: true, takeover: tk, swBefore: HAS, swAfter: HAS });
+  assert.equal(v.status, "fail");
+  assert.match(v.detail, /扩展接管过这次触发/);
+  assert.equal(t14Verdict({ name: "Perplexity", split: false, plain: true, takeover: null, swBefore: HAS, swAfter: HAS }).status, "degrade");
+});
+
+test("takeoverEvidence: 没有收集器、触发后新增扩展控制台错误、孤立的 Google 右侧都算反证；SW 绕过时（链里只有触发网址）为 null", () => {
+  assert.match(takeoverEvidence({ text: TEXT, chains: null }), /没有控制台收集器/);
+  assert.match(takeoverEvidence({ text: TEXT, chains: [], errors: [{ text: "[split-search] 分屏失败，只打开左侧 Error: x" }] }), /分屏失败/);
+  assert.match(takeoverEvidence({ text: TEXT, chains: [], stray: [{ id: 12 }] }), /Google 标签 12/);
+  assert.equal(takeoverEvidence({ text: TEXT, chains: [[TRIG, "https://www.perplexity.ai/search/xleft-ab12cd-Zx9"]], errors: [], stray: [] }), null);
+  assert.equal(takeoverEvidence({ text: TEXT, chains: [[GO.replace("ab12cd", "zz99zz")]] }), null, "上一次尝试的 go.html 不算");
+});
+
+test("strayRight 只要新出现的、不在分屏里的 Google 标签；tabChains 按网址唯一对应目标，同网址多个目标不认", () => {
+  const st = { tabs: [{ id: 1, url: "https://www.google.com/search?q=a", splitViewId: -1 }, { id: 2, url: "https://www.google.com/search?q=b", splitViewId: 3 },
+    { id: 4, url: "https://www.google.com/search?q=c", splitViewId: -1 }, { id: 5, url: LEFT, splitViewId: -1 }] };
+  assert.deepEqual(strayRight(st, new Set([1])).map(t => t.id), [4]);
+  const pages = [{ type: "page", targetId: "A", url: LEFT }, { type: "page", targetId: "B", url: "https://x/1" }, { type: "page", targetId: "C", url: "https://x/1" },
+    { type: "service_worker", targetId: "S", url: "https://x/2" }];
+  const chains = { A: [{ url: TRIG }, { url: LEFT }], B: [{ url: "https://x/1" }] };
+  const m = tabChains([{ id: 5, url: LEFT }, { id: 6, url: "https://x/1" }, { id: 7, url: "https://x/2" }, { id: 8 }], pages, id => chains[id] ?? []);
+  assert.deepEqual([...m], [[5, [TRIG, LEFT]]]);
+  // findPlain 用的是候选标签自己的链：别的标签的链经过触发网址不算
+  const tab = { id: 9, url: "https://www.perplexity.ai/", title: "Perplexity", splitViewId: -1 };
+  assert.equal(findPlain({ tabs: [tab] }, { host: PX, text: TEXT, beforeTabs: new Set(), chains: new Map([[10, [TRIG]]]) }), null);
+  assert.equal(findPlain({ tabs: [tab] }, { host: PX, text: TEXT, beforeTabs: new Set(), chains: new Map([[9, [TRIG, tab.url]]]) }).how, "跳转链经过触发网址");
+});
+
 // ---- (c) 预期降级 ----
 test("t14Verdict: 预期降级必须触发前就有 SW；没检测到 SW（或只在触发后才有）仍是失败", () => {
   const HAS = "有（注册 https://www.perplexity.ai/）";
@@ -71,15 +127,18 @@ test("t14Verdict: 预期降级必须触发前就有 SW；没检测到 SW（或�
   assert.equal(t14Verdict({ name: "Perplexity", split: false, plain: false, swBefore: HAS, swAfter: HAS }).status, "fail");
 });
 
-test("withAttempts: degrade 是确定结论不重试；之前有真实失败也按预期降级判（裁定 I2 的例外）", async () => {
+test("withAttempts: degrade 是确定结论不重试；之前有真实失败时判失败（I2 只给通过开例外）", async () => {
   let n = 0;
   const once = await withAttempts(ctx0(), async () => { n++; return { status: "degrade", detail: "预期降级（G5）" }; });
   assert.equal(n, 1);
   assert.equal(once.status, "degrade");
   assert.match(once.detail, /^第 1 次尝试预期降级：预期降级（G5）/);
   const after = await withAttempts(ctx0(), async k => (k === 1 ? { status: "fail", detail: "30 秒内未等到分屏" } : { status: "degrade", detail: "预期降级（G5）" }));
-  assert.equal(after.status, "degrade");
-  assert.match(after.detail, /^第 2 次尝试预期降级（之前：第 1 次 30 秒内未等到分屏）/);
+  assert.equal(after.status, "fail");
+  assert.match(after.detail, /^第 2 次尝试判为预期降级（预期降级（G5）），但之前有真实失败（之前：第 1 次 30 秒内未等到分屏）/);
+  // 之前只是环境失败：仍按预期降级
+  const envFirst = await withAttempts(ctx0(), async k => { if (k === 1) throw gestureError("env", "拿不到前台"); return { status: "degrade", detail: "预期降级（G5）" }; });
+  assert.equal(envFirst.status, "degrade");
   // 真实失败之后只是跳过：仍判失败（I2 不变）
   const skip = await withAttempts(ctx0(), async k => { if (k === 1) return { status: "fail", detail: "坏" }; throw gestureError("skip", "光标不在测试窗口上"); });
   assert.equal(skip.status, "fail");
@@ -125,6 +184,28 @@ test("renderReport: 预期降级单独计数、显示在汇总行与表格；子
   assert.match(unc, /- T14 Perplexity 作左侧：预期降级——分屏：否；SW 注册：触发前有 https:\/\/www\.perplexity\.ai\/\?sid=\*\*\*/);
   assert.equal(json.uncoveredItems.length, 2);
   assert.equal(json.uncoveredItems[1].id, "T14");
+});
+
+test("exitCodeOf: 预期降级退出码 0；有失败 1；预期降级加失败 1；运行出错、存储没恢复也是 1", () => {
+  const s = results => ({ results, storage: { equal: true } });
+  const rt = {};
+  assert.equal(exitCodeOf(s([{ status: "pass" }, { status: "skip" }, { status: "degrade" }]), rt, null), 0);
+  assert.equal(exitCodeOf(s([{ status: "fail" }]), rt, null), 1);
+  assert.equal(exitCodeOf(s([{ status: "degrade" }, { status: "fail" }]), rt, null), 1);
+  assert.equal(exitCodeOf(s([{ status: "degrade" }]), rt, new Error("x")), 1);
+  assert.equal(exitCodeOf({ results: [], storage: { equal: false } }, rt, null), 1);
+  assert.equal(exitCodeOf(s([]), { stopReason: "按键可能卡住" }, null), 1);
+});
+
+test("writeReport: 终端汇总行带预期降级计数", () => {
+  const dir = mkdtempSync(join(tmpdir(), "sse2e-report-"));
+  try {
+    const logs = [];
+    writeReport({ startedAt: new Date(0), args: {}, consoleErrors: [], results: [
+      { id: "T1", title: "a", kind: "xauto", status: "pass", detail: "ok", durationMs: 1 },
+      { id: "T14", title: "b", kind: "xauto", status: "degrade", detail: "共 4 项", durationMs: 1 }] }, { outDir: dir, log: m => logs.push(m) });
+    assert.ok(logs.some(l => l.includes("汇总：共 2 步，通过 1，失败 0，跳过 0，预期降级 1；")), logs.join("|"));
+  } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
 // ---- (e) 指针被拉回真实光标 ----
