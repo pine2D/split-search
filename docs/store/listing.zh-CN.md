@@ -6,13 +6,16 @@
 
 ## 提交前必做（上架阻塞项）
 
-- [ ] **manifest 加图标**：`src/manifest.json` 目前没有 `icons` 和 `action.default_icon`。选定图标后，把 16/32/48/128 四个 PNG 放进 `src/`，在 `icons`（16/32/48/128）和 `action.default_icon`（16/32）中声明；商店图标（128）要和包内的 128 图标一致。缺 128 图标时控制台会警告或拒绝。改 manifest 需要你确认。
-- [ ] 选定图标后重渲宣传图：`node scripts/store/render-assets.mjs --icon assets/icon-proposals/<方案目录>/icon.svg`（方案 6 再加 `--no-tile`），当前宣传图里的图标是占位（方案 2）。
+提交时机：**v0.3 时提交（2026-10-24 用户决定）**，v0.1、v0.2 不提交。提交时带 4 种语言的详情：`en`（默认）、`zh_CN`、`zh_TW`、`es`，见 `docs/superpowers/specs/2026-10-24-i18n-design.md`。
+
+- [x] manifest 图标：方案 3 形状 + c6 pine-fog 配色，已接入 `src/icons/` 并在 manifest 声明；宣传图已用它重渲（见 `assets-spec.md` 第 1 节）。商店图标上传 `src/icons/icon-128.png`。
+- [ ] 用带新图标的扩展重拍 `assets/raw/` 截图、重渲全部图片（现有截图里是 Chrome 生成的字母图标，见 `assets-spec.md` 第 1 节），并按 4 种语言出图（i18n 方案 9.3 冒烟步骤的截图，经 `scripts/store` 合成）。
+- [ ] **改 manifest 简介**：`description` 改成下方“简介”一节的采用版本，先用 humanizer 和 lieflat-less-ai-tone 润色定稿；v0.2 起它是 `zh_CN` 的 `ext_description`，其他语言照译（各 ≤132 字符）。
+- [ ] 详细说明【使用限制】删掉“界面仅提供简体中文”，改为一句“设置页可以切换语言”；`listing.en.md` 的两处同改。
+- [ ] 待办：写 `listing.zh-TW.md`（台湾用词）和 `listing.es.md`，在 v0.2/v0.3 期间完成。
 - [ ] 隐私政策托管到公开网址，替换 `privacy.md` 中的占位符。
-- [ ] **改 manifest 简介**：商店简介取自 `src/manifest.json` 的 `description`，需改成下方“简介”一节的采用版本（需你确认后改 `src/`）。
 - [ ] 隐私做法标签页：数据使用披露**一项都不勾（含“网页浏览记录”）**，并附上 `privacy.md` (d) 的英文审核说明。
-- [ ] 提交时机待定：先以 v0.1 简体中文版提交，还是等 v0.2 多语言完成后首次提交，见 `docs/superpowers/specs/2026-10-24-i18n-design.md` 第 13 节问题 5。英文、繁体中文、西班牙语的详情随多语言版本提交。
-- [ ] 待办：所有面向用户的文案（简介、详细说明、隐私政策、截图文字）后期统一用 humanizer 和 lieflat-less-ai-tone 两个 skill 润色。
+- [ ] 所有面向用户的文案（简介、详细说明、隐私政策、截图文字）统一用 humanizer 和 lieflat-less-ai-tone 润色。
 
 ## 名称（上限 75）
 
@@ -88,5 +91,5 @@ Chrome 不允许扩展直接更改搜索引擎，所以需要你在 Chrome 设�
 
 ## 语言
 
-- 当前扩展没有 `_locales`，控制台只有一种语言的详情：中文（简体）`zh-CN`。
-- 首期多语言（英文、简体中文、繁体中文、西班牙语，设置页可切换语言）已排期，见 `docs/superpowers/specs/2026-10-24-i18n-design.md`。首次提交是只带简体中文还是直接带多语言详情，待该方案第 13 节问题 5 确定。
+- v0.3 提交时控制台有 4 种语言的详情：英文 `en`（默认语言）、简体中文 `zh-CN`、繁体中文 `zh-TW`、西班牙语 `es`，对应 v0.2 加入扩展包的 `_locales/en|zh_CN|zh_TW|es`。
+- 繁体中文和西班牙语详情尚未写（见“提交前必做”的待办）。

@@ -2,7 +2,7 @@
 
 > 状态：草稿，待审。
 > 前半部分是控制台“隐私做法”标签页各栏的填写建议。审核员读英文，所以可粘贴的文字用英文，说明用中文。后半部分 (f) 是隐私政策全文（中英两版），需要托管在公开网址上。
-> 依据：`src/manifest.json`、`src/background.js`、`src/go.js`、`src/lib/rules.js`、`src/lib/engines.js`、`src/chrome/config-store.js`、`src/chrome/split-actions.js`、`src/options/ui.js`（核对日期 2026-10-24，对应 v0.1.0）。
+> 依据：`src/manifest.json`、`src/background.js`、`src/go.js`、`src/lib/rules.js`、`src/lib/engines.js`、`src/chrome/config-store.js`、`src/chrome/split-actions.js`、`src/options/ui.js`（核对日期 2026-10-24，对应 v0.1.0）。提交在 v0.3（2026-10-24 用户决定），提交前按 v0.3 代码重新核对“代码事实速查”：v0.2 会新增读取扩展包内 `_locales` 的 `fetch`（i18n 方案 5.4）。
 
 > **重点说明（已定，2026-10-24）**
 > - **数据使用披露一项都不勾，包括“网页浏览记录”（Web history）。** 理由和风险见 (d)。

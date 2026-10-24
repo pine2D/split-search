@@ -29,11 +29,11 @@ Chrome MV3 扩展：用户在地址栏搜索，或把文字拖到标签栏时，
 - 未经允许覆盖用户手动建的分屏里的页面。
 
 **路线图（方向，不承诺）**
-- v0.2 模式 B（可选）：默认引擎保持单一，只有拖拽才分屏。依据是原型测到的 `transitionType` 差异，需排除结果页内的链接点击，届时再验证。
+- v0.2 多语言（en/zh_CN/zh_TW/es，页内切换，见 `docs/superpowers/specs/2026-10-24-i18n-design.md`）。
+- v0.3 模式 B（可选）：默认引擎保持单一，只有拖拽才分屏。依据是原型测到的 `transitionType` 差异，需排除结果页内的链接点击，届时再验证。并在 v0.3 上架 Chrome 网上应用店（隐私说明、截图见 `docs/store/`）。
 - 无痕窗口内分屏，需要 `incognito: "split"` 并重新设计生命周期。
 - 每个引擎可配置“附加 host”，应对跨 origin 跳转。
 - 右键菜单“分屏搜索选中文字”；快捷键“换另一个引擎并分屏”。
-- 上架 Chrome 网上应用店，需要隐私说明和截图。
 
 ## 开发与安装
 
@@ -70,13 +70,17 @@ split-search/
 ├── .gitignore
 ├── package.json                  "test": "node --test"、"e2e": "node scripts/e2e/run.mjs"
 ├── docs/acceptance-v0.1.md       v0.1 验收：先跑 e2e，再做 Windows 冒烟；B/T 表注明覆盖方式
+├── docs/store/                   商店详情（各语言）、隐私做法与隐私政策、图片素材规格
+├── assets/                       商店与 README 图片：templates/ 模板、raw/ 真实截图、store/ 与 readme/ 成品、icon-proposals/ 图标提案
 ├── scripts/
 │   ├── gen-key.sh                打印扩展 ID；manifest 无 key 时才生成公钥写入（不保留私钥）
 │   ├── sync-to-windows.sh        rsync src/ → D 盘镜像目录
+│   ├── store/render-assets.mjs   把 assets/templates 渲染成商店与 README 图片（无头 Chrome，无依赖）
 │   └── e2e/                      引导式端到端验收（Node 24，无依赖）：run.mjs 入口、cdp/browser 管道 CDP、
 │                                 server.mjs 模拟引擎与向导页、runner/report、steps/*.mjs 各步骤（setup.mjs 安装/授权/Kagi 登录/收尾）
 ├── src/                          扩展根目录（加载这个目录）
 │   ├── manifest.json
+│   ├── icons/                    工具栏与扩展管理页图标，16/32/48/128，配色 c6 pine-fog
 │   ├── background.js             SW：重建 DNR 规则、打开设置页
 │   ├── go.html / go.js           触发处理页（解析、判定、出错页与“只打开左侧搜索”兜底）
 │   ├── options/options.html|css  设置页静态结构、引导文字与样式
