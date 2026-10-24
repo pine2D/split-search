@@ -2,14 +2,9 @@
 
 > 状态：草稿，待审。
 
-## 前提：要不要启用英文详情
+## 状态：等多语言版本上线后再提交
 
-控制台里每种语言的详情对应扩展包中的一个 `_locales/<语言代码>` 目录。当前 `src/` 没有 `_locales`，也没有 `default_locale`，所以控制台只会提供一种语言的详情。
-
-两种做法：
-
-- **A（v0.1 建议）**：只上中文详情。本文件留作以后用，或供 GitHub 和其他英文渠道使用。
-- **B**：新增 `_locales/zh_CN/messages.json` 和 `_locales/en/messages.json`，只放 `extName`、`extDescription` 两条，manifest 改为 `"name": "__MSG_extName__"`、`"description": "__MSG_extDescription__"`、`"default_locale": "zh_CN"`。这样做只本地化商店名称和简介，设置页仍然只有简体中文，不违反“界面只用简体中文”的约束。不过 `test/manifest.test.js` 断言了 `name === "Split Search"`，测试要一起改。这件事需要你来决定。
+控制台里每种语言的详情对应扩展包中的一个 `_locales/<语言代码>` 目录，当前 `src/` 没有 `_locales`。已决定：首期多语言（英文、繁体中文、简体中文及全球使用人数前五的其他语言）随 i18n 版本上线，届时再提交本文件，见 `docs/superpowers/specs/*-i18n-design.md`。i18n 上线后，下文“settings page in Simplified Chinese only”两处要删掉，文案统一用 humanizer 和 lieflat-less-ai-tone 润色（待办）。
 
 字数按 Unicode 字符计。
 
@@ -64,12 +59,12 @@ LIMITATIONS
 • Settings page in Simplified Chinese only
 
 PRIVACY
-No servers, no analytics, no ads. The extension sends no data to the developer or anyone else. Your search terms go only from your browser to the two engines you chose. Settings are stored in chrome.storage.sync, which Chrome syncs across your devices only if you have Chrome sync turned on.
+Important: the extension collects no data. It has no servers, makes no network requests, contains no analytics, ads or remote code, and sends no data to the developer or anyone else. To do its job it reads, only inside your browser, the URL of the search you start (including the search terms) and the site origin of the other tab in a split view. It does not read your browsing history or page content, and stores nothing except your settings. Your search terms go only from your browser to the two engines you chose. Settings are stored in chrome.storage.sync, which Chrome syncs across your devices only if you have Chrome sync turned on.
 ```
 
-字数：3269（含换行）
+字数：3619（含换行）
 
 ## Category / Language
 
 - Category: **Tools**（备选 Functionality & UI），与中文详情一致。
-- Language: English（仅在采用做法 B 时出现）。
+- Language: English（i18n 版本上线后提供）。
