@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<!-- README 首图：GitHub 正文约 880px 宽，2 倍输出。整张不透明（深浅主题都清楚）。
+     画布是图标的两格，缝在 x=440；分屏截图的窗格分界线正好接在缝上。 -->
+<meta name="asset-size" content="880x440@2">
+<meta name="asset-out" content="readme/hero.png">
+<link rel="stylesheet" href="base.css">
+<style>
+  .row { position: absolute; left: 0; right: 0; top: 24px; height: 40px; display: grid; grid-template-columns: 1fr 1fr; column-gap: 48px; align-items: center; }
+  .brand { justify-self: end; display: flex; align-items: center; gap: 12px; }
+  .tile { width: 36px; height: 36px; }
+  .name { font-size: 26px; font-weight: 700; letter-spacing: -.01em; }
+  .line { font-size: 19px; font-weight: 500; letter-spacing: .02em; }
+  /* 缩放 808/2400：源图分界线 x≈1200 → 36 + 404 = 440 */
+  .crop { left: 36px; top: 88px; width: 808px; border-radius: 8px 8px 0 0; box-shadow: none; }
+</style></head>
+<body class="split-solid">
+  <div class="row">
+    <div class="brand"><div class="tile"><img data-icon alt=""></div><div class="name">Split Search</div></div>
+    <div class="line">地址栏或拖拽搜索，两个引擎左右对比</div>
+  </div>
+  <!-- 真实截图：左 DuckDuckGo、右 Bing，查询词 rust programming，向下出血 -->
+  <div class="crop" data-crop="0,0,2400,1100"><img src="../raw/split-ddg-bing-rust.png" data-iw="2400" alt=""></div>
+  <script src="crop.js"></script>
+</body></html>
