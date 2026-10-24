@@ -7,6 +7,52 @@
     "message": "Split Search 设置",
     "description": "Tooltip of the toolbar button."
   },
+  "go_status_opening": {
+    "message": "正在打开分屏…",
+    "description": "Status line on the trigger page while the split view is being opened (shown only for a moment)."
+  },
+  "go_status_failed": {
+    "message": "无法打开分屏",
+    "description": "Status line on the trigger page when the split view could not be opened; an error box with the reason follows."
+  },
+  "go_status_kept": {
+    "message": "已在右侧新分屏中打开搜索结果，可以关闭本页。",
+    "description": "Status line on the trigger page after the results were opened in a new split view next to the current one and this tab could not close itself; tells the user they may close the page."
+  },
+  "go_status_no_repeat": {
+    "message": "本页不会自动重复打开分屏。",
+    "description": "Status line when the user comes back to the trigger page via Back, Forward or reload: the page does not open the split view again by itself (a Run again button is offered)."
+  },
+  "go_btn_rerun": {
+    "message": "重新执行",
+    "description": "Button on the trigger page that runs the split search again after Back/Forward/reload."
+  },
+  "go_btn_left_only": {
+    "message": "只打开左侧搜索",
+    "description": "Button on the trigger page error screen: open only the left engine's search (a normal search, no split view)."
+  },
+  "go_btn_open_options": {
+    "message": "打开设置",
+    "description": "Button in the trigger page error box that opens the extension's settings page."
+  },
+  "go_err_no_trigger": {
+    "message": "没有收到触发网址。请从地址栏或拖拽搜索进入，不要直接打开本页。",
+    "description": "Error on the trigger page when it was opened without a trigger URL (e.g. typed directly); the user should start a search from the address bar or by drag-and-drop instead."
+  },
+  "go_err_config_unreadable": {
+    "message": "读取配置失败，且触发网址无法识别。",
+    "description": "Error on the trigger page: the settings could not be read and the trigger URL is not a usable http(s) URL, so not even the left search can be opened."
+  },
+  "go_err_bad_template": {
+    "message": "$ENGINE$ 的网址模板无效，请到设置页检查。",
+    "description": "Error on the trigger page: the left engine's URL template is invalid; the user should check it on the settings page. The placeholder is the engine name (not translated).",
+    "placeholders": {
+      "ENGINE": {
+        "content": "$1",
+        "example": "Google"
+      }
+    }
+  },
   "engine_tpl_ok": {
     "message": "可作左侧或右侧",
     "description": "Live hint under the URL template field in the engine dialog: the template can be used on either side of the split view."

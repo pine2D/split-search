@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en" class="i18n-pending">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -39,6 +39,8 @@
       align-items: center;
       justify-content: center;
     }
+    :lang(zh-TW) body { font-family: system-ui, "Microsoft JhengHei UI", "PingFang TC", sans-serif; }
+    .i18n-pending main { visibility: hidden; }
     main { max-width: 32rem; padding: 24px 16px; text-align: center; }
     #status { margin: 0 0 16px; color: var(--muted); }
     #error {
@@ -67,14 +69,14 @@
 </head>
 <body>
   <main>
-    <p id="status">正在打开分屏…</p>
+    <p id="status" data-i18n="go_status_opening"></p>
     <div id="error" role="alert" hidden>
       <p id="error-message"></p>
-      <button id="open-options" type="button">打开设置</button>
+      <button id="open-options" type="button" data-i18n="go_btn_open_options"></button>
     </div>
     <div class="actions">
-      <button id="rerun" type="button" hidden>重新执行</button>
-      <button id="left-only" type="button" hidden>只打开左侧搜索</button>
+      <button id="rerun" type="button" data-i18n="go_btn_rerun" hidden></button>
+      <button id="left-only" type="button" data-i18n="go_btn_left_only" hidden></button>
     </div>
   </main>
 </body>
