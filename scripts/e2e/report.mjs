@@ -16,8 +16,11 @@ const STOP = "%26|%23|%3B|%2526|%2523|%253B";
 const VALUE = `(?:(?!${STOP})[^&#;\\s；，。、（）)\\]|"'<>])*`;
 const SECRET = new RegExp(`(^|[?&;#]|%3F|%26|%23|%253F|%2526|%2523)(${NAME})(=|%3D|%253D)(${VALUE})`, "gi");
 const EXEMPTION = new RegExp(`([a-z0-9_]*ABUSE_EXEMPTION)(=|%3D|%253D)(?!\\*\\*\\*)(${VALUE})`, "gi");
+// Google 人机验证页 /sorry/… 的 q 不是查询词，是编码了访问者 IP 的令牌，整段换掉（continue 里的查询词是百分号编码的，不受影响）
+const SORRY_Q = new RegExp(`(/sorry/[^\\s?#]*\\?(?:[^\\s#]*?&)?q=)(?!\\*\\*\\*)(${VALUE})`, "gi");
 export const redact = s => (typeof s === "string"
   ? s.replace(SECRET, (_, pre, name, eq) => `${pre}${name}${eq}***`).replace(EXEMPTION, (_, name, eq) => `${name}${eq}***`)
+    .replace(SORRY_Q, (_, pre) => `${pre}***`)
   : s);
 export function redactDeep(v) {
   if (typeof v === "string") return redact(v);

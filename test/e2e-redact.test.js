@@ -74,10 +74,18 @@ test("redact: google_abuse 与 *_abuse、含 exemption 的参数，原样与百�
   assert.match(r, /google_abuse=\*\*\*/);
   assert.match(r, /&sei=x$/, "后面的参数不动");
   const nested = "https://www.google.com/sorry/index?continue=https://www.google.com/search%3Fq%3Dt5%26google_abuse%3DGOOGLE_ABUSE_EXEMPTION%253DID%253Dfake:IP%253D10.1.2.3%26sei%3Dk&q=Eg";
-  assert.equal(redact(nested), "https://www.google.com/sorry/index?continue=https://www.google.com/search%3Fq%3Dt5%26google_abuse%3D***%26sei%3Dk&q=Eg");
+  assert.equal(redact(nested), "https://www.google.com/sorry/index?continue=https://www.google.com/search%3Fq%3Dt5%26google_abuse%3D***%26sei%3Dk&q=***");
   assert.equal(redact("?Google_Abuse=x&q=1"), "?Google_Abuse=***&q=1");
   assert.equal(redact("?yt_abuse=1.2.3.4&abuse_exemption_token=z&q=1"), "?yt_abuse=***&abuse_exemption_token=***&q=1");
   assert.equal(redact("x?a=1%2526token%253Dsecret%2526b%253D2"), "x?a=1%2526token%253D***%2526b%253D2");
   assert.equal(redact("cookie GOOGLE_ABUSE_EXEMPTION=ID=a:TM=1:IP=203.0.113.9-:S=zz; path=/"), "cookie GOOGLE_ABUSE_EXEMPTION=***; path=/");
   assert.equal(redact("?abuse=1&monkey=2&q=token=4"), "?abuse=1&monkey=2&q=token=4", "不是 *_abuse 的参数不动");
+});
+
+test("redact：Google 人机验证页 /sorry 的 q（编码了访问者 IP）换成 ***，continue 与普通 q 不动", () => {
+  const sorry = "https://www.google.com/sorry/index?continue=https://www.google.com.hk/search%3Fq%3Dsplit%2520test%26sei%3Dabc&q=EgQPzF7uGK_H8dYGIjAVKFVM";
+  assert.equal(redact(sorry), "https://www.google.com/sorry/index?continue=https://www.google.com.hk/search%3Fq%3Dsplit%2520test%26sei%3Dabc&q=***");
+  assert.equal(redact("https://www.google.com/sorry/index?q=EgQPzF7u&continue=x"), "https://www.google.com/sorry/index?q=***&continue=x");
+  assert.equal(redact(`右侧：${sorry}（分屏已建成）`), `右侧：${sorry.replace(/&q=.*$/, "&q=***")}（分屏已建成）`);
+  assert.equal(redact("https://www.google.com/search?q=split+test"), "https://www.google.com/search?q=split+test");
 });
