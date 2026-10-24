@@ -1,6 +1,6 @@
 # 原始截图说明
 
-这些是真实截图，用于合成商店截图和 README 配图，只做裁剪、缩放和外框处理，不改动画面内容。合成模板在 `assets/templates/`，渲染脚本是 `scripts/store/render-assets.mjs`。
+这些是真实截图，用于合成商店截图和 README 配图，只做裁剪、缩放和外框处理，不改动画面内容；唯一例外是下面“修补”一节列出的一处。合成模板在 `assets/templates/`，渲染脚本是 `scripts/store/render-assets.mjs`。
 
 ## 拍摄环境
 
@@ -27,10 +27,26 @@
 | `permission-prompt.png` | 2400×1500 | 设置页点“点此授权 DuckDuckGo（必需）和 Bing（建议）”后弹出的 Chrome 授权框，内容是“读取和更改您在 duckduckgo.com 和 www.bing.com 上的数据”。这时默认组合已经改成 DuckDuckGo ｜ Bing，但还没授权，所以页面上有黄色提示。 |
 | `split-ddg-bing-rust.png` | 2400×1500 | 原生分屏：左边是 DuckDuckGo，右边是 Bing，查询词“rust programming”。新开一个标签访问触发网址 `https://duckduckgo.com/?q=rust+programming&_ss=ddg,bing`，由扩展的 DNR 规则和 go.html 建成分屏，和真实使用的路径相同。页面缩放 100%。两个网页在约 800 CSS 像素宽的窗格里都有横向滚动条，这是两个网站本身的问题。 |
 | `split-ddg-baidu-weather.png` | 2400×1500 | 原生分屏：左边是 DuckDuckGo，右边是百度（自定义引擎），查询词“北京 天气”。在已有的扩展分屏左侧访问触发网址 `…&_ss=ddg,baidu`，扩展在原分屏里直接更新两侧。 |
-| `drag-to-tabstrip.png` | 2400×1500 | 拖拽过程中：在中文维基百科“Rust (编程语言)”页面选中正文里的“Graydon Hoare”，用 xdotool 真实按下鼠标，把选中的文字拖到标签栏空白处，在还没松手时截图。可以看到标签栏上方的拖拽影像“Graydon Hoare”和 Chrome 的插入位置箭头。拍之前用页面自带的关闭按钮关掉了维基百科的活动横幅。 |
+| `drag-to-tabstrip.png` | 2400×1500 | 拖拽过程中：在中文维基百科“Rust (编程语言)”页面选中正文里的“Graydon Hoare”，用 xdotool 真实按下鼠标，把选中的文字拖到标签栏空白处，在还没松手时截图。可以看到标签栏上方的拖拽影像“Graydon Hoare”；第一个标签右下方还有一个黑底白色“↑”方块，应该是 Chrome 的标签插入位置箭头，Xvfb 没有合成器，它的透明背景变成了黑色（合成时已盖掉，见“修补”）。拍之前用页面自带的关闭按钮关掉了维基百科的活动横幅。 |
 | `drag-result-split.png` | 2400×1500 | 上一张松手之后的结果：Chrome 用默认搜索引擎打开新标签，扩展把它变成分屏，左边 DuckDuckGo、右边百度，查询词“Graydon Hoare”。 |
 | `omnibox-suggest.png` | 2400×1500 | 在分屏左侧的地址栏输入“rust ownership”，下拉建议显示“rust ownership - DuckDuckGo ｜ 百度 搜索”。这是 Chrome 用默认搜索引擎（触发网址做成的网站搜索）给出的建议。 |
 | `omnibox-result-split.png` | 2400×1500 | 上一张按回车后的结果：扩展在原分屏里更新两侧，左边 DuckDuckGo、右边百度，查询词“rust ownership”。 |
+
+## 修补
+
+| 修补图 | 盖在哪里 | 做法 |
+|---|---|---|
+| `patches/drag-to-tabstrip-397-61.png`（32×31） | `drag-to-tabstrip.png` 的 (397,61) 处，由 `store-3-drag.html` 以 `<img class="patch">` 叠加 | 去掉黑底“↑”方块：上半填标签白、下半填地址栏底色 `#EDF2FA`；被挡住的“/”上半截取自同一斜杠下段（下移 8 行、右移 2 列），“wi”上半截取自同一张图里“zh.wikipedia”的“wi”（x 减 142，同一基线）。原图不动。 |
+
+重做命令（在 `assets/raw/` 下）：
+
+```bash
+convert drag-to-tabstrip.png \
+  -fill white -draw "rectangle 397,61 428,68" -fill "#EDF2FA" -draw "rectangle 397,69 428,91" \
+  \( drag-to-tabstrip.png -crop 7x7+400+93 +repage \) -geometry +402+85 -composite \
+  \( drag-to-tabstrip.png -crop 21x10+266+82 +repage \) -geometry +408+82 -composite \
+  -crop 32x31+397+61 +repage -strip patches/drag-to-tabstrip-397-61.png
+```
 
 ## 拍摄时的默认搜索引擎
 

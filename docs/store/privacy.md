@@ -10,7 +10,7 @@
 |---|---|
 | `permissions` 只有 `declarativeNetRequest`、`storage`；没有 `tabs`，没有必需的 `host_permissions` | `src/manifest.json` |
 | `optional_host_permissions` 为 `https://*/*`、`http://*/*`，但运行时只为引擎的精确 origin 申请 `<origin>/*`，含 `*` 的不生成；在用户点击“授权”时调用 `chrome.permissions.request` | `src/options/ui.js` `originPattern` / `authButton` |
-| 只有一条 DNR 动态规则（id 1）：只匹配带 `_ss=` 参数的 `main_frame` 请求，`requestDomains` 只含可作左侧的引擎域名，动作是重定向到本扩展的 `go.html?u=<原网址>`。不拦截、不改请求头和响应头 | `src/lib/rules.js`、`src/background.js` |
+| 只有一条 DNR 动态规则（id 1）：只匹配带 `_ss=` 参数的 `main_frame` 请求，`requestDomains` 只含可作左侧的引擎的 hostname（DNR 也会匹配它们的子域名），动作是重定向到本扩展的 `go.html?u=<原网址>`。不拦截、不改请求头和响应头 | `src/lib/rules.js`、`src/background.js` |
 | `chrome.storage.sync` 只存设置：`customEngines`（id、名称、网址模板）、`presetOverrides`（名称、网址、隐藏）、`order`、`defaultPair` | `src/lib/engines.js` `mergeConfig`、`src/options/edits.js` |
 | `chrome.storage.session` 只存本扩展所建分屏的标签 id 配对（`split:<tabId>` → 另一侧 tabId），仅在内存中，浏览器关闭即清空 | `src/chrome/split-actions.js` `recordPair` |
 | 扩展代码不发任何网络请求（没有 `fetch`、`XMLHttpRequest`、`WebSocket`、`sendBeacon`），也没有 `eval` 或远程脚本 | 全仓 `src/` 检索 |
@@ -22,10 +22,10 @@
 ## (a) Single purpose（单一用途）
 
 ```text
-Split Search opens a search in two search engines side by side in Chrome's native Split View. When the user searches from the address bar (or drags text onto the tab strip) using a trigger URL they added as a Chrome site search, the extension opens the left engine's results in the current tab and the right engine's results in a paired split tab. Everything in the extension (engine list, trigger-URL generator, site-access requests) serves only this purpose.
+Split Search opens a search in two search engines side by side in Chrome's native Split View. When the user searches from the address bar or drags text onto the tab strip, and Chrome navigates to a trigger URL the user added as a site search (as default search engine or via its keyword), the extension opens the left engine's results in the current tab and the right engine's results in a paired split tab. Everything in the extension (engine list, trigger-URL generator, site-access requests) serves only this purpose.
 ```
 
-字数：460
+字数：520
 
 ## (b) Permission justification（权限理由）
 
@@ -34,10 +34,10 @@ Split Search opens a search in two search engines side by side in Chrome's nativ
 ### declarativeNetRequest
 
 ```text
-Used for exactly one dynamic redirect rule. It matches only top-level (main_frame) navigations whose URL contains the extension's own marker parameter "_ss=", and only on the domains of the user's configured search engines (Chrome applies the redirect only where the user has granted host access). Those navigations are redirected to the extension's own page (go.html), which reads the search terms from that URL and opens the two result pages in a split view. The rule never blocks requests and never modifies request or response headers. Such URLs come from the trigger URLs the user adds to Chrome as site searches.
+Used for exactly one dynamic redirect rule. It matches only top-level (main_frame) navigations whose URL contains the extension's own marker parameter "_ss=", and only on the hostnames (and their subdomains) of the user's engines that can act as the left side (Chrome applies the redirect only where the user has granted host access). Those navigations are redirected to the extension's own page (go.html), which reads the search terms from that URL and opens the two result pages in a split view. The rule never blocks requests and never modifies request or response headers. Such URLs come from the trigger URLs the user adds to Chrome as site searches.
 ```
 
-字数：618
+字数：655
 
 ### storage
 
@@ -114,7 +114,7 @@ Split Search（以下简称“本扩展”）是由 pine2D 开发的 Chrome 扩�
 
 ## 概要
 
-本扩展不收集、不上传、不出售你的任何数据。它没有服务器，不含统计、广告或第三方代码。
+本扩展只在你的设备上处理完成功能所需的数据（触发网址、分屏标签网址、设置），不把任何数据发送给开发者或第三方，也不出售数据。它没有服务器，不含统计、广告或第三方代码。
 
 ## 本扩展在你的设备上处理的数据
 
@@ -169,7 +169,7 @@ Split Search ("the extension") is a Chrome extension developed by pine2D. It ope
 
 ## Summary
 
-The extension does not collect, upload or sell any of your data. It has no servers and contains no analytics, advertising or third-party code.
+The extension processes the data it needs to work (trigger URLs, URLs of split-view tabs, your settings) only on your device. It sends nothing to the developer or any third party and does not sell data. It has no servers and contains no analytics, advertising or third-party code.
 
 ## Data handled on your device
 

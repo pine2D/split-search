@@ -12,7 +12,7 @@
 | 顶部宣传图（marquee） | 1400×560 | PNG 或 JPEG | 1 | 可选 | 只有被商店选作首页推荐时才会用到。要求同小宣传图，不能按语言区分 |
 | 宣传视频 | — | YouTube 链接 | 1 | 可选 | 可按语言区分 |
 
-另外，manifest 目前**没有 `icons` 字段**。上架前要在 `src/` 中加入 16、32、48、128 四个尺寸的图标，并在 `icons` 和 `action.default_icon` 中声明（16/32 用于工具栏，48 用于扩展管理页，128 用于安装对话框和商店）。这一步要改 manifest，需要另行确认。
+另外，manifest 目前**没有 `icons` 字段**。上架前要在 `src/` 中加入 16、32、48、128 四个尺寸的图标，并在 `icons` 和 `action.default_icon` 中声明（16/32 用于工具栏，48 用于扩展管理页，128 用于安装对话框和商店）。这是**上架阻塞项**，已列入 `listing.zh-CN.md` 开头的“提交前必做”；改 manifest 需要你确认。
 
 ## 2. 商店图片与 README 图片的区别
 
@@ -38,19 +38,19 @@
 node scripts/store/render-assets.mjs --icon assets/icon-proposals/<方案目录>/icon.svg
 ```
 
-（也可以改脚本里的 `DEFAULT_ICON`。）图标放在白色圆角底板上，任何一个方案都能用；用到图标的是小宣传图、顶部宣传图和 README 首图。
+（也可以改脚本里的 `DEFAULT_ICON`。）模板把图标放在白色圆角底板上，方案 1–5（透明底）都适用；方案 6 自带圆角底板，再放到白底板上会成“板中板”，选它时加 `--no-tile`（去掉白底板、让图标自带的底板铺满）。用到图标的是小宣传图、顶部宣传图和 README 首图。**看图标提案时注意：这三张图里的图标目前是占位的方案 2，不代表推荐。**
 
 ### 商店（`assets/store/`）
 
 | 文件 | 尺寸 | 模板 | 内容 |
 |---|---|---|---|
-| `screenshot-1.png` | 1280×800 | `store-1-split` | “一次搜索，两个引擎左右对比”：DuckDuckGo ｜ 百度分屏整窗 |
-| `screenshot-2.png` | 1280×800 | `store-2-omnibox` | “地址栏照常搜索，回车就分屏”：地址栏下拉建议，框出“DuckDuckGo ｜ 百度 搜索” |
-| `screenshot-3.png` | 1280×800 | `store-3-drag` | “选中文字，拖到标签栏”：拖拽中的真实画面加箭头，右下角小图是松手后的分屏 |
-| `screenshot-4.png` | 1280×800 | `store-4-engines` | “引擎自己选，组合随意配”：设置页的引擎列表和“添加到 Chrome”卡片 |
-| `screenshot-5.png` | 1280×800 | `store-5-fallback` | “其他设备与无痕窗口：自动退化为普通搜索”：同一个触发网址，装了扩展是分屏，没生效时是普通 DuckDuckGo 结果页（右图只取网页区域） |
+| `screenshot-1.png` | 1280×800 | `store-1-split` | “一次搜索，两个引擎左右对比”：DuckDuckGo ｜ Bing（预置组合）分屏整窗 |
+| `screenshot-2.png` | 1280×800 | `store-2-omnibox` | “地址栏照常搜索，回车就分屏”：上方是输入“rust ownership”时的下拉建议（只取下拉框，框出“DuckDuckGo ｜ 百度 搜索”），下方是回车后的分屏整窗（同一查询词）；右下角注明“百度”为自行添加的引擎 |
+| `screenshot-3.png` | 1280×800 | `store-3-drag` | “选中文字，拖到标签栏”（副标题写明前提“触发网址设为默认后”）：拖拽中的真实画面加箭头，右下角小图是松手后的分屏；Xvfb 下黑底的插入箭头用修补图盖掉（见 `assets/raw/captions.md`“修补”） |
+| `screenshot-4.png` | 1280×800 | `store-4-engines` | “引擎自己选，组合随意配”：设置页的引擎列表，叠一张放大到约 0.67 的“添加到 Chrome”默认组合块（触发网址 + 复制） |
+| `screenshot-5.png` | 1280×800 | `store-5-fallback` | “其他设备与无痕窗口：自动退化为普通搜索”：同一个触发网址，装了扩展是分屏，没生效时是普通 DuckDuckGo 结果页（左图只取两个窗格上半部分，缩放约 0.31；右图只取网页区域，约 0.51） |
 | `small-promo-440x280.png` | 440×280 | `promo-small` | 图标、产品名、“双引擎分屏搜索” |
-| `marquee-1400x560.png` | 1400×560 | `promo-marquee` | 图标、产品名、“一次搜索 两个引擎左右对比”，右侧分屏截图出血 |
+| `marquee-1400x560.png` | 1400×560 | `promo-marquee` | 图标、产品名、“一次搜索 两个引擎左右对比”，右侧 DuckDuckGo ｜ Bing 分屏截图出血 |
 
 商店图标 128×128 和 `src/icons/` 的 16/32/48/128 等图标选定后再导出（要改 manifest，另行确认）。
 
@@ -62,3 +62,33 @@ node scripts/store/render-assets.mjs --icon assets/icon-proposals/<方案目录>
 | `how-it-works.png` | 1760×760（显示 880 宽） | `readme-how-it-works` | 地址栏或拖拽 → 触发网址（真实搜索网址 + `_ss`）→ 原生分屏，下方是“扩展未生效时”的降级支线。浅色不透明底 |
 
 演示 GIF 暂缺：`assets/raw/` 里拖拽流程只有“拖拽中”和“松手后”两张静态图，没有连续帧，拼成 GIF 只是幻灯片，所以没有做。以后要做，先用屏幕录制拍下真实的拖拽过程，再用 ffmpeg（palettegen）转成 3 MB 以内的 GIF，放在 `assets/readme/demo.gif`。
+
+## Review fixes（2026-10-24）
+
+按评审意见做的修改。图片都已用 `render-assets.mjs` / `build.mjs` 重新渲染。
+
+已改：
+
+1. **“手动建的分屏不会被覆盖”说得太绝对**：中英详细说明第 4 条改为“另一侧不是搜索引擎页面的分屏不会被改动”（英文 “splits whose other tab isn't one of your search engines are left untouched”），并在措辞说明里注明依据 `split-decision.js`。
+2. **拖拽 / 右键只走默认搜索引擎**：中英【三步设置】第 3 步改为“设为默认后地址栏、拖拽、右键都会分屏；不设默认时只有快捷字词会分屏”；`privacy.md` 单一用途改为 “…and Chrome navigates to a trigger URL the user added as a site search (as default search engine or via its keyword)…”；`how-it-works.png` 第 2 步说明同步改写；`screenshot-3.png` 副标题改为“触发网址设为默认后，松手即用两个引擎打开分屏”。
+3. **拖拽截图里的黑底“↑”方块**：它应该是 Chrome 的标签插入位置箭头，Xvfb 没有合成器，透明背景变成了黑色。新增修补图 `assets/raw/patches/drag-to-tabstrip-397-61.png`，`store-3-drag` 用 `<img class="patch">` 叠加（`crop.js` 支持 `.patch[data-box]`），被挡的“/wi”上半用同图像素补齐，原图不动；做法和命令写在 `captions.md`。`how-it-works.png` 改为局部裁切后不再包含这块区域。
+4. **v3 / v5 在 16px 下撞车**：v3 的 16px 每格加 1px 白色横条（搜索框）；v5 的 16px 改为每块 6×10、错开 4px、对角圆角 5。对比图每行加了一条“16px 下长什么样”的说明，并注明宣传图里的图标是占位。
+5. **隐私政策概要**与 Web history 披露矛盾：中英概要改为“只在你的设备上处理完成功能所需的数据，不发送给开发者或第三方，也不出售”。
+6. **DNR 域名范围**：权限理由和代码事实速查改为“可作左侧的引擎的 hostname（及其子域名）”。
+7. **百度不在预置引擎里**：`screenshot-1` 和 marquee 换成预置组合 DuckDuckGo ｜ Bing；`screenshot-2`、`screenshot-3` 仍用百度（中文场景 Bing 会弹人机验证），右下角加注“示例右侧‘百度’为自行添加的引擎”，中英详细说明的引擎条目也加了一句。
+8. **manifest 缺 icons**：在 `listing.zh-CN.md` 开头新增“提交前必做”清单（manifest 图标、选定图标后重渲、隐私政策托管）。manifest 本身未改，需要你确认。
+9. **v6 放在白色底板上成“板中板”**：`render-assets.mjs` 新增 `--no-tile`，去掉白底板并让图标自带的底板铺满；上文“任何一个方案都能用”的说法已更正。
+10. **橙色对比度**：图标提案的橙色从 `#F26B3A` 加深到 `#E0561F`（对 `#f1f3f4` 约 3.4:1，对 `#202124` 约 4.2:1），v3/v4/v5 的 notes 都写明了；v5 的 128 母版仍用橙色渐变（大尺寸不受影响）。
+11. **screenshot-2 查询词和结果对不上、比例不一**：改为上方只取地址栏下拉框（0.8 倍），下方放回车后的分屏整窗 `omnibox-result-split.png`（0.5 倍，和截图 1、3 同比例），查询词都是“rust ownership”，用“输入 / 回车后”两个标签串起来。
+12. **how-it-works 第 1 步裁切不整齐**：地址栏裁切从下拉框内侧开始（不带分屏按钮和选中条）；拖拽改成两张局部图：“选中的文字”一行和“标签栏落点”，分别放大，中间加“拖到标签栏 ↑”。去掉了会穿过第 2 步说明文字的虚线连接。
+13. **hero 底部标签压住网页内容**：截图底部加白色渐隐，标签居中放在各自窗格的渐隐带上。
+14. **screenshot-4 第二张卡片字太小 / screenshot-5 两侧缩放差太多**：截图 4 只取“添加到 Chrome”的默认组合块，放大到约 0.67；截图 5 左图只取两个窗格的上半部分，缩放从 0.23 提到约 0.31。
+
+未改及原因：
+
+- **宣传图仍以方案 2 作占位**：要等你选定图标后用 `--icon`（方案 6 加 `--no-tile`）重渲，现在换哪一版都同样会影响选择；已在对比图和本文件里写明是占位。
+- **marquee 里的第三方 Logo**：换成 DuckDuckGo ｜ Bing 后，两个 Logo 在画面里都很小（真实使用画面），没有再缩小截图占比；如果仍担心被理解为合作背书，可以改用不含 Logo 的局部，或在上架前再评估。
+- **README 正文第 3 步**（“如不想替换默认引擎，可不设为默认，改用快捷字词触发”）同样没提拖拽需要设为默认。它是 README 原有文字，主仓库另有任务在改 README，这里只动图片，避免合并冲突；建议合并后补一句“拖拽只在设为默认时分屏”。
+- **重拍截图**：screenshot-2 的问题用现有两张真实截图重新组合解决，没有重拍；拖拽黑块用修补图解决，也没有重拍。以后补拍时，在有合成器的显示环境里拍拖拽，就不会出现黑底箭头。
+- `base.css` 的宣传图强调色 `--coral` 仍是 `#F26B3A`：它画在紫色底和截图上，不涉及工具栏对比度；选定图标后可以再统一。
+

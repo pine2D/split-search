@@ -14,7 +14,7 @@ const PROFILE = process.env.ICON_PROFILE || join(tmpdir(), 'split-search-icon-pr
 
 const IRIS = '#6A5CFF';   // 主色：浅/深工具栏对比度约 4.1 / 3.5
 const IRIS_D = '#4B3FE0'; // 主色深一档
-const CORAL = '#F26B3A';  // 辅色
+const CORAL = '#E0561F';  // 辅色：对浅色工具栏 #f1f3f4 约 3.4:1、深色 #202124 约 4.2:1（原 #F26B3A 在浅色上只有 2.7:1）
 
 // 圆角矩形路径，四角半径可分别指定 [tl, tr, br, bl]
 function rr(x, y, w, h, r) {
@@ -37,7 +37,7 @@ const S_PATH = 'M85 41C80 35 73 32 64 32C53 32 44 38 44 47.5C44 57.5 53 60.5 64 
 
 const variants = [
   {
-    n: 1, slug: 'pane', title: '原生分屏线框',
+    n: 1, c16: '16px：2px 实心线框 + 2px 分隔线，和原生分屏按钮几乎一样', slug: 'pane', title: '原生分屏线框',
     caption: '贴近原生分屏按钮的圆角线框，换成品牌紫',
     notes: '思路：几乎照搬 Chrome 分屏按钮的“[|]”造型，只把线条加粗、圆角放大并换成单一品牌紫（#6A5CFF）。理由：用户一眼就能联想到“分屏”，学习成本最低，16px 下用 2px 实心线框和 2px 分隔线，像素对齐，清晰度最好。风险：和原生分屏按钮太像，两者并排出现在工具栏时容易混淆、显得像仿冒；也没有任何“搜索”含义，在应用店里辨识度最弱。',
     s128: () => svg(128, `<path fill="${IRIS}" fill-rule="evenodd" d="${frame(16, 24, 96, 80, 18, 10)}"/><rect x="59" y="28" width="10" height="72" fill="${IRIS}"/>`),
@@ -45,7 +45,7 @@ const variants = [
     s16: () => svg(16, `<path fill="${IRIS}" fill-rule="evenodd" d="${frame(1, 2, 14, 12, 3, 2)}"/><rect x="7" y="3" width="2" height="10" fill="${IRIS}"/>`),
   },
   {
-    n: 2, slug: 'pane-magnifier', title: '分屏 + 放大镜',
+    n: 2, c16: '16px：线框只剩 1px，放大镜近似实心小方块，是 16px 下最弱的一版', slug: 'pane-magnifier', title: '分屏 + 放大镜',
     caption: '分屏线框右下角压一个放大镜，点明“搜索”',
     notes: '思路：保留分屏线框，在右下角叠一个放大镜，线框在放大镜周围留出透明间隙。理由：同时表达“分屏”和“搜索”两层含义，仍然沿用用户熟悉的分屏符号，比方案 1 多了产品语义。风险：16px 下放大镜只有约 6px、镜片内孔 2px，线框也只能改成 1px 细线才放得下，在 1x 屏幕上接近辨识下限；元素多、显得略挤；“窗口 + 放大镜”在搜索类扩展里很常见，独特性一般。',
     s128: () => {
@@ -67,9 +67,9 @@ const variants = [
     },
   },
   {
-    n: 3, slug: 'two-tint', title: '双色分屏',
+    n: 3, c16: '16px：两块齐平的实心色块，各带 1px 白色横条（搜索框）', slug: 'two-tint', title: '双色分屏',
     caption: '左紫右橙两块实心窗格，一眼看出“两边对比”',
-    notes: '思路：把分屏拆成两块实心窗格，左紫（#6A5CFF）右橙（#F26B3A），大图里每格加一条白色搜索框和两行结果线。理由：实心色块在 16px 下最醒目，在浅色和深色工具栏上都有足够面积；双色直接表达“两个引擎左右对比”，同时和原生分屏按钮明显区分。风险：配色要避开 Google 四色和 Bing 青绿，橙色仍可能让人联想到某些品牌；两块方色块偏通用，需要靠配色建立辨识度；橙色在浅色工具栏上对比度偏低（约 2.7），主要靠紫色那半边撑住。',
+    notes: '思路：把分屏拆成两块实心窗格，左紫（#6A5CFF）右橙（#F26B3A），大图里每格加一条白色搜索框和两行结果线。理由：实心色块在 16px 下最醒目，在浅色和深色工具栏上都有足够面积；双色直接表达“两个引擎左右对比”，同时和原生分屏按钮明显区分。风险：配色要避开 Google 四色和 Bing 青绿，橙色仍可能让人联想到某些品牌；两块方色块偏通用，需要靠配色建立辨识度；橙色已从 #F26B3A 加深到 #E0561F，对浅色工具栏约 3.4:1，刚过非文本图形 3:1 的门槛，余量不大。',
     s128: () => {
       const L = rr(16, 26, 45, 76, [18, 6, 6, 18]), R = rr(67, 26, 45, 76, [6, 18, 18, 6]);
       const ui = (x) => `<rect x="${x}" y="38" width="29" height="9" rx="4.5" fill="#fff"/><rect x="${x}" y="56" width="23" height="5" rx="2.5" fill="#fff" opacity=".6"/><rect x="${x}" y="68" width="17" height="5" rx="2.5" fill="#fff" opacity=".6"/>`;
@@ -77,12 +77,14 @@ const variants = [
     },
     s32: () => svg(32, `<path fill="${IRIS}" d="${rr(2, 5, 13, 22, [5, 1.5, 1.5, 5])}"/><path fill="${CORAL}" d="${rr(17, 5, 13, 22, [1.5, 5, 5, 1.5])}"/>` +
       `<rect x="5" y="9" width="7" height="2" rx="1" fill="#fff"/><rect x="20" y="9" width="7" height="2" rx="1" fill="#fff"/>`),
-    s16: () => svg(16, `<path fill="${IRIS}" d="${rr(1, 2, 6, 12, [2.5, 0.5, 0.5, 2.5])}"/><path fill="${CORAL}" d="${rr(9, 2, 6, 12, [0.5, 2.5, 2.5, 0.5])}"/>`),
+    // 16px：每格保留一条 1px 白色横条暗示搜索框，和方案 5 的错位色块区分开
+    s16: () => svg(16, `<path fill="${IRIS}" d="${rr(1, 2, 6, 12, [2.5, 0.5, 0.5, 2.5])}"/><path fill="${CORAL}" d="${rr(9, 2, 6, 12, [0.5, 2.5, 2.5, 0.5])}"/>` +
+      `<rect x="2" y="4" width="4" height="1" fill="#fff"/><rect x="10" y="4" width="4" height="1" fill="#fff"/>`),
   },
   {
-    n: 4, slug: 'split-lens', title: '分屏镜片',
+    n: 4, c16: '16px：紫色镜圈 + 右半橙色，轮廓与分屏按钮完全不同', slug: 'split-lens', title: '分屏镜片',
     caption: '放大镜的镜片被竖缝一分为二，左紫右橙',
-    notes: '思路：主体换成放大镜，镜片被一条透明竖缝分成两半，左半紫、右半橙，镜圈和手柄用品牌紫。理由：先读出“搜索”，再读出“一分为二”，概念最贴合“分屏搜索”，轮廓（圆 + 斜柄）和原生分屏按钮完全不同，不会混淆；色块面积大，16px 下也稳。风险：放大镜是搜索类图标的通用符号，若别家也用分色镜片会撞车；16px 下镜片太小放不下两个半圆加竖缝，所以 16px 版只把右半填橙、左半留空，和大尺寸略有差异；缩放到 24px（1.5 倍屏）时竖缝可能略糊。',
+    notes: '思路：主体换成放大镜，镜片被一条透明竖缝分成两半，左半紫、右半橙，镜圈和手柄用品牌紫。理由：先读出“搜索”，再读出“一分为二”，概念最贴合“分屏搜索”，轮廓（圆 + 斜柄）和原生分屏按钮完全不同，不会混淆；色块面积大，16px 下也稳。风险：放大镜是搜索类图标的通用符号，若别家也用分色镜片会撞车；16px 下镜片太小放不下两个半圆加竖缝，所以 16px 版只把右半填橙、左半留空，和大尺寸略有差异；缩放到 24px（1.5 倍屏）时竖缝可能略糊；橙色已加深到 #E0561F（对浅色工具栏约 3.4:1），但 16px 下橙色只占镜片右半，主要靠紫色镜圈撑住辨识度。',
     s128: () => {
       const defs = `<clipPath id="lens"><circle cx="54" cy="54" r="22"/></clipPath>`;
       return svg(128, `<g clip-path="url(#lens)"><rect x="20" y="20" width="31" height="70" fill="${IRIS}"/><rect x="57" y="20" width="40" height="70" fill="${CORAL}"/></g>` +
@@ -100,19 +102,20 @@ const variants = [
     },
   },
   {
-    n: 5, slug: 'offset-s', title: '错位窗格',
+    n: 5, c16: '16px：两块上下错开 4px，对角大圆角；和方案 3 的区别在错位与无横条', slug: 'offset-s', title: '错位窗格',
     caption: '两块窗格上下错位、对角大圆角，组成抽象的 S',
-    notes: '思路：两块窗格上下错开，左格左上角、右格右下角用大圆角，其余为小圆角，整体呈中心对称，像一个抽象的“S”（Split / Search），左格紫色渐变、右格橙色渐变。理由：保留“左右两格”的分屏语义，又有品牌字母的暗示，形状独特、适合做成长期品牌标识，在 16px 下仍是两块大色块。风险：抽象度较高，第一次见到的用户未必读出“S”或“搜索”；错位让它更像“对话气泡”或“拼图”，需要配合名称和宣传图建立认知。',
+    notes: '思路：两块窗格上下错开，左格左上角、右格右下角用大圆角，其余为小圆角，整体呈中心对称，像一个抽象的“S”（Split / Search），左格紫色渐变、右格橙色渐变。理由：保留“左右两格”的分屏语义，又有品牌字母的暗示，形状独特、适合做成长期品牌标识，在 16px 下仍是两块大色块。风险：抽象度较高，第一次见到的用户未必读出“S”或“搜索”；错位让它更像“对话气泡”或“拼图”，需要配合名称和宣传图建立认知；16px 下只剩两块色块，和方案 3 最容易撞，所以 16px 版把错位拉大到 4px（每块 6×10），靠对角大圆角保留 S 轮廓；橙色已加深到 #E0561F（对浅色工具栏约 3.4:1）。',
     s128: () => {
       const defs = `<linearGradient id="a" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7E6BFF"/><stop offset="1" stop-color="${IRIS_D}"/></linearGradient>` +
         `<linearGradient id="b" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FF8A4C"/><stop offset="1" stop-color="#E5532A"/></linearGradient>`;
       return svg(128, `<path fill="url(#a)" d="${rr(16, 16, 45, 74, [34, 8, 8, 8])}"/><path fill="url(#b)" d="${rr(67, 38, 45, 74, [8, 8, 34, 8])}"/>`, defs);
     },
     s32: () => svg(32, `<path fill="${IRIS}" d="${rr(2, 2, 13, 21, [9, 2, 2, 2])}"/><path fill="${CORAL}" d="${rr(17, 9, 13, 21, [2, 2, 9, 2])}"/>`),
-    s16: () => svg(16, `<path fill="${IRIS}" d="${rr(1, 1, 6, 11, [4.5, 1, 1, 1])}"/><path fill="${CORAL}" d="${rr(9, 4, 6, 11, [1, 1, 4.5, 1])}"/>`),
+    // 16px：错开 4px（原来只错开 3px、高 11px，1x 下几乎看不出 S）
+    s16: () => svg(16, `<path fill="${IRIS}" d="${rr(1, 1, 6, 10, [5, 1, 1, 1])}"/><path fill="${CORAL}" d="${rr(9, 5, 6, 10, [1, 1, 5, 1])}"/>`),
   },
   {
-    n: 6, slug: 'gradient-s', title: '渐变字标',
+    n: 6, c16: '16px：彩色圆角方块 + 白色 S，渐变和分色缝基本看不出', slug: 'gradient-s', title: '渐变字标',
     caption: '紫到橙渐变底板左右分两色调，中间白色字母 S',
     notes: '思路：做成应用图标式的圆角方底板，填紫—品红—橙对角渐变，底板右半叠一层暗色，形成一条竖直的“分屏”色缝；中间是完整的白色几何字母“S”（Split / Search）。理由：最大胆、最像正式产品的品牌标识，在应用店列表和扩展管理页最抢眼；白字落在实心底板上，浅色、深色工具栏都清楚。曾试过用竖缝直接切开 S，结果像美元符号“$”，所以改为让底板分色、字母保持完整。风险：满版底板在工具栏里比其他图标“重”，和 Chrome 简洁的线性图标风格反差大；字母 S 本身不说明功能，需要靠名称；16px 下渐变和分色缝被压得很弱，基本只剩“彩色方块 + S”。',
     s128: () => {
@@ -179,7 +182,7 @@ h1{font-size:22px;margin:0 0 4px}p.sub{margin:0 0 18px;color:#5f6368;font-size:1
 .head{font-size:12px;color:#5f6368;padding:0 0 6px;border-bottom:1px solid #dadce0}
 .row{padding:12px 0;border-bottom:1px solid #e8eaed}
 .label b{display:inline-block;width:26px;height:26px;border-radius:13px;background:#202124;color:#fff;text-align:center;line-height:26px;font-size:14px;margin-right:8px}
-.label .t{font-size:15px;font-weight:600}.label .c{font-size:12px;color:#5f6368;margin-top:6px;line-height:1.5}
+.label .t{font-size:15px;font-weight:600}.label .c{font-size:12px;color:#5f6368;margin-top:6px;line-height:1.5}.label .c16{font-size:11px;color:#8a4b00;margin-top:6px;line-height:1.5}
 .sizes{display:flex;align-items:flex-end;gap:14px;padding:12px 14px;border-radius:10px;height:172px}
 .sizes figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:6px}
 .sizes figcaption{font-size:10px;opacity:.6}.sizes img{display:block}
@@ -191,9 +194,9 @@ h1{font-size:22px;margin:0 0 4px}p.sub{margin:0 0 18px;color:#5f6368;font-size:1
 .zoom{image-rendering:pixelated;border:1px solid #dadce0;background:repeating-conic-gradient(#f1f3f4 0 25%,#fff 0 50%) 0 0/8px 8px}
 </style></head><body>
 <h1>Split Search 扩展图标提案（1 保守 → 6 大胆）</h1>
-<p class="sub">每行依次为：浅色工具栏背景 / 深色工具栏背景下的 128、48、32、16 px；1x 工具栏示意（左：Chrome 原生分屏按钮，中：本扩展 16px，右：扩展菜单）；16px 放大 4 倍看像素。</p>
+<p class="sub">每行依次为：浅色工具栏背景 / 深色工具栏背景下的 128、48、32、16 px；1x 工具栏示意（左：Chrome 原生分屏按钮，中：本扩展 16px，右：扩展菜单）；16px 放大 4 倍看像素。宣传图和 README 首图里的图标目前是占位（方案 2），选定后会重渲。</p>
 <div class="head"><span>方案</span><span>浅色背景 #f1f3f4</span><span>深色背景 #202124</span><span>工具栏 16px 实际比例</span><span>16px ×4</span></div>
-${variants.map((v) => `<div class="row"><div class="label"><div><b>${v.n}</b><span class="t">${v.title}</span></div><div class="c">${v.caption}</div></div>` +
+${variants.map((v) => `<div class="row"><div class="label"><div><b>${v.n}</b><span class="t">${v.title}</span></div><div class="c">${v.caption}</div><div class="c16">${v.c16}</div></div>` +
   sizesCell(v, LIGHT, '#202124') + sizesCell(v, DARK, '#e8eaed') +
   `<div class="tbs">${toolbar(v, LIGHT, '#474747', '#ffffff')}${toolbar(v, DARK, '#c7c7c7', '#3c3c3c')}</div>${zoom(v)}</div>`).join('\n')}
 </body></html>

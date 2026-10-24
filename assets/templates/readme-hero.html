@@ -9,14 +9,18 @@
     gap: 14px; font-size: 24px; font-weight: 700; }
   .tile { width: 36px; height: 36px; border-radius: 9px; box-shadow: 0 4px 12px rgba(20, 12, 90, .3); }
   .crop { left: 36px; top: 74px; width: 808px; border-radius: 10px 10px 0 0; }
-  .lab { position: absolute; top: 398px; padding: 4px 12px; border-radius: 999px; background: var(--ink); color: #fff;
+  /* 底部渐隐成白色，标签放在渐隐带上，不压网页里的标题和按钮 */
+  .fade { position: absolute; left: 36px; width: 808px; top: 352px; bottom: 0;
+    background: linear-gradient(rgba(255, 255, 255, 0), rgba(255, 255, 255, .98) 48%); }
+  .lab { position: absolute; top: 398px; transform: translateX(-50%); padding: 4px 12px; border-radius: 999px; background: var(--ink); color: #fff;
     font-size: 14px; font-weight: 600; box-shadow: 0 4px 12px rgba(0, 0, 0, .25); }
-  .lab.l { left: 214px; } .lab.r { left: 630px; }
+  .lab.l { left: 238px; } .lab.r { left: 642px; }
 </style></head>
 <body class="bg-iris">
   <div class="line"><div class="tile"><img data-icon alt=""></div>地址栏或拖拽搜索，两个引擎在原生分屏里左右对比</div>
   <!-- 真实截图：左 DuckDuckGo、右 Bing，查询词 rust programming -->
   <div class="crop" data-crop="0,0,2400,1100"><img src="../raw/split-ddg-bing-rust.png" data-iw="2400" alt=""></div>
+  <div class="fade"></div>
   <div class="lab l">左：DuckDuckGo</div><div class="lab r">右：Bing</div>
   <script src="crop.js"></script>
 </body></html>

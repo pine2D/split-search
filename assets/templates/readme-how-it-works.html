@@ -12,6 +12,9 @@
   h2 b { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--iris); color: #fff; font-size: 15px; }
   .crop { position: relative; width: 100%; margin-top: 12px; border-radius: 8px; box-shadow: 0 1px 2px rgba(20,12,90,.12), 0 8px 22px rgba(20,12,90,.16); }
   .mark { border-width: 2px; border-radius: 6px; box-shadow: none; padding: 3px; box-sizing: content-box; margin: -3px 0 0 -3px; }
+  .drag { display: flex; flex-direction: column-reverse; }
+  .drag .up { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 6px; font-size: 12px; font-weight: 600; color: var(--iris-d); }
+  .drag .up svg { width: 12px; height: 18px; }
   .or { margin-top: 8px; text-align: center; font-size: 13px; color: var(--muted); }
   .note { margin-top: 10px; font-size: 13px; line-height: 1.55; color: var(--muted); }
   .url { margin-top: 12px; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 14px 14px 12px;
@@ -27,20 +30,20 @@
     background: #fff; border: 2px dashed #c9c4f2; border-radius: 12px; padding: 12px 16px; font-size: 14px; line-height: 1.5; }
   .fall b { color: var(--ink); }
   .fall .tag { flex: none; font-size: 12px; font-weight: 700; color: #fff; background: var(--muted); border-radius: 999px; padding: 3px 10px; }
-  svg.branch { position: absolute; left: 0; top: 0; width: 880px; height: 380px; }
 </style></head>
 <body>
-  <svg class="branch" viewBox="0 0 880 380">
-    <path d="M441 270 V 300" stroke="#9d95e8" stroke-width="2" stroke-dasharray="5 5" fill="none"/>
-  </svg>
   <div class="col c1">
     <h2><b>1</b>地址栏输入，或拖到标签栏</h2>
-    <!-- 真实截图片段：地址栏下拉建议 -->
-    <div class="crop" data-crop="196,56,640,136"><img src="../raw/omnibox-suggest.png" data-iw="2400" alt=""></div>
+    <!-- 真实截图片段：地址栏下拉建议（左边界从下拉框内侧开始，不带分屏按钮和选中条） -->
+    <div class="crop" data-crop="238,62,600,136"><img src="../raw/omnibox-suggest.png" data-iw="2400" alt=""></div>
     <div class="or">或</div>
-    <!-- 真实截图片段：选中文字拖到标签栏（尚未松手） -->
-    <div class="crop" data-crop="360,0,1280,680"><img src="../raw/drag-to-tabstrip.png" data-iw="2400" alt="">
-      <i class="mark" data-box="698,594,170,38"></i><i class="mark" data-box="1424,16,170,28"></i></div>
+    <!-- 真实截图片段（拖拽中，尚未松手）：只取“选中的文字”和“标签栏落点”两处，分开放大 -->
+    <div class="drag">
+      <div class="crop" data-crop="648,584,360,52"><img src="../raw/drag-to-tabstrip.png" data-iw="2400" alt=""></div>
+      <span class="up">拖到标签栏<svg viewBox="0 0 14 22"><path d="M7 20V3M2 8L7 3L12 8" stroke="#4b3fe0" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <div class="crop" data-crop="1250,0,480,74"><img src="../raw/drag-to-tabstrip.png" data-iw="2400" alt="">
+        <i class="mark" data-box="1424,16,170,28"></i></div>
+    </div>
   </div>
   <div class="arrow a1">Chrome<br>拼出<svg viewBox="0 0 42 18"><path d="M4 9H34M28 3L36 9L28 15" stroke="#4b3fe0" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
   <div class="col c2">
@@ -51,7 +54,7 @@
       <code><b>&amp;_ss=ddg,baidu</b></code>
       <span class="k s">标记：左 ddg，右 baidu</span>
     </div>
-    <p class="note">它是你在 Chrome“网站搜索”里添加的条目，设为默认或用快捷字词触发。</p>
+    <p class="note">它是你在 Chrome“网站搜索”里添加的条目。设为默认后，地址栏和拖拽都会用它；不设默认时，只有“快捷字词 + 空格 + 关键词”会用它。</p>
   </div>
   <div class="arrow a2">扩展<br>接管<svg viewBox="0 0 42 18"><path d="M4 9H34M28 3L36 9L28 15" stroke="#4b3fe0" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
   <div class="col c3">

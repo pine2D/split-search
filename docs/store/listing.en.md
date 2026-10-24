@@ -40,15 +40,15 @@ Both sides are ordinary Chrome tabs, so your sign-ins and site settings work as 
 
 FEATURES
 • Works from the address bar, from dragging text onto the tab strip, and from Chrome's built-in right-click "Search [engine] for …" item
-• Ships with Google, Bing, DuckDuckGo, Perplexity and Kagi; add other engines with a URL template (%s stands for the search terms), then edit, hide or reorder them
+• Ships with Google, Bing, DuckDuckGo, Perplexity and Kagi; add other engines with a URL template (%s stands for the search terms), then edit, hide or reorder them (the Baidu engine in some screenshots was added this way)
 • Generate a trigger URL for each engine pair and give each one your own keyword, e.g. "gb terms" for Google | Bing and "dk terms" for DuckDuckGo | Kagi
-• Searching again inside a split the extension opened refreshes both sides in place; splits you made yourself are never overwritten, and new results open as a new pair next to them
+• Searching again inside a split the extension opened refreshes both sides in place; splits whose other tab isn't one of your search engines are left untouched, and new results open as a new pair next to them
 
 SET UP IN THREE STEPS
 Chrome does not let extensions change your search engines, so you add one entry yourself, once:
 1. Grant access: on the settings page, click "授权" (Grant) for the engines you use. The extension asks only for access to those engines' own sites. Required for the left engine, recommended for the right.
 2. Copy the trigger URL: pick a left and a right engine, then copy the trigger URL the settings page generates.
-3. Add it as a site search: open chrome://settings/searchEngines, add an entry under "Site search", paste the trigger URL and choose a shortcut. Make it the default to split every address-bar search, or keep your current default and type "shortcut + space + terms" when you want a split.
+3. Add it as a site search: open chrome://settings/searchEngines, add an entry under "Site search", paste the trigger URL and choose a shortcut. As the default, it splits address-bar searches, text dragged onto the tab strip and Chrome's right-click "Search [engine] for …" item. If you keep your current default, only typing "shortcut + space + terms" opens a split.
 
 ON OTHER DEVICES AND IN INCOGNITO
 A trigger URL is the left engine's real search URL plus one marker parameter, _ss. Wherever the extension isn't active (other computers and phones that sync your search settings, Incognito windows, or when the extension is disabled or not granted access), it simply runs a normal search on the left engine. Nothing breaks.
@@ -67,7 +67,7 @@ PRIVACY
 No servers, no analytics, no ads. The extension sends no data to the developer or anyone else. Your search terms go only from your browser to the two engines you chose. Settings are stored in chrome.storage.sync, which Chrome syncs across your devices only if you have Chrome sync turned on.
 ```
 
-字数：3103（含换行）
+字数：3269（含换行）
 
 ## Category / Language
 
