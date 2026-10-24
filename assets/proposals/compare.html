@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>宣传图方向对比</title>
+<!-- 对比表：三个低饱和方向 + 现状（仅对照）。渲染：见 scripts 说明或 compare.png。
+     样式刻意保持中性灰，不偏向任何一个方向。所有图片按原比例缩放，未裁切。 -->
+<style>
+  :root {
+    --page: #E9E9E9;
+    --card: #F6F6F6;
+    --ink: #1F1F1F;
+    --ink-2: #555555;
+    --ink-3: #7A7A7A;
+    --rule: #D2D2D2;
+    --frame: rgba(0,0,0,.16);
+    --gap: 24px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--page); }
+  html { overflow: hidden; }
+  body {
+    width: 1800px;
+    padding: 56px 48px 48px;
+    font-family: "Sarasa UI SC", "Noto Sans SC", sans-serif;
+    color: var(--ink);
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  header.sheet { display: grid; grid-template-columns: 1fr auto; align-items: end; padding-bottom: 28px; border-bottom: 1px solid var(--rule); margin-bottom: 0; }
+  header.sheet h1 { font-size: 34px; font-weight: 600; line-height: 1.2; letter-spacing: .01em; }
+  header.sheet p { margin-top: 8px; color: var(--ink-2); font-size: 17px; }
+  header.sheet .legend { color: var(--ink-3); font-size: 15px; text-align: right; line-height: 1.6; }
+
+  section.dir { padding: 36px 0 44px; }
+  section.dir + section.dir { border-top: 1px solid var(--rule); }
+  .head { display: grid; grid-template-columns: 1fr auto; column-gap: 40px; align-items: start; margin-bottom: 24px; }
+  .head h2 { font-size: 26px; font-weight: 600; line-height: 1.25; }
+  .head h2 .id { font-family: "Sarasa Fixed SC", monospace; font-size: 17px; font-weight: 400; color: var(--ink-3); margin-left: 12px; }
+  .head .idea { margin-top: 6px; color: var(--ink-2); font-size: 17px; max-width: 64em; }
+  .swatches { display: flex; gap: 10px; }
+  .sw { width: 76px; }
+  .sw i { display: block; height: 36px; border: 1px solid var(--frame); }
+  .sw span { display: block; margin-top: 4px; font-family: "Sarasa Fixed SC", monospace; font-size: 12px; color: var(--ink-2); line-height: 1.3; }
+  .sw em { display: block; font-style: normal; font-size: 12px; color: var(--ink-3); line-height: 1.3; }
+
+  .row { display: flex; gap: var(--gap); align-items: flex-start; }
+  .row + .row { margin-top: 26px; }
+  figure img { display: block; border: 1px solid var(--frame); background: #fff; }
+  figcaption { margin-top: 7px; font-size: 14px; color: var(--ink-2); line-height: 1.35; }
+  figcaption b { font-weight: 600; color: var(--ink); margin-right: 6px; }
+  .tiles { display: flex; flex-direction: column; gap: 18px; width: 440px; flex: none; }
+  .tiles .pair { display: flex; gap: var(--gap); align-items: flex-end; }
+  /* 宽度扣掉 2px 描边，让图片内容本身按准确比例缩放 */
+  .t100 img { width: 442px; height: 282px; }
+  .t50 img { width: 222px; height: 142px; }
+  .marquee img { width: 1240px; height: auto; }        /* 1238 × 495 */
+  .hero { width: 638px; }
+  .hero img { width: 638px; height: auto; }           /* 636 宽，按原比例 */
+  .shot img { width: 509px; height: auto; }           /* 507 × 317，1280 × 800 的 39.6% */
+  .note { color: var(--ink-3); font-size: 13px; }
+
+    section.baseline .head h2 { color: var(--ink-2); }
+</style>
+</head>
+<body>
+
+<header class="sheet">
+  <div>
+    <h1>宣传图方向对比</h1>
+    <p>同一套素材，三个低饱和方向；最后一行是现状，仅作对照。</p>
+  </div>
+  <div class="legend">
+    小宣传图按 100% 与 50% 两档显示，其余图按原比例缩小，未裁切<br>
+    截图选第 1 张（首图）和第 3 张（标注最多的一张）
+  </div>
+</header>
+
+<section class="dir" id="d1">
+  <div class="head">
+    <div>
+      <h2>纸白精排<span class="id">d1-paper</span></h2>
+      <p class="idea">暖白纸底、近黑字、一处松针绿；页头一栏左对齐，真实截图占主体，标注只用 1px 细线和一行小字。</p>
+    </div>
+    <div class="swatches">
+      <div class="sw"><i style="background:#F4F3EF"></i><span>#F4F3EF</span><em>纸底</em></div>
+      <div class="sw"><i style="background:#1D2320"></i><span>#1D2320</span><em>墨色</em></div>
+      <div class="sw"><i style="background:#565C58"></i><span>#565C58</span><em>次级字</em></div>
+      <div class="sw"><i style="background:#D7D4CB"></i><span>#D7D4CB</span><em>分隔线</em></div>
+      <div class="sw"><i style="background:#507665"></i><span>#507665</span><em>强调</em></div>
+      <div class="sw"><i style="background:#3E5D50"></i><span>#3E5D50</span><em>强调文字</em></div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="tiles">
+      <figure class="t100"><img src="promo-d1-paper/small-promo-440x280.png" alt=""><figcaption><b>小宣传图</b>440 × 280，100%</figcaption></figure>
+      <figure class="t50"><img src="promo-d1-paper/small-promo-440x280.png" alt=""><figcaption><b>50%</b>商店列表里的大致观感</figcaption></figure>
+    </div>
+    <figure class="marquee"><img src="promo-d1-paper/marquee-1400x560.png" alt=""><figcaption><b>顶部宣传图</b>1400 × 560</figcaption></figure>
+  </div>
+  <div class="row">
+    <figure class="hero"><img src="promo-d1-paper/hero.png" alt=""><figcaption><b>README 首图</b>hero.png</figcaption></figure>
+    <figure class="shot"><img src="promo-d1-paper/screenshot-1.png" alt=""><figcaption><b>截图 1</b>1280 × 800</figcaption></figure>
+    <figure class="shot"><img src="promo-d1-paper/screenshot-3.png" alt=""><figcaption><b>截图 3</b>拖拽，标注最多</figcaption></figure>
+  </div>
+</section>
+
+<section class="dir" id="d2">
+  <div class="head">
+    <div>
+      <h2>石墨专业<span class="id">d2-graphite</span></h2>
+      <p class="idea">深石墨底，只放一行标题和一张清楚的真实截图；用一行等宽字的“键入 ↵”表示输入一次就够。</p>
+    </div>
+    <div class="swatches">
+      <div class="sw"><i style="background:#1B2120"></i><span>#1B2120</span><em>底色</em></div>
+      <div class="sw"><i style="background:#242B29"></i><span>#242B29</span><em>抬升面</em></div>
+      <div class="sw"><i style="background:#343D3A"></i><span>#343D3A</span><em>描边</em></div>
+      <div class="sw"><i style="background:#ECEEEA"></i><span>#ECEEEA</span><em>主文字</em></div>
+      <div class="sw"><i style="background:#9BA49F"></i><span>#9BA49F</span><em>次级字</em></div>
+      <div class="sw"><i style="background:#9FBDAF"></i><span>#9FBDAF</span><em>强调</em></div>
+      <div class="sw"><i style="background:#3F6656"></i><span>#3F6656</span><em>标注线</em></div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="tiles">
+      <figure class="t100"><img src="promo-d2-graphite/small-promo-440x280.png" alt=""><figcaption><b>小宣传图</b>440 × 280，100%</figcaption></figure>
+      <figure class="t50"><img src="promo-d2-graphite/small-promo-440x280.png" alt=""><figcaption><b>50%</b>商店列表里的大致观感</figcaption></figure>
+    </div>
+    <figure class="marquee"><img src="promo-d2-graphite/marquee-1400x560.png" alt=""><figcaption><b>顶部宣传图</b>1400 × 560</figcaption></figure>
+  </div>
+  <div class="row">
+    <figure class="hero"><img src="promo-d2-graphite/hero.png" alt=""><figcaption><b>README 首图</b>hero.png</figcaption></figure>
+    <figure class="shot"><img src="promo-d2-graphite/screenshot-1.png" alt=""><figcaption><b>截图 1</b>1280 × 800</figcaption></figure>
+    <figure class="shot"><img src="promo-d2-graphite/screenshot-3.png" alt=""><figcaption><b>截图 3</b>拖拽，标注最多</figcaption></figure>
+  </div>
+</section>
+
+<section class="dir" id="d3">
+  <div class="head">
+    <div>
+      <h2>分屏叙事<span class="id">d3-split</span></h2>
+      <p class="idea">画布本身就是一次分屏：左格松针绿、右格暖雾灰，中间 2px 白缝，和图标两格之间的缝一致。</p>
+    </div>
+    <div class="swatches">
+      <div class="sw"><i style="background:#507665"></i><span>#507665</span><em>左格 / 强调</em></div>
+      <div class="sw"><i style="background:#78746D"></i><span>#78746D</span><em>右格</em></div>
+      <div class="sw"><i style="background:#DFE7E2"></i><span>#DFE7E2</span><em>浅左格</em></div>
+      <div class="sw"><i style="background:#E9E7E2"></i><span>#E9E7E2</span><em>浅右格</em></div>
+      <div class="sw"><i style="background:#1E2723"></i><span>#1E2723</span><em>墨色</em></div>
+      <div class="sw"><i style="background:#4D5852"></i><span>#4D5852</span><em>次级字</em></div>
+      <div class="sw"><i style="background:#F5F5F2"></i><span>#F5F5F2</span><em>纸</em></div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="tiles">
+      <figure class="t100"><img src="promo-d3-split/small-promo-440x280.png" alt=""><figcaption><b>小宣传图</b>440 × 280，100%</figcaption></figure>
+      <figure class="t50"><img src="promo-d3-split/small-promo-440x280.png" alt=""><figcaption><b>50%</b>商店列表里的大致观感</figcaption></figure>
+    </div>
+    <figure class="marquee"><img src="promo-d3-split/marquee-1400x560.png" alt=""><figcaption><b>顶部宣传图</b>1400 × 560</figcaption></figure>
+  </div>
+  <div class="row">
+    <figure class="hero"><img src="promo-d3-split/hero.png" alt=""><figcaption><b>README 首图</b>hero.png（原图 1760 × 760，比其他方向矮）</figcaption></figure>
+    <figure class="shot"><img src="promo-d3-split/screenshot-1.png" alt=""><figcaption><b>截图 1</b>1280 × 800</figcaption></figure>
+    <figure class="shot"><img src="promo-d3-split/screenshot-3.png" alt=""><figcaption><b>截图 3</b>拖拽，标注最多</figcaption></figure>
+  </div>
+</section>
+
+<section class="dir baseline" id="current">
+  <div class="head">
+    <div>
+      <h2>现状（高饱和，仅对照）<span class="id">assets/store · assets/readme</span></h2>
+      <p class="idea">紫色渐变底加橙色标注，饱和度高；用户已否定，列在这里只为对比改动幅度。</p>
+    </div>
+    <div class="swatches">
+      <div class="sw"><i style="background:#6A5CFF"></i><span>#6A5CFF</span><em>iris</em></div>
+      <div class="sw"><i style="background:#4B3FE0"></i><span>#4B3FE0</span><em>iris-d</em></div>
+      <div class="sw"><i style="background:#2B2391"></i><span>#2B2391</span><em>iris-dd</em></div>
+      <div class="sw"><i style="background:#F26B3A"></i><span>#F26B3A</span><em>coral</em></div>
+      <div class="sw"><i style="background:#F5F4FF"></i><span>#F5F4FF</span><em>paper</em></div>
+      <div class="sw"><i style="background:#1B1838"></i><span>#1B1838</span><em>ink</em></div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="tiles">
+      <figure class="t100"><img src="../store/small-promo-440x280.png" alt=""><figcaption><b>小宣传图</b>440 × 280，100%</figcaption></figure>
+      <figure class="t50"><img src="../store/small-promo-440x280.png" alt=""><figcaption><b>50%</b>商店列表里的大致观感</figcaption></figure>
+    </div>
+    <figure class="marquee"><img src="../store/marquee-1400x560.png" alt=""><figcaption><b>顶部宣传图</b>1400 × 560</figcaption></figure>
+  </div>
+  <div class="row">
+    <figure class="hero"><img src="../readme/hero.png" alt=""><figcaption><b>README 首图</b>hero.png</figcaption></figure>
+    <figure class="shot"><img src="../store/screenshot-1.png" alt=""><figcaption><b>截图 1</b>1280 × 800</figcaption></figure>
+    <figure class="shot"><img src="../store/screenshot-3.png" alt=""><figcaption><b>截图 3</b>拖拽，标注最多</figcaption></figure>
+  </div>
+</section>
+
+<script>
+  // 渲染辅助：把整页高度写进 DOM，供截图脚本读取
+  addEventListener("load", () => document.documentElement.setAttribute("data-h", Math.ceil(document.documentElement.scrollHeight)));
+</script>
+</body>
+</html>
