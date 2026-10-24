@@ -51,7 +51,7 @@ test("renderReport: json 与 md 内容一致", () => {
   const { json } = renderReport({ ...base, storage: { before: "aa", after: "aa", equal: true }, notes: ["测试备注"] });
   assert.deepEqual(json.results.map(r => r.id), ["B5", "T7", "T9"]);
   assert.equal(json.results[1].status, "fail");
-  assert.deepEqual(json.summary, { total: 3, pass: 1, fail: 1, skip: 1 });
+  assert.deepEqual(json.summary, { total: 3, pass: 1, fail: 1, skip: 1, degrade: 0 });
   assert.equal(json.consoleErrors.length, 1);
   assert.equal(json.storage.equal, true);
   assert.deepEqual(json.notes, ["测试备注"]);

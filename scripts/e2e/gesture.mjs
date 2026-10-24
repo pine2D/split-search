@@ -13,6 +13,19 @@ export { gestureError, held, sameClient, releaseAfterClose, releaseHeldSync, REA
 export const REASON_CURSOR = "光标不在测试窗口上";
 export const REASON_BUSY = "检测到用户在操作鼠标";
 export const CURSOR_GUIDE = "请把鼠标光标停在测试浏览器窗口里，然后别动";
+// 读回连续两次被拉到同一个点（±SNAP_PX）：WSLg 在真实鼠标有任何物理移动（手搭在鼠标上、触摸板误触）时把 X 指针同步回
+// 真实光标位置（progress.md Task 4 I4 实测 557,371、780,689）。和“用户在动鼠标”分开报，向导页提示把手拿开
+export const REASON_SNAP = "指针被拉回真实光标位置（请把手从鼠标/触摸板上拿开）";
+export const SNAP_GUIDE = "移动后的指针被拉回了真实光标所在的位置：WSLg 下手只要碰到鼠标或触摸板，X 指针就会同步回真实光标。"
+  + "请把光标停在测试浏览器窗口里，然后把手从鼠标/触摸板上拿开，脚本会自动重试。";
+const SNAP_PX = 3, SNAP_MS = 10 * 60 * 1000;
+// 上一次读回不符时读到的位置（全进程只有一个手势在跑；跨尝试保留，成功的读回不清掉它）
+export const snap = { last: null };
+export function snapBack(p, now = Date.now()) {
+  const l = snap.last;
+  snap.last = { x: p.x, y: p.y, at: now };
+  return !!l && now - l.at <= SNAP_MS && Math.abs(l.x - p.x) <= SNAP_PX && Math.abs(l.y - p.y) <= SNAP_PX;
+}
 
 const realSleep = ms => new Promise(r => setTimeout(r, ms));
 const stopped = ctx => !!(ctx.signal?.aborted || ctx.abortSignal?.aborted);
@@ -71,8 +84,12 @@ export async function readyMouse(ctx, wid) {
 export async function moveTo(xi, x, y) {
   await xi.move(x, y);
   const p = await xi.pointer();
-  // 读回不符多半是用户在动鼠标（真实光标经过 WSLg 窗口会改 X 指针）：干扰，判环境问题（重试，最后仍这样判跳过）
-  if (p.x !== x || p.y !== y) throw gestureError("env", `移动后读回的指针位置 ${p.x},${p.y} 与命令 ${x},${y} 不符（用户可能在动鼠标），已中止`);
+  // 读回不符多半是用户在动鼠标（真实光标经过 WSLg 窗口会改 X 指针）：干扰，判环境问题（重试，最后仍这样判跳过）；
+  // 连续两次被拉到同一个点 → 手搭在鼠标上，单独的原因
+  if (p.x !== x || p.y !== y) {
+    if (snapBack(p)) throw gestureError("env", `${REASON_SNAP}：移动后读回 ${p.x},${p.y}，与命令 ${x},${y} 不符，且和上一次不符时读回的位置相同，已中止`);
+    throw gestureError("env", `移动后读回的指针位置 ${p.x},${p.y} 与命令 ${x},${y} 不符（用户可能在动鼠标），已中止`);
+  }
   return p;
 }
 // 不在测试窗口上：被别的窗口盖住是环境干扰（env）。指针在根窗口上有歧义（Task 2：真实光标离开 WSLg 窗口后，XTEST 移动

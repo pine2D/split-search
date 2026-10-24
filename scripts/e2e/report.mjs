@@ -1,6 +1,8 @@
 // 报告生成（纯函数）：同一份内容输出 Markdown 与 JSON。所有写进报告或终端的文字先经 redact 脱敏
 const KIND = { auto: "自动", assist: "协助", judge: "判断" };
-const STATUS = { pass: "✅ 通过", fail: "❌ 失败", skip: "⏭ 跳过" };
+// degrade：预期降级（T14 引擎的 SW 接管导航，按 G5 退化为普通左侧搜索），单独计数，不算失败、不影响退出码
+const STATUS = { pass: "✅ 通过", fail: "❌ 失败", skip: "⏭ 跳过", degrade: "↘️ 预期降级" };
+const ITEM = { skip: "跳过", degrade: "预期降级" };
 
 // 隐私：网址里名为 token/session/sid/auth/key/code、access_token 等 *_token、session_id/sessionid、
 // google_abuse 等 *_abuse、含 exemption 的（不区分大小写）查询参数，值一律换成 ***。参数名前须是 ? & ; # 或开头
@@ -51,7 +53,7 @@ const secs = ms => (typeof ms === "number" ? `${(ms / 1000).toFixed(1)}s` : "-")
 const iso = d => (d instanceof Date ? d.toISOString() : d ?? null);
 
 function summarize(results) {
-  const s = { total: results.length, pass: 0, fail: 0, skip: 0 };
+  const s = { total: results.length, pass: 0, fail: 0, skip: 0, degrade: 0 };
   for (const r of results) if (r.status in s) s[r.status]++;
   return s;
 }
@@ -62,9 +64,12 @@ export function renderReport(input) {
   const consoleErrors = redactDeep(input.consoleErrors ?? []);
   const notes = redactDeep(input.notes ?? []);
   const summary = summarize(results);
+  // 本次运行里跳过或预期降级的子项（summarize 给出，runner 带进结果；步骤整体仍可能判通过）
+  const uncoveredItems = results.flatMap(r => (Array.isArray(r.uncovered) ? r.uncovered : []).map(i => ({ id: r.id, ...i })));
   const json = {
     startedAt: iso(startedAt), finishedAt: iso(finishedAt), chromeVersion: chromeVersion ?? null, args,
     summary, results, consoleErrors, storage: storage ?? null, notes, uncovered: UNCOVERED,
+    uncoveredItems,
   };
 
   const md = [];
@@ -72,7 +77,7 @@ export function renderReport(input) {
   md.push(`- 开始：${json.startedAt ?? "-"}${json.finishedAt ? `；结束：${json.finishedAt}` : ""}`);
   md.push(`- 浏览器：${chromeVersion ?? "未知"}`);
   md.push(`- 参数：\`${JSON.stringify(args)}\``);
-  md.push(`- 汇总：共 ${summary.total} 步，通过 ${summary.pass}，失败 ${summary.fail}，跳过 ${summary.skip}`, "");
+  md.push(`- 汇总：共 ${summary.total} 步，通过 ${summary.pass}，失败 ${summary.fail}，跳过 ${summary.skip}，预期降级 ${summary.degrade}`, "");
 
   md.push("## 汇总", "", "| 编号 | 类型 | 结果 | 耗时 | 说明 |", "|---|---|---|---|---|");
   for (const r of results) {
@@ -88,7 +93,7 @@ export function renderReport(input) {
   // 通过/跳过的步骤里，表格只显示了第一行的那些（多子项的计数与各子项、T12 的联想回答、T8(d) 是否适用、T14 各引擎）
   const full = results.filter(r => r.status !== "fail" && needsFull(r));
   if (full.length) {
-    md.push("## 详细说明（通过与跳过的步骤）", "");
+    md.push("## 详细说明（通过、跳过与预期降级的步骤）", "");
     for (const r of full) md.push(`### ${r.id} ${r.title ?? ""}（${STATUS[r.status] ?? r.status}）`, "", ...fenced(r.detail), "");
   }
 
@@ -113,6 +118,10 @@ export function renderReport(input) {
   }
   md.push("## 未覆盖", "");
   for (const u of UNCOVERED) md.push(`- ${u}`);
+  if (uncoveredItems.length) {
+    md.push("", "本次运行中跳过或预期降级的子项：", "");
+    for (const g of uncoveredItems) md.push(`- ${g.id} ${g.name}：${ITEM[g.status] ?? g.status}——${String(g.detail ?? "").split("\n")[0]}`);
+  }
   md.push("");
   return { md: md.join("\n"), json };
 }

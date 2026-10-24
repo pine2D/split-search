@@ -123,7 +123,7 @@ export async function reloadExtension(browser, { timeoutMs = 20000 } = {}) {
 // ---- 状态 ----
 const STATE_EXPR = `(async () => {
   const tabs = (await chrome.tabs.query({})).map(t => ({ id: t.id, index: t.index, windowId: t.windowId,
-    splitViewId: t.splitViewId, pinned: t.pinned, groupId: t.groupId, url: t.url, status: t.status, active: t.active }));
+    splitViewId: t.splitViewId, pinned: t.pinned, groupId: t.groupId, url: t.url, title: t.title, status: t.status, active: t.active }));
   const windows = (await chrome.windows.getAll()).map(w => ({ id: w.id, type: w.type, focused: w.focused }));
   const rules = await chrome.declarativeNetRequest.getDynamicRules();
   return { tabs, windows, rules };

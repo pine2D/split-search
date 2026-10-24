@@ -32,14 +32,16 @@ async function expectPlain(ctx, q, { useExt = true } = {}) {
   return problems.length ? { status: "fail", detail: problems.join("；") } : { status: "pass", detail: `普通左侧搜索，未分屏：${url}` };
 }
 
-// 脚本看不到无痕窗口（扩展不在那里运行），只能由用户判断；没人作答就按 judge 的超时判失败
+// 脚本看不到无痕窗口（扩展不在那里运行），只能由用户判断；没人作答就按 judge 的超时判失败。
+// 直接粘贴触发网址，不依赖网站搜索 gb（xinput 可用时 T1 走 xauto、只建 sse2e 专用条目，全新测试配置里没有 gb）
+export const INCOGNITO_URL = "https://www.google.com/search?q=无痕测试&_ss=google,bing";
 export const INCOGNITO_TEXT = "这一项只能你来判断，脚本不会自动继续：看完后必须回到这里点“通过”或“不通过”（做不了点“跳过”）。\n"
-  + "1. 按 Ctrl+Shift+N 打开无痕窗口；\n2. 在无痕窗口的地址栏输入“gb 无痕测试”回车（gb 是 T1 添加的网站搜索）；\n"
+  + "1. 按 Ctrl+Shift+N 打开无痕窗口；\n2. 点下面的“复制”，把触发网址粘贴到无痕窗口的地址栏回车（直接用网址，不依赖任何网站搜索）；\n"
   + "3. 看结果：应是一次普通的 Google 搜索，不分屏、不出错误页。无痕窗口里扩展不运行，Google 收到 `_ss` 是正常的"
   + "（地址栏里能看到 _ss=google,bing，这就是预期的降级，不算失败）；Google 弹出人机验证页也不算失败；\n"
   + "4. 关掉无痕窗口，回到这里：是普通搜索点“通过”，分屏了或出了错误页点“不通过”。";
 const incognito = ctx => sub("(a) 无痕窗口", () => judge(ctx, {
-  title: "T8(a) 无痕窗口（看完请点“通过”或“不通过”）", copyText: "gb 无痕测试", timeoutMs: ctx.timeoutMs * 2,
+  title: "T8(a) 无痕窗口（看完请点“通过”或“不通过”）", copyText: INCOGNITO_URL, timeoutMs: ctx.timeoutMs * 2,
   instruction: INCOGNITO_TEXT,
   passDetail: "用户判断：通过（无痕窗口里是普通 Google 搜索，带 _ss，属预期降级）",
   failDetail: "用户判断：不通过（无痕窗口里分屏了或出了错误页）",

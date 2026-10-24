@@ -2,7 +2,7 @@
 // 测试窗口定位（页面标题 token → X 窗口 id，手势前取好、手势中不再找）、固定窗口尺寸、网站搜索专用条目、ASCII 校验。
 // xauto 步骤形状：{ id, title, kind: "xauto", fallback: <assist/judge 步骤>, run }，xinput 不可用时由 selectSteps 换成 fallback。
 import { sleep, evalIn, nonce } from "./util.mjs";
-import { REASON_STUCK, held, releaseHeld } from "../gesture.mjs";
+import { REASON_STUCK, REASON_SNAP, SNAP_GUIDE, held, releaseHeld } from "../gesture.mjs";
 import { measureTab } from "../screen.mjs";
 
 export const WIN_W = 1600, WIN_H = 1000;
@@ -76,7 +76,9 @@ async function stuckGuide(ctx) {
 // 抛错 kind：skip（光标不在、用户在动鼠标）不重试；env（环境不支持、拿不到前台、被别的窗口干扰）重试；stuck → 停掉剩余 xauto 步骤。
 // 裁定 I2：只要有一次尝试是真实失败（不是 env），这一步就判失败——之后的 env/skip 不能把它吞成跳过；
 // 只有全部失败都是 env（或在任何真实失败之前就 skip）才判跳过。之后某次通过仍判通过（detail 记下之前的失败，作为不稳定信号）。
-// final(r)：返回 true 的失败是确定结论（如 T14 的预期降级），不再重试。detail 第一行写明第几次尝试
+// status degrade（T14 的预期降级：触发前有 SW、没分屏、左侧停在引擎上带着查询词）是确定结论，不重试，之前有真实失败也按它判
+// （它本身就解释了没分屏）。final(r)：返回 true 的失败同样是确定结论，不再重试。detail 第一行写明第几次尝试。
+// 指针被拉回真实光标位置（REASON_SNAP）时向导页提示把手从鼠标上拿开，再重试
 export async function withAttempts(ctx, attempt, { max = 3, final = () => false } = {}) {
   const fails = [];
   let real = false;
@@ -102,11 +104,15 @@ export async function withAttempts(ctx, attempt, { max = 3, final = () => false 
       r = { status: "fail", detail: e.message, env: e.kind === "env" };
     }
     if (r.status === "skip" && real) return realFail(n, `跳过（${r.detail}）`);
-    if (r.status === "pass" || r.status === "skip" || final(r)) {
-      const verb = { pass: "通过", skip: "跳过", fail: "失败" }[r.status];
+    if (r.status === "pass" || r.status === "skip" || r.status === "degrade" || final(r)) {
+      const verb = { pass: "通过", skip: "跳过", fail: "失败", degrade: "预期降级" }[r.status];
       return { ...r, detail: `第 ${n} 次尝试${verb}${prev()}：${r.detail}`, attempt: n };
     }
     if (!r.env) real = true;
+    else if (String(r.detail).startsWith(REASON_SNAP)) {
+      ctx.log?.(`  ${REASON_SNAP}`);
+      ctx.guide?.setStep?.({ title: REASON_SNAP, instruction: SNAP_GUIDE, buttons: [] });
+    }
     fails.push(`第 ${n} 次${r.env ? "（环境）" : ""} ${r.detail.split("\n")[0]}`);
   }
   return real ? { status: "fail", detail: `${max} 次尝试都没成功\n${fails.join("\n")}`, attempt: max }

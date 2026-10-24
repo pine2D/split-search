@@ -2,7 +2,9 @@
 // 说明与诊断里的网址先脱敏（report.mjs 的 redact），再写进结果、终端和向导页
 import { redact, redactDeep } from "./report.mjs";
 import { collectCdp, formatCdp, tabSuffix } from "./diag.mjs";
-const STATUSES = new Set(["pass", "fail", "skip"]);
+// degrade：预期降级（T14 引擎的 SW 接管导航，按 G5 退化为普通左侧搜索），单独计数，不算失败
+const STATUSES = new Set(["pass", "fail", "skip", "degrade"]);
+const LOG_STATUS = { pass: "✔ 通过", fail: "✘ 失败", skip: "↷ 跳过", degrade: "↘ 预期降级" };
 const ABORTED = "中断";
 
 // 每步开始时向导页显示的卡片（无按钮）：auto 步骤提示别动浏览器（restarts 的步骤预告重启），xauto 提示把光标停在窗口里，
@@ -17,7 +19,8 @@ export function startCard(step) {
   if (step.kind === "xauto") {
     return { title: `${title}（自动操作中）`, buttons: [],
       instruction: "脚本正在用真实的鼠标和键盘自动操作测试浏览器（会新开窗口、拖动文字、右键、在地址栏输入）。\n"
-        + "请把鼠标光标停在测试浏览器窗口里，然后不要动鼠标键盘，等这一步结束。光标不在窗口里时这里会提示，等不到就跳过这一步。" };
+        + "请把鼠标光标停在测试浏览器窗口里，然后把手从鼠标/触摸板上拿开，不要碰鼠标键盘，等这一步结束"
+        + "（WSLg 下手一碰鼠标，X 指针就会被拉回真实光标位置，手势会中止重来）。光标不在窗口里时这里会提示，等不到就跳过这一步。" };
   }
   return { title, buttons: [], instruction: "脚本正在准备这一步（整理标签），说明马上出现在这里。请先不要操作测试浏览器。" };
 }
@@ -108,7 +111,7 @@ export async function runSteps(steps, ctx, { timeoutMs, settleMs = SETTLE_MS, re
       unsettled = !settled;
     }
 
-    let status, detail;
+    let status, detail, uncovered = null;
     if (outcome.kind === "abort") { status = "skip"; detail = `${ABORTED}（步骤执行中${why() ? "；" + why() : ""}）`; }
     else if (outcome.kind === "timeout") { status = "fail"; detail = `超时（${limit} ms 内未完成）`; }
     else if (outcome.kind === "error") { status = "fail"; detail = `异常：${outcome.error?.message ?? outcome.error}`; }
@@ -116,12 +119,14 @@ export async function runSteps(steps, ctx, { timeoutMs, settleMs = SETTLE_MS, re
       const v = outcome.value;
       if (!v || typeof v !== "object" || !STATUSES.has(v.status)) {
         status = "fail"; detail = `步骤返回值不合法：${JSON.stringify(v)}`;
-      } else { status = v.status; detail = String(v.detail ?? ""); }
+      } else { status = v.status; detail = String(v.detail ?? ""); uncovered = Array.isArray(v.uncovered) && v.uncovered.length ? v.uncovered : null; }
     }
     if (unsettled) detail += `；步骤在 ${settleMs} ms 收尾期限内仍未结束，已不再等待`;
     detail = redact(detail);
 
     const result = { ...base, status, detail, durationMs: Date.now() - started };
+    // 子项里的跳过/预期降级（summarize 给出），报告的“未覆盖”小节逐条列出
+    if (uncovered) result.uncovered = redactDeep(uncovered);
     // assist 步骤被跳过（用户点“跳过”或条件不满足）也附上当时的状态，便于事后判断为什么做不下去
     // noDiag：跳过是正常情况的步骤（B1 在扩展早已安装时），不附诊断
     const wantDiag = status === "fail" || (status === "skip" && step.kind === "assist" && !step.noDiag);
@@ -131,7 +136,7 @@ export async function runSteps(steps, ctx, { timeoutMs, settleMs = SETTLE_MS, re
       if (d.state) result.diag = redactDeep(d.state);
     }
     results.push(result);
-    log(`  ${status === "pass" ? "✔ 通过" : status === "fail" ? "✘ 失败" : "↷ 跳过"}（${(result.durationMs / 1000).toFixed(1)}s）${detail ? "：" + detail.split("\n")[0] : ""}`);
+    log(`  ${LOG_STATUS[status]}（${(result.durationMs / 1000).toFixed(1)}s）${detail ? "：" + detail.split("\n")[0] : ""}`);
     ctx.guide?.setResult?.(step.id, status, result.detail);
     ctx.guide?.setProgress?.(results.length, total);
     // afterStep（run.mjs 的授权/启用恢复检查）：不受单步超时限制，无论步骤结果如何、是否超时都执行；

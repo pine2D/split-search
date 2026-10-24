@@ -1,6 +1,6 @@
 // 验收向导：轮询 /api/state，按钮 POST /api/answer。不依赖任何扩展 API。
 const LABELS = { pass: "通过", fail: "不通过", skip: "跳过", retry: "重试", done: "我已完成", nosplit: "没分屏" };
-const STATUS = { pass: "通过", fail: "失败", skip: "跳过", retry: "重试", error: "出错" };
+const STATUS = { pass: "通过", fail: "失败", skip: "跳过", degrade: "预期降级", retry: "重试", error: "出错" };
 const $ = id => document.getElementById(id);
 let renderedSeq = -1;
 let answering = false;

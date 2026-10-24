@@ -30,7 +30,7 @@ h3 { font-size: 14px; margin: 0 0 8px; color: var(--muted); }
 .results li { padding: 4px 0; border-top: 1px solid var(--line); display: flex; gap: 8px; }
 .results li:first-child { border-top: 0; }
 .st { font-weight: 600; min-width: 3.5em; }
-.st.pass { color: var(--ok); } .st.fail { color: var(--bad); } .st.skip, .st.retry { color: var(--warn); }
+.st.pass { color: var(--ok); } .st.fail { color: var(--bad); } .st.skip, .st.retry, .st.degrade { color: var(--warn); }
 .detail { color: var(--muted); }
 /* 深色下 --ok/--bad 是亮色底，白字对比度不足（约 1.9:1），改用深色字；放在最后以覆盖上面的 #fff */
 @media (prefers-color-scheme: dark) {

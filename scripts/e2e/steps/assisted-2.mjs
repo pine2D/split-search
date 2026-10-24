@@ -4,7 +4,7 @@ import { openOptions } from "./optpage.mjs";
 import { assist, judge, focusGuide, activate, guideUrl } from "./guided.mjs";
 import { prepare, hostOf, fmt, SETTINGS, G, BING } from "./assisted.mjs";
 import { L } from "./labels.mjs";
-import { readServiceWorkers, swText, t14Verdict, originOf } from "./sw.mjs";
+import { readServiceWorkers, swText, t14Verdict, originOf, findPlain, plainTracker, plainLine } from "./sw.mjs";
 
 // 联想只记录、不判失败（清单里是“建议”）：通过=有，不通过=没有
 async function ask(ctx, title, question) {
@@ -68,9 +68,8 @@ export async function engineTabs(ctx, host) {
   return `${host} 上的标签：${tabs.slice(0, 3).map(t => `${t.id}${(t.splitViewId ?? -1) !== -1 ? `（分屏 ${t.splitViewId}）` : "（未分屏）"} ${t.url}`).join("；")}`;
 }
 
-// 引擎收到了带 _ss 的触发网址（DNR 没生效）：普通左侧搜索、不在分屏里
-export const hasSs = url => { try { return [...new URL(url).searchParams.keys()].some(k => k === "_ss" || k === "amp;_ss"); } catch { return false; } };
-const PLAIN_STABLE_MS = 3000; // 同一个标签连续这么久都是“带 _ss、未分屏”才判降级，避开导航中间态
+// 主框架跳转链（控制台收集器记的，没有则空）：认“普通左侧搜索”时用（Perplexity 的 SPA 可能改写网址、丢掉 _ss）
+export const navChains = ctx => ctx.consoleCollector?.navChains?.() ?? [];
 
 export const swNow = async ctx => readServiceWorkers(ctx.browser, { prefer: t => t.url.startsWith(guideUrl(ctx.port)) })
   .catch(e => ({ map: new Map(), error: e.message }));
@@ -80,12 +79,13 @@ async function leftItem(ctx, e) {
   const sw0 = await swNow(ctx);
   const swBefore = sw0.error ? `未知（${sw0.error}）` : swText(sw0.map, origin);
   await focusGuide(ctx);
-  let before, beforeTabs, plainSeen = null;
+  let before, beforeTabs;
+  const plain = plainTracker();
   const snap = async () => {
     const st = await ctx.ext.state();
     before = new Set(splitPairs(st).map(p => p[0].splitViewId));
     beforeTabs = new Set(st.tabs.map(t => t.id));
-    plainSeen = null;
+    plain.reset();
   };
   await snap();
   const q = `左侧 ${e.name} 测试`;
@@ -95,7 +95,7 @@ async function leftItem(ctx, e) {
     timeoutMs: ctx.timeoutMs * 2,
     instruction: `1. 在 ${SETTINGS} 的${L.siteSearch}里点${L.add}：名称和快捷字词都填 ${e.kw}，网址粘贴下面的网址，保存；\n`
       + `2. 在 ${e.kw} 右侧 ${L.more} 里点${L.makeDefault}；\n3. 回到向导页，选中下面的文字，拖到标签栏上两个标签之间。\n`
-      + `期望：${e.name} ｜ Google 分屏。（${e.name} 的 Service Worker：${swBefore}）脚本能自己认出“只打开了普通的 ${e.name} 搜索（带 _ss、没分屏）”；`
+      + `期望：${e.name} ｜ Google 分屏。（${e.name} 的 Service Worker：${swBefore}）脚本能自己认出“只打开了普通的 ${e.name} 搜索（带着这次的查询词、没分屏）”；`
       + "认不出时点“没分屏”（记为失败，脚本会记下那个标签的网址）；做不了这一项才点“跳过”。点“重试”会重新记下现有标签，再拖一次。",
     buttons: ["nosplit", "skip", "retry"],
     onRetry: snap,
@@ -103,21 +103,22 @@ async function leftItem(ctx, e) {
       const st = await ctx.ext.state();
       const p = splitPairs(st).find(x => !before.has(x[0].splitViewId) && hostOf(x[0].url) === e.host && hostOf(x[1].url) === G);
       if (p) return { split: p };
-      const t = st.tabs.find(x => !beforeTabs.has(x.id) && hostOf(x.url) === e.host && hasSs(x.url) && (x.splitViewId ?? -1) === -1);
-      if (!t) { plainSeen = null; return null; }
-      if (plainSeen?.id !== t.id) plainSeen = { id: t.id, at: Date.now() };
-      return Date.now() - plainSeen.at >= PLAIN_STABLE_MS && { plain: t };
+      const hit = plain.see(findPlain(st, { host: e.host, text: q, beforeTabs, chains: navChains(ctx) }));
+      return hit && { plain: hit };
     },
     verdict: async v => {
       const sw1 = await swNow(ctx);
-      return t14Verdict({ name: e.name, split: !!v.split, swBefore, swAfter: sw1.error ? `未知（${sw1.error}）` : swText(sw1.map, origin),
-        splitText: v.split ? fmt(v.split) : "", plainText: v.plain ? `普通左侧搜索（引擎收到了 _ss）：标签 ${v.plain.id} ${v.plain.url}` : "" });
+      return t14Verdict({ name: e.name, split: !!v.split, plain: !!v.plain, swBefore, swAfter: sw1.error ? `未知（${sw1.error}）` : swText(sw1.map, origin),
+        splitText: v.split ? fmt(v.split) : "", plainText: v.plain ? plainLine(v.plain) : "" });
     },
     onAnswer: async a => {
       const seen = await engineTabs(ctx, e.host);
       if (a !== "nosplit") return { status: "skip", detail: `用户点了“跳过”；SW 注册：触发前${swBefore}；${seen}` };
       const sw1 = await swNow(ctx);
-      return t14Verdict({ name: e.name, split: false, swBefore, swAfter: sw1.error ? `未知（${sw1.error}）` : swText(sw1.map, origin), plainText: `用户报告没分屏；${seen}` });
+      const st = await ctx.ext.state().catch(() => null);
+      const hit = st && findPlain(st, { host: e.host, text: q, beforeTabs, chains: navChains(ctx) });
+      return t14Verdict({ name: e.name, split: false, plain: !!hit, swBefore, swAfter: sw1.error ? `未知（${sw1.error}）` : swText(sw1.map, origin),
+        plainText: `用户报告没分屏；${hit ? `${plainLine(hit)}；` : ""}${seen}` });
     },
   });
   return { name: `${e.name} 作左侧`, ...r };
@@ -136,10 +137,10 @@ const T14 = {
     }
     const res = summarize(items);
     const short = i => i.name.replace(" 作左侧", "");
-    const degraded = items.filter(i => i.degraded).map(short);
+    const degraded = items.filter(i => i.status === "degrade").map(short);
     const unknown = items.filter(i => i.status === "fail" && i.sw === "未知").map(short);
     return { ...res, detail: `${res.detail}\n（开始前已打开五个引擎首页，让它们有机会注册 Service Worker；SW 由 CDP ServiceWorker 域与 service_worker 目标核实）`
-      + (degraded.length ? `\n预期降级（有 SW、未分屏）：${degraded.join("、")}——据此决定是否给这些预置引擎设 leftDiscouraged` : "")
+      + (degraded.length ? `\n预期降级（触发前有 SW、未分屏、左侧停在引擎上）：${degraded.join("、")}——据此决定是否给这些预置引擎设 leftDiscouraged` : "")
       + (unknown.length ? `\nSW 状态读不到、未分屏（无法区分降级和缺陷，不据此设 leftDiscouraged）：${unknown.join("、")}` : "") };
   },
 };

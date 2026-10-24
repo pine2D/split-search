@@ -104,12 +104,19 @@ export async function resetTabs(ctx, path = "/start") {
   return { ...made, url, targetId: site.targetId };
 }
 
-// 一组子项的汇总：任何一项失败即失败；全部跳过（或没有子项）判跳过；通过与跳过混合判通过。
-// 第一行写计数（报告表格与终端只显示第一行，跳过的子项也要看得见），之后每个子项一行
+// 一组子项的汇总：任何一项失败即失败；否则有预期降级（degrade）判预期降级；有通过判通过；全部跳过（或没有子项）判跳过。
+// 第一行写计数（报告表格与终端只显示第一行，跳过的子项也要看得见），之后每个子项一行。
+// 跳过与预期降级的子项另外放进 uncovered（runner 带进结果，报告“未覆盖”小节逐条列出）；步骤不是整体失败/跳过时，
+// 第一行末尾也写出它们的名字，免得“通过 + 跳过”判成通过后把没测到的子项藏起来
+const ITEM = { pass: "通过", skip: "跳过", fail: "失败", degrade: "预期降级" };
 export function summarize(items) {
-  const line = i => `${i.name}：${i.status === "pass" ? "通过" : i.status === "skip" ? "跳过" : "失败"}——${i.detail}`;
+  const line = i => `${i.name}：${ITEM[i.status] ?? i.status}——${i.detail}`;
   const n = s => items.filter(i => i.status === s).length;
-  const status = n("fail") ? "fail" : n("pass") ? "pass" : "skip";
-  const head = `共 ${items.length} 项：通过 ${n("pass")}，跳过 ${n("skip")}，失败 ${n("fail")}`;
-  return { status, detail: [head, ...items.map(line)].join("\n") };
+  const status = n("fail") ? "fail" : n("degrade") ? "degrade" : n("pass") ? "pass" : "skip";
+  const uncovered = items.filter(i => i.status === "skip" || i.status === "degrade")
+    .map(i => ({ name: i.name, status: i.status, detail: String(i.detail ?? "").split("\n")[0] }));
+  const gaps = (status === "pass" || status === "degrade") && uncovered.length
+    ? `（未覆盖：${uncovered.map(i => `${i.name}（${ITEM[i.status]}）`).join("、")}）` : "";
+  const head = `共 ${items.length} 项：通过 ${n("pass")}，跳过 ${n("skip")}，失败 ${n("fail")}${n("degrade") ? `，预期降级 ${n("degrade")}` : ""}${gaps}`;
+  return { status, detail: [head, ...items.map(line)].join("\n"), ...(uncovered.length ? { uncovered } : {}) };
 }

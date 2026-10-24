@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { mapTargets, collectCdp, formatCdp } from "../scripts/e2e/diag.mjs";
 import { formatDiag, runSteps } from "../scripts/e2e/runner.mjs";
 import { swByOrigin, swText, t14Verdict } from "../scripts/e2e/steps/sw.mjs";
-import { INCOGNITO_TEXT } from "../scripts/e2e/steps/t8.mjs";
+import { INCOGNITO_TEXT, INCOGNITO_URL } from "../scripts/e2e/steps/t8.mjs";
 
 const EXT = "chrome-extension://alngkkgnobglnfbhcplhpaflcgfiajnj";
 const GUIDE = "http://127.0.0.1:8765/guide";
@@ -84,14 +84,14 @@ test("swByOrigin / swText: 合并注册、版本、worker 目标，只看网页 
   assert.equal(swText(m, "https://www.bing.com"), "无");
 });
 
-test("t14Verdict: 无 SW 分屏通过、不分屏是真缺陷；有 SW 不分屏记失败并写明预期降级与 leftDiscouraged", () => {
+test("t14Verdict: 无 SW 分屏通过、不分屏是真缺陷；触发前有 SW、不分屏且左侧带查询词 → 预期降级（degrade，不算失败）", () => {
   assert.equal(t14Verdict({ name: "Bing", split: true, swBefore: "无", swAfter: "无" }).status, "pass");
   const real = t14Verdict({ name: "Bing", split: false, swBefore: "无", swAfter: "无" });
   assert.equal(real.status, "fail");
   assert.match(real.detail, /分屏：否；SW 注册：触发前无，触发后无；没检测到 Bing 的 Service Worker 却没分屏/);
   assert.equal(real.degraded, false);
-  const deg = t14Verdict({ name: "Perplexity", split: false, swBefore: "无", swAfter: "有（注册 https://www.perplexity.ai/）", plainText: "标签 5" });
-  assert.equal(deg.status, "fail");
+  const deg = t14Verdict({ name: "Perplexity", split: false, plain: true, swBefore: "有（注册 https://www.perplexity.ai/）", swAfter: "有（x）", plainText: "标签 5" });
+  assert.equal(deg.status, "degrade");
   assert.equal(deg.degraded, true);
   assert.match(deg.detail, /预期降级（G5）.*leftDiscouraged.*标签 5/);
   assert.match(t14Verdict({ name: "Kagi", split: true, swBefore: "有（x）", swAfter: "有（x）" }).detail, /^分屏：是；SW 注册：触发前有/);
@@ -100,30 +100,35 @@ test("t14Verdict: 无 SW 分屏通过、不分屏是真缺陷；有 SW 不分屏
 test("T8(a) 卡片：写明必须点通过/不通过，并说明无痕窗口里 Google 收到 _ss 是正常的", () => {
   assert.match(INCOGNITO_TEXT, /必须回到这里点“通过”或“不通过”/);
   assert.match(INCOGNITO_TEXT, /无痕窗口里扩展不运行，Google 收到 `_ss` 是正常的/);
+  // M-7：不依赖 T1 添加的 gb（xauto 的 T1 只建 sse2e 专用条目），直接粘贴触发网址
+  assert.ok(!/gb/.test(INCOGNITO_TEXT));
+  assert.match(INCOGNITO_URL, /^https:\/\/www\.google\.com\/search\?q=.+&_ss=google,bing$/);
 });
 
-test("t14Verdict 三态：有/无/未知 × 分屏/不分屏 全组合；只有“有 + 不分屏”才是预期降级", () => {
+test("t14Verdict 三态：有/无/未知 × 分屏/不分屏 × 左侧带查询词；只有“触发前有 + 不分屏 + 左侧带查询词”才是预期降级", () => {
   const HAS = "有（注册 https://www.perplexity.ai/）", NONE = "无", UNK = "未知（ServiceWorker.enable 超时）";
   const cases = [
-    // [触发前, 触发后, 分屏, 期望状态, degraded, sw, 说明匹配]
-    [NONE, NONE, true, "pass", undefined, "无", /^分屏：是/],
-    [HAS, HAS, true, "pass", undefined, "有", /^分屏：是/],
-    [UNK, UNK, true, "pass", undefined, "未知", /^分屏：是/],
-    [NONE, NONE, false, "fail", false, "无", /不是预期降级，需要排查/],
-    [HAS, NONE, false, "fail", true, "有", /预期降级（G5）.*leftDiscouraged/],
-    [NONE, HAS, false, "fail", true, "有", /预期降级（G5）/],
-    [HAS, UNK, false, "fail", true, "有", /预期降级（G5）/],
-    [UNK, UNK, false, "fail", false, "未知", /SW 状态读不到，无法区分降级和缺陷/],
-    [UNK, NONE, false, "fail", false, "未知", /SW 状态读不到，无法区分降级和缺陷/],
-    [NONE, "未知", false, "fail", false, "未知", /SW 状态读不到/],
+    // [触发前, 触发后, 分屏, 左侧带查询词, 期望状态, degraded, sw, 说明匹配]
+    [NONE, NONE, true, false, "pass", undefined, "无", /^分屏：是/],
+    [HAS, HAS, true, true, "pass", undefined, "有", /^分屏：是/],
+    [UNK, UNK, true, false, "pass", undefined, "未知", /^分屏：是/],
+    [NONE, NONE, false, true, "fail", false, "无", /不是预期降级，需要排查/],
+    [HAS, NONE, false, true, "degrade", true, "有", /预期降级（G5）.*leftDiscouraged/],
+    [HAS, UNK, false, true, "degrade", true, "有", /预期降级（G5）/],
+    [HAS, HAS, false, false, "fail", false, "有", /没确认左侧停在 Perplexity 上并带着这次的查询词，不能算预期降级/],
+    [NONE, HAS, false, true, "fail", false, "有", /触发前没有检测到 Perplexity 的 Service Worker（触发后才有）.*不是预期降级/],
+    [UNK, HAS, false, true, "fail", false, "有", /触发前 SW 状态读不到、触发后才读到有.*不算预期降级/],
+    [UNK, UNK, false, true, "fail", false, "未知", /SW 状态读不到，无法区分降级和缺陷/],
+    [UNK, NONE, false, true, "fail", false, "未知", /SW 状态读不到，无法区分降级和缺陷/],
+    [NONE, "未知", false, true, "fail", false, "未知", /SW 状态读不到/],
   ];
-  for (const [b, a, split, status, degraded, sw, re] of cases) {
-    const v = t14Verdict({ name: "Perplexity", split, swBefore: b, swAfter: a });
-    const label = `${b} / ${a} / ${split}`;
+  for (const [b, a, split, plain, status, degraded, sw, re] of cases) {
+    const v = t14Verdict({ name: "Perplexity", split, plain, swBefore: b, swAfter: a });
+    const label = `${b} / ${a} / ${split} / ${plain}`;
     assert.equal(v.status, status, label);
     assert.equal(v.degraded, degraded, label);
     assert.equal(v.sw, sw, label);
     assert.match(v.detail, re, label);
-    if (sw === "未知" && !split) assert.ok(!/预期降级|建议给该预置引擎/.test(v.detail), `${label}：读不到时不给产品建议`);
+    if (status === "fail") assert.ok(!/建议给该预置引擎/.test(v.detail), `${label}：不是预期降级时不给产品建议`);
   }
 });

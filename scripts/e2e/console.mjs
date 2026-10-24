@@ -80,6 +80,7 @@ export async function collectConsole(browser, { carry } = {}) {
     sessionCount: () => sessions.size,
     stats: () => ({ attached, extAttached }),
     navChain: targetId => [...(nav.get(targetId) ?? [])],
+    navChains: () => [...nav.values()].map(list => list.map(e => e.url)), // 全部页面的跳转链（只要网址），T14 认“普通左侧搜索”用
     stop: async () => {
       client.off("Runtime.consoleAPICalled", onConsole);
       client.off("Runtime.exceptionThrown", onException);
