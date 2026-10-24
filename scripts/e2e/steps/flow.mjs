@@ -174,7 +174,7 @@ async function antiReentry(ctx, targetId, how) {
     const away = siteX(ctx.port, `/away?n=${nonce()}`);
     await navigate(ctx, targetId, away);
     await waitTarget(ctx, t => t.targetId === targetId && t.url === away, away);
-    await evalIn(ctx, targetId, "history.back(), true");
+    await evalIn(ctx, targetId, "setTimeout(() => history.back(), 0), true");
   }
   let v;
   try {

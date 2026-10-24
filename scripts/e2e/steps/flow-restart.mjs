@@ -81,10 +81,10 @@ const T10 = {
 
     // 后退回 site-x，再前进回左侧结果页（go.html 已被 location.replace 替换，不在历史里）
     const nav = [];
-    await evalIn(ctx, base.targetId, "history.back(), true");
+    await evalIn(ctx, base.targetId, "setTimeout(() => history.back(), 0), true");
     await waitState(ctx, st => st.tabs.some(t => t.id === pair[0].id && t.url === base.url && t.status === "complete"), `左侧后退到 ${base.url}`);
     nav.push("后退到 site-x");
-    await evalIn(ctx, base.targetId, "history.forward(), true");
+    await evalIn(ctx, base.targetId, "setTimeout(() => history.forward(), 0), true");
     await waitState(ctx, st => st.tabs.some(t => t.id === pair[0].id && t.url === pair[0].url && t.status === "complete"), `左侧前进回 ${pair[0].url}`);
     nav.push("前进回左侧结果页");
     const p1 = await steady(ctx, want);
