@@ -3,15 +3,18 @@
 <meta name="asset-size" content="1280x800">
 <meta name="asset-out" content="store/screenshot-1.png">
 <link rel="stylesheet" href="base.css">
+<script src="fonts.js"></script>
 <style>
-  .crop { left: 40px; top: 158px; width: 1200px; border-radius: 14px 14px 0 0; }
+  /* 整窗截图左右各裁 8px 窗口边，宽 1184（缩放 0.497），分屏中缝正好落在画布中线 640；
+     出血高 652 → 原图第 1312 行，落在两行之间的空白（1304–1321） */
+  .crop { left: 48px; width: 1184px; }
 </style></head>
-<body class="bg-iris">
-  <header class="store-head">
-    <h1>一次搜索，两个引擎左右对比</h1>
+<body>
+  <header class="head">
+    <h1>一次搜索，两个引擎对比</h1>
     <p>Chrome 原生分屏，两侧都是普通标签页</p>
   </header>
   <!-- 真实截图：左 DuckDuckGo，右 Bing（都是预置引擎），整窗，向下出血 -->
-  <div class="crop" data-crop="0,0,2400,1500"><img src="../raw/split-ddg-bing-rust.png" data-iw="2400" alt=""></div>
+  <div class="crop bleed" data-crop="8,0,2384,1312" data-h="fill"><img src="../raw/split-ddg-bing-rust.png" data-iw="2400" alt=""></div>
   <script src="crop.js"></script>
 </body></html>

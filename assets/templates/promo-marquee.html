@@ -3,20 +3,28 @@
 <meta name="asset-size" content="1400x560">
 <meta name="asset-out" content="store/marquee-1400x560.png">
 <link rel="stylesheet" href="base.css">
+<script src="fonts.js"></script>
 <style>
-  .copy { position: absolute; left: 84px; top: 0; bottom: 0; width: 520px; display: flex; flex-direction: column; justify-content: center; }
-  .brand { display: flex; align-items: center; gap: 20px; }
-  .tile { width: 84px; height: 84px; }
-  .name { font-size: 42px; font-weight: 700; letter-spacing: -.01em; }
-  h1 { font-size: 54px; font-weight: 700; line-height: 1.2; margin-top: 40px; }
-  .crop { left: 640px; top: 64px; width: 860px; border-radius: 16px 0 0 0; }
+  /* 左栏 0–480 铺松针绿 #507665（OKLCH C 0.051），字反白：缩到 350×140 时也有一块清楚的色面。
+     图标左格也是 #507665，所以图标放在纸白圆角底板上（同小宣传图）。
+     右侧整窗截图从 528 到 1352（右边距 48，左右窗框都完整），缩放 0.343；上缘 45，整窗高 515 正好落到画布底边，不切到任何一行字 */
+  .l { position: absolute; left: 0; top: 0; bottom: 0; width: 480px; background: var(--pine); }
+  .copy { position: absolute; left: 64px; top: 0; bottom: 0; width: 360px; display: flex; flex-direction: column; justify-content: center; color: #fff; }
+  .brand { display: flex; align-items: center; gap: 16px; }
+  .plate { width: 56px; height: 56px; border-radius: 13px; }
+  .plate .icon { width: 58px; height: 58px; }
+  .brand .name { font-size: 26px; font-weight: 600; letter-spacing: -.005em; }
+  h1 { margin-top: 48px; font-size: 54px; line-height: 68px; font-weight: 600; letter-spacing: .01em; }
+  p { margin-top: 24px; font-size: 21px; line-height: 32px; color: #e6ece8; }
+  .crop { left: 528px; top: 45px; bottom: 0; width: 824px; border-radius: 10px 10px 0 0; }
 </style></head>
-<body class="bg-iris">
-  <div class="copy">
-    <div class="brand"><div class="tile"><img data-icon alt=""></div><div class="name">Split Search</div></div>
-    <h1>一次搜索<br>两个引擎左右对比</h1>
-  </div>
-  <!-- 真实截图：左 DuckDuckGo、右 Bing（预置组合），向右、向下出血 -->
-  <div class="crop" data-crop="0,0,2400,1500"><img src="../raw/split-ddg-bing-rust.png" data-iw="2400" alt=""></div>
+<body>
+  <div class="l"><div class="copy">
+    <div class="brand"><div class="plate"><div class="icon"><img data-icon alt=""></div></div><div class="name">Split Search</div></div>
+    <h1>一次搜索，<br>两个引擎对比</h1>
+    <p>Chrome 原生分屏，地址栏或拖拽即用</p>
+  </div></div>
+  <!-- 真实截图：左 DuckDuckGo、右 Bing（预置组合），整窗，向下出血 -->
+  <div class="crop" data-crop="0,0,2400,1500" data-h="fill"><img src="../raw/split-ddg-bing-rust.png" data-iw="2400" alt=""></div>
   <script src="crop.js"></script>
 </body></html>
