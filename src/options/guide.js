@@ -41,6 +41,7 @@ export function renderTriggers(ctx) {
       h("span", { class: "tag tag-accent" }, "默认组合"),
       h("strong", null, dl && dr ? `${dl.name} ｜ ${dr.name}` : "（默认组合无效）")),
     defUrl ? urlBox(defUrl) : h("p", { class: "hint hint-error" }, "无法生成触发网址，请检查默认组合的左侧引擎。"),
+    defUrl && dl.leftDiscouraged && leftWarn(dl),
     h("p", { class: "hint" },
       "按下方步骤添加为网站搜索后，在该条目的 ⋮ 菜单里选“设为默认”。之后地址栏直接搜索、拖拽文字到标签栏都会分屏。")));
 
@@ -53,7 +54,8 @@ export function renderTriggers(ctx) {
     if (!rights.some(e => e.id === gen[1])) gen[1] = rights[0]?.id;
   }
   const out = h("div", { class: "gen-output" });
-  const leftSel = h("select", { id: "gen-left" }, lefts.map(e => option(e.id, e.name, e.id === gen[0])));
+  const leftSel = h("select", { id: "gen-left" },
+    lefts.map(e => option(e.id, e.leftDiscouraged ? `${e.name}（建议作右侧）` : e.name, e.id === gen[0])));
   const rightSel = h("select", { id: "gen-right" }, rights.map(e => option(e.id, e.name, e.id === gen[1])));
   const update = () => {
     gen = [leftSel.value, rightSel.value];
@@ -81,10 +83,17 @@ function genOutput(left, right, granted, refresh) {
   const url = triggerOf(left, right);
   if (!url) return [h("p", { class: "hint hint-error" }, `${left.name} 不能作为左侧引擎。`)];
   const nodes = [urlBox(url)];
+  if (left.leftDiscouraged) nodes.push(leftWarn(left));
   if (granted.get(left.id) !== true) {
     nodes.push(h("div", { class: "callout callout-warn" },
       h("span", null, `左侧 ${left.name} 还没授权，这个组合不会分屏，只会打开普通的 ${left.name} 搜索。`),
       authButton([left, right], `授权 ${left.name}`, { cls: "btn btn-small btn-attention", onDone: refresh })));
   }
   return nodes;
+}
+
+// 预置里标了 leftDiscouraged 的引擎（如 Perplexity）作左侧：站点 Service Worker 接管跳转，扩展收不到触发
+function leftWarn(e) {
+  return h("div", { class: "callout callout-warn" },
+    h("span", null, `${e.name} 建议只作右侧：它的网站用 Service Worker 接管页面跳转，作左侧时通常只会打开普通的 ${e.name} 搜索、不分屏。作右侧不受影响。`));
 }

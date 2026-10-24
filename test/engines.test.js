@@ -104,3 +104,10 @@ test("常量", () => {
   assert.deepEqual(DEFAULT_PAIR, ["google", "bing"]);
   assert.ok(ID_PATTERN.test("a-1") && !ID_PATTERN.test("A") && !ID_PATTERN.test("a".repeat(21)));
 });
+
+test("PRESETS: 只有 Perplexity 标了 leftDiscouraged（站点 SW 接管导航），合并配置后仍保留", () => {
+  assert.deepEqual(PRESETS.filter(p => p.leftDiscouraged).map(p => p.id), ["perplexity"]);
+  const cfg = mergeConfig({});
+  assert.equal(cfg.engines.find(e => e.id === "perplexity").leftDiscouraged, true);
+  assert.equal(cfg.engines.find(e => e.id === "google").leftDiscouraged, undefined);
+});

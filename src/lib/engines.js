@@ -4,7 +4,8 @@ export const PRESETS = [
   { id: "google", name: "Google", url: "https://www.google.com/search?q=%s" },
   { id: "bing", name: "Bing", url: "https://www.bing.com/search?q=%s" },
   { id: "ddg", name: "DuckDuckGo", url: "https://duckduckgo.com/?q=%s" },
-  { id: "perplexity", name: "Perplexity", url: "https://www.perplexity.ai/search?q=%s" },
+  // 站点的 Service Worker 接管导航（Workbox 路由所有 document 请求），DNR main_frame 规则看不到，作左侧时退化为普通搜索（G5）
+  { id: "perplexity", name: "Perplexity", url: "https://www.perplexity.ai/search?q=%s", leftDiscouraged: true },
   { id: "kagi", name: "Kagi", url: "https://kagi.com/search?q=%s" },
 ];
 
