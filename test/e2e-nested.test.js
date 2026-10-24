@@ -5,13 +5,14 @@ import assert from "node:assert/strict";
 import { createXinput } from "../scripts/e2e/xinput.mjs";
 import {
   cursorHome, readyMouse, dragText, moveTo, snap, held, NESTED_DRAG, nestedStepMs,
-  REASON_SNAP, REASON_SNAP_NESTED, SNAP_GUIDE_NESTED, gestureError,
+  REASON_SNAP, REASON_SNAP_NESTED, SNAP_GUIDE_NESTED, REASON_SNAP_XVFB, SNAP_GUIDE_XVFB, REASON_STUCK, gestureError,
 } from "../scripts/e2e/gesture.mjs";
 import { omnibox } from "../scripts/e2e/gesture-ui.mjs";
 import { newFocusedWindow } from "../scripts/e2e/screen.mjs";
 import { releaseHeldSync } from "../scripts/e2e/gesture-guard.mjs";
 import { withAttempts } from "../scripts/e2e/steps/xauto-lib.mjs";
-import { startCard, NESTED_XAUTO_CARD } from "../scripts/e2e/runner.mjs";
+import { startCard, NESTED_XAUTO_CARD, XVFB_XAUTO_CARD } from "../scripts/e2e/runner.mjs";
+import { closeStep } from "../scripts/e2e/teardown.mjs";
 
 const ROOT = "1080", WID = "12582915", OTHER = "4194409";
 const NO_EWMH = "Your windowmanager claims not to support _NET_ACTIVE_WINDOW, so the attempt to query the active window aborted.\nxdo_get_active_window reported an error";
@@ -74,14 +75,21 @@ test("activeWindow: 报不支持 _NET_ACTIVE_WINDOW → 改用 getwindowfocus，
   await assert.rejects(xi.assertActive("778"), /前台窗口不是测试窗口/);
 });
 
-test("activeWindow: 其他报错只这一次退回 getwindowfocus；getactivewindow 正常时不碰 getwindowfocus", async () => {
+test("activeWindow: 其他报错（不含 _NET_ACTIVE_WINDOW）返回 null，不退回 getwindowfocus、不缓存（host 基线不变）", async () => {
   let fail = true;
   const { st, xi } = sim({ active: () => { if (fail) throw Object.assign(new Error("Command failed"), { code: 1, stdout: "" }); return "55"; }, focus: () => "66" });
-  assert.equal(await xi.activeWindow(), "66");
+  assert.equal(await xi.activeWindow(), null);
   assert.equal(xi.focusMode(), "getactivewindow");
+  await assert.rejects(xi.assertActive("66"), /前台窗口不是测试窗口/);
   fail = false;
   assert.equal(await xi.activeWindow(), "55");
-  assert.deepEqual(st.calls.map(c => c[1]), ["getactivewindow", "getwindowfocus", "getactivewindow"]);
+  assert.deepEqual(st.calls.map(c => c[1]), ["getactivewindow", "getactivewindow", "getactivewindow"]);
+});
+
+test("activeWindow: getactivewindow 输出不是窗口 id 也不含提示 → null，不碰 getwindowfocus", async () => {
+  const { st, xi } = sim({ active: () => "garbage", focus: () => "66" });
+  assert.equal(await xi.activeWindow(), null);
+  assert.equal(st.calls.some(c => c[1] === "getwindowfocus"), false);
 });
 
 test("activeWindow: getwindowfocus 也失败（焦点是 PointerRoot）→ null", async () => {
@@ -241,4 +249,66 @@ test("startCard: nested 的 xauto 卡片写“请不要把光标停在 Xephyr �
   assert.match(startCard(step).instruction, /光标停在测试浏览器窗口里/);
   const auto = { id: "B2", title: "x", kind: "auto" };
   assert.deepEqual(startCard(auto, { nested: true }), startCard(auto));
+});
+
+// ---- Fix round：按模式区分的文案、pointerHome 不计入 snapBack ----
+test("cursorHome nested: 中心读回被夹到别处 → env（中心可能在屏幕外），不计入 snapBack", async () => {
+  snap.last = null;
+  const moves = [];
+  const xi = {
+    windowRect: async () => ({ x: 2000, y: 0, width: 1600, height: 1000 }),
+    move: async (x, y) => { moves.push([x, y]); },
+    pointer: async () => ({ x: 2399, y: 500, window: WID }),
+  };
+  const ctx = mkCtx(xi);
+  await assert.rejects(cursorHome(ctx, [WID]), e => e.kind === "env" && /2800,500 后读回 2399,500/.test(e.message) && !e.message.startsWith(REASON_SNAP_NESTED));
+  await assert.rejects(cursorHome(ctx, [WID]), e => e.kind === "env" && !e.message.startsWith(REASON_SNAP_NESTED));
+  assert.equal(snap.last, null);
+});
+
+test("snapReason/snapGuide: Xvfb 不让用户移光标；Xephyr（含单测的 true）与 host 不变", async () => {
+  snap.last = null;
+  const { xi } = sim({ windowAt: () => WID });
+  const pin = { ...xi, pointer: async () => ({ x: 9, y: 9, window: WID }) };
+  await assert.rejects(moveTo(pin, 100, 100, { nested: "xvfb" }), e => !e.message.startsWith(REASON_SNAP_XVFB));
+  await assert.rejects(moveTo(pin, 100, 100, { nested: "xvfb" }), e => e.message.startsWith(`${REASON_SNAP_XVFB}：`));
+  snap.last = null;
+  assert.doesNotMatch(SNAP_GUIDE_XVFB, /把光标|把手/);
+  const cards = [];
+  const ctx = { gx: { nested: "xvfb" }, guide: { setStep: c => cards.push(c) }, log: () => {} };
+  await withAttempts(ctx, async n => { if (n === 1) throw gestureError("env", `${REASON_SNAP_XVFB}：x`); return { status: "pass", detail: "ok" }; });
+  assert.deepEqual([cards[0].title, cards[0].instruction], [REASON_SNAP_XVFB, SNAP_GUIDE_XVFB]);
+});
+
+test("startCard: Xvfb 的 xauto 卡片写不可见、可以照常用电脑，不提 Xephyr；\"xephyr\" 与 true 相同", () => {
+  const step = { id: "T3", title: "拖拽", kind: "xauto" };
+  const v = startCard(step, { nested: "xvfb" });
+  assert.ok(v.instruction.startsWith(XVFB_XAUTO_CARD));
+  assert.doesNotMatch(v.instruction, /Xephyr|光标/);
+  assert.deepEqual(startCard(step, { nested: "xephyr" }), startCard(step, { nested: true }));
+});
+
+test("stuckGuide nested: 不让用户去点测试窗口（嵌套显示里自行松开）；host 原文不变", async () => {
+  held.current = null;
+  for (const [nested, re, not] of [["xvfb", /自行松开.*不影响你的桌面/, /点一下鼠标左键/], [false, /点一下鼠标左键/, /自行松开/]]) {
+    const cards = [];
+    const ctx = { gx: { nested, stop: null }, guide: { setStep: c => cards.push(c) }, log: () => {} };
+    await withAttempts(ctx, async () => { throw gestureError("stuck", `${REASON_STUCK}：左键可能仍按着`); });
+    const c = cards.find(x => x.title === REASON_STUCK);
+    assert.match(c.instruction, re);
+    assert.doesNotMatch(c.instruction, not);
+  }
+});
+
+test("closeStep: afterClose 卡住时嵌套模式不让用户自己跑 xdotool；host 原文不变", async () => {
+  const run = async display => {
+    const rt = { browser: { close: async () => ({ graceful: true }) }, col: null, notes: [] };
+    await closeStep(rt, { display, seVerified: false }, { afterClose: async () => "stuck" });
+    return rt.notes.at(-1);
+  };
+  const n = await run({ mode: "xvfb", display: ":90" });
+  assert.match(n, /嵌套显示 :90 里.*随服务器停止/);
+  assert.doesNotMatch(n, /xdotool/);
+  assert.match(await run({ mode: "host", display: ":0" }), /运行 xdotool mouseup 1/);
+  assert.match(await run(null), /运行 xdotool mouseup 1/);
 });

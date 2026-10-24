@@ -61,7 +61,9 @@ const stoppedCtx = ctx => !!(ctx.signal?.aborted || ctx.abortSignal?.aborted);
 // 按键可能卡住：停掉剩余 xauto 步骤，请用户在测试窗口里点一下；期间光标回到测试窗口就由脚本在起点松开
 async function stuckGuide(ctx) {
   ctx.gx.stop = REASON_STUCK;
-  const msg = `${REASON_STUCK}：拖拽中途中止，脚本没能在测试窗口里松开鼠标左键。请把光标移到测试浏览器窗口里点一下鼠标左键。剩余的 xauto 步骤全部跳过。`;
+  const msg = ctx.gx.nested
+    ? `${REASON_STUCK}：拖拽中途中止，脚本没能在测试窗口里松开鼠标左键。脚本会在嵌套显示里自行松开；仍不行时随嵌套显示服务器停止，不影响你的桌面，不需要你操作。剩余的 xauto 步骤全部跳过。`
+    : `${REASON_STUCK}：拖拽中途中止，脚本没能在测试窗口里松开鼠标左键。请把光标移到测试浏览器窗口里点一下鼠标左键。剩余的 xauto 步骤全部跳过。`;
   ctx.log?.(`  ${msg}`);
   ctx.guide?.setStep?.({ title: REASON_STUCK, instruction: msg, buttons: [] });
   const end = Date.now() + 30000;
@@ -112,7 +114,7 @@ export async function withAttempts(ctx, attempt, { max = 3, final = () => false 
     }
     if (!r.env) real = true;
     else if (isSnap(r.detail)) {
-      const nested = !!ctx.gx?.nested;
+      const nested = ctx.gx?.nested ?? false;
       ctx.log?.(`  ${snapReason(nested)}`);
       ctx.guide?.setStep?.({ title: snapReason(nested), instruction: snapGuide(nested), buttons: [] });
     }

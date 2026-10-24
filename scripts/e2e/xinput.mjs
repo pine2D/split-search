@@ -130,7 +130,8 @@ export function createXinput({ exec = defaultExec, env = process.env, timeoutMs 
 
   const pointer = async () => parsePointer(await run(["getmouselocation", "--shell"]));
   // 前台窗口：先用 getactivewindow（EWMH）。嵌套显示（Xephyr/Xvfb）没有窗口管理器，它报“不支持 _NET_ACTIVE_WINDOW”：
-  // 记在本实例上（focus.noEwmh），之后直接用 getwindowfocus（X 焦点窗口，键盘就送给它）。其他报错只这一次退回 getwindowfocus
+  // 记在本实例上（focus.noEwmh），之后直接用 getwindowfocus（X 焦点窗口，键盘就送给它）。其他报错或输出不是窗口 id 一律返回 null
+  // （与 host 基线一致：WSLg 上 getactivewindow 偶发报错时不能改用 X 焦点放行，见 Global Constraint“host 行为与防护不变”）
   const focus = { noEwmh: false };
   const focusWindow = async () => {
     try { const w = await run(["getwindowfocus"]); return isWid(w) ? w : null; }
@@ -141,10 +142,11 @@ export function createXinput({ exec = defaultExec, env = process.env, timeoutMs 
     try {
       const w = await run(["getactivewindow"]);
       if (isWid(w)) return w;
-      if (NO_EWMH.test(w)) focus.noEwmh = true;
+      if (!NO_EWMH.test(w)) return null;
     } catch (e) {
-      if (NO_EWMH.test(`${e.message ?? ""}\n${e.stdout ?? ""}\n${e.stderr ?? ""}`)) focus.noEwmh = true;
+      if (!NO_EWMH.test(`${e.message ?? ""}\n${e.stdout ?? ""}\n${e.stderr ?? ""}`)) return null;
     }
+    focus.noEwmh = true;
     return focusWindow();
   };
   const windowSize = async wid => {

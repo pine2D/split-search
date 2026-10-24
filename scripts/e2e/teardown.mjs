@@ -102,8 +102,10 @@ export async function closeStep(rt, s, d) {
   // 真实输入：手势中止后鼠标左键仍按着（光标一直没回到测试窗口），浏览器关掉后再处理（见 gesture.releaseAfterClose）
   const held = await d.afterClose?.().catch(e => `出错：${e.message}`);
   if (held && held !== "none") {
-    rt.notes.push(held === "released" ? "真实输入：之前卡住的鼠标左键已在浏览器关闭后、指针停在桌面时松开"
-      : `真实输入：鼠标左键可能仍按着（${held}）。请把光标移到桌面空白处（不在任何 Linux 窗口上）后运行 xdotool mouseup 1`);
+    const nested = s.display?.mode && s.display.mode !== "host";
+    rt.notes.push(held === "released" ? `真实输入：之前卡住的鼠标左键已在浏览器关闭后、指针停在${nested ? "嵌套显示的根窗口上" : "桌面"}时松开`
+      : nested ? `真实输入：嵌套显示 ${s.display.display ?? ""} 里鼠标左键可能仍按着（${held}）。这只在嵌套显示里，随服务器停止，不影响你的桌面，不需要你操作`
+        : `真实输入：鼠标左键可能仍按着（${held}）。请把光标移到桌面空白处（不在任何 Linux 窗口上）后运行 xdotool mouseup 1`);
     warn(rt.notes.at(-1));
   }
   if (!s.seVerified) return closed;

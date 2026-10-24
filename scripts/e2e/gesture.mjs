@@ -24,9 +24,13 @@ export const SNAP_GUIDE = "移动后的指针被拉回了真实光标所在的�
 export const REASON_SNAP_NESTED = "指针被用户光标带走（请把光标移出测试窗口 Xephyr）";
 export const SNAP_GUIDE_NESTED = "移动后的指针被你的光标带走了：光标停在 Xephyr 窗口上时，你的鼠标移动会被转发给测试浏览器。"
   + "请把光标移出 Xephyr 窗口，脚本会自动重试。";
-export const snapReason = nested => (nested ? REASON_SNAP_NESTED : REASON_SNAP);
-export const snapGuide = nested => (nested ? SNAP_GUIDE_NESTED : SNAP_GUIDE);
-export const isSnap = detail => [REASON_SNAP, REASON_SNAP_NESTED].some(r => String(detail).startsWith(r));
+// Xvfb 不可见、用户光标进不去：同一现象只能是脚本这边的问题（多半坐标被夹到屏幕边），不提示用户做什么
+export const REASON_SNAP_XVFB = "指针两次被夹回同一点（Xvfb 不可见，不是你的光标造成的，多半是坐标在屏幕外）";
+export const SNAP_GUIDE_XVFB = "移动后的指针两次停在同一个与命令不符的位置。Xvfb 嵌套显示不可见，你的鼠标影响不到它，不需要你做什么，脚本会自动重试。";
+// nested：false（host）| "xvfb" | 其他真值（"xephyr"，或单测里的 true）
+export const snapReason = nested => (nested === "xvfb" ? REASON_SNAP_XVFB : nested ? REASON_SNAP_NESTED : REASON_SNAP);
+export const snapGuide = nested => (nested === "xvfb" ? SNAP_GUIDE_XVFB : nested ? SNAP_GUIDE_NESTED : SNAP_GUIDE);
+export const isSnap = detail => [REASON_SNAP, REASON_SNAP_NESTED, REASON_SNAP_XVFB].some(r => String(detail).startsWith(r));
 const SNAP_PX = 3, SNAP_MS = 10 * 60 * 1000;
 // 上一次读回不符时读到的位置（全进程只有一个手势在跑；跨尝试保留，成功的读回不清掉它）
 export const snap = { last: null };
@@ -69,7 +73,10 @@ async function pointerHome(ctx, wid) {
   if (!Number.isInteger(r.x) || !Number.isInteger(r.y)) throw gestureError("env", `读不到测试窗口 ${wid} 的位置，未移动指针`);
   const x = r.x + Math.floor(r.width / 2), y = r.y + Math.floor(r.height / 2);
   if (x < 0 || y < 0) throw gestureError("env", `测试窗口中心 ${x},${y} 在屏幕外，未移动指针`);
-  const p = await moveTo(xi, x, y, { nested: true });
+  // 不走 moveTo：读回不符不计入 snapBack（坐标被夹回屏幕内时不能误报成“被用户光标带走”）
+  await xi.move(x, y);
+  const p = await xi.pointer();
+  if (p.x !== x || p.y !== y) throw gestureError("env", `指针移到测试窗口中心 ${x},${y} 后读回 ${p.x},${p.y}（中心可能在屏幕外或窗口位置算错），未按下`);
   if (p.window !== String(wid)) {
     throw gestureError("env", `指针移到测试窗口中心 ${x},${y} 后不在测试窗口上（在窗口 ${p.window}，期望 ${wid}${await describeWindow(xi, p.window, pid, wid)}），未按下`);
   }

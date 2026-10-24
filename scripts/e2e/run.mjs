@@ -184,8 +184,9 @@ async function main() {
     // 真实输入：读一次 X 根窗口 id（判断光标是否在任何 X 窗口上），窗口固定为 normal 1600×1000（xauto 步骤每次也会再核对）
     let gx = null;
     if (xa.ok && steps.some(st => st.kind === "xauto")) {
-      // nested：嵌套显示（Xephyr/Xvfb）下手势层自己移动指针、用慢节奏拖拽、焦点走 getwindowfocus（gesture.mjs）
-      gx = { xi: xinput, root: await xinput.rootWindow(), profileDir: PROFILE_DIR, stop: null, nested: disp.mode !== "host" };
+      // nested：嵌套显示（Xephyr/Xvfb）下手势层自己移动指针、用慢节奏拖拽、焦点走 getwindowfocus（gesture.mjs）；
+      // 值为 false（host）或模式名 "xephyr"/"xvfb"（真值），文案按模式区分
+      gx = { xi: xinput, root: await xinput.rootWindow(), profileDir: PROFILE_DIR, stop: null, nested: disp.mode !== "host" && disp.mode };
       const page = (await browser.targets()).find(t => t.type === "page");
       if (page) await fixWindow({ browser }, page.targetId).catch(e => notes.push(`固定窗口尺寸失败：${e.message}`));
     }

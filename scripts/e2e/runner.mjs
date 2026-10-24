@@ -9,14 +9,18 @@ const ABORTED = "中断";
 
 // 每步开始时向导页显示的卡片（无按钮）：auto 步骤提示别动浏览器（restarts 的步骤预告重启），xauto 提示把光标停在窗口里，
 // 等人的步骤先显示“准备中”，说明由步骤自己随后给出。否则向导页会停在上一个人工步骤的说明和按钮上。
-// nested（嵌套显示）：xauto 的指针不是用户的光标，只提醒别把光标停在 Xephyr 窗口上
+// nested（嵌套显示）：xauto 的指针不是用户的光标。Xephyr 只提醒别把光标停在 Xephyr 窗口上；Xvfb 不可见，什么都不用做
 export const NESTED_XAUTO_CARD = "自动操作中，请不要把光标停在 Xephyr 窗口上";
+export const XVFB_XAUTO_CARD = "自动操作在不可见的嵌套显示里进行，可以照常使用电脑";
 export function startCard(step, { nested = false } = {}) {
   const title = `${step.id} ${step.title}`;
   if (step.kind === "auto") {
     return { title: `${title}（自动执行中）`, buttons: [],
       instruction: "脚本正在自动操作测试浏览器，请不要点击或切换标签，等这一步结束。"
         + (step.restarts ? "\n这一步会关闭并重新打开测试浏览器（恢复上次会话），窗口消失再出现属正常现象，不要按 Ctrl+C。" : "") };
+  }
+  if (step.kind === "xauto" && nested === "xvfb") {
+    return { title: `${title}（自动操作中）`, buttons: [], instruction: `${XVFB_XAUTO_CARD}。脚本自己移动嵌套显示里的指针，等这一步结束即可。` };
   }
   if (step.kind === "xauto" && nested) {
     return { title: `${title}（自动操作中）`, buttons: [],
@@ -93,7 +97,7 @@ export async function runSteps(steps, ctx, { timeoutMs, settleMs = SETTLE_MS, re
     const started = Date.now();
     log(`▶ ${step.id} ${step.title}`);
     ctx.onStepStart?.(step);
-    ctx.guide?.setStep?.(startCard(step, { nested: !!ctx.gx?.nested }));
+    ctx.guide?.setStep?.(startCard(step, { nested: ctx.gx?.nested ?? false }));
 
     let timer, onAbort;
     const running = Promise.resolve()
