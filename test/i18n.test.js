@@ -8,8 +8,8 @@ import {
 test("常量", () => {
   assert.deepEqual([...LOCALES], ["en", "zh_CN", "zh_TW", "es"]);
   assert.equal(DEFAULT_LOCALE, "en");
-  assert.equal(MARK_OPEN, "");
-  assert.equal(MARK_CLOSE, "");
+  assert.equal(MARK_OPEN, "\uE000");
+  assert.equal(MARK_CLOSE, "\uE001");
 });
 
 test("resolveLocale 映射", () => {
@@ -34,6 +34,8 @@ test("formatMessage 具名占位符", () => {
   assert.equal(formatMessage({ message: "$A$-$A$", placeholders: ph("$1") }, ["x"]), "x-x");
   assert.equal(formatMessage({ message: "$1 and $2" }, ["x", "y"]), "x and y");
   assert.equal(formatMessage({ message: "[$1][$2]" }, ["x"]), "[x][]");
+  assert.equal(formatMessage({ message: "[$A$][$B$]", placeholders: ph("$1", "$2") }, ["x"]), "[x][]");
+  assert.equal(formatMessage({ message: "$A$", placeholders: ph("$$$1") }, ["x"]), "$x");
   assert.equal(formatMessage({ message: "$$5" }, []), "$5");
   assert.equal(formatMessage({ message: "$NOPE$" }, []), "$NOPE$");
 });
@@ -44,7 +46,7 @@ test("formatMessage 替换值不再扫描", () => {
 });
 
 test("splitMarked", () => {
-  assert.deepEqual(splitMarked("a0b1"), ["a", 0, "b", 1]);
+  assert.deepEqual(splitMarked("a\uE0000\uE001b\uE0001\uE001"), ["a", 0, "b", 1]);
   assert.deepEqual(splitMarked("abc"), ["abc"]);
-  assert.deepEqual(splitMarked("01"), [0, 1]);
+  assert.deepEqual(splitMarked("\uE0000\uE001\uE0001\uE001"), [0, 1]);
 });

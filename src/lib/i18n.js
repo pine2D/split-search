@@ -1,8 +1,8 @@
 // 纯逻辑：语言选择与消息格式化。不引用 chrome。
 export const LOCALES = Object.freeze(["en", "zh_CN", "zh_TW", "es"]);
 export const DEFAULT_LOCALE = "en";
-export const MARK_OPEN = "";
-export const MARK_CLOSE = "";
+export const MARK_OPEN = "\uE000";
+export const MARK_CLOSE = "\uE001";
 
 export function normalizeLocalePref(v) {
   return typeof v === "string" && (v === "auto" || LOCALES.includes(v)) ? v : "auto";
@@ -23,14 +23,14 @@ const SIMPLE = /\$\$|\$([1-9])/g;
 
 export function formatMessage(entry, subs) {
   const args = subs ?? [];
-  const holders = {};
+  const holders = Object.create(null);
   for (const [k, v] of Object.entries(entry.placeholders ?? {})) holders[k.toLowerCase()] = v;
   return entry.message.replace(TOKEN, (m, name, n) => {
     if (m === "$$") return "$";
     if (n) return args[Number(n) - 1] ?? "";
     const h = holders[name.toLowerCase()];
     if (!h) return m;
-    return String(h.content).replace(SIMPLE, (mm, nn) => (mm === "$$" ? "$" : args[Number(nn) - 1] ?? ""));
+    return String(h.content ?? "").replace(SIMPLE, (mm, nn) => (mm === "$$" ? "$" : args[Number(nn) - 1] ?? ""));
   });
 }
 
