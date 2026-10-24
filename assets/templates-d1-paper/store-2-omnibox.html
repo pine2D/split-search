@@ -3,26 +3,25 @@
 <meta name="asset-size" content="1280x800">
 <meta name="asset-out" content="store/screenshot-2.png">
 <link rel="stylesheet" href="base.css">
+<script src="fonts.js"></script>
 <style>
-  /* 底：回车后的分屏整窗（0.493，与截图 1、3 同比例）。上：输入时的地址栏下拉，放大到 0.8 盖在原地址栏的位置，像一块放大镜 */
-  .main { left: 48px; top: 148px; width: 1184px; }
-  .typed { left: 160px; top: 206px; width: 704px; z-index: 2;
-    box-shadow: 0 0 0 1px rgba(29, 35, 32, .16), 0 2px 4px rgba(29, 35, 32, .08), 0 24px 48px -16px rgba(29, 35, 32, .38); }
-  .t1 { left: 176px; top: 180px; z-index: 2; }
-  .t2 { left: 64px; top: 122px; }
+  /* 两块同缩放（0.435）、同上缘，高 652 正好是原图整窗高 1500：窗口下沿就落在画布底边，不切到任何一行字。
+     左 432 宽 = 输入时的地址栏下拉；右 704 宽 = 回车后的分屏（DuckDuckGo 整个窗格 + 百度的 logo 和搜索框）。中间 48 的间距里一条 1px 箭头 */
+  .a { left: 48px; width: 432px; } .b { left: 528px; width: 704px; }
+  .cap.ca { left: 48px; } .cap.cb { left: 528px; }
+  .link { left: 480px; top: 226px; }
 </style></head>
 <body>
   <header class="head">
     <h1>地址栏回车，直接分屏</h1>
-    <p>触发网址设为默认搜索，或用快捷字词触发<small>示例右侧的“百度”是自行添加的引擎</small></p>
+    <p>把触发网址设为默认搜索，或输入快捷字词</p>
   </header>
-  <!-- 真实截图：回车后的分屏，左 DuckDuckGo、右百度，查询词 rust ownership，整窗，向下出血 -->
-  <div class="crop main bleed" data-crop="0,0,2400,1500"><img src="../raw/omnibox-result-split.png" data-iw="2400" alt=""></div>
-  <!-- 真实截图片段：在地址栏输入 rust ownership 时的下拉建议（只取下拉框） -->
-  <div class="crop typed" data-crop="236,62,880,141"><img src="../raw/omnibox-suggest.png" data-iw="2400" alt="">
-    <i class="mark" data-box="246,132,504,56"></i>
-  </div>
-  <div class="tab t1">输入</div>
-  <div class="tab t2">回车后</div>
+  <div class="cap ca">① 输入</div><div class="cap cb">② 回车后</div>
+  <!-- 真实截图：在地址栏输入 rust ownership，下拉建议“rust ownership - DuckDuckGo ｜ 百度 搜索”（细框） -->
+  <div class="crop bleed a" data-crop="0,0,994,1500" data-h="fill"><img src="../raw/omnibox-suggest.png" data-iw="2400" alt="">
+    <i class="mark" data-box="246,132,504,56"></i></div>
+  <svg class="link" viewBox="0 0 48 12"><path d="M8 6H39M34 2L39 6L34 10" stroke="#507665" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <!-- 真实截图：回车后的分屏，左 DuckDuckGo、右百度，查询词 rust ownership -->
+  <div class="crop bleed b" data-crop="50,0,1620,1500" data-h="fill"><img src="../raw/omnibox-result-split.png" data-iw="2400" alt=""></div>
   <script src="crop.js"></script>
 </body></html>

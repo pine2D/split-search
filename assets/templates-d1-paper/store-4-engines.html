@@ -3,20 +3,18 @@
 <meta name="asset-size" content="1280x800">
 <meta name="asset-out" content="store/screenshot-4.png">
 <link rel="stylesheet" href="base.css">
+<script src="fonts.js"></script>
 <style>
-  /* 左：设置页“搜索引擎”整张卡片（0.64）；右下：“添加到 Chrome”的默认组合块（0.6）压在上面，右缘对齐网格 1232 */
-  .engines { left: 48px; top: 148px; width: 720px; }
-  .combo { left: 560px; top: 466px; width: 672px; z-index: 2;
-    box-shadow: 0 0 0 1px rgba(29, 35, 32, .16), 0 2px 4px rgba(29, 35, 32, .08), 0 24px 48px -16px rgba(29, 35, 32, .38); }
+  /* 只放一样东西：设置页“搜索引擎”卡片，缩放 0.819。宽 1184 对应原图 x 477–1922（卡片居中，两边是设置页自己的浅灰底）；
+     出血高 652 → 原图第 1266 行，落在 Perplexity 一行下方分隔线之后的空白（1249–1284） */
+  .crop { left: 48px; width: 1184px; }
 </style></head>
 <body>
   <header class="head">
-    <h1>引擎自己选，组合随意配</h1>
-    <p>预置 5 个引擎，也能用网址模板添加</p>
+    <h1>引擎自己选，也能自己加</h1>
+    <p>预置 5 个引擎，左右各选一个组成默认组合</p>
   </header>
-  <!-- 真实截图：设置页“搜索引擎”卡片（授权状态、排序、编辑） -->
-  <div class="crop engines" data-crop="640,490,1120,926"><img src="../raw/options-engines.png" data-iw="2400" alt=""></div>
-  <!-- 真实截图：设置页“添加到 Chrome”卡片的标题和默认组合（触发网址 + 复制） -->
-  <div class="crop combo" data-crop="640,576,1120,290"><img src="../raw/options-top.png" data-iw="2400" alt=""></div>
+  <!-- 真实截图：设置页“搜索引擎”卡片（DuckDuckGo 默认左侧、Bing 默认右侧，授权状态、排序、编辑） -->
+  <div class="crop bleed" data-crop="477,470,1445,796" data-h="fill"><img src="../raw/options-engines.png" data-iw="2400" alt=""></div>
   <script src="crop.js"></script>
 </body></html>

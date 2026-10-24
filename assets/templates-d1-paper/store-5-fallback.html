@@ -3,19 +3,22 @@
 <meta name="asset-size" content="1280x800">
 <meta name="asset-out" content="store/screenshot-5.png">
 <link rel="stylesheet" href="base.css">
+<script src="fonts.js"></script>
 <style>
-  /* 同一个触发网址，两种结果：左栏装了扩展（分屏），右栏扩展未生效（普通 DuckDuckGo 结果页）。两栏与页头两栏同宽 */
-  .url { position: absolute; left: 48px; right: 48px; top: 148px; height: 64px; display: flex; align-items: center; gap: 24px;
+  /* 同一个触发网址，两种结果，上下两行对照，左边一栏写说明。两张截图同一缩放 0.39：
+     上 = 装了扩展的分屏（两个窗格的上部，原图 y 137–701，切在 698–704 的空白里）；
+     下 = 扩展没生效时的普通 DuckDuckGo 结果页（只取网页区域，出血到原图第 937 行，空白 931–947）。下图只有上图一半宽，正好是“一个引擎”和“两个引擎”的差别 */
+  .url { position: absolute; left: 48px; right: 48px; top: 148px; height: 56px; display: flex; align-items: center; gap: 24px;
     padding: 0 24px; background: #fff; border-radius: 8px; box-shadow: var(--frame); }
   .url span { font-size: 15px; color: var(--ink-3); white-space: nowrap; }
-  .url code { font: 500 24px/1 var(--mono); color: var(--ink); white-space: nowrap; }
+  .url code { font: 500 22px/1 var(--mono); color: var(--ink); white-space: nowrap; }
   .url code b { font-weight: 600; color: var(--pine-ink); background: rgba(80, 118, 101, .12); border-radius: 4px; padding: 2px 4px; margin-left: 1px; }
-  .col { position: absolute; top: 252px; width: 568px; }
-  .col.l { left: 48px; } .col.r { left: 664px; }
-  .col h2 { font-size: 20px; line-height: 28px; font-weight: 600; padding-bottom: 12px; border-bottom: 1px solid var(--rule); }
-  .col h2 span { font-weight: 400; color: var(--ink-2); margin-left: 10px; }
-  .col .crop { position: relative; margin-top: 20px; width: 568px; }
-  .col p { margin-top: 16px; font-size: 17px; line-height: 26px; color: var(--ink-2); }
+  .row { position: absolute; left: 48px; width: 232px; }
+  .row h2 { font-size: 20px; line-height: 28px; font-weight: 600; white-space: nowrap; }
+  .row p { margin-top: 6px; font-size: 16px; line-height: 24px; color: var(--ink-2); }
+  .r1 { top: 236px; } .r2 { top: 488px; }
+  .s1 { left: 312px; top: 236px; width: 920px; }
+  .s2 { left: 312px; top: 488px; bottom: 0; width: 425px; border-radius: 8px 8px 0 0; }
 </style></head>
 <body>
   <header class="head">
@@ -23,15 +26,11 @@
     <p>其他设备、无痕窗口里，就是一次普通搜索</p>
   </header>
   <div class="url"><span>同一个触发网址</span><code>duckduckgo.com/?q=rust+programming<b>&amp;_ss=ddg,bing</b></code></div>
-  <div class="col l">
-    <h2>装了 Split Search<span>左右分屏</span></h2>
-    <!-- 真实截图：触发网址经扩展建成的分屏，左 DuckDuckGo、右 Bing；只取两个窗格的上部（缩放约 0.32，右图约 0.52） -->
-    <div class="crop" data-crop="20,130,1800,1286"><img src="../raw/split-ddg-bing-rust.png" data-iw="2400" alt=""></div>
-  </div>
-  <div class="col r">
-    <h2>其他设备或无痕窗口<span>普通结果页，不报错</span></h2>
-    <!-- 真实截图的页面区域：同一网址的 DuckDuckGo 结果页（只取网页内容，不含浏览器界面） -->
-    <div class="crop" data-crop="14,132,1090,778"><img src="../raw/split-ddg-bing-rust.png" data-iw="2400" alt=""></div>
-  </div>
+  <div class="row r1"><h2>装了 Split Search</h2><p>左右分屏</p></div>
+  <!-- 真实截图：触发网址经扩展建成的分屏，左 DuckDuckGo、右 Bing；只取两个窗格的上部 -->
+  <div class="crop s1" data-crop="20,137,2360,564"><img src="../raw/split-ddg-bing-rust.png" data-iw="2400" alt=""></div>
+  <div class="row r2"><h2>其他设备或无痕窗口</h2><p>普通结果页，不报错</p></div>
+  <!-- 真实截图的页面区域：同一网址的 DuckDuckGo 结果页（只取网页内容，不含浏览器界面） -->
+  <div class="crop s2" data-crop="14,137,1090,800" data-h="fill"><img src="../raw/split-ddg-bing-rust.png" data-iw="2400" alt=""></div>
   <script src="crop.js"></script>
 </body></html>

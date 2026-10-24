@@ -1,17 +1,19 @@
-/* d1-paper「纸白 · 精排」：暖白纸底、近黑墨字，松针绿（图标左格 #507665）是唯一强调色，只用在图标、标注细框和少量标记上。
+/* d1-paper「纸白 · 精排」：暖白纸底、近黑墨字，松针绿（图标左格 #507665）是唯一强调色。
+   强调色只有两种用法：#507665 的 1px 线框 / 箭头，和 #3E5D50 的文字；实心松针绿块只用在小宣传图左格和顶部宣传图左栏。
    不用渐变、发光和大面积彩色；截图放在 1px 细边框里，阴影只起“浮起一点”的作用。
-   网格：商店截图 1280×800，左右边距 48，中线 640 与分屏中缝对齐；页头分两栏（左标题、右说明），和下面左右两个窗格对应。 */
+   网格：商店截图 1280×800，左右边距 48；页头一栏左对齐（标题下面一行副标题）；截图上缘 y=148，向下出血，切口落在两行文字之间。
+   字体：只用更纱黑体（Sarasa UI SC / Sarasa Fixed SC）定稿。fonts.js 在截图前检查这两个字体，没装就报错退出，避免换机器后悄悄退回别的字体、改变折行。 */
 :root {
   --paper: #f4f3ef;   /* 底色 */
   --ink: #1d2320;     /* 标题、正文 */
   --ink-2: #565c58;   /* 副标题、说明 */
-  --ink-3: #686c68;   /* 脚注（纸底对比 4.8:1） */
-  --rule: #d7d4cb;    /* 1px 分隔线、截图外框 */
-  --pine: #507665;    /* 强调：图标同色，标注框、编号、标签底 */
-  --pine-ink: #3e5d50;/* 松针绿文字（纸底上对比度够用） */
-  --font: "Sarasa UI SC", "Source Han Sans SC", "Noto Sans CJK SC", sans-serif;
-  --mono: "Sarasa Fixed SC", "Noto Sans Mono CJK SC", "Noto Sans Mono", monospace;
-  --frame: 0 0 0 1px rgba(29, 35, 32, .13), 0 1px 2px rgba(29, 35, 32, .06), 0 14px 32px -18px rgba(29, 35, 32, .28);
+  --ink-3: #686c68;   /* 次要说明（纸底对比 4.8:1） */
+  --rule: #d7d4cb;    /* 1px 分隔线 */
+  --pine: #507665;    /* 强调：图标同色；1px 线框、箭头 */
+  --pine-ink: #3e5d50;/* 松针绿文字：步骤编号、截图上方的标注、_ss 参数 */
+  --font: "Sarasa UI SC", sans-serif;
+  --mono: "Sarasa Fixed SC", monospace;
+  --frame: 0 0 0 1px rgba(29, 35, 32, .13), 0 4px 12px rgba(29, 35, 32, .06);
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { width: 100%; height: 100%; overflow: hidden; }
@@ -23,23 +25,25 @@ body { position: relative; font-family: var(--font); color: var(--ink); backgrou
 .icon { display: block; }
 .icon > img { width: 100%; height: 100%; display: block; }
 
-/* 截图片段：data-crop="x,y,w,h" 是原图像素坐标，容器宽度决定缩放（见 crop.js）。 */
+/* 截图片段：data-crop="x,y,w,h" 是原图像素坐标，容器宽度决定缩放（见 crop.js）。
+   .bleed：上缘 148，高度铺到画布底边（data-h="fill"），切口位置在模板注释里写明。 */
 .crop { position: absolute; overflow: hidden; background: #fff; border-radius: 8px; box-shadow: var(--frame); }
 .crop > img { position: absolute; max-width: none; display: block; }
 .crop > svg.ann { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; }
-.crop.bleed { border-radius: 8px 8px 0 0; }
+.crop.bleed { top: 148px; bottom: 0; border-radius: 8px 8px 0 0; }
 
-/* 标注：2px 松针绿细框，向外让 3px，不加光晕 */
-.mark { position: absolute; border: 2px solid var(--pine); border-radius: 6px; padding: 3px; box-sizing: content-box;
-  margin: -5px 0 0 -5px; }
+/* 标注：1px 松针绿细框，向外让 3px */
+.mark { position: absolute; border: 1px solid var(--pine); border-radius: 5px; padding: 3px; box-sizing: content-box;
+  margin: -4px 0 0 -4px; }
 
-/* 商店截图页头：两栏，基线对齐。左栏标题，右栏说明（+ 脚注），右栏起点是中线 + 24 */
-.head { position: absolute; left: 48px; right: 48px; top: 50px; display: grid; grid-template-columns: 568px 568px;
-  column-gap: 48px; align-items: baseline; }
+/* 商店截图页头：一栏，左对齐 x=48；标题 ≤ 12 字，下面一行副标题 */
+.head { position: absolute; left: 48px; right: 48px; top: 34px; }
 .head h1 { font-size: 40px; line-height: 48px; font-weight: 600; letter-spacing: .01em; color: var(--ink); white-space: nowrap; }
-.head p { font-size: 20px; line-height: 30px; color: var(--ink-2); }
-.head small { display: block; font-size: 15px; line-height: 22px; color: var(--ink-3); margin-top: 2px; }
+.head p { margin-top: 4px; font-size: 20px; line-height: 28px; color: var(--ink-2); white-space: nowrap; }
 
-/* 附在截图上沿的小标签：说明这一块是什么（输入 / 回车后 / 松手后） */
-.tab { position: absolute; height: 26px; padding: 0 10px; border-radius: 5px 5px 0 0; background: var(--pine); color: #fff;
-  font-size: 15px; line-height: 26px; font-weight: 600; letter-spacing: .02em; white-space: nowrap; }
+/* 截图上方的标注文字（① 输入 / ② 回车后）：放在页头和截图之间的边距里，左缘对齐所指截图 */
+.cap { position: absolute; top: 124px; font-size: 13px; line-height: 16px; font-weight: 600; color: var(--pine-ink);
+  letter-spacing: .02em; white-space: nowrap; }
+
+/* 两块截图之间的 1px 箭头 */
+.link { position: absolute; width: 48px; height: 12px; overflow: visible; }
