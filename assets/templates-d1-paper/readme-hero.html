@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<!-- README 首图：GitHub 正文约 880px 宽，2 倍输出。整张不透明纸底（深浅主题下都是一张完整卡片），只说明“它长什么样”。 -->
+<meta name="asset-size" content="880x440@2">
+<meta name="asset-out" content="readme/hero.png">
+<link rel="stylesheet" href="base.css">
+<style>
+  /* 页头两栏与截图左右窗格对齐：左栏品牌，右栏一句话；截图完整带框，下面一行标出左右各是哪个引擎 */
+  .head2 { position: absolute; left: 36px; right: 36px; top: 22px; height: 32px; display: grid; grid-template-columns: 1fr 1fr; column-gap: 24px; align-items: center; }
+  .brand { display: flex; align-items: center; gap: 8px; font-size: 20px; font-weight: 600; letter-spacing: -.005em; }
+  .brand .icon { width: 40px; height: 40px; margin: 0 -5px; }
+  .head2 p { font-size: 15px; color: var(--ink-2); padding-left: 2px; }
+  .crop { left: 36px; top: 70px; width: 808px; }
+  .lab { position: absolute; top: 396px; font-size: 13px; line-height: 16px; color: var(--ink-2); }
+  .lab b { font-weight: 600; color: var(--ink); margin-left: 6px; }
+  .lab.l { left: 40px; } .lab.r { left: 445px; }
+</style></head>
+<body>
+  <div class="head2">
+    <div class="brand"><div class="icon"><img data-icon alt=""></div>Split Search</div>
+    <p>地址栏或拖拽搜索，两个引擎在原生分屏里左右对比</p>
+  </div>
+  <!-- 真实截图：左 DuckDuckGo、右 Bing，查询词 rust programming -->
+  <div class="crop" data-crop="0,0,2400,930"><img src="../raw/split-ddg-bing-rust.png" data-iw="2400" alt=""></div>
+  <div class="lab l">左<b>DuckDuckGo</b></div><div class="lab r">右<b>Bing</b></div>
+  <script src="crop.js"></script>
+</body></html>

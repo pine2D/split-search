@@ -1,0 +1,45 @@
+/* d1-paper「纸白 · 精排」：暖白纸底、近黑墨字，松针绿（图标左格 #507665）是唯一强调色，只用在图标、标注细框和少量标记上。
+   不用渐变、发光和大面积彩色；截图放在 1px 细边框里，阴影只起“浮起一点”的作用。
+   网格：商店截图 1280×800，左右边距 48，中线 640 与分屏中缝对齐；页头分两栏（左标题、右说明），和下面左右两个窗格对应。 */
+:root {
+  --paper: #f4f3ef;   /* 底色 */
+  --ink: #1d2320;     /* 标题、正文 */
+  --ink-2: #565c58;   /* 副标题、说明 */
+  --ink-3: #686c68;   /* 脚注（纸底对比 4.8:1） */
+  --rule: #d7d4cb;    /* 1px 分隔线、截图外框 */
+  --pine: #507665;    /* 强调：图标同色，标注框、编号、标签底 */
+  --pine-ink: #3e5d50;/* 松针绿文字（纸底上对比度够用） */
+  --font: "Sarasa UI SC", "Source Han Sans SC", "Noto Sans CJK SC", sans-serif;
+  --mono: "Sarasa Fixed SC", "Noto Sans Mono CJK SC", "Noto Sans Mono", monospace;
+  --frame: 0 0 0 1px rgba(29, 35, 32, .13), 0 1px 2px rgba(29, 35, 32, .06), 0 14px 32px -18px rgba(29, 35, 32, .28);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 100%; height: 100%; overflow: hidden; }
+body { position: relative; font-family: var(--font); color: var(--ink); background: var(--paper);
+  -webkit-font-smoothing: antialiased; font-feature-settings: "kern"; }
+
+/* 图标：c6 直接放在纸底上，不加底板。母版 128 里图形占 96×76（左右各 16 透明边），
+   所以 .icon 的宽度 = 想要的图形宽 ÷ 0.75。这套模板不用 .tile 底板，--no-tile 对它不起作用。 */
+.icon { display: block; }
+.icon > img { width: 100%; height: 100%; display: block; }
+
+/* 截图片段：data-crop="x,y,w,h" 是原图像素坐标，容器宽度决定缩放（见 crop.js）。 */
+.crop { position: absolute; overflow: hidden; background: #fff; border-radius: 8px; box-shadow: var(--frame); }
+.crop > img { position: absolute; max-width: none; display: block; }
+.crop > svg.ann { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; }
+.crop.bleed { border-radius: 8px 8px 0 0; }
+
+/* 标注：2px 松针绿细框，向外让 3px，不加光晕 */
+.mark { position: absolute; border: 2px solid var(--pine); border-radius: 6px; padding: 3px; box-sizing: content-box;
+  margin: -5px 0 0 -5px; }
+
+/* 商店截图页头：两栏，基线对齐。左栏标题，右栏说明（+ 脚注），右栏起点是中线 + 24 */
+.head { position: absolute; left: 48px; right: 48px; top: 50px; display: grid; grid-template-columns: 568px 568px;
+  column-gap: 48px; align-items: baseline; }
+.head h1 { font-size: 40px; line-height: 48px; font-weight: 600; letter-spacing: .01em; color: var(--ink); white-space: nowrap; }
+.head p { font-size: 20px; line-height: 30px; color: var(--ink-2); }
+.head small { display: block; font-size: 15px; line-height: 22px; color: var(--ink-3); margin-top: 2px; }
+
+/* 附在截图上沿的小标签：说明这一块是什么（输入 / 回车后 / 松手后） */
+.tab { position: absolute; height: 26px; padding: 0 10px; border-radius: 5px 5px 0 0; background: var(--pine); color: #fff;
+  font-size: 15px; line-height: 26px; font-weight: 600; letter-spacing: .02em; white-space: nowrap; }

@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<!-- README 原理图：地址栏/拖拽 → 触发网址 → 原生分屏，底部一行写降级。2 倍输出，纸白不透明底（深色主题下也是一张完整卡片）。 -->
+<meta name="asset-size" content="880x380@2">
+<meta name="asset-out" content="readme/how-it-works.png">
+<link rel="stylesheet" href="base.css">
+<style>
+  /* 三栏，每栏顶上一条 1px 线，编号用松针绿数字（这是真的先后顺序）；栏间的箭头是细线 */
+  .col { position: absolute; top: 24px; }
+  .c1 { left: 24px; width: 258px; } .c2 { left: 330px; width: 222px; } .c3 { left: 600px; width: 256px; }
+  h2 { display: flex; align-items: baseline; gap: 8px; padding-top: 8px; border-top: 1px solid var(--ink);
+    font-size: 16px; line-height: 22px; font-weight: 600; white-space: nowrap; }
+  h2 b { font-size: 16px; font-weight: 600; color: var(--pine-ink); font-variant-numeric: tabular-nums; }
+  .crop { position: relative; width: 100%; margin-top: 14px; border-radius: 6px; }
+  .mark { border-width: 1.5px; border-radius: 4px; padding: 2px; margin: -3.5px 0 0 -3.5px; }
+  .drag { display: flex; flex-direction: column-reverse; }
+  .drag .up { display: flex; align-items: center; justify-content: center; gap: 5px; margin-top: 7px; font-size: 12px; color: var(--ink-2); }
+  .drag .up svg { width: 10px; height: 14px; }
+  .or { margin-top: 8px; text-align: center; font-size: 12px; color: var(--ink-3); }
+  .note { margin-top: 12px; font-size: 12.5px; line-height: 1.65; color: var(--ink-2); text-wrap: pretty; }
+  .url { margin-top: 14px; background: #fff; border-radius: 6px; padding: 12px 12px 10px; box-shadow: var(--frame); }
+  .url code { display: block; font: 500 13px/1.5 var(--mono); white-space: nowrap; color: var(--ink); }
+  .url code b { font-weight: 600; color: var(--pine-ink); background: rgba(80, 118, 101, .12); border-radius: 3px; padding: 1px 3px; margin-left: -3px; }
+  .url .k { display: block; margin: 4px 0 10px; padding-top: 4px; border-top: 1px solid var(--rule); font-size: 11.5px; color: var(--ink-3); }
+  .url .k.s { margin-bottom: 0; border-color: var(--pine); color: var(--pine-ink); }
+  .arrow { position: absolute; top: 112px; width: 48px; text-align: center; font-size: 11px; line-height: 1.35; color: var(--ink-2); }
+  .arrow svg { display: block; width: 36px; height: 12px; margin: 6px auto 0; }
+  .a1 { left: 283px; } .a2 { left: 552px; }
+  .fall { position: absolute; left: 24px; right: 24px; top: 318px; display: flex; align-items: baseline; gap: 14px;
+    padding-top: 10px; border-top: 1px solid var(--rule); font-size: 13px; line-height: 1.6; color: var(--ink-2); }
+  .fall .tag { flex: none; font-weight: 600; color: var(--ink); }
+  .fall b { font-weight: 600; color: var(--ink); }
+</style></head>
+<body>
+  <div class="col c1">
+    <h2><b>1</b>地址栏输入，或拖到标签栏</h2>
+    <!-- 真实截图片段：地址栏下拉建议（左边界从下拉框内侧开始，不带分屏按钮和选中条） -->
+    <div class="crop" data-crop="238,62,600,136"><img src="../raw/omnibox-suggest.png" data-iw="2400" alt=""></div>
+    <div class="or">或</div>
+    <!-- 真实截图片段（拖拽中，尚未松手）：只取“选中的文字”和“标签栏落点”两处，分开放大 -->
+    <div class="drag">
+      <div class="crop" data-crop="648,584,360,52"><img src="../raw/drag-to-tabstrip.png" data-iw="2400" alt=""></div>
+      <span class="up">拖到标签栏<svg viewBox="0 0 10 14"><path d="M5 13V2M1.5 5.5L5 2L8.5 5.5" stroke="#565c58" stroke-width="1.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <div class="crop" data-crop="1250,0,480,74"><img src="../raw/drag-to-tabstrip.png" data-iw="2400" alt="">
+        <i class="mark" data-box="1424,16,170,28"></i></div>
+    </div>
+  </div>
+  <div class="arrow a1">Chrome<br>拼出<svg viewBox="0 0 36 12"><path d="M2 6H33M28 2L33 6L28 10" stroke="#565c58" stroke-width="1.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+  <div class="col c2">
+    <h2><b>2</b>触发网址</h2>
+    <div class="url">
+      <code>https://duckduckgo.com<br>/?q=rust+ownership</code>
+      <span class="k">左侧引擎的真实搜索网址</span>
+      <code><b>&amp;_ss=ddg,baidu</b></code>
+      <span class="k s">标记：左 ddg，右 baidu</span>
+    </div>
+    <p class="note">它是你在 Chrome“网站搜索”里添加的条目。设为默认后，地址栏和拖拽都会用它；否则要先输入快捷字词。</p>
+  </div>
+  <div class="arrow a2">扩展<br>接管<svg viewBox="0 0 36 12"><path d="M2 6H33M28 2L33 6L28 10" stroke="#565c58" stroke-width="1.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+  <div class="col c3">
+    <h2><b>3</b>Chrome 原生分屏</h2>
+    <!-- 真实截图：回车后的分屏，左 DuckDuckGo、右百度 -->
+    <div class="crop" data-crop="0,0,2400,1500"><img src="../raw/omnibox-result-split.png" data-iw="2400" alt=""></div>
+    <p class="note">左侧打开真实搜索，右侧新开一个标签，两者组成分屏；都是普通标签页，登录状态照常。</p>
+  </div>
+  <div class="fall"><span class="tag">扩展未生效时</span><span>同步到的其他设备、无痕窗口、扩展停用或未授权：这条网址就是<b>一次普通的 DuckDuckGo 搜索</b>，不会出错。</span></div>
+  <script src="crop.js"></script>
+</body></html>
