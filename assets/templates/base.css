@@ -1,0 +1,17 @@
+/* 模板共用样式：画布尺寸由各模板 <meta name="asset-size"> 决定，这里只管字体、配色和常用块 */
+:root {
+  --ink: #1f2328; --muted: #57606a; --brand: #1a73e8; --brand-2: #0b57d0;
+  --bg: #f3f6fb; --card: #ffffff; --line: #d8dee8;
+  --font: "Sarasa UI SC", "Source Han Sans SC", "Noto Sans CJK SC", sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 100%; height: 100%; overflow: hidden; }
+body { font-family: var(--font); color: var(--ink); background: var(--bg); -webkit-font-smoothing: antialiased; }
+.icon { display: block; object-fit: contain; }
+/* 截图外框：圆角 + 阴影，内部 img 用 object-position 选取片段 */
+.shot { position: absolute; overflow: hidden; border-radius: 12px; background: #fff;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, .08), 0 18px 48px rgba(16, 24, 40, .18); border: 1px solid rgba(16, 24, 40, .08); }
+.shot > img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top left; }
+.kicker { font-size: 15px; font-weight: 600; letter-spacing: .08em; color: var(--brand); }
+.title { font-weight: 700; letter-spacing: -.01em; line-height: 1.2; }
+.sub { color: var(--muted); line-height: 1.55; }

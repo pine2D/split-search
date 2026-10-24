@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="asset-size" content="1280x800">
+<meta name="asset-out" content="store/screenshot-3-omnibox.png">
+<link rel="stylesheet" href="base.css">
+<style>
+  header { position: absolute; left: 0; right: 0; top: 46px; text-align: center; }
+  .title { font-size: 40px; }
+  .sub { font-size: 19px; margin-top: 12px; }
+  .shot { left: 64px; top: 172px; width: 1152px; height: 720px; }
+  /* 原图 2400x1500，取左上 1900 宽，缩放 0.6063 → 让地址栏下拉更清楚 */
+  .shot > img { position: absolute; width: 1455px; height: 909px; object-fit: fill; left: 0; top: 0; }
+</style></head>
+<body>
+  <header>
+    <h1 class="title">地址栏照常输入，回车就分屏</h1>
+    <p class="sub">把设置页生成的触发网址添加为 Chrome 网站搜索，设为默认或用快捷字词触发</p>
+  </header>
+  <div class="shot"><img src="../raw/omnibox-suggest.png" alt=""></div>
+</body></html>

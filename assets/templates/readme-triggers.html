@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<!-- README “两种触发方式”配图：左地址栏、右拖拽，各取真实截图的局部 -->
+<meta name="asset-size" content="1200x440@2">
+<meta name="asset-out" content="readme/triggers.png">
+<link rel="stylesheet" href="base.css">
+<style>
+  body { background: #eef1f5; }
+  .col { position: absolute; top: 28px; width: 548px; }
+  .col.l { left: 40px; } .col.r { left: 612px; }
+  h2 { font-size: 20px; font-weight: 600; } h2 span { color: var(--brand); margin-right: 8px; }
+  .shot { position: relative; margin-top: 14px; width: 548px; height: 330px; border-radius: 10px; }
+  /* 原图 2400x1500：左取地址栏下拉 x 0..1200（缩放 0.4567）；右取选中文字到标签栏 x 300..1700（缩放 0.3914） */
+  .shot > img { position: absolute; object-fit: fill; top: 0; }
+  .l .shot > img { width: 1096px; height: 685px; left: 0; }
+  .r .shot > img { width: 939px; height: 587px; left: -117px; }
+</style></head>
+<body>
+  <div class="col l"><h2><span>1</span>地址栏输入关键词</h2><div class="shot"><img src="../raw/omnibox-suggest.png" alt=""></div></div>
+  <div class="col r"><h2><span>2</span>把选中的文字拖到标签栏</h2><div class="shot"><img src="../raw/drag-to-tabstrip.png" alt=""></div></div>
+</body></html>
