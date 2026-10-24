@@ -25,7 +25,7 @@ Split Search
 
 字数：12 / 75
 
-建议沿用现名。改名需要同时改 manifest，`test/manifest.test.js` 也断言了 `name === "Split Search"`。
+已定（2026-10-24 用户决定）：所有语言都叫 Split Search，商店名称不加本地副标题。改名需要同时改 manifest，`test/manifest.test.js` 也断言了 `name === "Split Search"`。
 
 ## 简介（上限 132）
 

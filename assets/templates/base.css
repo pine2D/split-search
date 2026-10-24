@@ -1,5 +1,6 @@
 /* 模板共用样式：画布尺寸由各模板 <meta name="asset-size"> 决定，这里只管字体、配色和常用块。
-   配色取自图标提案的品牌紫（#6A5CFF）与辅色橙（#F26B3A）；不用 Google 蓝，避免像 Google 官方物料。 */
+   --iris* 是宣传图背景渐变色，--coral 是截图标注色；不用 Google 蓝，避免像 Google 官方物料。
+   这两组颜色早于选定图标（c6 pine-fog），上架前是否跟着图标调整见 docs/store/assets-spec.md 第 1 节。 */
 :root {
   --iris: #6a5cff; --iris-d: #4b3fe0; --iris-dd: #2b2391; --coral: #f26b3a;
   --ink: #1b1838; --muted: #5a5878; --paper: #f5f4ff; --line: #dcd9f5;
@@ -11,7 +12,7 @@ html, body { width: 100%; height: 100%; overflow: hidden; }
 body { position: relative; font-family: var(--font); color: var(--ink); background: var(--paper); -webkit-font-smoothing: antialiased; }
 .bg-iris { background: radial-gradient(120% 140% at 0% 0%, #7d70ff 0%, var(--iris-d) 48%, var(--iris-dd) 100%); color: #fff; }
 
-/* 图标放在白色圆角底板上：方案 1–5 是透明底的紫色图形，直接放紫底上会看不见 */
+/* 图标放在白色圆角底板上：给透明底的图标用，避免图形和深色背景混在一起 */
 .tile { display: grid; place-items: center; background: #fff; border-radius: 24%;
   box-shadow: 0 10px 30px rgba(20, 12, 90, .35); }
 .tile > img { width: 84%; height: 84%; display: block; }

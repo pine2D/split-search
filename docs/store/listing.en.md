@@ -16,6 +16,8 @@ Split Search
 
 字数：12 / 75
 
+已定（2026-10-24 用户决定）：所有语言都叫 Split Search，不加本地副标题。
+
 ## Summary (max 132)
 
 ```text

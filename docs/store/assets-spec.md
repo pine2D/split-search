@@ -18,6 +18,7 @@
 - 来源：`assets/icon-proposals/v3-colors/c6-pine-fog/`（`icon.svg` 是 128 母版，16/32 是按像素网格调整的版本）。`assets/icon-proposals/` 其余方案留作历史。
 - 接入：`src/icons/icon-{16,32,48,128}.png`，在 manifest 的 `icons`（16/32/48/128）和 `action.default_icon`（16/32）中声明；`test/manifest.test.js` 核对文件存在且 PNG 尺寸与声明一致。`render-assets.mjs` 的默认图标已改为 c6 的 `icon.svg`，小宣传图、顶部宣传图和 README 首图已用它重渲。
 - **提交前必做（v0.3 上架前）**：`assets/raw/` 的真实截图是装上图标之前拍的，设置页标签的图标是 Chrome 生成的灰底字母“S”，地址栏扩展标识和授权框里是默认拼图图标。凡是画面里带“Split Search 设置”标签、设置页地址栏或授权框的图都受影响（至少 `screenshot-1`、`screenshot-4`、marquee 和 README 首图）。上架前要用带新图标的扩展重拍，再重渲全部图片。
+- **提交前待定（v0.3 上架前，由用户决定）**：宣传图和 README 首图的背景仍是早先的紫色渐变（`base.css` 的 `--iris*`），截图标注框是橙色 `--coral`，和 c6 pine-fog 图标（松针绿 `#507665` / 暖雾灰 `#8C8881`）不成一套。重渲前确认这两组颜色是否跟着图标调整。
 
 ## 2. 商店图片与 README 图片的区别
 
