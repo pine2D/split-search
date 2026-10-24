@@ -73,7 +73,7 @@ node scripts/store/render-assets.mjs --icon assets/icon-proposals/<方案目录>
 2. **拖拽 / 右键只走默认搜索引擎**：中英【三步设置】第 3 步改为“设为默认后地址栏、拖拽、右键都会分屏；不设默认时只有快捷字词会分屏”；`privacy.md` 单一用途改为 “…and Chrome navigates to a trigger URL the user added as a site search (as default search engine or via its keyword)…”；`how-it-works.png` 第 2 步说明同步改写；`screenshot-3.png` 副标题改为“触发网址设为默认后，松手即用两个引擎打开分屏”。
 3. **拖拽截图里的黑底“↑”方块**：它应该是 Chrome 的标签插入位置箭头，Xvfb 没有合成器，透明背景变成了黑色。新增修补图 `assets/raw/patches/drag-to-tabstrip-397-61.png`，`store-3-drag` 用 `<img class="patch">` 叠加（`crop.js` 支持 `.patch[data-box]`），被挡的“/wi”上半用同图像素补齐，原图不动；做法和命令写在 `captions.md`。`how-it-works.png` 改为局部裁切后不再包含这块区域。
 4. **v3 / v5 在 16px 下撞车**：v3 的 16px 每格加 1px 白色横条（搜索框）；v5 的 16px 改为每块 6×10、错开 4px、对角圆角 5。对比图每行加了一条“16px 下长什么样”的说明，并注明宣传图里的图标是占位。
-5. **隐私政策概要**与 Web history 披露矛盾：中英概要改为“只在你的设备上处理完成功能所需的数据，不发送给开发者或第三方，也不出售”。
+5. **隐私政策概要**与 Web history 披露矛盾：中英概要改为“只在你的设备上处理完成功能所需的数据，不发送给开发者或第三方，也不出售”。（这一条对应的“勾选 Web history”已被 2026-10-24 的决定取代：Web history 不勾，见 `privacy.md` (d)。）
 6. **DNR 域名范围**：权限理由和代码事实速查改为“可作左侧的引擎的 hostname（及其子域名）”。
 7. **百度不在预置引擎里**：`screenshot-1` 和 marquee 换成预置组合 DuckDuckGo ｜ Bing；`screenshot-2`、`screenshot-3` 仍用百度（中文场景 Bing 会弹人机验证），右下角加注“示例右侧‘百度’为自行添加的引擎”，中英详细说明的引擎条目也加了一句。
 8. **manifest 缺 icons**：在 `listing.zh-CN.md` 开头新增“提交前必做”清单（manifest 图标、选定图标后重渲、隐私政策托管）。manifest 本身未改，需要你确认。

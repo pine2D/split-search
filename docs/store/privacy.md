@@ -6,7 +6,7 @@
 
 > **重点说明（已定，2026-10-24）**
 > - **数据使用披露一项都不勾，包括“网页浏览记录”（Web history）。** 理由和风险见 (d)。
-> - 不勾不等于“不处理数据”。扩展会在本机读取它被要求处理的触发网址（查询词和 `_ss` 标记），并比较它管理的分屏另一侧标签的 origin。这一点在 (d) 的审核说明、隐私政策和商店详情的“隐私”段都要写明，不能删。
+> - 不勾不等于“不处理数据”。扩展会在本机读取它被要求处理的触发网址（查询词和 `_ss` 标记），并在当前标签已处于分屏时读取另一侧标签的网址、只用它的 origin 判断是不是本扩展的分屏。这一点在 (d) 的审核说明、隐私政策和商店详情的“隐私”段都要写明，不能删。
 > - 除设置外不保存任何数据（另有仅存内存的分屏标签编号）；不向开发者或任何第三方发送数据；没有统计代码，没有远程代码。设置在用户开启 Chrome 同步时会由 Chrome 同步，这一点必须保留披露。
 
 ## 代码事实速查（供核对）
@@ -74,18 +74,37 @@ No host access is granted at install. The manifest lists https://*/* and http://
 
 ### 扩展在本机实际读取的内容（核对代码后的完整清单）
 
-1. 触发网址：只有带 `_ss=` 的主框架导航、且域名属于可作左侧的引擎时，DNR 规则才把它交给 `go.html`。`go.html` 从中取出查询词和 `_ss` 的值（两个引擎 id），拼出左右两个结果页网址后在标签中打开。查询词不写入任何存储（`src/go.js`、`src/lib/trigger.js`）。
-2. 分屏另一侧标签的网址：只在当前标签已处于分屏中时读取，只取 origin 与用户配置的引擎比较，判断是否是本扩展的分屏；只有已授权 origin 上的标签 Chrome 才提供网址。不保存（`src/go.js` `gatherContext`、`src/lib/split-decision.js`）。
+1. 触发网址：只有带 `_ss=` 的主框架导航、且 hostname 属于可作左侧的引擎（含子域名）时，DNR 规则才把它交给 `go.html`。规则不看导航从哪里来：网页里一个带 `_ss` 的链接被点开时同样会交给 `go.html`；正常使用中这类网址只来自用户自己添加的触发网址。`go.html` 从中取出查询词和 `_ss` 的值（两个引擎 id），拼出左右两个结果页网址后在标签中打开。查询词不写入任何存储（`src/go.js`、`src/lib/trigger.js`）。
+2. 分屏另一侧标签的网址：只在当前标签已处于分屏中时读取。tabs API 返回的是完整网址，扩展从中算出 origin，只用 origin 与用户配置的引擎比较，判断是否是本扩展的分屏；只有已授权 origin 上的标签 Chrome 才提供网址。不保存（`src/go.js` `gatherContext`、`src/lib/split-decision.js`）。
 3. 保存的数据只有两类：`chrome.storage.sync` 中的设置（引擎名称、网址模板、排序、隐藏、默认组合），用户开启 Chrome 同步时由 Chrome 同步；`chrome.storage.session` 中本扩展所建分屏的标签编号配对，仅在内存，关浏览器即清空。
 4. 没有任何网络请求、统计、广告或远程代码；没有 `history`、`tabs`、`cookies` 权限，没有 content script。
 
 ### 为什么不勾 Web history
 
 - 控制台对 Web history 的定义是“用户访问过的网页列表及页面标题、访问时间等相关数据”。扩展不读取浏览历史，不建立任何访问列表，也看不到用户访问的其他网页：DNR 规则由 Chrome 执行，只把带 `_ss` 标记的搜索网址交给扩展；分屏另一侧的网址只做一次 origin 比较。
-- 扩展读取的唯一网址是用户自己配置成网站搜索、并主动发起的那一次搜索，读取的目的就是完成这次搜索本身，用完即弃，不保存、不传输。
+- 扩展只读两类网址：① 触发网址，即用户自己配置成网站搜索、并主动发起的那一次搜索（见上文第 1 条）；② 分屏另一侧标签的网址，只用来比较 origin。读取的目的就是完成用户这一次主动发起的操作，用完即弃，不保存、不传输。
+- 控制台问卷问的是“收集了哪些类别的数据”，Web history 这一类指的是访问记录列表。扩展只是为完成用户当次的操作按需读取单个网址，不形成任何列表，也不保存，所以不属于这一类。
 - 其他类别同理：不读身份信息、凭据、通信、位置、点击按键或网页内容。
 
-风险（如实记录）：用户数据 FAQ 规定本地处理也算“处理”。审核员如果认为读取查询词属于 Web history，可能判定披露不完整而拒审。应对：被问到时用下面的英文说明回复；如仍被要求，再勾选 Web history 重新提交，无需改代码。
+风险（如实记录）：CWS 用户数据 FAQ（https://developer.chrome.com/docs/webstore/program-policies/user-data-faq ，2026-10-24 查阅）有三条可以被用来反驳上面的理由，其中第 2、4 条是被拒审时最可能引用的依据：
+
+- 第 2 条（什么叫 handle）：“Generally, by "handle" we mean collecting, transmitting, using, or sharing user data.” 例子里有 “Collecting web browsing activity and any information about the website content … including the domains or URLs the browser interacts with”。也就是说，只是“使用”也算 handle。
+- 第 4 条（用户数据举例）：“Web browsing activity (which is any information about the websites or other web resources a user requests … including the domains or URLs the browser interacts with).” 扩展读取触发网址和另一侧标签的网址，字面上落在这个定义里。
+- 第 3 条：本地处理、不传输也要披露（“even when data is processed or stored locally on a user's device and is not transmitted to external servers or third parties”）。
+
+审核员如果按这几条认定读取网址属于 Web history，可能判定披露不完整而拒审。应对：被问到时用下面的英文说明回复；如仍被要求，就勾选 Web history 重新提交，无需改代码。
+
+回退时要同步修改的文字（先列好，免得漏改）：
+
+| 位置 | 现在的说法 | 回退后 |
+|---|---|---|
+| 本文件开头“重点说明”第 1 条、(d) 开头的决定 | 一项都不勾，含 Web history | 只勾 Web history，其余不勾 |
+| 本文件 (d)“为什么不勾 Web history”和英文审核说明最后一段 | 解释为什么不勾 | 删掉，改为说明勾选的是什么、只在本机使用、不保存不传输 |
+| 隐私政策中英两版的小标题“重点说明：我们不收集任何数据” / “Important: we collect no data” | 不收集任何数据 | 改为“只在你的设备上使用完成搜索所需的网址，不保存，不发送给开发者或第三方” |
+| 隐私政策“儿童”一节“也不收集任何人的个人信息” | 不收集 | 保留（网址不是个人信息），但核对措辞与上一行一致 |
+| `listing.zh-CN.md` 与 `listing.en.md` 详细说明【隐私】段第一句 | 本扩展不收集任何数据 | 同隐私政策小标题的新说法 |
+| `listing.zh-CN.md` “提交前必做”与“措辞说明”最后一条 | 一项都不勾（含网页浏览记录） | 只勾网页浏览记录 |
+| i18n 方案第 11 节“隐私”一条 | Web history 不勾选 | 改为勾选，各语言详情的隐私段照新说法翻译 |
 
 ### 给审核员的英文说明（可直接粘贴）
 
@@ -93,12 +112,12 @@ No host access is granted at install. The manifest lists https://*/* and http://
 
 ```text
 Important: no data-usage category is selected, and here is exactly what the extension reads.
-- It reads, only inside the user's browser, the URL of a search the user started with a trigger URL they added to Chrome as a site search. Only top-level URLs on the user's left engine that carry the marker parameter "_ss" reach the extension (via one declarativeNetRequest redirect to its own page). It takes the search terms and the "_ss" value (two engine IDs) from that URL to open the two result pages in a split view. The search terms are not stored.
-- When the current tab is already in a split view, it compares the origin of the other tab with the user's configured engines, to decide whether that split is its own. Chrome exposes that URL only for sites the user granted access to. It is not stored.
+- It reads, only inside the user's browser, the URL of a search the user started with a trigger URL they added to Chrome as a site search. Only top-level navigations to the hostnames of the user's left-capable engines that carry the marker parameter "_ss" (normally produced only by the user's own trigger URL) reach the extension, via one declarativeNetRequest redirect to its own page. It takes the search terms and the "_ss" value (two engine IDs) from that URL to open the two result pages in a split view. The search terms are not stored.
+- When the current tab is already in a split view, it reads the other tab's URL and compares only its origin with the user's configured engines, to decide whether that split is its own. Chrome exposes that URL only for sites the user granted access to. It is not stored.
 - It does not read browsing history (no "history" or "tabs" permission), page content (no content scripts), cookies, clipboard contents, or user input on web pages.
 - Stored data: only the user's settings in chrome.storage.sync (Chrome syncs them if the user has Chrome sync on) and, in memory only, tab-ID pairs of splits it created (chrome.storage.session).
 - Nothing is transmitted to the developer or any third party. There are no network requests, no analytics and no remote code. Search terms go only from the user's browser to the two search engines the user chose.
-Because the extension never builds or accesses a list of visited pages, and the one URL it reads is the user's own search, used once to fulfil that search, we did not select "Web history".
+Because the extension never builds or accesses a list of visited pages, and the only URLs it reads are the trigger URL of the user's own search and, for a split it may own, the other tab's URL, which is reduced to its origin for one comparison and discarded, we did not select "Web history".
 ```
 
 ## (e) Certifications（合规声明）
@@ -136,12 +155,12 @@ Split Search（以下简称“本扩展”）是由 pine2D 开发的 Chrome 扩�
 
 - 本扩展不把任何数据发送给开发者或任何第三方，也不出售数据。它没有服务器，不发网络请求，不含统计、广告、第三方代码或远程代码。
 - 除你的设置外不保存任何数据（另有关闭浏览器即清除的分屏标签编号，见下文第 4 条）。
-- 为了完成搜索，本扩展会在你的设备上读取少量信息：你发起的那次搜索的触发网址（含查询词），以及分屏另一侧标签的网站来源。下文逐条说明。
+- 为了完成搜索，本扩展会在你的设备上读取少量信息：你发起的那次搜索的触发网址（含查询词），以及分屏另一侧标签的网址（只用来比较其网站来源，不保存）。下文逐条说明。
 
 ## 本扩展在你的设备上处理的数据
 
 1. 触发网址和查询词。当你通过自己添加到 Chrome 的触发网址进行搜索时（只有带本扩展标记参数 _ss 的网址会交给本扩展），本扩展会在本机读取这个网址，取出查询词和 _ss 中的引擎标识，拼出右侧搜索引擎的网址，然后在两个标签页中分别打开左右两个引擎的结果页。查询词不会被保存，也不会发给除这两个引擎以外的任何一方。
-2. 分屏标签的网站来源。当前标签已在分屏中时，为了判断这个分屏是不是本扩展打开的，本扩展会比较分屏另一侧标签的网站来源（origin）是否属于你配置的搜索引擎。本扩展不读取你的浏览历史，也不读取网页内容。只有你授权过的网站上的标签，Chrome 才会把网址提供给本扩展。这一信息只用于当次判断，不保存。
+2. 分屏另一侧标签的网址。当前标签已在分屏中时，为了判断这个分屏是不是本扩展打开的，本扩展会读取分屏另一侧标签的网址，只用它的网站来源（origin）判断是否属于你配置的搜索引擎。本扩展不读取你的浏览历史，也不读取网页内容。只有你授权过的网站上的标签，Chrome 才会把网址提供给本扩展。这一信息只用于当次判断，不保存。
 3. 设置。你配置的搜索引擎（名称、网址模板）、排序、隐藏的预置引擎和默认组合，保存在 chrome.storage.sync 中。如果你开启了 Chrome 同步，Chrome 会通过你的 Google 账号在你的设备之间同步这些设置；这由 Chrome 和 Google 的隐私政策管辖，本扩展的开发者无法访问。
 4. 分屏记录。本扩展所建分屏的标签编号配对保存在 chrome.storage.session 中，只存在内存里，关闭浏览器即清除。
 
@@ -193,12 +212,12 @@ Split Search ("the extension") is a Chrome extension developed by pine2D. It ope
 
 - The extension sends no data to the developer or any third party and does not sell data. It has no servers, makes no network requests, and contains no analytics, advertising, third-party code or remote code.
 - It stores nothing except your settings (plus split-view tab IDs that are cleared when the browser closes; see item 4 below).
-- To do its job, it reads a small amount of information on your device: the trigger URL of the search you start (including the search terms) and the site origin of the other tab in a split view. Each item is explained below.
+- To do its job, it reads a small amount of information on your device: the trigger URL of the search you start (including the search terms) and the URL of the other tab in a split view, used only to compare its site origin and not stored. Each item is explained below.
 
 ## Data handled on your device
 
 1. Trigger URLs and search terms. When you search using a trigger URL you added to Chrome (only URLs carrying the extension's marker parameter "_ss" are handed to it), the extension reads that URL on your device, extracts the search terms and the engine IDs in "_ss", builds the right-hand engine's URL, and opens both engines' result pages in two tabs. Search terms are not stored and are not sent to anyone other than those two engines.
-2. Site origin of split-view tabs. When the current tab is already in a split view, the extension checks whether the origin of the other tab belongs to one of your configured engines, to tell whether it opened that split. It does not read your browsing history or any page content. Chrome provides that URL only for sites you have granted access to. It is used for that check only and is not stored.
+2. URL of the other tab in a split view. When the current tab is already in a split view, the extension reads the other tab's URL and checks only whether its origin belongs to one of your configured engines, to tell whether it opened that split. It does not read your browsing history or any page content. Chrome provides that URL only for sites you have granted access to. It is used for that check only and is not stored.
 3. Settings. Your search engines (names and URL templates), their order, hidden built-in engines and your default pair are stored in chrome.storage.sync. If you have Chrome sync turned on, Chrome syncs these settings across your devices through your Google Account; this is governed by Chrome's and Google's privacy policies, and the developer has no access to it.
 4. Split records. Tab-ID pairs of split views the extension created are kept in chrome.storage.session, in memory only, and are cleared when the browser closes.
 

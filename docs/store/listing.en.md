@@ -59,10 +59,10 @@ LIMITATIONS
 • Settings page in Simplified Chinese only
 
 PRIVACY
-Important: the extension collects no data. It has no servers, makes no network requests, contains no analytics, ads or remote code, and sends no data to the developer or anyone else. To do its job it reads, only inside your browser, the URL of the search you start (including the search terms) and the site origin of the other tab in a split view. It does not read your browsing history or page content, and stores nothing except your settings. Your search terms go only from your browser to the two engines you chose. Settings are stored in chrome.storage.sync, which Chrome syncs across your devices only if you have Chrome sync turned on.
+Important: the extension collects no data. It has no servers, makes no network requests, contains no analytics, ads or remote code, and sends no data to the developer or anyone else. To do its job it reads, only inside your browser, the URL of the search you start (including the search terms) and the URL of the other tab in a split view, used only to compare its site origin and not stored. It does not read your browsing history or page content, and stores nothing except your settings and temporary split records that are cleared when the browser closes. Your search terms go only from your browser to the two engines you chose. Settings are stored in chrome.storage.sync, which Chrome syncs across your devices only if you have Chrome sync turned on.
 ```
 
-字数：3619（含换行）
+字数：3733（含换行）
 
 ## Category / Language
 
