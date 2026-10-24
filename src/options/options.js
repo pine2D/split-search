@@ -25,6 +25,11 @@ let current = null;          // 最近一次渲染用的 cfg
 // 静态文字最近一次按哪种语言写入；初值 undefined 保证第一次渲染一定写入（即使目录没加载成功）。
 // 不能用“setLocale 已调用过”代替：调过 setLocale 的渲染可能被更新的渲染打断，那次就没写静态文字。
 let appliedLocale;
+// 最近一次交给 setLocale 的 pref（同步记录）。判断要不要切换时和它比，不和已生效的 currentPref() 比：
+// 否则“切走再切回”时，后一次渲染看到旧语言仍生效就不发 setLocale，前一次晚到的 setLocale 反而成了最后一次调用。
+let requestedPref;
+// 下拉框最近一次按哪组 uiLocale|语言 建的；都没变就只同步选中值，不重建（重建会关掉用户正打开的下拉列表）
+let pickerKey;
 
 // ---- 写入：串行化，避免并发的读取→修改→写回 ----
 
@@ -133,6 +138,19 @@ async function pickLocale(value) {
   }
 }
 
+function syncLangPicker(pref) {
+  const key = `${pref}|${currentLocale()}`;
+  const select = $("lang-select");
+  if (select && key === pickerKey) {
+    select.value = pref; // 保存失败后退回已保存的语言
+    return;
+  }
+  pickerKey = key;
+  const focused = document.activeElement === select;
+  $("lang-picker").replaceChildren(renderLangPicker(pref, pickLocale));
+  if (focused) $("lang-select").focus(); // 键盘用户选完语言后焦点留在下拉框上
+}
+
 async function render() {
   const seq = ++renderSeq;
   let raw;
@@ -147,20 +165,17 @@ async function render() {
   }
   const cfg = mergeConfig(pendingOrder ? { ...raw, order: pendingOrder } : raw);
   // 连续切换时每次渲染各调一次 setLocale，它保证最后一次调用生效；被取代的渲染在下面的 seq 检查处退出
-  const switching = cfg.uiLocale !== currentPref();
-  if (switching) await setLocale(cfg.uiLocale).catch(log);
+  if (cfg.uiLocale !== (requestedPref ?? currentPref())) {
+    requestedPref = cfg.uiLocale;
+    await setLocale(cfg.uiLocale).catch(log);
+  }
   const all = [...cfg.engines, ...cfg.hidden];
   const granted = new Map(await Promise.all(all.map(async e => [e.id, await isGranted(e)])));
   if (seq !== renderSeq) return; // 已有更新的渲染
-  // 本次没切换，但上一次渲染的 setLocale 晚到生效（如快速切走又切回）：重来一次，按本次的 uiLocale 切换
-  if (!switching && cfg.uiLocale !== currentPref()) return render();
   for (const id of attention) if (granted.get(id)) attention.delete(id);
   current = cfg;
   applyStatic();
-
-  const langFocused = document.activeElement?.id === "lang-select";
-  $("lang-picker").replaceChildren(renderLangPicker(cfg.uiLocale, pickLocale));
-  if (langFocused) $("lang-select").focus();
+  syncLangPicker(cfg.uiLocale);
   const ctx = { cfg, granted, attention, actions, refresh: render };
   const byId = new Map(all.map(e => [e.id, e]));
   $("banner").replaceChildren(...banner(cfg, byId, granted));
