@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 // 把 assets/templates/*.html 渲染成尺寸精确的 PNG（商店截图、宣传图块、README 配图）。Node 24，无依赖。
 //
-// 用法：node scripts/store/render-assets.mjs [--icon <svg>] [--no-tile] [--only a,b] [--out <dir>] [--tmp <dir>] [--list]
+// 用法：node scripts/store/render-assets.mjs [--icon <svg>] [--no-tile] [--only a,b] [--templates <dir>] [--out <dir>] [--tmp <dir>] [--list]
 //   --icon <svg>  图标文件（默认是选定的 c6 松针绿：assets/icon-proposals/v3-colors/c6-pine-fog/icon.svg，
 //                 与 src/icons/ 同源）；试别的图标时传它的 icon.svg 或 .png
 //   --no-tile     图标自带底板（如方案 6）时用：去掉模板里的白色圆角底板，避免“板中板”
 //   --only a,b    只渲染这些模板（文件名去掉 .html）
-//   --out <dir>   输出根目录（默认 assets/）；模板声明的相对输出路径接在它后面
+//   --templates <dir>  模板目录（默认 assets/templates）；可放一套备选模板，不动现有的
+//   --out <dir>   所有输出平铺到这一个目录，用模板声明的文件名（不含子目录）；省略时按模板声明的路径写到 assets/store、assets/readme
 //   --tmp <dir>   放临时 Chrome 配置的目录（默认系统临时目录），结束后删除
 //   --list        只列出模板与目标尺寸，不渲染
 //
@@ -31,11 +32,12 @@ const CHROME = "/opt/google/chrome/google-chrome";
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 export function parseArgs(argv) {
-  const o = { icon: DEFAULT_ICON, only: null, out: join(ROOT, "assets"), tmp: tmpdir(), list: false, noTile: false };
+  const o = { icon: DEFAULT_ICON, only: null, templates: TEMPLATES, out: null, tmp: tmpdir(), list: false, noTile: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i], v = () => { if (i + 1 >= argv.length) throw new Error(`${a} 缺少参数`); return argv[++i]; };
     if (a === "--icon") o.icon = resolve(v());
     else if (a === "--only") o.only = v().split(",").map(s => s.trim()).filter(Boolean);
+    else if (a === "--templates") o.templates = resolve(v());
     else if (a === "--out") o.out = resolve(v());
     else if (a === "--tmp") o.tmp = resolve(v());
     else if (a === "--list") o.list = true;
@@ -183,8 +185,8 @@ async function renderOne(client, t, icon, noTile) {
 
 async function main() {
   const o = parseArgs(process.argv.slice(2));
-  if (o.help) { console.log(readFileSync(fileURLToPath(import.meta.url), "utf8").split("\n").slice(1, 11).join("\n")); return; }
-  let list = readTemplates();
+  if (o.help) { console.log(readFileSync(fileURLToPath(import.meta.url), "utf8").split("\n").slice(1, 13).join("\n")); return; }
+  let list = readTemplates(o.templates);
   if (o.only) {
     const miss = o.only.filter(n => !list.some(t => t.name === n));
     if (miss.length) throw new Error(`没有这些模板：${miss.join("，")}`);
@@ -200,7 +202,7 @@ async function main() {
         const png = await renderOne(b.client, t, icon, o.noTile);
         const info = pngInfo(png), W = Math.round(t.width * t.scale), H = Math.round(t.height * t.scale);
         if (info.width !== W || info.height !== H) throw new Error(`输出 ${info.width}x${info.height}，应为 ${W}x${H}`);
-        const dest = join(o.out, t.out);
+        const dest = o.out ? join(o.out, basename(t.out)) : join(ROOT, "assets", t.out);
         mkdirSync(dirname(dest), { recursive: true });
         writeFileSync(dest, png);
         console.log(`✓ ${t.name} → ${dest} (${W}x${H})`);
