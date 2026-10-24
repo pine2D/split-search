@@ -2,8 +2,8 @@
 import { DEFAULT_PORT } from "./config.mjs";
 
 export const USAGE = `用法：npm run e2e -- [选项]
-  --auto-only        只跑自动步骤（默认无头运行，不需要人在场）
-  --headed           强制显示浏览器窗口（与 --auto-only 合用时不再无头）
+  --auto-only        只跑自动步骤（默认在不可见的 Xvfb 里无人值守运行，xauto 照跑；退回 host 时无头）
+  --headed           auto-only 改用可见的 Xephyr 窗口（退回 host 时则是不再无头）
   --only <编号,...>  只跑指定步骤，例如 --only B5,T7
   --port <端口>      模拟服务端口，默认 ${DEFAULT_PORT}（改端口后需要重新授权）
   --timeout <毫秒>   单步超时，默认 120000
