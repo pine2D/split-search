@@ -28,6 +28,9 @@ let appliedLocale;
 // 最近一次交给 setLocale 的 pref（同步记录）。判断要不要切换时和它比，不和已生效的 currentPref() 比：
 // 否则“切走再切回”时，后一次渲染看到旧语言仍生效就不发 setLocale，前一次晚到的 setLocale 反而成了最后一次调用。
 let requestedPref;
+// 对应 requestedPref 的那次 setLocale（与它同步赋值）。每次渲染都等它：同语言的无关渲染不发起切换，
+// 但不能抢在进行中的切换完成前按旧语言写入。
+let localeSwitch = Promise.resolve();
 // 下拉框最近一次按哪组 uiLocale|语言 建的；都没变就只同步选中值，不重建（重建会关掉用户正打开的下拉列表）
 let pickerKey;
 
@@ -164,11 +167,13 @@ async function render() {
     return;
   }
   const cfg = mergeConfig(pendingOrder ? { ...raw, order: pendingOrder } : raw);
-  // 连续切换时每次渲染各调一次 setLocale，它保证最后一次调用生效；被取代的渲染在下面的 seq 检查处退出
-  if (cfg.uiLocale !== (requestedPref ?? currentPref())) {
+  // 和最近一次请求的 pref 比，不同才调 setLocale（它保证最后一次调用生效）；所有渲染都等进行中的切换。
+  // 已被取代的渲染不发起切换（它的 raw 可能比更新的渲染旧），反正会在下面的 seq 检查处退出。
+  if (seq === renderSeq && cfg.uiLocale !== (requestedPref ?? currentPref())) {
     requestedPref = cfg.uiLocale;
-    await setLocale(cfg.uiLocale).catch(log);
+    localeSwitch = setLocale(cfg.uiLocale).catch(log);
   }
+  await localeSwitch;
   const all = [...cfg.engines, ...cfg.hidden];
   const granted = new Map(await Promise.all(all.map(async e => [e.id, await isGranted(e)])));
   if (seq !== renderSeq) return; // 已有更新的渲染
