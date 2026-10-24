@@ -782,5 +782,39 @@
         "example": "Google"
       }
     }
+  },
+  "lang_label": {
+    "message": "语言",
+    "description": "Label of the language drop-down at the top of the settings page. [needs-translation]"
+  },
+  "lang_auto": {
+    "message": "跟随浏览器（当前：$CURRENT$）",
+    "description": "First option of the language drop-down: use the browser's language. The placeholder is the native name of the language the browser currently resolves to (one of the lang_name_* messages). [needs-translation]",
+    "placeholders": {
+      "CURRENT": {
+        "content": "$1",
+        "example": "English"
+      }
+    }
+  },
+  "lang_note": {
+    "message": "扩展简介、工具栏按钮的提示、chrome://extensions 里的说明和 Chrome 网上应用店详情页始终跟随浏览器语言，不受这里的选择影响。",
+    "description": "Note under the language drop-down: the extension description, the toolbar button tooltip, the description on chrome://extensions and the Chrome Web Store listing always follow the browser language, not this choice. Keep chrome://extensions as is. [needs-translation]"
+  },
+  "lang_name_en": {
+    "message": "English",
+    "description": "Native name of English in the language drop-down (本名，不要翻译): identical in every locale, do not translate."
+  },
+  "lang_name_zh_cn": {
+    "message": "简体中文",
+    "description": "Native name of Simplified Chinese in the language drop-down (本名，不要翻译): identical in every locale, do not translate."
+  },
+  "lang_name_zh_tw": {
+    "message": "繁體中文",
+    "description": "Native name of Traditional Chinese in the language drop-down (本名，不要翻译): identical in every locale, do not translate."
+  },
+  "lang_name_es": {
+    "message": "Español",
+    "description": "Native name of Spanish in the language drop-down (本名，不要翻译): identical in every locale, do not translate."
   }
 }

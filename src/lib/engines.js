@@ -1,5 +1,6 @@
 // 预置引擎、模板校验、配置合并。纯逻辑，不得引用 chrome。
 import { fail } from "./errors.js";
+import { normalizeLocalePref } from "./i18n.js";
 
 export const PRESETS = [
   { id: "google", name: "Google", url: "https://www.google.com/search?q=%s" },
@@ -90,7 +91,7 @@ export function mergeConfig(stored = {}) {
       else pair = [...DEFAULT_PAIR];
     }
   }
-  return { engines, hidden, defaultPair: pair };
+  return { engines, hidden, defaultPair: pair, uiLocale: normalizeLocalePref(stored.uiLocale) };
 }
 
 export function isIdTaken(id, stored = {}) {

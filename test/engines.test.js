@@ -98,6 +98,23 @@ test("mergeConfig: order 中未知、隐藏、重复的 id 被忽略，未列出
 test("mergeConfig: 隐藏的预置引擎出现在 hidden 中", () => {
   assert.deepEqual(mergeConfig({ presetOverrides: { bing: { hidden: true } } }).hidden.map(e => e.id), ["bing"]);
 });
+test("mergeConfig 透传合法 uiLocale", () => {
+  assert.equal(mergeConfig({ uiLocale: "es" }).uiLocale, "es");
+  for (const v of ["auto", "en", "zh_CN", "zh_TW"]) assert.equal(mergeConfig({ uiLocale: v }).uiLocale, v);
+});
+test("mergeConfig 对缺省和非法 uiLocale 给 auto", () => {
+  for (const stored of [{}, { uiLocale: "fr" }, { uiLocale: "zh-CN" }, { uiLocale: 42 }]) {
+    assert.equal(mergeConfig(stored).uiLocale, "auto", JSON.stringify(stored));
+  }
+  assert.equal(mergeConfig().uiLocale, "auto");
+});
+test("uiLocale 不影响引擎合并", () => {
+  const { uiLocale, ...rest } = mergeConfig({ uiLocale: "es", order: ["bing"] });
+  const { uiLocale: base, ...expected } = mergeConfig({ order: ["bing"] });
+  assert.equal(uiLocale, "es");
+  assert.equal(base, "auto");
+  assert.deepEqual(rest, expected);
+});
 test("isIdTaken: 已隐藏的预置引擎 id 也算已占用", () => {
   assert.equal(isIdTaken("bing", { presetOverrides: { bing: { hidden: true } } }), true);
   assert.equal(isIdTaken("baidu", { customEngines: [{ id: "baidu", name: "百度", url: "https://www.baidu.com/s?wd=%s" }] }), true);

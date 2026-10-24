@@ -51,12 +51,25 @@ body {
   color: var(--text);
   font: 14px/1.6 system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
 }
+:lang(zh-TW) body {
+  font-family: system-ui, -apple-system, "Segoe UI", "PingFang TC", "Microsoft JhengHei", "Noto Sans CJK TC", sans-serif;
+}
 
 body.loading main { visibility: hidden; }
 
 .page { max-width: 780px; margin: 0 auto; padding: 28px 16px 64px; }
+.page-head {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 8px 24px; flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.page-title { flex: 1 1 320px; }
 .page-head h1 { margin: 0 0 4px; font-size: 22px; }
-.page-head p { margin: 0 0 20px; }
+.page-title p { margin: 0; }
+
+/* ---- 语言 ---- */
+.lang-box { flex: 0 1 300px; }
+.lang-picker { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+.lang-box .hint { font-size: 12px; margin: 6px 0 0; }
 
 h2 { font-size: 16px; margin: 0 0 6px; }
 h3 { font-size: 14px; margin: 20px 0 6px; }
@@ -89,7 +102,7 @@ code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
   border-radius: 7px;
   padding: 6px 14px;
   cursor: pointer;
-  white-space: nowrap;
+  overflow-wrap: break-word; /* 译文较长时允许换行，不撑出容器 */
 }
 .btn:hover:not(:disabled) { border-color: var(--accent); }
 .btn:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
@@ -125,7 +138,7 @@ code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
 
 /* ---- 组合选择 ---- */
 .pair-pickers { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
-.pair-pickers label { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: var(--muted); }
+.pair-pickers label { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: var(--muted); min-width: 0; overflow-wrap: break-word; }
 .pair-sep { padding-bottom: 6px; color: var(--muted); }
 
 select, input {

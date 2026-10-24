@@ -7,8 +7,8 @@ import {
 } from "./edits.js";
 import { renderEngineList, renderHiddenList, setupEngineDialog, confirmRemoval } from "./engine-list.js";
 import { renderTriggers, setupGuide } from "./guide.js";
-import { applyRichText } from "./locale-ui.js";
-import { initI18n, applyI18n, t } from "../chrome/i18n.js";
+import { applyRichText, renderLangPicker } from "./locale-ui.js";
+import { initI18n, applyI18n, setLocale, currentPref, currentLocale, t } from "../chrome/i18n.js";
 
 const ORDER_DEBOUNCE_MS = 500;
 const $ = (id) => document.getElementById(id);
@@ -22,7 +22,9 @@ let pendingOrder = null;     // 防抖期间的本地排序
 let orderTimer = null;
 let renderSeq = 0;
 let current = null;          // 最近一次渲染用的 cfg
-let staticApplied = false;   // 静态文字是否已按目录写入
+// 静态文字最近一次按哪种语言写入；初值 undefined 保证第一次渲染一定写入（即使目录没加载成功）。
+// 不能用“setLocale 已调用过”代替：调过 setLocale 的渲染可能被更新的渲染打断，那次就没写静态文字。
+let appliedLocale;
 
 // ---- 写入：串行化，避免并发的读取→修改→写回 ----
 
@@ -113,12 +115,22 @@ async function flushOrder() {
 
 // ---- 渲染 ----
 
-// 第一次渲染时把 options.html 的静态文字按目录写入，写入后才去掉 loading
+// 语言变了（含第一次渲染）就把 options.html 的静态文字按目录重写，写入后才去掉 loading
 function applyStatic() {
-  if (staticApplied) return;
-  staticApplied = true;
+  if (currentLocale() === appliedLocale) return;
+  appliedLocale = currentLocale();
   applyI18n(document);
   applyRichText();
+}
+
+// 只写 uiLocale；成功后由 storage.onChanged 触发 render()，另开的设置页也跟着切换
+async function pickLocale(value) {
+  try {
+    await write(() => ({ ok: true, patch: { uiLocale: value } }));
+  } catch (err) {
+    notify(t("notice_save_failed", errorText(err)), "error");
+    render(); // 下拉框退回已保存的语言
+  }
 }
 
 async function render() {
@@ -134,13 +146,21 @@ async function render() {
     return;
   }
   const cfg = mergeConfig(pendingOrder ? { ...raw, order: pendingOrder } : raw);
+  // 连续切换时每次渲染各调一次 setLocale，它保证最后一次调用生效；被取代的渲染在下面的 seq 检查处退出
+  const switching = cfg.uiLocale !== currentPref();
+  if (switching) await setLocale(cfg.uiLocale).catch(log);
   const all = [...cfg.engines, ...cfg.hidden];
   const granted = new Map(await Promise.all(all.map(async e => [e.id, await isGranted(e)])));
   if (seq !== renderSeq) return; // 已有更新的渲染
+  // 本次没切换，但上一次渲染的 setLocale 晚到生效（如快速切走又切回）：重来一次，按本次的 uiLocale 切换
+  if (!switching && cfg.uiLocale !== currentPref()) return render();
   for (const id of attention) if (granted.get(id)) attention.delete(id);
   current = cfg;
   applyStatic();
 
+  const langFocused = document.activeElement?.id === "lang-select";
+  $("lang-picker").replaceChildren(renderLangPicker(cfg.uiLocale, pickLocale));
+  if (langFocused) $("lang-select").focus();
   const ctx = { cfg, granted, attention, actions, refresh: render };
   const byId = new Map(all.map(e => [e.id, e]));
   $("banner").replaceChildren(...banner(cfg, byId, granted));
