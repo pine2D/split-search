@@ -1,0 +1,8 @@
+title: Split Search
+description: Chrome extension that opens a search in two engines side by side in split view.
+markdown: kramdown
+exclude:
+  - superpowers
+  - store
+  - i18n
+  - acceptance-v0.1.md

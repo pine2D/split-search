@@ -14,7 +14,7 @@
 - [x] manifest 简介：v0.2 起是各语言的 `ext_description`（`__MSG_ext_description__`），4 种语言已定稿（各 ≤132 字符）。
 - [x] 详细说明【使用限制】已把“界面仅提供简体中文”改为一句“设置页可以切换语言”；`listing.en.md` 的两处同改。
 - [x] `listing.en.md`、`listing.zh-TW.md`、`listing.es.md` 已按精炼版中文写好（2026-10-24 用户确认）。
-- [ ] 隐私政策托管到公开网址，替换 `privacy.md` 中的占位符。
+- [x] 隐私政策托管到公开网址：`docs/privacy*.md` 已写好并填完占位符（`https://pine2d.github.io/split-search/privacy`）。仍待用户：push 后在仓库 Settings → Pages 选 main /docs。
 - [ ] 隐私做法标签页：数据使用披露**一项都不勾（含“网页浏览记录”）**，并附上 `privacy.md` (d) 的英文审核说明。
 - [x] 面向用户的文案统一润色：zh-CN 的简介和详细说明已过 lieflat-less-ai-tone 和 humanizer-zh（2026-10-24）。其他语言按 CLAUDE.md“文案”一节各自润色。
 

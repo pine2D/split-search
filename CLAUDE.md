@@ -73,6 +73,7 @@ split-search/
 ├── docs/acceptance-v0.1.md       v0.1 验收：跑 e2e（Windows 冒烟 v0.1 不做，2026-10-24 用户决定）；B/T 表注明覆盖方式
 ├── docs/i18n/chrome-terms.md     Chrome 术语表：各语言功能术语以此为准（由 scripts/i18n/chrome-terms.mjs 生成）
 ├── docs/store/                   商店详情（各语言）、隐私做法与隐私政策、图片素材规格
+├── docs/_config.yml _layouts/ index.md privacy.md privacy.zh-CN.md   GitHub Pages 站点（main:/docs，Jekyll；_config.yml 的 exclude 只放行这些公开页，新增内部文档要加进 exclude）
 ├── assets/                       商店与 README 图片：templates/ 模板、raw/ 真实截图、store/ 与 readme/ 成品、icon-proposals/ 图标提案
 ├── scripts/
 │   ├── gen-key.sh                打印扩展 ID；manifest 无 key 时才生成公钥写入（不保留私钥）
@@ -182,6 +183,7 @@ split-search/
 
 适用于所有面向用户的文字：扩展界面（设置页、go.html 出错页）、README、商店详情与隐私政策（`docs/store/`）、宣传图文字（`assets/templates/i18n/*.json`）。v0.2 起支持 en、zh_CN、zh_TW、es（见 `docs/superpowers/specs/2026-10-24-i18n-design.md`），之前界面仍只有简体中文。
 
+- 隐私政策有任何改动，`docs/privacy.md`、`docs/privacy.zh-CN.md`（GitHub Pages 托管副本）必须与 `docs/store/privacy.md` (f) 一起改。
 - 术语用 Chrome 官方界面在该语言里的叫法（拆分视图/Split view、地址栏、标签栏、网站搜索、设为默认等），从 `/opt/google/chrome/locales/<语言>.pak` 或 Chrome 官方帮助页核实，不自造译名。
 - 产品名所有语言都是 `Split Search`，不翻译、不加本地副标题。
 - 写给真实用户看：只讲用户关心的关键点（能做什么、怎么设置、有什么限制、隐私），短句、精炼；不解释实现原理和设计取舍，不加“部分截图里的 X 就是这样来的”之类旁白。细节留给设置页的逐步说明和内部文档（2026-10-24 用户要求，商店详情、README 同样适用）。

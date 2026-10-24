@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="{{ page.lang | default: 'en' }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ page.title | default: site.title }}</title>
+<meta name="description" content="{{ page.description | default: site.description }}">
+<style>
+:root { color-scheme: light dark; --bg:#fafafa; --fg:#222; --muted:#666; --link:#1a5fb4; --line:#ddd; }
+@media (prefers-color-scheme: dark) { :root { --bg:#17191c; --fg:#e4e4e4; --muted:#999; --link:#7db3f5; --line:#33373c; } }
+* { box-sizing: border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.65 system-ui,-apple-system,"Segoe UI",sans-serif; }
+header, main, footer { max-width: 720px; margin: 0 auto; padding: 0 16px; }
+header { padding-top: 24px; padding-bottom: 12px; border-bottom: 1px solid var(--line); margin-bottom: 24px; }
+.brand { font-weight: 700; font-size: 18px; color: var(--fg); text-decoration: none; }
+main { padding-bottom: 32px; }
+h1 { font-size: 26px; margin: 0 0 16px; }
+h2 { font-size: 19px; margin: 28px 0 8px; }
+a { color: var(--link); }
+code { font-size: 0.9em; }
+footer { padding-top: 12px; padding-bottom: 32px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; }
+</style>
+</head>
+<body>
+<header><a href="{{ '/' | relative_url }}" class="brand">Split Search</a></header>
+<main>
+{{ content }}
+</main>
+<footer>
+<a href="https://github.com/pine2D/split-search">GitHub</a> ·
+<a href="https://github.com/pine2D/split-search/issues">Issues</a> ·
+<a href="{{ '/privacy' | relative_url }}">Privacy Policy</a>
+</footer>
+</body>
+</html>

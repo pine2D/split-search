@@ -133,13 +133,15 @@ Because the extension never builds or accesses a list of visited pages, and the 
 
 ## 隐私政策网址
 
-控制台填 `{{PRIVACY_POLICY_URL}}`。可以托管在 GitHub Pages、仓库里的 `PRIVACY.md`（需公开仓库），或其他能匿名访问的页面。开发者账号层面的隐私政策网址要与这里一致。
+控制台填 `https://pine2d.github.io/split-search/privacy`（GitHub Pages，`main:/docs`，与 Pinboard 扩展同一做法）。开发者账号层面的隐私政策网址与这里一致。中文版在 `https://pine2d.github.io/split-search/privacy.zh-CN.html`。
+
+托管副本是 `docs/privacy.md`（English）和 `docs/privacy.zh-CN.md`（简体中文），内容取自下面 (f)；**改 (f) 必须同步改这两个文件**，反之亦然。
 
 ---
 
 ## (f) 隐私政策全文
 
-> 占位符：`{{PRIVACY_POLICY_URL}}`（本政策的公开网址）、`{{CONTACT_URL}}`（联系方式，例如公开仓库的 Issues 页面）、`{{EFFECTIVE_DATE}}`（生效日期）。作者署名 pine2D。
+> 占位符已在托管副本里填好：`{{PRIVACY_POLICY_URL}}` = `https://pine2d.github.io/split-search/privacy`、`{{CONTACT_URL}}` = `https://github.com/pine2D/split-search/issues`、`{{EFFECTIVE_DATE}}` = 2026-10-24。此处保留占位符作模板；托管副本另在标题下加了中英互链。作者署名 pine2D。
 
 ### 简体中文
 
