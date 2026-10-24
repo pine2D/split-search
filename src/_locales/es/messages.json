@@ -1,0 +1,10 @@
+{
+  "ext_description": {
+    "message": "地址栏或拖拽搜索，一键用两个搜索引擎打开原生分屏对比",
+    "description": "Extension description shown in the Chrome Web Store and chrome://extensions. [needs-translation]"
+  },
+  "ext_action_title": {
+    "message": "Split Search 设置",
+    "description": "Tooltip of the toolbar button. [needs-translation]"
+  }
+}
