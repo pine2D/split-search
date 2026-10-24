@@ -33,7 +33,8 @@ body { position: relative; font-family: var(--font); color: var(--ink); backgrou
 .mark { position: absolute; border: 2px solid #3f6656; border-radius: 6px; padding: 3px; box-sizing: content-box;
   margin: -5px 0 0 -5px; }
 
-/* 商店截图：左对齐标题区，截图在 64px 边距内，向下出血 */
+/* 商店截图：左对齐标题区，截图在 64px 边距内，向下出血。
+   标题区底（约 y=143）到内容顶统一 48px：所有商店截图的第一块内容都从 y=192 开始。 */
 .head { position: absolute; left: 64px; right: 64px; top: 48px; }
 .head h1 { font-size: 46px; font-weight: 700; line-height: 1.12; letter-spacing: .02em; }
 .head p { margin-top: 14px; font-size: 21px; font-weight: 400; line-height: 1.4; color: var(--muted); letter-spacing: .01em; }
@@ -43,5 +44,11 @@ body { position: relative; font-family: var(--font); color: var(--ink); backgrou
 .keys .caret { display: inline-block; width: .08em; height: 1.05em; margin: 0 .18em 0 .06em; vertical-align: -.17em; background: var(--accent); }
 .keys .ret { color: var(--accent); }
 
-/* 角落小注 */
+/* 截图题注：紧贴在下一张截图正上方，左边与截图左边对齐；右侧可放一条小注 */
+.cap { position: absolute; left: 64px; right: 64px; height: 24px; display: flex; align-items: center; gap: 10px;
+  font-size: 18px; font-weight: 500; line-height: 24px; color: var(--muted); }
+.cap .ret { font: 500 20px/24px var(--mono); color: var(--accent); }
+.cap .note { position: static; margin-left: auto; }
+
+/* 小注 */
 .note { position: absolute; font-size: 15px; line-height: 1.3; color: var(--dim); white-space: nowrap; }

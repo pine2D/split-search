@@ -4,35 +4,33 @@
 <meta name="asset-out" content="store/screenshot-3.png">
 <link rel="stylesheet" href="base.css">
 <style>
-  /* 拖拽中的整窗局部（约 0.7 倍），向下出血；右下角叠一张松手后的分屏 */
-  .main { left: 64px; top: 184px; width: 1152px; border-radius: 8px 8px 0 0; }
-  /* 小图用 4px 石墨框和网页分开，标签像框上的一个页签 */
-  .after { left: 772px; top: 514px; width: 420px; border-radius: 2px; box-shadow: 0 0 0 4px var(--ground); }
-  .tab { position: absolute; left: 768px; top: 478px; height: 36px; padding: 0 14px; display: flex; align-items: center;
-    background: var(--ground); border-radius: 6px 6px 0 0; font-size: 17px; font-weight: 500; color: var(--ink); }
-  .note { right: 64px; top: 121px; }
+  /* 和截图 2 同一结构：上为拖拽中（约 0.62 倍），中为题注“松手后”，下为松手后的分屏整窗（0.48 倍）向下出血。
+     上图右边裁在维基信息框与右栏之间的空白（原图 x=1848），下边裁在两行正文之间（原图 y=672），不切字。
+     纵向节奏：拖拽 192–611，16，题注 627–651，16，截图 667 起 */
+  .drag { left: 64px; top: 192px; width: 1152px; }
+  .cap { top: 627px; }
+  .main { left: 64px; top: 667px; width: 1152px; border-radius: 8px 8px 0 0; }
 </style></head>
 <body>
   <header class="head">
     <h1>选中文字，拖到标签栏</h1>
-    <p>触发网址设为默认后，松手即用两个引擎打开分屏</p>
+    <p>设为默认后，松手即分屏</p>
   </header>
-  <div class="note">示例右侧“百度”为自行添加的引擎</div>
   <!-- 真实截图：拖拽中（选中“Graydon Hoare”，拖拽影像已到标签栏，尚未松手）；箭头和框是标注 -->
-  <div class="crop main" data-crop="0,0,1650,1100"><img src="../raw/drag-to-tabstrip.png" data-iw="2400" alt="">
+  <div class="crop drag" data-crop="0,0,1848,672"><img src="../raw/drag-to-tabstrip.png" data-iw="2400" alt="">
     <!-- 修补：盖掉 Xvfb 下黑底的标签插入箭头（见 assets/raw/captions.md） -->
     <img class="patch" src="../raw/patches/drag-to-tabstrip-397-61.png" data-box="397,61,32,31" alt="">
-    <i class="mark" data-box="692,588,182,50"></i>
-    <i class="mark" data-box="1416,4,186,46"></i>
+    <i class="mark" data-box="698,594,170,40"></i>
+    <i class="mark" data-box="1420,10,178,34"></i>
     <svg class="ann">
-      <defs><marker id="h" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="4.5" markerHeight="4.5" orient="auto">
+      <defs><marker id="h" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto">
         <path d="M0 0L10 5L0 10z" fill="#3f6656"/></marker></defs>
-      <path d="M792 576 C 810 380, 1180 150, 1500 64" fill="none" stroke="#3f6656" stroke-width="3.5"
-        stroke-dasharray="12 9" stroke-linecap="round" marker-end="url(#h)"/>
+      <path d="M800 580 C 830 400, 1180 170, 1404 62" fill="none" stroke="#3f6656" stroke-width="3"
+        stroke-dasharray="10 8" stroke-linecap="round" marker-end="url(#h)"/>
     </svg>
   </div>
-  <!-- 真实截图：松手后的结果，左 DuckDuckGo、右百度 -->
-  <div class="tab">松手后</div>
-  <div class="crop after" data-crop="0,0,2400,1500"><img src="../raw/drag-result-split.png" data-iw="2400" alt=""></div>
+  <div class="cap">松手后<span class="note">右侧“百度”为自行添加的引擎</span></div>
+  <!-- 真实截图：松手后的结果，左 DuckDuckGo、右百度，查询词 Graydon Hoare，整窗，向下出血 -->
+  <div class="crop main" data-crop="0,0,2400,1500"><img src="../raw/drag-result-split.png" data-iw="2400" alt=""></div>
   <script src="crop.js"></script>
 </body></html>
