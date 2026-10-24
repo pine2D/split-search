@@ -12,7 +12,8 @@ const withWiki = [...E, wiki];
 test("buildTriggerTemplate", () => {
   assert.equal(buildTriggerTemplate(kagi, "google"), "https://kagi.com/search?q=%s&_ss=kagi,google");
   assert.equal(buildTriggerTemplate({ id: "x", name: "X", url: "https://x.com/s?q=%s" }, "bing"), "https://x.com/s?q=%s&_ss=x,bing");
-  assert.throws(() => buildTriggerTemplate({ id: "w", name: "W", url: "https://w.org/wiki/%s" }, "google"));
+  assert.throws(() => buildTriggerTemplate({ id: "w", name: "W", url: "https://w.org/wiki/%s" }, "google"),
+    { message: "not_left", code: "not_left", args: ["W"] });
 });
 test("extractOriginalUrl 保留原始网址里的 & 和 +", () => {
   assert.equal(extractOriginalUrl("?u=https://kagi.com/search?q=a+b&_ss=kagi,google"), "https://kagi.com/search?q=a+b&_ss=kagi,google");
@@ -35,20 +36,20 @@ test("parseTrigger: 兼容 Kagi 把逗号改写成 %2C", () => {
 test("parseTrigger: 左右可以是同一个引擎", () => {
   assert.equal(parseTrigger("https://kagi.com/search?q=x&_ss=kagi,kagi", E).ok, true);
 });
-test("parseTrigger: 出错时返回中文说明", () => {
+test("parseTrigger: 出错时返回错误码", () => {
   const unknown = parseTrigger("https://kagi.com/search?q=x&_ss=kagi,nope", E);
-  assert.equal(unknown.ok, false); assert.match(unknown.error, /未知引擎：nope/);
+  assert.equal(unknown.ok, false); assert.deepEqual(unknown.error, { code: "unknown_engine", args: ["nope"] });
   const bad = parseTrigger("https://kagi.com/search?q=x&_ss=kagi", E);
-  assert.equal(bad.ok, false); assert.match(bad.error, /标记参数格式不对/);
+  assert.equal(bad.ok, false); assert.equal(bad.error.code, "marker_format");
   const notLeft = parseTrigger("https://kagi.com/search?q=x&_ss=wiki,google", withWiki); // 左侧不能作左
-  assert.equal(notLeft.ok, false); assert.match(notLeft.error, /Wiki 不能作为左侧引擎/);
+  assert.equal(notLeft.ok, false); assert.deepEqual(notLeft.error, { code: "not_left", args: ["Wiki"] });
   const m = parseTrigger("https://kagi.com/search?query=x&_ss=kagi,google", E);  // 模板已改、参数名对不上
-  assert.equal(m.ok, false); assert.match(m.error, /重新复制/);
+  assert.equal(m.ok, false); assert.equal(m.error.code, "template_mismatch");
 });
 test("parseTrigger: 右侧引擎已隐藏时报未知引擎", () => {
   const { engines } = mergeConfig({ presetOverrides: { bing: { hidden: true } } });
   const r = parseTrigger("https://kagi.com/search?q=x&_ss=kagi,bing", engines);
-  assert.equal(r.ok, false); assert.match(r.error, /未知引擎：bing/);
+  assert.equal(r.ok, false); assert.deepEqual(r.error, { code: "unknown_engine", args: ["bing"] });
 });
 test("parseTrigger: 参数存在但值为空时 query 为空串", () => {
   assert.equal(parseTrigger("https://kagi.com/search?q=&_ss=kagi,google", E).query, "");

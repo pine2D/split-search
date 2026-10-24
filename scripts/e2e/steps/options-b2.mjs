@@ -1,22 +1,25 @@
 // 设置页自动步骤（二）：B12 B13 B15
-import { openOptions, withOptions, guarded, sleep } from "./optpage.mjs";
+import { openOptions, withOptions, guarded, sleep, keySel } from "./optpage.mjs";
+import { msg } from "../i18n.mjs";
 
 const B12 = {
   id: "B12", title: "隐藏/恢复预置引擎（确认框含网站搜索提示）", kind: "auto", needs: [],
   async run({ browser, ext }) {
     {
       return await withOptions(browser, async page => {
-        await page.run(`btn(row("ddg"), "隐藏").click(); return true;`);
+        const name = await page.run(`return row("ddg").querySelector(".engine-name").textContent`);
+        await page.run(`row("ddg").querySelector(${keySel("engine_hide")}).click(); return true;`);
         await page.until(`return !row("ddg") && [...document.querySelectorAll("#hidden-engines .hidden-row")].some(r => r.querySelector(".engine-id").textContent === "ddg")`);
         const problems = [];
-        const msg = page.dialogs[0] || "";
-        if (!msg.includes("网站搜索")) problems.push(`确认框文字应含“网站搜索”，实际 ${JSON.stringify(msg)}`);
+        const text = page.dialogs[0] || "";
+        const want = msg("engine_confirm_hide", name);
+        if (text !== want) problems.push(`确认框文字应为 ${JSON.stringify(want)}，实际 ${JSON.stringify(text)}`);
         await page.run(`
           const r = [...document.querySelectorAll("#hidden-engines .hidden-row")].find(r => r.querySelector(".engine-id").textContent === "ddg");
-          btn(r, "恢复").click(); return true;`);
+          r.querySelector(${keySel("engine_restore")}).click(); return true;`);
         await page.until(`return !!row("ddg") && !document.querySelector("#hidden-engines .hidden-row")`);
         if (problems.length) return { status: "fail", detail: problems.join("；") };
-        return { status: "pass", detail: `确认框（${msg.split("\n")[0]}）含“网站搜索”；ddg 隐藏后出现在“已隐藏的预置引擎”，点“恢复”后回到列表` };
+        return { status: "pass", detail: `确认框（${text.split("\n")[0]}）与 engine_confirm_hide 文案一致；ddg 隐藏后出现在“已隐藏的预置引擎”，点“恢复”后回到列表` };
       });
     }
   },

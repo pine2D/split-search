@@ -1,7 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
-import { LOCALES, SOURCE_LOCALE, localizedOut, parseArgs, resolveLocales } from "../scripts/store/render-assets.mjs";
+import { LOCALES, SOURCE_LOCALE, localizedOut, parseArgs, rawSet, resolveLocales } from "../scripts/store/render-assets.mjs";
+import { fileURLToPath } from "node:url";
 
 // 商店 / README 图片模板的文案：assets/templates/i18n/<locale>.json，模板里用 data-t="键" 引用
 const DIR = new URL("../assets/templates/", import.meta.url);
@@ -42,4 +43,13 @@ test("输出路径按语言分目录，zh_CN 的 README 图留在 assets/readme/
   assert.equal(parseArgs([]).locale, SOURCE_LOCALE);
   assert.equal(parseArgs(["--locale", "all"]).locale, "all");
   assert.throws(() => parseArgs(["--locale", "zh-TW"]), /--locale/);
+});
+
+test("en 用 assets/raw/en/ 的英文截图（宣传截图暂时只做英文），其他语言用共用截图；模板用到的每张图 en 都有", () => {
+  const en = rawSet(fileURLToPath(DIR), "en");
+  assert.equal(en?.set, "en");
+  for (const f of templates) {
+    for (const [, img] of readFileSync(new URL(f, DIR), "utf8").matchAll(/src="\.\.\/raw\/([^"/]+\.png)"/g)) assert.ok(en.files.includes(img), `${f} 用到的 ${img} 没有英文版`);
+  }
+  for (const l of ["zh_CN", "zh_TW", "es"]) assert.equal(rawSet(fileURLToPath(DIR), l), null);
 });

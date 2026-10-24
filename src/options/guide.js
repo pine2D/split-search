@@ -1,7 +1,8 @@
 // 触发网址：默认组合一条 + 自选组合生成器。分步引导和注意事项是 options.html 里的静态文字。
 import { buildTriggerTemplate } from "../lib/trigger.js";
-import { h, copyButton, authButton, option } from "./ui.js";
+import { h, ht, copyButton, authButton, option } from "./ui.js";
 import { canBeLeft } from "./edits.js";
+import { t } from "../chrome/i18n.js";
 
 const SETTINGS_URL = "chrome://settings/searchEngines";
 
@@ -9,7 +10,7 @@ let gen = null; // 生成器当前选择 [leftId, rightId]，跨重渲染保留
 
 export function setupGuide() {
   const slot = document.getElementById("settings-url-copy");
-  slot.replaceChildren(copyButton(() => SETTINGS_URL, "复制地址"));
+  slot.replaceChildren(copyButton(() => SETTINGS_URL, ["guide_copy_settings_url"]));
 }
 
 function triggerOf(left, right) {
@@ -38,12 +39,11 @@ export function renderTriggers(ctx) {
   const defUrl = dl && dr ? triggerOf(dl, dr) : null;
   frag.append(h("div", { class: "trigger-card trigger-default" },
     h("div", { class: "trigger-head" },
-      h("span", { class: "tag tag-accent" }, "默认组合"),
-      h("strong", null, dl && dr ? `${dl.name} ｜ ${dr.name}` : "（默认组合无效）")),
-    defUrl ? urlBox(defUrl) : h("p", { class: "hint hint-error" }, "无法生成触发网址，请检查默认组合的左侧引擎。"),
+      ht("span", { class: "tag tag-accent" }, "guide_default_tag"),
+      dl && dr ? ht("strong", null, "guide_pair_label", dl.name, dr.name) : ht("strong", null, "guide_pair_invalid")),
+    defUrl ? urlBox(defUrl) : ht("p", { class: "hint hint-error" }, "guide_no_trigger"),
     defUrl && dl.leftDiscouraged && leftWarn(dl),
-    h("p", { class: "hint" },
-      "按下方步骤添加为网站搜索后，在该条目的 ⋮ 菜单里选“设为默认”。之后地址栏直接搜索、拖拽文字到标签栏都会分屏。")));
+    ht("p", { class: "hint" }, "guide_default_hint")));
 
   // 自选组合
   const lefts = cfg.engines.filter(canBeLeft);
@@ -55,7 +55,7 @@ export function renderTriggers(ctx) {
   }
   const out = h("div", { class: "gen-output" });
   const leftSel = h("select", { id: "gen-left" },
-    lefts.map(e => option(e.id, e.leftDiscouraged ? `${e.name}（建议作右侧）` : e.name, e.id === gen[0])));
+    lefts.map(e => option(e.id, e.leftDiscouraged ? t("engine_left_discouraged_suffix", e.name) : e.name, e.id === gen[0])));
   const rightSel = h("select", { id: "gen-right" }, rights.map(e => option(e.id, e.name, e.id === gen[1])));
   const update = () => {
     gen = [leftSel.value, rightSel.value];
@@ -65,14 +65,14 @@ export function renderTriggers(ctx) {
   rightSel.addEventListener("change", update);
 
   frag.append(h("div", { class: "trigger-card" },
-    h("div", { class: "trigger-head" }, h("strong", null, "其他组合")),
-    h("p", { class: "hint" }, "每个组合添加成一条网站搜索，用你自己定的快捷字词触发，例如在地址栏输入“kg 关键词”。"),
+    h("div", { class: "trigger-head" }, ht("strong", null, "guide_other_pairs_title")),
+    ht("p", { class: "hint" }, "guide_pair_shortcut_hint", t("guide_example_shortcut_query")),
     lefts.length
       ? h("div", { class: "pair-pickers" },
-          h("label", null, h("span", null, "左侧"), leftSel),
-          h("span", { class: "pair-sep", "aria-hidden": "true" }, "｜"),
-          h("label", null, h("span", null, "右侧"), rightSel))
-      : h("p", { class: "hint hint-error" }, "没有可作左侧的引擎。"),
+          h("label", null, ht("span", null, "common_left"), leftSel),
+          ht("span", { class: "pair-sep", "aria-hidden": "true" }, "common_pair_separator"),
+          h("label", null, ht("span", null, "common_right"), rightSel))
+      : ht("p", { class: "hint hint-error" }, "guide_no_left"),
     out));
   if (lefts.length) update();
   return frag;
@@ -81,13 +81,13 @@ export function renderTriggers(ctx) {
 function genOutput(left, right, granted, refresh) {
   if (!left || !right) return [];
   const url = triggerOf(left, right);
-  if (!url) return [h("p", { class: "hint hint-error" }, `${left.name} 不能作为左侧引擎。`)];
+  if (!url) return [ht("p", { class: "hint hint-error" }, "guide_not_left", left.name)];
   const nodes = [urlBox(url)];
   if (left.leftDiscouraged) nodes.push(leftWarn(left));
   if (granted.get(left.id) !== true) {
     nodes.push(h("div", { class: "callout callout-warn" },
-      h("span", null, `左侧 ${left.name} 还没授权，这个组合不会分屏，只会打开普通的 ${left.name} 搜索。`),
-      authButton([left, right], `授权 ${left.name}`, { cls: "btn btn-small btn-attention", onDone: refresh })));
+      ht("span", null, "guide_left_not_granted", left.name),
+      authButton([left, right], ["engine_grant_named", left.name], { cls: "btn btn-small btn-attention", onDone: refresh })));
   }
   return nodes;
 }
@@ -95,5 +95,5 @@ function genOutput(left, right, granted, refresh) {
 // 预置里标了 leftDiscouraged 的引擎（如 Perplexity）作左侧：站点 Service Worker 接管跳转，扩展收不到触发
 function leftWarn(e) {
   return h("div", { class: "callout callout-warn" },
-    h("span", null, `${e.name} 建议只作右侧：它的网站用 Service Worker 接管页面跳转，作左侧时通常只会打开普通的 ${e.name} 搜索、不分屏。作右侧不受影响。`));
+    ht("span", null, "guide_left_discouraged", e.name));
 }

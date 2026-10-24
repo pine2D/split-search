@@ -1,0 +1,824 @@
+{
+  "ext_description": {
+    "message": "Search from the address bar or drag text to the tab strip to compare two search engines side by side in Chrome’s split view.",
+    "description": "Extension description shown in the Chrome Web Store and chrome://extensions."
+  },
+  "ext_action_title": {
+    "message": "Split Search settings",
+    "description": "Tooltip of the toolbar button."
+  },
+  "go_status_opening": {
+    "message": "Opening split view…",
+    "description": "Status line on the trigger page while the split view is being opened (shown only for a moment)."
+  },
+  "go_status_failed": {
+    "message": "Couldn’t open split view",
+    "description": "Status line on the trigger page when the split view could not be opened; an error box with the reason follows."
+  },
+  "go_status_kept": {
+    "message": "The results are open in a new split view to the right. You can close this tab.",
+    "description": "Status line on the trigger page after the results were opened in a new split view next to the current one and this tab could not close itself; tells the user they may close the page."
+  },
+  "go_status_no_repeat": {
+    "message": "This page won’t open the split view again on its own.",
+    "description": "Status line when the user comes back to the trigger page via Back, Forward or reload: the page does not open the split view again by itself (a Run again button is offered)."
+  },
+  "go_btn_rerun": {
+    "message": "Run again",
+    "description": "Button on the trigger page that runs the split search again after Back/Forward/reload."
+  },
+  "go_btn_left_only": {
+    "message": "Search with the left engine only",
+    "description": "Button on the trigger page error screen: open only the left engine's search (a normal search, no split view)."
+  },
+  "go_btn_open_options": {
+    "message": "Open settings",
+    "description": "Button in the trigger page error box that opens the extension's settings page."
+  },
+  "go_err_no_trigger": {
+    "message": "No trigger URL was received. Start a search from the address bar or by dragging text. Don’t open this page directly.",
+    "description": "Error on the trigger page when it was opened without a trigger URL (e.g. typed directly); the user should start a search from the address bar or by drag-and-drop instead."
+  },
+  "go_err_config_unreadable": {
+    "message": "Couldn’t read the settings, and the trigger URL isn’t recognized.",
+    "description": "Error on the trigger page: the settings could not be read and the trigger URL is not a usable http(s) URL, so not even the left search can be opened."
+  },
+  "go_err_bad_template": {
+    "message": "The URL template for $ENGINE$ is invalid. Check it on the settings page.",
+    "description": "Error on the trigger page: the left engine's URL template is invalid; the user should check it on the settings page. The placeholder is the engine name (not translated).",
+    "placeholders": {
+      "ENGINE": {
+        "content": "$1",
+        "example": "Google"
+      }
+    }
+  },
+  "engine_tpl_ok": {
+    "message": "Can be used on the left or right",
+    "description": "Live hint under the URL template field in the engine dialog: the template can be used on either side of the split view."
+  },
+  "engine_tpl_right_only": {
+    "message": "Right side only. A URL on the left needs a lowercase %s exactly once, as the whole value of a query parameter (e.g. ?q=%s). That parameter name can appear only once, and the URL can’t contain #.",
+    "description": "Live hint under the URL template field: the template can only be used on the right side. Contains the full 'can be left side' rule; keep the rule wording identical to err_default_left_url. Do not translate %s, ?q=%s or #."
+  },
+  "err_bad_url": {
+    "message": "Invalid URL",
+    "description": "Error: the URL (template or trigger URL) cannot be parsed."
+  },
+  "err_tpl_no_placeholder": {
+    "message": "The URL must contain a lowercase %s",
+    "description": "Error in the URL template field: the template lacks the lowercase %s placeholder. Do not translate %s."
+  },
+  "err_tpl_bad_scheme": {
+    "message": "The URL must start with http:// or https://",
+    "description": "Error in the URL template field: the template does not use http or https."
+  },
+  "err_tpl_no_host": {
+    "message": "The URL has no domain",
+    "description": "Error in the URL template field: the template has no host name."
+  },
+  "err_tpl_wildcard_host": {
+    "message": "The domain can’t contain *. Enter the site’s actual address.",
+    "description": "Error in the URL template field: the host name contains a * wildcard."
+  },
+  "err_tpl_ipv6": {
+    "message": "IPv6 addresses aren’t supported. Use a domain name instead.",
+    "description": "Error in the URL template field: the host is an IPv6 address literal."
+  },
+  "err_tpl_reserved_param": {
+    "message": "The URL can’t contain _ss. It’s a reserved parameter.",
+    "description": "Error in the URL template field: the template contains the reserved _ss parameter. Do not translate _ss."
+  },
+  "err_marker_format": {
+    "message": "The marker parameter is malformed",
+    "description": "Error page after a search: the _ss marker parameter in the trigger URL is malformed."
+  },
+  "err_unknown_engine": {
+    "message": "Unknown engine: $ENGINE_ID$",
+    "description": "Error page after a search: the trigger URL names an engine id that does not exist (deleted or hidden).",
+    "placeholders": {
+      "ENGINE_ID": {
+        "content": "$1",
+        "example": "baidu"
+      }
+    }
+  },
+  "err_not_left": {
+    "message": "$ENGINE$ can’t be used as the left engine",
+    "description": "Error: the named engine's URL template cannot be used as the left side of a split view.",
+    "placeholders": {
+      "ENGINE": {
+        "content": "$1",
+        "example": "Wikipedia"
+      }
+    }
+  },
+  "err_template_mismatch": {
+    "message": "The trigger URL doesn’t match the current template. Copy it again from the settings page.",
+    "description": "Error page after a search: the trigger URL no longer matches the left engine's current template; the user must copy the trigger URL again from the settings page."
+  },
+  "err_config_too_large": {
+    "message": "Settings too large to save: $KEY$",
+    "description": "Error when saving settings: one stored item exceeds chrome.storage.sync's per-item size limit. The placeholder is an internal storage key name (not translated).",
+    "placeholders": {
+      "KEY": {
+        "content": "$1",
+        "example": "customEngines"
+      }
+    }
+  },
+  "err_name_required": {
+    "message": "Enter a name",
+    "description": "Error in the engine dialog: the name field is empty."
+  },
+  "err_name_too_long": {
+    "message": "The name can’t be longer than $MAX$ characters",
+    "description": "Error in the engine dialog: the name is longer than the maximum number of characters.",
+    "placeholders": {
+      "MAX": {
+        "content": "$1",
+        "example": "40"
+      }
+    }
+  },
+  "err_id_format": {
+    "message": "The id must be 1 to 20 characters: lowercase letters, digits or -",
+    "description": "Error in the engine dialog: the engine id has invalid characters or length."
+  },
+  "err_id_taken": {
+    "message": "The id “$ID$” is already taken. Choose another one.",
+    "description": "Error in the engine dialog: another engine already uses this id.",
+    "placeholders": {
+      "ID": {
+        "content": "$1",
+        "example": "baidu"
+      }
+    }
+  },
+  "err_engine_gone": {
+    "message": "This engine no longer exists. It may have been deleted on another device.",
+    "description": "Error in the engine dialog: the engine being edited no longer exists (probably deleted on another synced device)."
+  },
+  "err_default_left_url": {
+    "message": "Can’t save: this engine is on the left of the default pair, and the new URL can’t be used on the left. A URL on the left needs a lowercase %s exactly once, as the whole value of a query parameter (e.g. ?q=%s). That parameter name can appear only once, and the URL can’t contain #. To use this URL anyway, first put a different engine on the left of the default pair.",
+    "description": "Error in the engine dialog: the engine is the left side of the default pair and the new URL cannot be a left side. Contains the full 'can be left side' rule; keep the rule wording identical to engine_tpl_right_only. Do not translate %s, ?q=%s or #."
+  },
+  "err_only_preset_hide": {
+    "message": "Only built-in engines can be hidden",
+    "description": "Error: only preset engines can be hidden."
+  },
+  "err_pair_uses_hide": {
+    "message": "The default pair uses this engine, so it can’t be hidden",
+    "description": "Error: the engine cannot be hidden because the default pair uses it."
+  },
+  "err_only_custom_delete": {
+    "message": "Only custom engines can be deleted",
+    "description": "Error: only custom engines can be deleted."
+  },
+  "err_pair_uses_delete": {
+    "message": "The default pair uses this engine, so it can’t be deleted",
+    "description": "Error: the engine cannot be deleted because the default pair uses it."
+  },
+  "err_pair_missing": {
+    "message": "A selected engine no longer exists. It may have been deleted or hidden.",
+    "description": "Error when setting the default pair: a selected engine no longer exists (deleted or hidden)."
+  },
+  "err_quota_rate": {
+    "message": "You’re saving too often. Try again in a moment.",
+    "description": "Error when saving settings: chrome.storage.sync write rate limit reached."
+  },
+  "err_quota_bytes": {
+    "message": "Sync storage is full. Delete some custom engines or shorten names and URLs, then try again.",
+    "description": "Error when saving settings: chrome.storage.sync total storage quota is full."
+  },
+  "options_title": {
+    "message": "Split Search settings",
+    "description": "Settings page title: browser tab title and the page heading. Keep the product name Split Search untranslated."
+  },
+  "options_tagline": {
+    "message": "Search from the address bar, or drag text to the tab strip, and get results from two search engines at once in Chrome’s split view.",
+    "description": "One-line summary under the settings page heading."
+  },
+  "options_pair_title": {
+    "message": "Default pair",
+    "description": "Heading of the settings card where the user picks the default engine pair (left and right engine)."
+  },
+  "options_pair_hint": {
+    "message": "Only engines tagged “Left or right” can go on the left. After you change the default pair, add the new trigger URL to Chrome and make it default. Until you do, Chrome keeps using the old one.",
+    "description": "Hint in the default pair card. \"Can be left\" refers to the engine tag engine_tag_left_ok; keep the same wording."
+  },
+  "options_guide_title": {
+    "message": "Add to Chrome",
+    "description": "Heading of the settings card that explains how to add the trigger URL to Chrome as a site search."
+  },
+  "guide_steps_title": {
+    "message": "Setup",
+    "description": "Subheading above the numbered setup steps."
+  },
+  "guide_step_open_settings": {
+    "message": "Open Chrome’s search engine settings. Web pages can’t open this address directly, so copy it and paste it into the address bar:",
+    "description": "Setup step 1. The address chrome://settings/searchEngines and a Copy button follow right after this sentence, so it ends with a colon."
+  },
+  "guide_copy_settings_url": {
+    "message": "Copy address",
+    "description": "Button next to chrome://settings/searchEngines in setup step 1: copies that address."
+  },
+  "guide_step_add": {
+    "message": "Under “Site search”, click “Add”.",
+    "description": "Setup step 2. \"Site search\" and \"Add\" must match Chrome's own labels on chrome://settings/searchEngines in this language."
+  },
+  "guide_step_fields": {
+    "message": "Enter any name (e.g. “Google | Bing”) and a shortcut of your choice (e.g. $KEYWORD$). In “URL with %s in place of query”, paste the trigger URL you copied above. Then save.",
+    "description": "Setup step 3: what to type into Chrome's site search dialog. \"Shortcut\" must match Chrome's label. The placeholder becomes the example shortcut (guide_example_keyword) shown as code.",
+    "placeholders": {
+      "KEYWORD": {
+        "content": "$1",
+        "example": "gb"
+      }
+    }
+  },
+  "guide_example_keyword": {
+    "message": "gb",
+    "description": "Example site search shortcut for a Google | Bing pair, shown as code in setup step 3. Pick a short, natural shortcut for this language; ASCII letters only."
+  },
+  "guide_step_default": {
+    "message": "For the default pair, open the ⋮ menu next to the new entry and choose “Make default”. Other pairs don’t need to be the default. To use one, type “shortcut + space + search terms” in the address bar.",
+    "description": "Setup step 4. \"Make default\" and \"shortcut\" must match Chrome's labels; ⋮ is the More actions menu icon."
+  },
+  "guide_step_grant": {
+    "message": "Make sure the left engine shows “Access granted” in the engine list.",
+    "description": "Setup step 5. The quoted status must match engine_granted."
+  },
+  "guide_caveats_title": {
+    "message": "Things to know",
+    "description": "Subheading above the list of caveats."
+  },
+  "guide_caveat_degrade": {
+    "message": "In these cases the trigger URL runs a normal search on the left engine and no split view opens: on other computers and phones that sync these search settings, in Incognito windows, when the extension is disabled or its access is revoked, and when the engine’s own Service Worker takes over navigation.",
+    "description": "Caveat: cases where the trigger URL falls back to a plain search with the left engine. Keep Service Worker untranslated."
+  },
+  "guide_caveat_no_suggest": {
+    "message": "Site searches you add yourself have no suggestion URL, so while one is your default, the address bar shows no search suggestions.",
+    "description": "Caveat: a user-added site search has no suggestion URL, so the address bar shows no search suggestions once it is the default."
+  },
+  "guide_caveat_context_menu": {
+    "message": "Chrome’s right-click item, Search [engine] for “…”, also goes through the trigger URL and opens a split view.",
+    "description": "Caveat: the right-click menu item \"Search X for …\" also uses the trigger URL and opens the split view. Match Chrome's wording of that menu item; X stands for the search engine name."
+  },
+  "guide_caveat_sync": {
+    "message": "Chrome syncs your search engine settings to all your devices, but site access doesn’t sync. Grant access on this page on each device.",
+    "description": "Caveat: Chrome syncs search engine settings to all devices but site access granted to the extension does not sync."
+  },
+  "guide_caveat_template_change": {
+    "message": "After you change an engine’s URL, copy the trigger URL again for site searches that use it on the left.",
+    "description": "Caveat: after changing an engine's URL, site searches that use it on the left must be copied again."
+  },
+  "guide_caveat_remove": {
+    "message": "Before you delete or hide an engine, delete the Chrome site searches that use it. Otherwise, the ones with it on the left fall back to a normal search, and the ones with it on the right stop at an “Unknown engine” error page.",
+    "description": "Caveat: delete Chrome site searches that use an engine before deleting or hiding it. \"Unknown engine\" refers to err_unknown_engine. Same text as the second paragraph of engine_confirm_hide / engine_confirm_delete."
+  },
+  "options_engines_title": {
+    "message": "Search engines",
+    "description": "Heading of the settings card with the engine list."
+  },
+  "options_add_engine": {
+    "message": "Add engine",
+    "description": "Button that opens the dialog for adding a custom search engine."
+  },
+  "options_engines_hint": {
+    "message": "In a URL template, $CODE$ stands for the search terms. Split Search needs access to the left engine’s site; for the right engine, access is recommended. The order here is the order in the drop-down menus.",
+    "description": "Hint under the engine list heading. The placeholder is %s shown as code.",
+    "placeholders": {
+      "CODE": {
+        "content": "$1",
+        "example": "%s"
+      }
+    }
+  },
+  "options_hidden_title": {
+    "message": "Hidden built-in engines",
+    "description": "Subheading above the list of hidden preset engines."
+  },
+  "options_dlg_title_add": {
+    "message": "Add engine",
+    "description": "Engine dialog title when adding a new engine."
+  },
+  "options_dlg_title_edit": {
+    "message": "Edit engine: $NAME$",
+    "description": "Engine dialog title when editing an engine. The placeholder is the engine name (not translated).",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "Google"
+      }
+    }
+  },
+  "options_dlg_id_hint_add": {
+    "message": "Lowercase letters, digits and -, 1 to 20 characters. It goes into the trigger URL, so you can’t change it later.",
+    "description": "Hint under the id field when adding an engine: allowed characters and length; the id cannot be changed later because it is written into the trigger URL."
+  },
+  "options_dlg_id_hint_edit": {
+    "message": "The id can’t be changed after the engine is created (it’s part of the site search URLs you saved).",
+    "description": "Hint under the read-only id field when editing an engine. Keep \"id\" as is."
+  },
+  "options_dlg_id_placeholder": {
+    "message": "e.g. ecosia",
+    "description": "Placeholder of the id field: \"e.g.\" plus an example id. Use the id of a search engine common in this language's market; lowercase letters, digits and - only, and it must match options_dlg_url_placeholder."
+  },
+  "options_dlg_name_label": {
+    "message": "Name",
+    "description": "Label of the engine name field."
+  },
+  "options_dlg_name_placeholder": {
+    "message": "e.g. Ecosia",
+    "description": "Placeholder of the name field: \"e.g.\" plus the name of the engine used in options_dlg_id_placeholder."
+  },
+  "options_dlg_url_label": {
+    "message": "URL template",
+    "description": "Label of the URL template field."
+  },
+  "options_dlg_url_placeholder": {
+    "message": "https://www.ecosia.org/search?q=%s",
+    "description": "Placeholder of the URL template field: the search URL of the engine in options_dlg_id_placeholder with %s as the query. It must be usable as the left engine: lowercase %s once, as the full value of a query parameter, no #."
+  },
+  "options_dlg_preset_hint": {
+    "message": "Built-in values: $NAME$, $URL$ (change both back to restore the built-in engine)",
+    "description": "Hint when editing a preset engine: shows its built-in name and URL; setting both back restores the preset.",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "Google"
+      },
+      "URL": {
+        "content": "$2",
+        "example": "https://www.google.com/search?q=%s"
+      }
+    }
+  },
+  "options_dlg_edit_hint": {
+    "message": "If you change the URL, copy the trigger URL again for Chrome site searches that use this engine on the left.",
+    "description": "Hint in the edit dialog: after changing the URL, site searches saved in Chrome that use this engine on the left must be copied again."
+  },
+  "common_cancel": {
+    "message": "Cancel",
+    "description": "Cancel button."
+  },
+  "common_save": {
+    "message": "Save",
+    "description": "Save button."
+  },
+  "common_close": {
+    "message": "Close",
+    "description": "Accessible label of the × button that closes a notice."
+  },
+  "common_copy": {
+    "message": "Copy",
+    "description": "Copy button next to a URL."
+  },
+  "common_copied": {
+    "message": "Copied",
+    "description": "Copy button text for 1.5 seconds after copying succeeded."
+  },
+  "common_left": {
+    "message": "Left",
+    "description": "Label of the left engine picker."
+  },
+  "common_right": {
+    "message": "Right",
+    "description": "Label of the right engine picker."
+  },
+  "common_pair_separator": {
+    "message": "|",
+    "description": "Decorative separator between the left and right engine pickers; same mark as in guide_pair_label. Hidden from screen readers."
+  },
+  "notice_copy_failed": {
+    "message": "Couldn’t copy. Select the text and copy it yourself ($DETAIL$)",
+    "description": "Error notice when copying to the clipboard failed. The placeholder is the browser's error message.",
+    "placeholders": {
+      "DETAIL": {
+        "content": "$1",
+        "example": "Document is not focused."
+      }
+    }
+  },
+  "notice_grant_failed": {
+    "message": "Couldn’t grant access: $DETAIL$",
+    "description": "Error notice when the site access request failed. The placeholder is the error message.",
+    "placeholders": {
+      "DETAIL": {
+        "content": "$1",
+        "example": "Permission request failed."
+      }
+    }
+  },
+  "notice_granted": {
+    "message": "Access granted",
+    "description": "Notice after the user allowed site access."
+  },
+  "notice_grant_denied": {
+    "message": "Access not granted: the request was denied or the prompt was closed",
+    "description": "Warning notice when the site access prompt was denied or dismissed."
+  },
+  "engine_list_empty": {
+    "message": "No engines available",
+    "description": "Shown in place of the engine list when it is empty."
+  },
+  "engine_tag_left_ok": {
+    "message": "Left or right",
+    "description": "Tag on an engine row: the engine can be used on the left side."
+  },
+  "engine_tag_right_only": {
+    "message": "Right only",
+    "description": "Tag on an engine row: the engine can only be used on the right side."
+  },
+  "engine_tag_default_left": {
+    "message": "Default left",
+    "description": "Tag on the engine row that is the left side of the default pair."
+  },
+  "engine_tag_default_right": {
+    "message": "Default right",
+    "description": "Tag on the engine row that is the right side of the default pair."
+  },
+  "engine_tag_custom": {
+    "message": "Custom",
+    "description": "Tag on a user-added (custom) engine row."
+  },
+  "engine_granted": {
+    "message": "Access granted",
+    "description": "Status on an engine row: the extension has access to the engine's site."
+  },
+  "engine_not_granted_required": {
+    "message": "Needs access",
+    "description": "Status on the default left engine's row when its site is not granted; access is required."
+  },
+  "engine_not_granted": {
+    "message": "No access",
+    "description": "Status on an engine row when its site is not granted."
+  },
+  "engine_grant": {
+    "message": "Grant access",
+    "description": "Button on an engine row that asks Chrome for access to the engine's site."
+  },
+  "engine_grant_named": {
+    "message": "Grant access to $NAME$",
+    "description": "Button that asks Chrome for access to the named engine's site.",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "Google"
+      }
+    }
+  },
+  "engine_in_pair_title": {
+    "message": "The default pair uses this engine",
+    "description": "Tooltip of the disabled Hide/Delete button: the default pair uses this engine."
+  },
+  "engine_hide": {
+    "message": "Hide",
+    "description": "Button on a preset engine row that hides it."
+  },
+  "engine_delete": {
+    "message": "Delete",
+    "description": "Button on a custom engine row that deletes it."
+  },
+  "engine_edit": {
+    "message": "Edit",
+    "description": "Button on an engine row that opens the edit dialog."
+  },
+  "engine_restore": {
+    "message": "Restore",
+    "description": "Button on a hidden preset engine that shows it again."
+  },
+  "engine_left_discouraged_hint": {
+    "message": "Better on the right: this site’s Service Worker may take over navigation, so on the left the split view might not open.",
+    "description": "Warning on an engine row (e.g. Perplexity): its site's Service Worker may take over navigation, so as the left engine the split view may not open. Keep Service Worker untranslated."
+  },
+  "engine_move_up": {
+    "message": "Move up",
+    "description": "Tooltip of the ↑ button that moves an engine up in the list."
+  },
+  "engine_move_up_label": {
+    "message": "Move $NAME$ up",
+    "description": "Accessible label of the ↑ button. The placeholder is the engine name.",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "Google"
+      }
+    }
+  },
+  "engine_move_down": {
+    "message": "Move down",
+    "description": "Tooltip of the ↓ button that moves an engine down in the list."
+  },
+  "engine_move_down_label": {
+    "message": "Move $NAME$ down",
+    "description": "Accessible label of the ↓ button. The placeholder is the engine name.",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "Google"
+      }
+    }
+  },
+  "engine_hidden_empty": {
+    "message": "No built-in engines are hidden.",
+    "description": "Shown when no preset engine is hidden."
+  },
+  "engine_confirm_hide": {
+    "message": "Hide “$NAME$”?\n\nBefore you delete or hide an engine, delete the Chrome site searches that use it. Otherwise, the ones with it on the left fall back to a normal search, and the ones with it on the right stop at an “Unknown engine” error page.",
+    "description": "Confirmation dialog before hiding a preset engine. Keep the blank line (\\n\\n). The second paragraph is the same text as guide_caveat_remove.",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "Bing"
+      }
+    }
+  },
+  "engine_confirm_delete": {
+    "message": "Delete “$NAME$”?\n\nBefore you delete or hide an engine, delete the Chrome site searches that use it. Otherwise, the ones with it on the left fall back to a normal search, and the ones with it on the right stop at an “Unknown engine” error page.",
+    "description": "Confirmation dialog before deleting a custom engine. Keep the blank line (\\n\\n). The second paragraph is the same text as guide_caveat_remove.",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "Baidu"
+      }
+    }
+  },
+  "engine_left_discouraged_suffix": {
+    "message": "$NAME$ (better on the right)",
+    "description": "Option in the left engine picker of the pair generator for an engine better used on the right (e.g. Perplexity). The placeholder is the engine name.",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "Perplexity"
+      }
+    }
+  },
+  "guide_default_tag": {
+    "message": "Default pair",
+    "description": "Tag on the trigger URL card for the default pair."
+  },
+  "guide_pair_label": {
+    "message": "$LEFT$ | $RIGHT$",
+    "description": "Name of an engine pair on the trigger URL card: left engine, a separator, right engine.",
+    "placeholders": {
+      "LEFT": {
+        "content": "$1",
+        "example": "Google"
+      },
+      "RIGHT": {
+        "content": "$2",
+        "example": "Bing"
+      }
+    }
+  },
+  "guide_pair_invalid": {
+    "message": "(invalid default pair)",
+    "description": "Shown on the trigger URL card instead of the pair name when the default pair is invalid."
+  },
+  "guide_no_trigger": {
+    "message": "Can’t create a trigger URL. Check the left engine of the default pair.",
+    "description": "Error on the trigger URL card when no trigger URL can be built for the default pair."
+  },
+  "guide_default_hint": {
+    "message": "Add it as a site search using the steps below, then choose “Make default” from the entry’s ⋮ menu. After that, searching from the address bar or dragging text to the tab strip opens a split view.",
+    "description": "Hint on the default pair card. \"Make default\" must match Chrome's label; ⋮ is the More actions menu icon."
+  },
+  "guide_other_pairs_title": {
+    "message": "Other pairs",
+    "description": "Title of the card that generates trigger URLs for other engine pairs."
+  },
+  "guide_pair_shortcut_hint": {
+    "message": "Add each pair as its own site search and start it with a shortcut you pick, for example by typing “$EXAMPLE$” in the address bar.",
+    "description": "Hint on the other pairs card. The placeholder is guide_example_shortcut_query.",
+    "placeholders": {
+      "EXAMPLE": {
+        "content": "$1",
+        "example": "kg 关键词"
+      }
+    }
+  },
+  "guide_example_shortcut_query": {
+    "message": "kg search terms",
+    "description": "Example of what to type in the address bar: a shortcut for a Kagi | Bing pair, a space, then the search words (the word for \"keywords\" in this language)."
+  },
+  "guide_no_left": {
+    "message": "No engine can be used on the left.",
+    "description": "Shown in the pair generator when no engine can be used on the left."
+  },
+  "guide_not_left": {
+    "message": "$NAME$ can’t be used as the left engine.",
+    "description": "Shown in the pair generator when the chosen left engine cannot be used on the left.",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "Wikipedia"
+      }
+    }
+  },
+  "guide_left_not_granted": {
+    "message": "Split Search can’t access the left engine, $NAME$, yet, so this pair opens a normal $NAME$ search instead of a split view.",
+    "description": "Warning in the pair generator: the left engine's site is not granted, so this pair opens a plain search instead of a split view.",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "Kagi"
+      }
+    }
+  },
+  "guide_left_discouraged": {
+    "message": "$NAME$ is better on the right. Its site uses a Service Worker to take over navigation, so on the left you usually get a normal $NAME$ search instead of a split view. On the right it isn’t affected.",
+    "description": "Warning when an engine like Perplexity is the left side of a pair. Keep Service Worker untranslated.",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "Perplexity"
+      }
+    }
+  },
+  "notice_action_failed": {
+    "message": "Something went wrong",
+    "description": "Fallback error notice when an action failed without a known reason."
+  },
+  "notice_save_failed": {
+    "message": "Couldn’t save: $DETAIL$",
+    "description": "Error when saving settings failed. The placeholder is the reason (another message or a browser error).",
+    "placeholders": {
+      "DETAIL": {
+        "content": "$1",
+        "example": "QUOTA_BYTES quota exceeded"
+      }
+    }
+  },
+  "notice_added": {
+    "message": "“$NAME$” added.",
+    "description": "Notice after adding an engine.",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "Baidu"
+      }
+    }
+  },
+  "notice_saved": {
+    "message": "“$NAME$” saved.",
+    "description": "Notice after saving changes to an engine.",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "Baidu"
+      }
+    }
+  },
+  "notice_needs_grant": {
+    "message": "Split Search doesn’t have access to its site yet. Click the highlighted “Grant access” button in its row.",
+    "description": "Sentence shown right after notice_added / notice_saved when the engine's site is not granted yet. The quoted button is engine_grant."
+  },
+  "notice_template_changed": {
+    "message": "The URL of “$NAME$” changed. Site searches that use it on the left need a new trigger URL: copy it again from this page, then replace the URL of that site search in Chrome’s settings.",
+    "description": "Sticky notice after an engine's URL changed: site searches that use it on the left must be copied again and replaced in Chrome's settings.",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "Baidu"
+      }
+    }
+  },
+  "notice_hidden": {
+    "message": "“$NAME$” hidden",
+    "description": "Notice after hiding a preset engine.",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "Bing"
+      }
+    }
+  },
+  "notice_deleted": {
+    "message": "“$NAME$” deleted",
+    "description": "Notice after deleting a custom engine.",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "Baidu"
+      }
+    }
+  },
+  "notice_restored": {
+    "message": "“$NAME$” restored",
+    "description": "Notice after restoring a hidden preset engine.",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "Bing"
+      }
+    }
+  },
+  "notice_order_save_failed": {
+    "message": "Couldn’t save the order: $DETAIL$",
+    "description": "Error when saving the engine order failed. The placeholder is the reason.",
+    "placeholders": {
+      "DETAIL": {
+        "content": "$1",
+        "example": "QUOTA_BYTES quota exceeded"
+      }
+    }
+  },
+  "notice_load_failed": {
+    "message": "Couldn’t read the settings: $DETAIL$",
+    "description": "Error when the settings could not be read. The placeholder is the reason.",
+    "placeholders": {
+      "DETAIL": {
+        "content": "$1",
+        "example": "Extension context invalidated."
+      }
+    }
+  },
+  "notice_pair_saved": {
+    "message": "Default pair saved. Remember to add the new trigger URL to Chrome and make it default.",
+    "description": "Notice after changing the default pair: the new trigger URL must be added to Chrome and made default."
+  },
+  "options_banner_title": {
+    "message": "One more step: grant access to your search engines’ sites",
+    "description": "Title of the first-run banner asking for site access."
+  },
+  "options_banner_text": {
+    "message": "To open a split view, Split Search intercepts searches sent to the left engine, $LEFT$, so it needs access to that site. With access to the right engine’s site too, it can recognize a split view it opened and update it in place when you search again. Access covers only these two sites.",
+    "description": "Body of the first-run banner: why access to the left (required) and right (recommended) engine sites is needed.",
+    "placeholders": {
+      "LEFT": {
+        "content": "$1",
+        "example": "Google"
+      }
+    }
+  },
+  "options_banner_grant_both": {
+    "message": "Grant access to $LEFT$ (required) and $RIGHT$ (recommended)",
+    "description": "Banner button that requests access to both default engines' sites: left required, right recommended.",
+    "placeholders": {
+      "LEFT": {
+        "content": "$1",
+        "example": "Google"
+      },
+      "RIGHT": {
+        "content": "$2",
+        "example": "Bing"
+      }
+    }
+  },
+  "options_banner_grant_left": {
+    "message": "Grant access to $LEFT$ (required)",
+    "description": "Banner button that requests access to the default left engine's site (required).",
+    "placeholders": {
+      "LEFT": {
+        "content": "$1",
+        "example": "Google"
+      }
+    }
+  },
+  "options_left_not_granted": {
+    "message": "Split Search can’t access the left engine, $NAME$, yet. For now, searches open a normal $NAME$ search instead of a split view.",
+    "description": "Warning in the default pair card: the left engine's site is not granted, so searches open a plain search instead of a split view.",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "Google"
+      }
+    }
+  },
+  "lang_label": {
+    "message": "Language",
+    "description": "Label of the language drop-down at the top of the settings page."
+  },
+  "lang_auto": {
+    "message": "Same as browser (currently $CURRENT$)",
+    "description": "First option of the language drop-down: use the browser's language. The placeholder is the native name of the language the browser currently resolves to (one of the lang_name_* messages).",
+    "placeholders": {
+      "CURRENT": {
+        "content": "$1",
+        "example": "English"
+      }
+    }
+  },
+  "lang_note": {
+    "message": "The toolbar button tooltip and the extension description on chrome://extensions and the Chrome Web Store always follow the browser language. This setting doesn’t change them.",
+    "description": "Note under the language drop-down: the extension description, the toolbar button tooltip, the description on chrome://extensions and the Chrome Web Store listing always follow the browser language, not this choice. Keep chrome://extensions as is."
+  },
+  "lang_name_en": {
+    "message": "English",
+    "description": "Native name of English in the language drop-down (本名，不要翻译): identical in every locale, do not translate."
+  },
+  "lang_name_zh_cn": {
+    "message": "简体中文",
+    "description": "Native name of Simplified Chinese in the language drop-down (本名，不要翻译): identical in every locale, do not translate."
+  },
+  "lang_name_zh_tw": {
+    "message": "繁體中文",
+    "description": "Native name of Traditional Chinese in the language drop-down (本名，不要翻译): identical in every locale, do not translate."
+  },
+  "lang_name_es": {
+    "message": "Español",
+    "description": "Native name of Spanish in the language drop-down (本名，不要翻译): identical in every locale, do not translate."
+  }
+}

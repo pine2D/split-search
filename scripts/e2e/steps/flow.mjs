@@ -7,6 +7,7 @@ import {
 } from "./util.mjs";
 import { T5_RESTART, retrigger, ids, fmt } from "./flow-restart.mjs";
 import { FLOW_STEPS_2 } from "./flow-more.mjs";
+import { msg } from "../i18n.mjs";
 
 const fail = detail => ({ status: "fail", detail });
 
@@ -193,7 +194,7 @@ async function antiReentry(ctx, targetId, how) {
   if (v.old) return { name, status: "skip", detail: "后退时 go.html 从往返缓存（bfcache）恢复，页面脚本没有重新执行，到不了防重入分支（刷新子项已覆盖）" };
   const problems = [];
   if (!v.rerun) problems.push("“重新执行”按钮不可见");
-  if (!v.status.includes("不会自动重复")) problems.push(`状态行应说明不会自动重复，实际“${v.status}”`);
+  if (v.status !== msg("go_status_no_repeat")) problems.push(`状态行应为“${msg("go_status_no_repeat")}”，实际“${v.status}”`);
   const n = splitPairs(await ctx.ext.state()).length;
   if (n) problems.push(`不应产生分屏，实际 ${n} 个`);
   return { name, status: problems.length ? "fail" : "pass",
@@ -228,7 +229,7 @@ const T7 = {
   id: "T7", title: "_ss 写错：停在 go.html 显示错误与“只打开左侧搜索”；刷新/后退不自动分屏", kind: "auto", needs: [],
   async run(ctx) {
     await resetTabs(ctx);
-    const items = [await badMarker(ctx, "ea", "标记参数格式不对"), await badMarker(ctx, "ea,nope", "未知引擎：nope")];
+    const items = [await badMarker(ctx, "ea", msg("err_marker_format")), await badMarker(ctx, "ea,nope", msg("err_unknown_engine", "nope"))];
     // 防重入：在第一个错误页上刷新，再离开后退回来（错误页没出现时这两项无从验证，记跳过）
     const first = items[0];
     for (const how of ["reload", "back"]) {

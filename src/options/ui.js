@@ -1,5 +1,7 @@
 // 设置页的 DOM 小工具。所有文字都用 textContent / 文本节点写入，不用 innerHTML。
 import { engineOrigin } from "../lib/engines.js";
+import { errorKey } from "../lib/errors.js";
+import { t, setI18nText, currentLocale } from "../chrome/i18n.js";
 
 export function h(tag, props, ...children) {
   const el = document.createElement(tag);
@@ -15,6 +17,20 @@ export function h(tag, props, ...children) {
   return el;
 }
 
+// 带 key 的元素：切换语言时 applyI18n 按 data-i18n / data-i18n-args 重写文字
+export function ht(tag, props, key, ...subs) {
+  return h(tag, {
+    ...props,
+    "data-i18n": key,
+    "data-i18n-args": subs.length ? JSON.stringify(subs.map(String)) : null,
+  }, t(key, ...subs));
+}
+
+// 两句各自完整的话放进同一条提示：中文句间不加空格，其他语言加一个空格
+export function joinSentences(...parts) {
+  return parts.join(currentLocale()?.startsWith("zh") ? "" : " ");
+}
+
 function append(el, children) {
   for (const c of children) {
     if (c == null || c === false) continue;
@@ -24,38 +40,34 @@ function append(el, children) {
 }
 
 // 页面右下角的提示。sticky 的提示要手动关闭，用于“需要重新复制”这类必须看到的信息。
+// text 由调用方用 t() 算好；提示不带 data-i18n，切换语言时保持原语言。
 export function notify(text, kind = "ok", { sticky = false } = {}) {
   const box = document.getElementById("notices");
   if (!box) return;
   const close = () => item.remove();
   const item = h("div", { class: `notice notice-${kind}`, role: kind === "error" ? "alert" : "status" },
     h("span", { class: "notice-text" }, text),
-    h("button", { type: "button", class: "notice-close", "aria-label": "关闭", onclick: close }, "×"));
+    h("button", { type: "button", class: "notice-close", "aria-label": t("common_close"), onclick: close }, "×"));
   box.append(item);
   if (!sticky) setTimeout(close, kind === "error" ? 8000 : 3500);
 }
 
-// chrome.storage.sync 的配额错误是英文常量名，翻译成用户看得懂的说明
-const QUOTA_ERRORS = [
-  [/MAX_WRITE_OPERATIONS_PER_(MINUTE|HOUR)/, "保存过于频繁，请稍后再试"],
-  [/QUOTA_BYTES/, "同步存储空间已满，请删除一些自定义引擎或缩短名称和网址后再试"],
-];
-
+// 认得出的错误（错误码、storage.sync 配额常量）按当前语言显示，其余原样显示 message
 export function errorText(err) {
-  const text = err?.message || String(err);
-  for (const [re, zh] of QUOTA_ERRORS) if (re.test(text)) return zh;
-  return text;
+  const key = errorKey(err);
+  return key ? t(...key) : (err?.message ?? String(err));
 }
 
-export function copyButton(getText, label = "复制") {
-  const btn = h("button", { type: "button", class: "btn btn-small" }, label);
+// label 是 LabelSpec：[key, ...subs]
+export function copyButton(getText, label = ["common_copy"]) {
+  const btn = ht("button", { type: "button", class: "btn btn-small" }, ...label);
   btn.addEventListener("click", async () => {
     try {
       await navigator.clipboard.writeText(getText());
-      btn.textContent = "已复制";
-      setTimeout(() => { btn.textContent = label; }, 1500);
+      setI18nText(btn, "common_copied");
+      setTimeout(() => setI18nText(btn, ...label), 1500);
     } catch (err) {
-      notify(`复制失败，请手动选中文字复制（${errorText(err)}）`, "error");
+      notify(t("notice_copy_failed", errorText(err)), "error");
     }
   });
   return btn;
@@ -87,23 +99,24 @@ export async function isGranted(engine) {
 
 // 授权按钮：permissions.request 必须在点击处理函数里同步调用（在任何 await 之前），
 // 否则 Chrome 认为不是用户手势而拒绝。多个引擎在同一次 request 里申请。
+// label 是 LabelSpec：[key, ...subs]
 export function authButton(engines, label, { cls = "btn btn-small", onDone } = {}) {
   const origins = [...new Set(engines.map(originPattern).filter(Boolean))];
-  const btn = h("button", { type: "button", class: cls, disabled: origins.length === 0 }, label);
+  const btn = ht("button", { type: "button", class: cls, disabled: origins.length === 0 }, ...label);
   btn.addEventListener("click", () => {
     let pending;
     try {
       pending = chrome.permissions.request({ origins });
     } catch (err) {
-      notify(`授权失败：${errorText(err)}`, "error");
+      notify(t("notice_grant_failed", errorText(err)), "error");
       return;
     }
     Promise.resolve(pending).then(
       (granted) => {
-        notify(granted ? "授权成功" : "没有授权：弹窗被拒绝或关闭", granted ? "ok" : "warn");
+        notify(t(granted ? "notice_granted" : "notice_grant_denied"), granted ? "ok" : "warn");
         onDone?.(granted);
       },
-      (err) => notify(`授权失败：${errorText(err)}`, "error"),
+      (err) => notify(t("notice_grant_failed", errorText(err)), "error"),
     );
   });
   return btn;

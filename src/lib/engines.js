@@ -1,4 +1,6 @@
 // 预置引擎、模板校验、配置合并。纯逻辑，不得引用 chrome。
+import { fail } from "./errors.js";
+import { normalizeLocalePref } from "./i18n.js";
 
 export const PRESETS = [
   { id: "google", name: "Google", url: "https://www.google.com/search?q=%s" },
@@ -16,23 +18,23 @@ const PLACEHOLDER = "__SS__";
 
 export function validateTemplate(url) {
   if (typeof url !== "string" || !url.includes("%s")) {
-    return { ok: false, error: "网址中必须包含小写 %s" };
+    return fail("tpl_no_placeholder");
   }
   let u;
   try {
     u = new URL(url.replace("%s", PLACEHOLDER));
   } catch {
-    return { ok: false, error: "网址格式不正确" };
+    return fail("bad_url");
   }
   if (u.protocol !== "http:" && u.protocol !== "https:") {
-    return { ok: false, error: "网址必须以 http:// 或 https:// 开头" };
+    return fail("tpl_bad_scheme");
   }
   // 通配域名会让授权变成宽泛的 host 权限；IPv6 字面量会让整条 DNR 规则的 requestDomains 失效
-  if (!u.hostname) return { ok: false, error: "网址缺少域名" };
-  if (u.hostname.includes("*")) return { ok: false, error: "域名不能包含 *，请填写具体的网站地址" };
-  if (u.hostname.startsWith("[")) return { ok: false, error: "不支持 IPv6 地址，请改用域名" };
+  if (!u.hostname) return fail("tpl_no_host");
+  if (u.hostname.includes("*")) return fail("tpl_wildcard_host");
+  if (u.hostname.startsWith("[")) return fail("tpl_ipv6");
   // 右侧模板带 _ss 会让右侧标签再次被重定向到 go.html
-  if (u.searchParams.has("_ss")) return { ok: false, error: "_ss 是保留参数，网址中不能包含它" };
+  if (u.searchParams.has("_ss")) return fail("tpl_reserved_param");
   let leftParam = null;
   const once = url.split("%s").length === 2;
   if (once && !url.includes("#")) {
@@ -89,7 +91,7 @@ export function mergeConfig(stored = {}) {
       else pair = [...DEFAULT_PAIR];
     }
   }
-  return { engines, hidden, defaultPair: pair };
+  return { engines, hidden, defaultPair: pair, uiLocale: normalizeLocalePref(stored.uiLocale) };
 }
 
 export function isIdTaken(id, stored = {}) {

@@ -1,0 +1,824 @@
+{
+  "ext_description": {
+    "message": "在網址列搜尋，或把文字拖曳到分頁列，就能用兩個搜尋引擎開啟 Chrome 分割畫面，左右對照搜尋結果。",
+    "description": "Extension description shown in the Chrome Web Store and chrome://extensions."
+  },
+  "ext_action_title": {
+    "message": "Split Search 設定",
+    "description": "Tooltip of the toolbar button."
+  },
+  "go_status_opening": {
+    "message": "正在開啟分割畫面…",
+    "description": "Status line on the trigger page while the split view is being opened (shown only for a moment)."
+  },
+  "go_status_failed": {
+    "message": "無法開啟分割畫面",
+    "description": "Status line on the trigger page when the split view could not be opened; an error box with the reason follows."
+  },
+  "go_status_kept": {
+    "message": "搜尋結果已在右側新的分割畫面中開啟，這個頁面可以關閉了。",
+    "description": "Status line on the trigger page after the results were opened in a new split view next to the current one and this tab could not close itself; tells the user they may close the page."
+  },
+  "go_status_no_repeat": {
+    "message": "這個頁面不會自動再次開啟分割畫面。",
+    "description": "Status line when the user comes back to the trigger page via Back, Forward or reload: the page does not open the split view again by itself (a Run again button is offered)."
+  },
+  "go_btn_rerun": {
+    "message": "重新執行",
+    "description": "Button on the trigger page that runs the split search again after Back/Forward/reload."
+  },
+  "go_btn_left_only": {
+    "message": "只開啟左側搜尋",
+    "description": "Button on the trigger page error screen: open only the left engine's search (a normal search, no split view)."
+  },
+  "go_btn_open_options": {
+    "message": "開啟設定",
+    "description": "Button in the trigger page error box that opens the extension's settings page."
+  },
+  "go_err_no_trigger": {
+    "message": "沒有收到觸發網址。請從網址列搜尋或拖曳文字進入，不要直接開啟這個頁面。",
+    "description": "Error on the trigger page when it was opened without a trigger URL (e.g. typed directly); the user should start a search from the address bar or by drag-and-drop instead."
+  },
+  "go_err_config_unreadable": {
+    "message": "無法讀取設定，也無法辨識觸發網址。",
+    "description": "Error on the trigger page: the settings could not be read and the trigger URL is not a usable http(s) URL, so not even the left search can be opened."
+  },
+  "go_err_bad_template": {
+    "message": "$ENGINE$ 的網址範本無效，請到設定頁檢查。",
+    "description": "Error on the trigger page: the left engine's URL template is invalid; the user should check it on the settings page. The placeholder is the engine name (not translated).",
+    "placeholders": {
+      "ENGINE": {
+        "content": "$1",
+        "example": "Google"
+      }
+    }
+  },
+  "engine_tpl_ok": {
+    "message": "可放左側或右側",
+    "description": "Live hint under the URL template field in the engine dialog: the template can be used on either side of the split view."
+  },
+  "engine_tpl_right_only": {
+    "message": "只能放右側。要放左側，網址須符合：小寫 %s 剛好出現一次，而且是某個查詢參數的完整值（例如 ?q=%s），該參數名稱只出現一次，網址不含 #",
+    "description": "Live hint under the URL template field: the template can only be used on the right side. Contains the full 'can be left side' rule; keep the rule wording identical to err_default_left_url. Do not translate %s, ?q=%s or #."
+  },
+  "err_bad_url": {
+    "message": "網址格式不正確",
+    "description": "Error: the URL (template or trigger URL) cannot be parsed."
+  },
+  "err_tpl_no_placeholder": {
+    "message": "網址必須包含小寫 %s",
+    "description": "Error in the URL template field: the template lacks the lowercase %s placeholder. Do not translate %s."
+  },
+  "err_tpl_bad_scheme": {
+    "message": "網址必須以 http:// 或 https:// 開頭",
+    "description": "Error in the URL template field: the template does not use http or https."
+  },
+  "err_tpl_no_host": {
+    "message": "網址缺少網域",
+    "description": "Error in the URL template field: the template has no host name."
+  },
+  "err_tpl_wildcard_host": {
+    "message": "網域不能包含 *，請填寫實際的網站網址",
+    "description": "Error in the URL template field: the host name contains a * wildcard."
+  },
+  "err_tpl_ipv6": {
+    "message": "不支援 IPv6 位址，請改用網域",
+    "description": "Error in the URL template field: the host is an IPv6 address literal."
+  },
+  "err_tpl_reserved_param": {
+    "message": "_ss 是保留參數，網址不能包含它",
+    "description": "Error in the URL template field: the template contains the reserved _ss parameter. Do not translate _ss."
+  },
+  "err_marker_format": {
+    "message": "標記參數格式不正確",
+    "description": "Error page after a search: the _ss marker parameter in the trigger URL is malformed."
+  },
+  "err_unknown_engine": {
+    "message": "未知引擎：$ENGINE_ID$",
+    "description": "Error page after a search: the trigger URL names an engine id that does not exist (deleted or hidden).",
+    "placeholders": {
+      "ENGINE_ID": {
+        "content": "$1",
+        "example": "baidu"
+      }
+    }
+  },
+  "err_not_left": {
+    "message": "$ENGINE$ 不能放在左側",
+    "description": "Error: the named engine's URL template cannot be used as the left side of a split view.",
+    "placeholders": {
+      "ENGINE": {
+        "content": "$1",
+        "example": "Wikipedia"
+      }
+    }
+  },
+  "err_template_mismatch": {
+    "message": "觸發網址與目前的範本不一致，請到設定頁重新複製",
+    "description": "Error page after a search: the trigger URL no longer matches the left engine's current template; the user must copy the trigger URL again from the settings page."
+  },
+  "err_config_too_large": {
+    "message": "設定資料過大，無法儲存：$KEY$",
+    "description": "Error when saving settings: one stored item exceeds chrome.storage.sync's per-item size limit. The placeholder is an internal storage key name (not translated).",
+    "placeholders": {
+      "KEY": {
+        "content": "$1",
+        "example": "customEngines"
+      }
+    }
+  },
+  "err_name_required": {
+    "message": "請填寫名稱",
+    "description": "Error in the engine dialog: the name field is empty."
+  },
+  "err_name_too_long": {
+    "message": "名稱不能超過 $MAX$ 個字元",
+    "description": "Error in the engine dialog: the name is longer than the maximum number of characters.",
+    "placeholders": {
+      "MAX": {
+        "content": "$1",
+        "example": "40"
+      }
+    }
+  },
+  "err_id_format": {
+    "message": "id 只能包含小寫字母、數字和 -，長度 1–20",
+    "description": "Error in the engine dialog: the engine id has invalid characters or length."
+  },
+  "err_id_taken": {
+    "message": "id「$ID$」已被使用，請換一個",
+    "description": "Error in the engine dialog: another engine already uses this id.",
+    "placeholders": {
+      "ID": {
+        "content": "$1",
+        "example": "baidu"
+      }
+    }
+  },
+  "err_engine_gone": {
+    "message": "找不到這個引擎，可能已在其他裝置上刪除",
+    "description": "Error in the engine dialog: the engine being edited no longer exists (probably deleted on another synced device)."
+  },
+  "err_default_left_url": {
+    "message": "無法儲存：這個引擎是預設組合的左側，但新網址不能放在左側。要放左側，網址須符合：小寫 %s 剛好出現一次，而且是某個查詢參數的完整值（例如 ?q=%s），該參數名稱只出現一次，網址不含 #。如果確定要用這個網址，請先把預設組合的左側換成其他引擎。",
+    "description": "Error in the engine dialog: the engine is the left side of the default pair and the new URL cannot be a left side. Contains the full 'can be left side' rule; keep the rule wording identical to engine_tpl_right_only. Do not translate %s, ?q=%s or #."
+  },
+  "err_only_preset_hide": {
+    "message": "只有內建引擎可以隱藏",
+    "description": "Error: only preset engines can be hidden."
+  },
+  "err_pair_uses_hide": {
+    "message": "預設組合正在使用這個引擎，無法隱藏",
+    "description": "Error: the engine cannot be hidden because the default pair uses it."
+  },
+  "err_only_custom_delete": {
+    "message": "只有自訂引擎可以刪除",
+    "description": "Error: only custom engines can be deleted."
+  },
+  "err_pair_uses_delete": {
+    "message": "預設組合正在使用這個引擎，無法刪除",
+    "description": "Error: the engine cannot be deleted because the default pair uses it."
+  },
+  "err_pair_missing": {
+    "message": "所選的引擎不存在，可能已刪除或隱藏",
+    "description": "Error when setting the default pair: a selected engine no longer exists (deleted or hidden)."
+  },
+  "err_quota_rate": {
+    "message": "儲存次數太頻繁，請稍後再試",
+    "description": "Error when saving settings: chrome.storage.sync write rate limit reached."
+  },
+  "err_quota_bytes": {
+    "message": "同步儲存空間已滿，請刪除一些自訂引擎，或縮短名稱和網址後再試",
+    "description": "Error when saving settings: chrome.storage.sync total storage quota is full."
+  },
+  "options_title": {
+    "message": "Split Search 設定",
+    "description": "Settings page title: browser tab title and the page heading. Keep the product name Split Search untranslated."
+  },
+  "options_tagline": {
+    "message": "在網址列搜尋，或把文字拖曳到分頁列，一次用兩個搜尋引擎開啟 Chrome 分割畫面。",
+    "description": "One-line summary under the settings page heading."
+  },
+  "options_pair_title": {
+    "message": "預設組合",
+    "description": "Heading of the settings card where the user picks the default engine pair (left and right engine)."
+  },
+  "options_pair_hint": {
+    "message": "左側只能選「可放左側」的引擎。變更預設組合後，要把新的觸發網址新增到 Chrome 並設為預設，才會取代舊的那一筆。",
+    "description": "Hint in the default pair card. \"Can be left\" refers to the engine tag engine_tag_left_ok; keep the same wording."
+  },
+  "options_guide_title": {
+    "message": "新增到 Chrome",
+    "description": "Heading of the settings card that explains how to add the trigger URL to Chrome as a site search."
+  },
+  "guide_steps_title": {
+    "message": "設定步驟",
+    "description": "Subheading above the numbered setup steps."
+  },
+  "guide_step_open_settings": {
+    "message": "開啟 Chrome 的搜尋引擎設定。網頁無法直接開啟這個網址，請複製後貼到網址列：",
+    "description": "Setup step 1. The address chrome://settings/searchEngines and a Copy button follow right after this sentence, so it ends with a colon."
+  },
+  "guide_copy_settings_url": {
+    "message": "複製網址",
+    "description": "Button next to chrome://settings/searchEngines in setup step 1: copies that address."
+  },
+  "guide_step_add": {
+    "message": "在「網站搜尋」區塊點選「新增」。",
+    "description": "Setup step 2. \"Site search\" and \"Add\" must match Chrome's own labels on chrome://settings/searchEngines in this language."
+  },
+  "guide_step_fields": {
+    "message": "「姓名」隨意填（例如「Google ｜ Bing」）；「搜尋捷徑」自訂（例如 $KEYWORD$）；把上方複製的觸發網址貼到「以 %s 取代查詢的網址」欄位，最後點選「新增」。",
+    "description": "Setup step 3: what to type into Chrome's site search dialog. \"Shortcut\" must match Chrome's label. The placeholder becomes the example shortcut (guide_example_keyword) shown as code.",
+    "placeholders": {
+      "KEYWORD": {
+        "content": "$1",
+        "example": "gb"
+      }
+    }
+  },
+  "guide_example_keyword": {
+    "message": "gb",
+    "description": "Example site search shortcut for a Google | Bing pair, shown as code in setup step 3. Pick a short, natural shortcut for this language; ASCII letters only."
+  },
+  "guide_step_default": {
+    "message": "預設組合：在剛新增的項目右側 ⋮ 選單中選「設為預設」。其他組合不必設為預設，在網址列輸入「搜尋捷徑 + 空格 + 關鍵字」即可。",
+    "description": "Setup step 4. \"Make default\" and \"shortcut\" must match Chrome's labels; ⋮ is the More actions menu icon."
+  },
+  "guide_step_grant": {
+    "message": "確認左側引擎已授權（引擎清單中顯示「已授權」）。",
+    "description": "Setup step 5. The quoted status must match engine_granted."
+  },
+  "guide_caveats_title": {
+    "message": "注意事項",
+    "description": "Subheading above the list of caveats."
+  },
+  "guide_caveat_degrade": {
+    "message": "遇到以下情況，觸發網址會變成一般的左側引擎搜尋，不會開啟分割畫面：同步了這組搜尋設定的其他電腦和手機、無痕視窗、擴充功能已停用、授權已撤銷、引擎網站自己的 Service Worker 接管了導覽。",
+    "description": "Caveat: cases where the trigger URL falls back to a plain search with the left engine. Keep Service Worker untranslated."
+  },
+  "guide_caveat_no_suggest": {
+    "message": "自行新增的網站搜尋沒有搜尋建議網址，設為預設後，網址列就不會再顯示搜尋建議。",
+    "description": "Caveat: a user-added site search has no suggestion URL, so the address bar shows no search suggestions once it is the default."
+  },
+  "guide_caveat_context_menu": {
+    "message": "右鍵選單裡的「透過 X 搜尋『…』」同樣會使用觸發網址，開啟分割畫面。",
+    "description": "Caveat: the right-click menu item \"Search X for …\" also uses the trigger URL and opens the split view. Match Chrome's wording of that menu item; X stands for the search engine name."
+  },
+  "guide_caveat_sync": {
+    "message": "Chrome 的搜尋引擎設定會同步到你的所有裝置，但授權不會同步：每台裝置都要在這個頁面個別授權。",
+    "description": "Caveat: Chrome syncs search engine settings to all devices but site access granted to the extension does not sync."
+  },
+  "guide_caveat_template_change": {
+    "message": "修改某個引擎的網址後，把它放在左側的網站搜尋都要重新複製網址。",
+    "description": "Caveat: after changing an engine's URL, site searches that use it on the left must be copied again."
+  },
+  "guide_caveat_remove": {
+    "message": "刪除或隱藏引擎前，請先刪除 Chrome 中用到它的網站搜尋：放在左側的會變成一般搜尋，放在右側的會停在「未知引擎」錯誤頁。",
+    "description": "Caveat: delete Chrome site searches that use an engine before deleting or hiding it. \"Unknown engine\" refers to err_unknown_engine. Same text as the second paragraph of engine_confirm_hide / engine_confirm_delete."
+  },
+  "options_engines_title": {
+    "message": "搜尋引擎",
+    "description": "Heading of the settings card with the engine list."
+  },
+  "options_add_engine": {
+    "message": "新增引擎",
+    "description": "Button that opens the dialog for adding a custom search engine."
+  },
+  "options_engines_hint": {
+    "message": "網址範本中用 $CODE$ 代表關鍵字。左側引擎的網站必須授權，右側建議授權。排序決定下拉式選單中的順序。",
+    "description": "Hint under the engine list heading. The placeholder is %s shown as code.",
+    "placeholders": {
+      "CODE": {
+        "content": "$1",
+        "example": "%s"
+      }
+    }
+  },
+  "options_hidden_title": {
+    "message": "已隱藏的內建引擎",
+    "description": "Subheading above the list of hidden preset engines."
+  },
+  "options_dlg_title_add": {
+    "message": "新增引擎",
+    "description": "Engine dialog title when adding a new engine."
+  },
+  "options_dlg_title_edit": {
+    "message": "編輯引擎：$NAME$",
+    "description": "Engine dialog title when editing an engine. The placeholder is the engine name (not translated).",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "Google"
+      }
+    }
+  },
+  "options_dlg_id_hint_add": {
+    "message": "小寫字母、數字和 -，1–20 個字元。建立後無法修改，會寫進觸發網址。",
+    "description": "Hint under the id field when adding an engine: allowed characters and length; the id cannot be changed later because it is written into the trigger URL."
+  },
+  "options_dlg_id_hint_edit": {
+    "message": "id 建立後無法修改（已儲存的網站搜尋網址中含有它）。",
+    "description": "Hint under the read-only id field when editing an engine. Keep \"id\" as is."
+  },
+  "options_dlg_id_placeholder": {
+    "message": "例如 yahoo",
+    "description": "Placeholder of the id field: \"e.g.\" plus an example id. Use the id of a search engine common in this language's market; lowercase letters, digits and - only, and it must match options_dlg_url_placeholder."
+  },
+  "options_dlg_name_label": {
+    "message": "名稱",
+    "description": "Label of the engine name field."
+  },
+  "options_dlg_name_placeholder": {
+    "message": "例如 Yahoo奇摩",
+    "description": "Placeholder of the name field: \"e.g.\" plus the name of the engine used in options_dlg_id_placeholder."
+  },
+  "options_dlg_url_label": {
+    "message": "網址範本",
+    "description": "Label of the URL template field."
+  },
+  "options_dlg_url_placeholder": {
+    "message": "https://tw.search.yahoo.com/search?p=%s",
+    "description": "Placeholder of the URL template field: the search URL of the engine in options_dlg_id_placeholder with %s as the query. It must be usable as the left engine: lowercase %s once, as the full value of a query parameter, no #."
+  },
+  "options_dlg_preset_hint": {
+    "message": "內建值：$NAME$，$URL$（改回這兩個值即可還原為內建設定）",
+    "description": "Hint when editing a preset engine: shows its built-in name and URL; setting both back restores the preset.",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "Google"
+      },
+      "URL": {
+        "content": "$2",
+        "example": "https://www.google.com/search?q=%s"
+      }
+    }
+  },
+  "options_dlg_edit_hint": {
+    "message": "修改網址後，Chrome 中把這個引擎放在左側的網站搜尋需要重新複製網址。",
+    "description": "Hint in the edit dialog: after changing the URL, site searches saved in Chrome that use this engine on the left must be copied again."
+  },
+  "common_cancel": {
+    "message": "取消",
+    "description": "Cancel button."
+  },
+  "common_save": {
+    "message": "儲存",
+    "description": "Save button."
+  },
+  "common_close": {
+    "message": "關閉",
+    "description": "Accessible label of the × button that closes a notice."
+  },
+  "common_copy": {
+    "message": "複製",
+    "description": "Copy button next to a URL."
+  },
+  "common_copied": {
+    "message": "已複製",
+    "description": "Copy button text for 1.5 seconds after copying succeeded."
+  },
+  "common_left": {
+    "message": "左側",
+    "description": "Label of the left engine picker."
+  },
+  "common_right": {
+    "message": "右側",
+    "description": "Label of the right engine picker."
+  },
+  "common_pair_separator": {
+    "message": "｜",
+    "description": "Decorative separator between the left and right engine pickers; same mark as in guide_pair_label. Hidden from screen readers."
+  },
+  "notice_copy_failed": {
+    "message": "複製失敗，請手動選取文字複製（$DETAIL$）",
+    "description": "Error notice when copying to the clipboard failed. The placeholder is the browser's error message.",
+    "placeholders": {
+      "DETAIL": {
+        "content": "$1",
+        "example": "Document is not focused."
+      }
+    }
+  },
+  "notice_grant_failed": {
+    "message": "授權失敗：$DETAIL$",
+    "description": "Error notice when the site access request failed. The placeholder is the error message.",
+    "placeholders": {
+      "DETAIL": {
+        "content": "$1",
+        "example": "Permission request failed."
+      }
+    }
+  },
+  "notice_granted": {
+    "message": "授權成功",
+    "description": "Notice after the user allowed site access."
+  },
+  "notice_grant_denied": {
+    "message": "未取得授權：你拒絕或關閉了授權對話方塊",
+    "description": "Warning notice when the site access prompt was denied or dismissed."
+  },
+  "engine_list_empty": {
+    "message": "沒有可用的引擎",
+    "description": "Shown in place of the engine list when it is empty."
+  },
+  "engine_tag_left_ok": {
+    "message": "可放左側",
+    "description": "Tag on an engine row: the engine can be used on the left side."
+  },
+  "engine_tag_right_only": {
+    "message": "僅限右側",
+    "description": "Tag on an engine row: the engine can only be used on the right side."
+  },
+  "engine_tag_default_left": {
+    "message": "預設左側",
+    "description": "Tag on the engine row that is the left side of the default pair."
+  },
+  "engine_tag_default_right": {
+    "message": "預設右側",
+    "description": "Tag on the engine row that is the right side of the default pair."
+  },
+  "engine_tag_custom": {
+    "message": "自訂",
+    "description": "Tag on a user-added (custom) engine row."
+  },
+  "engine_granted": {
+    "message": "已授權",
+    "description": "Status on an engine row: the extension has access to the engine's site."
+  },
+  "engine_not_granted_required": {
+    "message": "未授權（必要）",
+    "description": "Status on the default left engine's row when its site is not granted; access is required."
+  },
+  "engine_not_granted": {
+    "message": "未授權",
+    "description": "Status on an engine row when its site is not granted."
+  },
+  "engine_grant": {
+    "message": "授權",
+    "description": "Button on an engine row that asks Chrome for access to the engine's site."
+  },
+  "engine_grant_named": {
+    "message": "授權 $NAME$",
+    "description": "Button that asks Chrome for access to the named engine's site.",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "Google"
+      }
+    }
+  },
+  "engine_in_pair_title": {
+    "message": "預設組合正在使用這個引擎",
+    "description": "Tooltip of the disabled Hide/Delete button: the default pair uses this engine."
+  },
+  "engine_hide": {
+    "message": "隱藏",
+    "description": "Button on a preset engine row that hides it."
+  },
+  "engine_delete": {
+    "message": "刪除",
+    "description": "Button on a custom engine row that deletes it."
+  },
+  "engine_edit": {
+    "message": "編輯",
+    "description": "Button on an engine row that opens the edit dialog."
+  },
+  "engine_restore": {
+    "message": "還原",
+    "description": "Button on a hidden preset engine that shows it again."
+  },
+  "engine_left_discouraged_hint": {
+    "message": "建議只放右側：這個網站的 Service Worker 可能會接管導覽，放在左側時可能無法開啟分割畫面。",
+    "description": "Warning on an engine row (e.g. Perplexity): its site's Service Worker may take over navigation, so as the left engine the split view may not open. Keep Service Worker untranslated."
+  },
+  "engine_move_up": {
+    "message": "上移",
+    "description": "Tooltip of the ↑ button that moves an engine up in the list."
+  },
+  "engine_move_up_label": {
+    "message": "上移 $NAME$",
+    "description": "Accessible label of the ↑ button. The placeholder is the engine name.",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "Google"
+      }
+    }
+  },
+  "engine_move_down": {
+    "message": "下移",
+    "description": "Tooltip of the ↓ button that moves an engine down in the list."
+  },
+  "engine_move_down_label": {
+    "message": "下移 $NAME$",
+    "description": "Accessible label of the ↓ button. The placeholder is the engine name.",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "Google"
+      }
+    }
+  },
+  "engine_hidden_empty": {
+    "message": "沒有已隱藏的內建引擎。",
+    "description": "Shown when no preset engine is hidden."
+  },
+  "engine_confirm_hide": {
+    "message": "要隱藏「$NAME$」嗎？\n\n刪除或隱藏引擎前，請先刪除 Chrome 中用到它的網站搜尋：放在左側的會變成一般搜尋，放在右側的會停在「未知引擎」錯誤頁。",
+    "description": "Confirmation dialog before hiding a preset engine. Keep the blank line (\\n\\n). The second paragraph is the same text as guide_caveat_remove.",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "Bing"
+      }
+    }
+  },
+  "engine_confirm_delete": {
+    "message": "要刪除「$NAME$」嗎？\n\n刪除或隱藏引擎前，請先刪除 Chrome 中用到它的網站搜尋：放在左側的會變成一般搜尋，放在右側的會停在「未知引擎」錯誤頁。",
+    "description": "Confirmation dialog before deleting a custom engine. Keep the blank line (\\n\\n). The second paragraph is the same text as guide_caveat_remove.",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "Baidu"
+      }
+    }
+  },
+  "engine_left_discouraged_suffix": {
+    "message": "$NAME$（建議放右側）",
+    "description": "Option in the left engine picker of the pair generator for an engine better used on the right (e.g. Perplexity). The placeholder is the engine name.",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "Perplexity"
+      }
+    }
+  },
+  "guide_default_tag": {
+    "message": "預設組合",
+    "description": "Tag on the trigger URL card for the default pair."
+  },
+  "guide_pair_label": {
+    "message": "$LEFT$ ｜ $RIGHT$",
+    "description": "Name of an engine pair on the trigger URL card: left engine, a separator, right engine.",
+    "placeholders": {
+      "LEFT": {
+        "content": "$1",
+        "example": "Google"
+      },
+      "RIGHT": {
+        "content": "$2",
+        "example": "Bing"
+      }
+    }
+  },
+  "guide_pair_invalid": {
+    "message": "（預設組合無效）",
+    "description": "Shown on the trigger URL card instead of the pair name when the default pair is invalid."
+  },
+  "guide_no_trigger": {
+    "message": "無法產生觸發網址，請檢查預設組合的左側引擎。",
+    "description": "Error on the trigger URL card when no trigger URL can be built for the default pair."
+  },
+  "guide_default_hint": {
+    "message": "依照下方步驟新增為網站搜尋後，在該項目的 ⋮ 選單中選「設為預設」。之後直接在網址列搜尋，或把文字拖曳到分頁列，都會開啟分割畫面。",
+    "description": "Hint on the default pair card. \"Make default\" must match Chrome's label; ⋮ is the More actions menu icon."
+  },
+  "guide_other_pairs_title": {
+    "message": "其他組合",
+    "description": "Title of the card that generates trigger URLs for other engine pairs."
+  },
+  "guide_pair_shortcut_hint": {
+    "message": "每個組合各新增一筆網站搜尋，用你自訂的搜尋捷徑觸發，例如在網址列輸入「$EXAMPLE$」。",
+    "description": "Hint on the other pairs card. The placeholder is guide_example_shortcut_query.",
+    "placeholders": {
+      "EXAMPLE": {
+        "content": "$1",
+        "example": "kg 關鍵字"
+      }
+    }
+  },
+  "guide_example_shortcut_query": {
+    "message": "kg 關鍵字",
+    "description": "Example of what to type in the address bar: a shortcut for a Kagi | Bing pair, a space, then the search words (the word for \"keywords\" in this language)."
+  },
+  "guide_no_left": {
+    "message": "沒有可放左側的引擎。",
+    "description": "Shown in the pair generator when no engine can be used on the left."
+  },
+  "guide_not_left": {
+    "message": "$NAME$ 不能放在左側。",
+    "description": "Shown in the pair generator when the chosen left engine cannot be used on the left.",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "Wikipedia"
+      }
+    }
+  },
+  "guide_left_not_granted": {
+    "message": "左側的 $NAME$ 尚未授權，這個組合不會開啟分割畫面，只會開啟一般的 $NAME$ 搜尋。",
+    "description": "Warning in the pair generator: the left engine's site is not granted, so this pair opens a plain search instead of a split view.",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "Kagi"
+      }
+    }
+  },
+  "guide_left_discouraged": {
+    "message": "$NAME$ 建議只放右側：它的網站用 Service Worker 接管頁面導覽，放在左側時通常只會開啟一般的 $NAME$ 搜尋，不會開啟分割畫面。放右側則不受影響。",
+    "description": "Warning when an engine like Perplexity is the left side of a pair. Keep Service Worker untranslated.",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "Perplexity"
+      }
+    }
+  },
+  "notice_action_failed": {
+    "message": "操作失敗",
+    "description": "Fallback error notice when an action failed without a known reason."
+  },
+  "notice_save_failed": {
+    "message": "儲存失敗：$DETAIL$",
+    "description": "Error when saving settings failed. The placeholder is the reason (another message or a browser error).",
+    "placeholders": {
+      "DETAIL": {
+        "content": "$1",
+        "example": "QUOTA_BYTES quota exceeded"
+      }
+    }
+  },
+  "notice_added": {
+    "message": "已新增「$NAME$」。",
+    "description": "Notice after adding an engine.",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "Baidu"
+      }
+    }
+  },
+  "notice_saved": {
+    "message": "已儲存「$NAME$」。",
+    "description": "Notice after saving changes to an engine.",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "Baidu"
+      }
+    }
+  },
+  "notice_needs_grant": {
+    "message": "它的網站尚未授權，請點選該列醒目顯示的「授權」按鈕。",
+    "description": "Sentence shown right after notice_added / notice_saved when the engine's site is not granted yet. The quoted button is engine_grant."
+  },
+  "notice_template_changed": {
+    "message": "「$NAME$」的網址已修改：把這個引擎放在左側的網站搜尋，需要在這個頁面重新複製觸發網址，並取代 Chrome 設定中對應網站搜尋的網址。",
+    "description": "Sticky notice after an engine's URL changed: site searches that use it on the left must be copied again and replaced in Chrome's settings.",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "Baidu"
+      }
+    }
+  },
+  "notice_hidden": {
+    "message": "已隱藏「$NAME$」",
+    "description": "Notice after hiding a preset engine.",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "Bing"
+      }
+    }
+  },
+  "notice_deleted": {
+    "message": "已刪除「$NAME$」",
+    "description": "Notice after deleting a custom engine.",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "Baidu"
+      }
+    }
+  },
+  "notice_restored": {
+    "message": "已還原「$NAME$」",
+    "description": "Notice after restoring a hidden preset engine.",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "Bing"
+      }
+    }
+  },
+  "notice_order_save_failed": {
+    "message": "無法儲存排序：$DETAIL$",
+    "description": "Error when saving the engine order failed. The placeholder is the reason.",
+    "placeholders": {
+      "DETAIL": {
+        "content": "$1",
+        "example": "QUOTA_BYTES quota exceeded"
+      }
+    }
+  },
+  "notice_load_failed": {
+    "message": "無法讀取設定：$DETAIL$",
+    "description": "Error when the settings could not be read. The placeholder is the reason.",
+    "placeholders": {
+      "DETAIL": {
+        "content": "$1",
+        "example": "Extension context invalidated."
+      }
+    }
+  },
+  "notice_pair_saved": {
+    "message": "預設組合已儲存。記得把新的觸發網址複製到 Chrome 並設為預設。",
+    "description": "Notice after changing the default pair: the new trigger URL must be added to Chrome and made default."
+  },
+  "options_banner_title": {
+    "message": "還差一步：授權存取搜尋引擎網站",
+    "description": "Title of the first-run banner asking for site access."
+  },
+  "options_banner_text": {
+    "message": "開啟分割畫面需要攔截傳送給左側引擎 $LEFT$ 的搜尋要求，因此必須授權它的網站；右側引擎授權後，再次搜尋時就能辨識本擴充功能開啟的分割畫面，並直接在原處更新。授權只限這兩個網站。",
+    "description": "Body of the first-run banner: why access to the left (required) and right (recommended) engine sites is needed.",
+    "placeholders": {
+      "LEFT": {
+        "content": "$1",
+        "example": "Google"
+      }
+    }
+  },
+  "options_banner_grant_both": {
+    "message": "點這裡授權 $LEFT$（必要）和 $RIGHT$（建議）",
+    "description": "Banner button that requests access to both default engines' sites: left required, right recommended.",
+    "placeholders": {
+      "LEFT": {
+        "content": "$1",
+        "example": "Google"
+      },
+      "RIGHT": {
+        "content": "$2",
+        "example": "Bing"
+      }
+    }
+  },
+  "options_banner_grant_left": {
+    "message": "點這裡授權 $LEFT$（必要）",
+    "description": "Banner button that requests access to the default left engine's site (required).",
+    "placeholders": {
+      "LEFT": {
+        "content": "$1",
+        "example": "Google"
+      }
+    }
+  },
+  "options_left_not_granted": {
+    "message": "左側的 $NAME$ 尚未授權，目前搜尋不會開啟分割畫面，只會開啟一般的 $NAME$ 搜尋。",
+    "description": "Warning in the default pair card: the left engine's site is not granted, so searches open a plain search instead of a split view.",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "Google"
+      }
+    }
+  },
+  "lang_label": {
+    "message": "語言",
+    "description": "Label of the language drop-down at the top of the settings page."
+  },
+  "lang_auto": {
+    "message": "跟隨瀏覽器（目前：$CURRENT$）",
+    "description": "First option of the language drop-down: use the browser's language. The placeholder is the native name of the language the browser currently resolves to (one of the lang_name_* messages).",
+    "placeholders": {
+      "CURRENT": {
+        "content": "$1",
+        "example": "English"
+      }
+    }
+  },
+  "lang_note": {
+    "message": "工具列按鈕的提示，以及 chrome://extensions 和 Chrome 線上應用程式商店詳細資料頁中的擴充功能簡介，一律跟隨瀏覽器語言，不受這裡的選擇影響。",
+    "description": "Note under the language drop-down: the extension description, the toolbar button tooltip, the description on chrome://extensions and the Chrome Web Store listing always follow the browser language, not this choice. Keep chrome://extensions as is."
+  },
+  "lang_name_en": {
+    "message": "English",
+    "description": "Native name of English in the language drop-down (本名，不要翻译): identical in every locale, do not translate."
+  },
+  "lang_name_zh_cn": {
+    "message": "简体中文",
+    "description": "Native name of Simplified Chinese in the language drop-down (本名，不要翻译): identical in every locale, do not translate."
+  },
+  "lang_name_zh_tw": {
+    "message": "繁體中文",
+    "description": "Native name of Traditional Chinese in the language drop-down (本名，不要翻译): identical in every locale, do not translate."
+  },
+  "lang_name_es": {
+    "message": "Español",
+    "description": "Native name of Spanish in the language drop-down (本名，不要翻译): identical in every locale, do not translate."
+  }
+}

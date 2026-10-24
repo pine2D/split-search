@@ -80,6 +80,26 @@ export async function restoreSettingsStep(rt, s, d) {
   }
 }
 
+// 测试配置里的扩展改回运行前装自的目录（别的检出的 src/，见 ext-source.mjs 的 restoreHome）：恢复 storage 和网站搜索之后、关浏览器之前。
+// d: { sourceHome() → 运行前的目录 | null, restoreSource(browser) → { restored, home?, missing? }, log, warn }
+export async function restoreSourceStep(rt, s, d) {
+  const { log = noop, warn = noop } = d;
+  const home = d.sourceHome?.();
+  if (!home || !d.restoreSource) return;
+  const keep = `测试配置里的扩展没改回运行前的 ${home}，仍登记在本检出；下次从本检出运行时收尾会再改回，在此之前从那个检出运行 e2e 会测到本检出的代码`;
+  if (browserGone(rt)) { rt.notes.push(`${goneWhy(rt)}，${keep}`); warn(rt.notes.at(-1)); return; }
+  try {
+    const r = await d.restoreSource(rt.browser);
+    if (r.restored) rt.notes.push(`测试配置里的扩展已改回运行前的 ${r.home}`);
+    else if (r.missing) rt.notes.push(`运行前装自的 ${r.missing} 已不存在，测试配置里的扩展保持登记在本检出`);
+    else return;
+    log(rt.notes.at(-1));
+  } catch (e) {
+    rt.notes.push(`改回扩展目录失败：${e.message}。${keep}；若失败在改装途中，扩展可能仍是临时装载，下次启动会被 Chrome 移除（授权随之丢失），届时需重新做一次性准备`);
+    warn(rt.notes.at(-1));
+  }
+}
+
 // 恢复清单：引导式运行里只要开始过带 cleanup 的步骤，无论正常结束、中断、出错还是浏览器退出，都打印并写进报告。
 // d: { cleanupItems, cleanupNote, cleanupText, log, warn }
 export function cleanupStep(rt, s, d) {
@@ -188,6 +208,7 @@ export async function teardown(rt, s, d) {
   await reenableStep(rt, s, d);
   await restoreStorageStep(rt, s, d);
   await restoreSettingsStep(rt, s, d);
+  await restoreSourceStep(rt, s, d);
   cleanupStep(rt, s, d);
   await closeStep(rt, s, d);
   // 嵌套显示服务器在浏览器关掉（含 afterClose 松开鼠标键）之后才停

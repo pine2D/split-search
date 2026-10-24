@@ -4,60 +4,66 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
-  <title>Split Search 设置</title>
+  <title data-i18n="options_title">Split Search</title>
   <link rel="stylesheet" href="options.css">
   <script type="module" src="options.js"></script>
 </head>
 <body class="loading">
   <main class="page">
     <header class="page-head">
-      <h1>Split Search 设置</h1>
-      <p class="muted">在地址栏搜索或把文字拖到标签栏，一次用两个搜索引擎打开 Chrome 原生分屏。</p>
+      <div class="page-title">
+        <h1 data-i18n="options_title">Split Search</h1>
+        <p class="muted" data-i18n="options_tagline"></p>
+      </div>
+      <div class="lang-box">
+        <div id="lang-picker"></div>
+        <p class="hint" data-i18n="lang_note"></p>
+      </div>
     </header>
 
     <div id="banner"></div>
 
     <section class="card" aria-labelledby="pair-title">
-      <h2 id="pair-title">默认组合</h2>
-      <p class="hint">左侧只能选“可作左侧”的引擎。改了默认组合后，要把新的触发网址重新添加到 Chrome 并设为默认，旧的那条才会被替换。</p>
+      <h2 id="pair-title" data-i18n="options_pair_title"></h2>
+      <p class="hint" data-i18n="options_pair_hint"></p>
       <div id="pair-body"></div>
     </section>
 
     <section class="card" aria-labelledby="guide-title">
-      <h2 id="guide-title">添加到 Chrome</h2>
+      <h2 id="guide-title" data-i18n="options_guide_title"></h2>
       <div id="triggers" class="triggers"></div>
 
-      <h3>设置步骤</h3>
+      <h3 data-i18n="guide_steps_title"></h3>
       <ol class="steps">
         <li>
-          打开 Chrome 的搜索引擎设置。这个地址不能从网页里直接打开，请复制后粘贴到地址栏：
+          <span data-i18n="guide_step_open_settings"></span>
           <span class="url-line"><code class="url-box mono">chrome://settings/searchEngines</code><span id="settings-url-copy"></span></span>
         </li>
-        <li>在“网站搜索”一栏点“添加”。</li>
-        <li>名称随意（例如“Google ｜ Bing”）；快捷字词自定（例如 <code>gb</code>）；网址粘贴上面复制的触发网址。保存。</li>
-        <li>默认组合：在刚添加的条目右侧 ⋮ 菜单里选“设为默认”。其他组合不用设为默认，在地址栏输入“快捷字词 + 空格 + 关键词”即可。</li>
-        <li>确认左侧引擎已授权（引擎列表里显示“已授权”）。</li>
+        <li data-i18n="guide_step_add"></li>
+        <li id="guide-step-fields"></li>
+        <li data-i18n="guide_step_default"></li>
+        <li data-i18n="guide_step_grant"></li>
       </ol>
 
-      <h3>注意事项</h3>
+      <h3 data-i18n="guide_caveats_title"></h3>
       <ul class="caveats">
-        <li>以下情况触发网址会降级为一次普通的左侧引擎搜索，不分屏：同步了这套搜索设置的其他电脑和手机、无痕窗口、扩展被停用、撤销了授权、引擎网站自己的 Service Worker 接管了导航。</li>
-        <li>自己添加的网站搜索没有联想网址，设为默认后地址栏不再有搜索联想。</li>
-        <li>右键菜单里的“在 X 中搜索”同样会走触发网址，同样会分屏。</li>
-        <li>Chrome 的搜索引擎设置会同步到你的所有设备，但授权不会同步：每台设备都要在这个页面单独授权。</li>
-        <li>修改某个引擎的网址后，以它为左侧的网站搜索网址需要重新复制。</li>
-        <li>删除或隐藏前，请先删掉 Chrome 里用到它的网站搜索：它作左侧的会退化为普通搜索，作右侧的会停在“未知引擎”错误页。</li>
+        <li data-i18n="guide_caveat_degrade"></li>
+        <li data-i18n="guide_caveat_no_suggest"></li>
+        <li data-i18n="guide_caveat_context_menu"></li>
+        <li data-i18n="guide_caveat_sync"></li>
+        <li data-i18n="guide_caveat_template_change"></li>
+        <li data-i18n="guide_caveat_remove"></li>
       </ul>
     </section>
 
     <section class="card" aria-labelledby="engines-title">
       <div class="section-head">
-        <h2 id="engines-title">搜索引擎</h2>
-        <button type="button" id="add-engine" class="btn btn-primary btn-small">新增引擎</button>
+        <h2 id="engines-title" data-i18n="options_engines_title"></h2>
+        <button type="button" id="add-engine" class="btn btn-primary btn-small" data-i18n="options_add_engine"></button>
       </div>
-      <p class="hint">网址模板中用 <code>%s</code> 代表关键词。左侧引擎的网站必须授权，右侧建议授权。排序决定下拉框里的顺序。</p>
+      <p id="engines-hint" class="hint"></p>
       <div id="engines"></div>
-      <h3>已隐藏的预置引擎</h3>
+      <h3 data-i18n="options_hidden_title"></h3>
       <div id="hidden-engines"></div>
     </section>
   </main>
@@ -66,31 +72,33 @@
 
   <dialog id="engine-dialog" aria-labelledby="dlg-title">
     <form id="engine-form" novalidate>
-      <h2 id="dlg-title">新增引擎</h2>
+      <h2 id="dlg-title"></h2>
       <div class="field">
         <label for="dlg-id">id</label>
-        <input id="dlg-id" name="id" autocomplete="off" spellcheck="false" maxlength="20" placeholder="例如 baidu">
+        <input id="dlg-id" name="id" autocomplete="off" spellcheck="false" maxlength="20"
+               data-i18n-attr="placeholder:options_dlg_id_placeholder">
         <p id="dlg-id-hint" class="hint"></p>
         <p class="field-error" data-for="id" hidden></p>
       </div>
       <div class="field">
-        <label for="dlg-name">名称</label>
-        <input id="dlg-name" name="name" autocomplete="off" maxlength="40" placeholder="例如 百度">
+        <label for="dlg-name" data-i18n="options_dlg_name_label"></label>
+        <input id="dlg-name" name="name" autocomplete="off" maxlength="40"
+               data-i18n-attr="placeholder:options_dlg_name_placeholder">
         <p class="field-error" data-for="name" hidden></p>
       </div>
       <div class="field">
-        <label for="dlg-url">网址模板</label>
+        <label for="dlg-url" data-i18n="options_dlg_url_label"></label>
         <input id="dlg-url" name="url" class="mono" autocomplete="off" spellcheck="false"
-               placeholder="https://www.baidu.com/s?wd=%s">
+               data-i18n-attr="placeholder:options_dlg_url_placeholder">
         <p id="dlg-url-status" class="hint"></p>
         <p id="dlg-preset-hint" class="hint" hidden></p>
-        <p id="dlg-edit-hint" class="hint" hidden>修改网址后，已存进 Chrome、以该引擎为左侧的网站搜索网址需要重新复制。</p>
+        <p id="dlg-edit-hint" class="hint" hidden data-i18n="options_dlg_edit_hint"></p>
         <p class="field-error" data-for="url" hidden></p>
       </div>
       <p class="field-error" data-for="form" hidden></p>
       <div class="dialog-actions">
-        <button type="button" id="dlg-cancel" class="btn">取消</button>
-        <button type="submit" id="dlg-save" class="btn btn-primary">保存</button>
+        <button type="button" id="dlg-cancel" class="btn" data-i18n="common_cancel"></button>
+        <button type="submit" id="dlg-save" class="btn btn-primary" data-i18n="common_save"></button>
       </div>
     </form>
   </dialog>

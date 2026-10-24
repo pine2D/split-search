@@ -65,8 +65,8 @@ node scripts/store/render-assets.mjs --list     # 只列模板、尺寸和输出
 
 - CWS 对截图的建议是“直角、无留白（满版）”。这套方向是纸底留边的排法，截图本身没有满版；如果要严格照建议，需要另做一版让真实截图铺满 1280×800。
 - 截图 2、3 的结果分屏只显示到百度窗格的 logo 和搜索框，百度一侧的正文被块的右缘截掉；要两侧都完整，就得把整窗缩到约 0.29，字会读不清。
-- `assets/raw/` 里地址栏和拖拽两组截图的右侧是自定义引擎“百度”（这台机器上 Bing 对中文查询会弹人机验证）。要换成预置引擎，需要重拍。
-- 截图里设置页标签仍是 Chrome 生成的灰底“S”图标（`assets/raw/` 拍摄时还没有正式图标），上架前要重拍，见 `docs/store/assets-spec.md` 第 1 节。
+- `assets/raw/` 里地址栏和拖拽两组截图的右侧是自定义引擎“百度”（这台机器上 Bing 对中文查询会弹人机验证）。英文截图 `assets/raw/en/` 已换成预置的 Bing；中文截图暂不重拍（宣传截图暂时只做英文）。
+- 共用截图里设置页标签仍是 Chrome 生成的灰底“S”图标（`assets/raw/` 拍摄时还没有正式图标）；`assets/raw/en/` 已是正式图标，见 `docs/store/assets-spec.md` 第 1、4 节。
 
 ## 多语言（i18n/）
 
@@ -77,6 +77,7 @@ node scripts/store/render-assets.mjs --list     # 只列模板、尺寸和输出
 - 换行：值里写 `\n`，渲染时变成 `<br>`（例如 `marquee.title` 的 `"一次搜索，\n两个引擎对比"`）。不要在值里写 `<br>`，会原样显示。
 - 字体：`base.css` 按 `<html lang>` 选字族，zh-CN / en / es 用 Sarasa UI SC，zh-TW 用 Sarasa UI TC；`fonts.js` 检查当前语言要用的字族。
 - 微调：需要按语言改字号、字距、折行时，建 `i18n/<locale>.css`（有就自动加载），规则用 `:lang()` 限定，例如 `:root:lang(es) .head h1 { font-size: 36px; }`。
+- 截图：`assets/raw/<locale>/` 里有同名截图时，这个语言改用它（目前只有 `en`，宣传截图暂时只做英文）。英文截图里选区、拖拽落点、裁切下沿和 `_ss` 网址与中文版不同，模板在对应元素上写 `data-crop-en`、`data-box-en`、`data-d-en`（svg.ann 的路径）、`data-text-en`（文字），`crop.js` 按 `<html data-raw>` 选用，没有就用默认值。
 - 检查：渲染时缺键直接报错（不会退回中文）；文字超出所在块、定位容器或画布也报错；会自动折行的元素带 `data-lines="n"`，译文折成超过 n 行同样报错。命令以非零码退出。
 
 ```bash

@@ -1,10 +1,14 @@
 // 设置页自动化的公共工具：打开/关闭额外的设置页、页内脚本、confirm 对话框处理、临时引擎。
 import { EXT_ID } from "../config.mjs";
+import { sel } from "../i18n.mjs";
 
 export const OPTIONS_URL = `chrome-extension://${EXT_ID}/options/options.html`;
 export const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-// 页内脚本的公共前缀：按 id 找引擎行、按文字找按钮
+// 页内脚本里按 data-i18n 的 key 找元素：返回选择器的 JS 字面量，直接拼进页内脚本，如 rw.querySelector(${keySel("engine_hide")})
+export const keySel = key => JSON.stringify(sel(key));
+
+// 页内脚本的公共前缀：按 id 找引擎行、按文字找按钮（只用于 ↑↓ 这类不随语言变的按钮；带文案的按钮用 keySel）
 const PRELUDE = `
 const row = id => [...document.querySelectorAll("#engines .engine-row")].find(r => r.querySelector(".engine-id").textContent === id);
 const btn = (root, text) => root && [...root.querySelectorAll("button")].find(b => b.textContent === text);

@@ -14,7 +14,7 @@ export async function createPaired(url, withTab) {
   try {
     return await chrome.tabs.create({ ...base, splitWithTabId: withTab.id });
   } catch (err) {
-    log("splitWithTabId 失败，改为普通标签", err);
+    log("splitWithTabId failed, falling back to a plain tab", err);
     return await chrome.tabs.create(base);
   }
 }
@@ -24,7 +24,7 @@ export async function recordPair(a, b) {
   try {
     await chrome.storage.session.set({ ["split:" + a]: b, ["split:" + b]: a });
   } catch (err) {
-    log("记录分屏标签对失败", err);
+    log("failed to record the split tab pair", err);
   }
 }
 
@@ -54,7 +54,7 @@ export async function openForeign({ tab, splitTabs, leftUrl, rightUrl }) {
     const right = await createPaired(rightUrl, newLeft);
     await recordPair(newLeft.id, right.id);
   } catch (err) {
-    log("其他分屏：创建右侧失败", err);
+    log("foreign split: failed to create the right side", err);
   }
   return { leave: true };
 }
@@ -65,7 +65,7 @@ export async function openInOtherWindow({ leftUrl, rightUrl }) {
   try {
     target = await chrome.windows.getLastFocused({ windowTypes: ["normal"] });
   } catch (err) {
-    log("没有可用的普通窗口，新建一个", err);
+    log("no normal window available, creating one", err);
   }
   let newLeft;
   if (target) {
@@ -78,14 +78,14 @@ export async function openInOtherWindow({ leftUrl, rightUrl }) {
     const right = await createPaired(rightUrl, newLeft);
     await recordPair(newLeft.id, right.id);
   } catch (err) {
-    log("其他窗口：创建右侧失败", err);
+    log("other window: failed to create the right side", err);
   }
   // 新分屏建在已有的后台窗口里时，把该窗口切到前台；新建的窗口本来就在前台
   if (target) {
     try {
       await chrome.windows.update(target.id, { focused: true });
     } catch (err) {
-      log("其他窗口：切到前台失败", err);
+      log("other window: failed to focus it", err);
     }
   }
   return { replaceWith: leftUrl };
@@ -102,7 +102,7 @@ export async function leaveTab(tab, hist = globalThis.history) {
     await chrome.tabs.remove(tab.id);
     return "closed";
   } catch (err) {
-    log("关闭当前标签失败，保留本页", err);
+    log("failed to close the current tab, keeping this page", err);
     return "kept";
   }
 }
