@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="asset-size" content="1400x560">
+<meta name="asset-out" content="store/marquee-1400x560.png">
+<link rel="stylesheet" href="base.css">
+<style>
+  /* 左：品牌、标题、一次键入作为一组，垂直居中，组内间距 32；
+     右：真实分屏（0.45 倍）顶边 72，向右、向下出血，露出 DuckDuckGo 整个窗格和 Bing 的 AI Overview */
+  .copy { position: absolute; left: 72px; top: 0; bottom: 0; width: 420px; display: flex; flex-direction: column; justify-content: center; }
+  .brand { display: flex; align-items: center; gap: 12px; font-size: 24px; font-weight: 500; color: var(--muted); letter-spacing: .01em; }
+  .brand .tile { width: 52px; height: 52px; margin: -8px -6px -8px -6.5px; }
+  h1 { margin-top: 32px; font-size: 60px; font-weight: 700; line-height: 1.16; letter-spacing: .02em; }
+  .keys { margin-top: 32px; align-self: flex-start; font-size: 24px; line-height: 1; padding: 16px 20px; border-radius: 8px;
+    background: var(--raised); box-shadow: inset 0 0 0 1px var(--rule); }
+  .keys .ret { margin-left: .6em; }
+  .crop { left: 540px; top: 72px; width: 860px; border-radius: 8px 0 0 0; }
+</style></head>
+<body>
+  <div class="copy">
+    <div class="brand"><div class="tile"><img data-icon alt=""></div>Split Search</div>
+    <h1>一次搜索<br>两个引擎对比</h1>
+    <div class="keys">rust programming<span class="caret"></span><span class="ret">↵</span></div>
+  </div>
+  <!-- 真实截图：左 DuckDuckGo、右 Bing（预置组合），取窗口左上 1911×1084，向右、向下出血 -->
+  <div class="crop" data-crop="0,0,1911,1084"><img src="../raw/split-ddg-bing-rust.png" data-iw="2400" alt=""></div>
+  <script src="crop.js"></script>
+</body></html>

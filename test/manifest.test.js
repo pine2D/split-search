@@ -2,6 +2,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, existsSync } from "node:fs";
 
+const PNG_SIG = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+
 const m = JSON.parse(readFileSync(new URL("../src/manifest.json", import.meta.url), "utf8"));
 
 test("manifest 满足硬约束", () => {
@@ -31,5 +33,29 @@ test("manifest 基本信息", () => {
 test("manifest 引用的文件都存在", () => {
   for (const path of [m.background.service_worker, m.options_ui.page, "go.html", "go.js"]) {
     assert.ok(existsSync(new URL("../src/" + path, import.meta.url)), path);
+  }
+});
+
+test("manifest 图标存在且是尺寸相符的 PNG", () => {
+  assert.deepEqual(Object.keys(m.icons), ["16", "32", "48", "128"]);
+  assert.deepEqual(Object.keys(m.action.default_icon), ["16", "32"]);
+  for (const [size, path] of [...Object.entries(m.icons), ...Object.entries(m.action.default_icon)]) {
+    const url = new URL("../src/" + path, import.meta.url);
+    assert.ok(existsSync(url), path);
+    const buf = readFileSync(url);
+    assert.ok(buf.subarray(0, 8).equals(PNG_SIG), `${path} 不是 PNG`);
+    assert.equal(buf.toString("latin1", 12, 16), "IHDR", path);
+    assert.equal(buf.readUInt32BE(16), Number(size), `${path} 宽度`);
+    assert.equal(buf.readUInt32BE(20), Number(size), `${path} 高度`);
+  }
+});
+
+test("src/icons 与选定图标 c6 源文件逐字节相同", () => {
+  // 16/32 是按像素对齐的 icon-16.svg / icon-32.svg 导出的；从 icon.svg 重导会失去对齐，这里拦住源和成品漂移
+  for (const size of [16, 32, 48, 128]) {
+    const name = `icon-${size}.png`;
+    const built = readFileSync(new URL("../src/icons/" + name, import.meta.url));
+    const source = readFileSync(new URL("../assets/icon-proposals/v3-colors/c6-pine-fog/" + name, import.meta.url));
+    assert.ok(built.equals(source), `src/icons/${name} 与 c6-pine-fog/${name} 不一致`);
   }
 });

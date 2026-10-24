@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="asset-size" content="1280x800">
+<meta name="asset-out" content="store/screenshot-5.png">
+<link rel="stylesheet" href="base.css">
+<style>
+  /* 同一条触发网址分成两支。两支用同一缩放（0.48，和截图 1–3 相同），每个窗格都取同一块：窗格左上 760×（到底）原图像素。
+     左支：DuckDuckGo 与 Bing 两个窗格并排（分屏）；右支：只有同一个 DuckDuckGo 窗格（普通搜索）。
+     网格：左支 64–802（365 + 8 + 365），间隔 48，右支 850–1215 */
+  .url { position: absolute; left: 64px; right: 64px; top: 192px; height: 56px; display: flex; align-items: center; justify-content: center;
+    border-radius: 8px; background: var(--raised); box-shadow: inset 0 0 0 1px var(--rule); font-size: 24px; }
+  .url .ss { color: var(--accent); }
+  svg.fork { position: absolute; left: 0; top: 0; width: 1280px; height: 800px; }
+  h2 { position: absolute; top: 296px; height: 24px; font-size: 20px; font-weight: 700; line-height: 24px; white-space: nowrap; text-align: center; }
+  h2 span { margin-left: 12px; font-weight: 400; color: var(--muted); }
+  h2.l { left: 64px; width: 738px; } h2.r { left: 850px; width: 365px; }
+  .crop { top: 336px; width: 365px; border-radius: 8px 8px 0 0; }
+  .p1 { left: 64px; } .p2 { left: 437px; } .p3 { left: 850px; }
+</style></head>
+<body>
+  <header class="head">
+    <h1>扩展未生效，照常搜索</h1>
+    <p>无痕窗口、其他设备照常可用</p>
+  </header>
+  <div class="url keys">duckduckgo.com/?q=rust+programming<span class="ss">&amp;_ss=ddg,bing</span></div>
+  <svg class="fork" viewBox="0 0 1280 800" fill="none" stroke="#6c7672" stroke-width="1.5">
+    <path d="M640 248V272M433 288V280Q433 272 441 272H1025Q1033 272 1033 280V288"/>
+  </svg>
+  <h2 class="l">装了 Split Search<span>左右分屏</span></h2>
+  <h2 class="r">扩展未生效<span>普通搜索</span></h2>
+  <!-- 真实截图 split-ddg-bing-rust.png：左窗格 DuckDuckGo、右窗格 Bing，各取窗格左上 760 宽，向下出血 -->
+  <div class="crop p1" data-crop="16,134,760,1366"><img src="../raw/split-ddg-bing-rust.png" data-iw="2400" alt=""></div>
+  <div class="crop p2" data-crop="1212,134,760,1366"><img src="../raw/split-ddg-bing-rust.png" data-iw="2400" alt=""></div>
+  <!-- 同一个 DuckDuckGo 窗格：扩展未生效时，触发网址就是这一页普通搜索 -->
+  <div class="crop p3" data-crop="16,134,760,1366"><img src="../raw/split-ddg-bing-rust.png" data-iw="2400" alt=""></div>
+  <script src="crop.js"></script>
+</body></html>

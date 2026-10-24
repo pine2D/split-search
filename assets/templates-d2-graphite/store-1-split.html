@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="asset-size" content="1280x800">
+<meta name="asset-out" content="store/screenshot-1.png">
+<link rel="stylesheet" href="base.css">
+<style>
+  /* 截图 1152 宽（缩放 0.48），左右各 64px，与标题左边对齐，向下出血 */
+  .crop { left: 64px; top: 192px; width: 1152px; border-radius: 8px 8px 0 0; }
+</style></head>
+<body>
+  <header class="head">
+    <h1>一次搜索，两个引擎对比</h1>
+    <p>Chrome 原生分屏，普通标签页</p>
+  </header>
+  <!-- 真实截图：左 DuckDuckGo，右 Bing（都是预置引擎），整窗，向下出血 -->
+  <div class="crop" data-crop="0,0,2400,1500"><img src="../raw/split-ddg-bing-rust.png" data-iw="2400" alt=""></div>
+  <script src="crop.js"></script>
+</body></html>

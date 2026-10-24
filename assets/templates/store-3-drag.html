@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="asset-size" content="1280x800">
+<meta name="asset-out" content="store/screenshot-3.png">
+<link rel="stylesheet" href="base.css">
+<script src="fonts.js"></script>
+<style>
+  /* 版式同截图 2：两块同缩放（0.435），高 652 正好是原图整窗高，窗口下沿落在画布底边。
+     左 432 宽 = 拖拽中（只取选中的“Graydon Hoare”到标签栏落点这一段）；右 704 宽 = 松手后的分屏 */
+  .a { left: 48px; width: 432px; } .b { left: 528px; width: 704px; }
+  .cap.ca { left: 48px; } .cap.cb { left: 528px; }
+  .link { left: 480px; top: 226px; }
+</style></head>
+<body>
+  <header class="head">
+    <h1 data-t="shot3.title"></h1>
+    <p data-t="shot3.sub"></p>
+  </header>
+  <div class="cap ca" data-t="shot3.cap1"></div><div class="cap cb" data-t="shot3.cap2"></div>
+  <!-- 真实截图：拖拽中（选中“Graydon Hoare”，拖拽影像已到标签栏，尚未松手）；细框和细箭头是标注。
+       这段裁切不含 Xvfb 下黑底的插入箭头（x=397），不需要修补图 -->
+  <div class="crop bleed a" data-crop="650,0,994,1500" data-h="fill"><img src="../raw/drag-to-tabstrip.png" data-iw="2400" alt="">
+    <i class="mark" data-box="692,588,182,50"></i>
+    <i class="mark" data-box="1418,10,182,38"></i>
+    <svg class="ann">
+      <defs><marker id="h" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M1 1L9 5L1 9" fill="none" stroke="#507665" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+      <path d="M886 604 C 1200 596, 1500 470, 1509 76" fill="none" stroke="#507665" stroke-width="2.4"
+        stroke-linecap="round" marker-end="url(#h)"/>
+    </svg>
+  </div>
+  <svg class="link" viewBox="0 0 48 12"><path d="M8 6H39M34 2L39 6L34 10" stroke="#507665" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <!-- 真实截图：松手后的分屏，左 DuckDuckGo、右百度，查询词 Graydon Hoare -->
+  <div class="crop bleed b" data-crop="50,0,1620,1500" data-h="fill"><img src="../raw/drag-result-split.png" data-iw="2400" alt=""></div>
+  <script src="crop.js"></script>
+</body></html>

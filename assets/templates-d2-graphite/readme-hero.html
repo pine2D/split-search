@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<!-- README 首图：GitHub 正文约 880px 宽，2 倍输出。整张不透明的石墨底，深浅主题下都是一张完整卡片。 -->
+<meta name="asset-size" content="880x440@2">
+<meta name="asset-out" content="readme/hero.png">
+<link rel="stylesheet" href="base.css">
+<style>
+  /* 上：图标 + 一句话（左）、一次键入（右）；下：真实分屏，左右 40px 边距，向下出血 */
+  .top { position: absolute; left: 40px; right: 40px; top: 0; height: 92px; display: flex; align-items: center; gap: 12px; }
+  .tile { width: 40px; height: 40px; margin: 0 -5px; flex: none; }
+  .top h1 { font-size: 24px; font-weight: 700; letter-spacing: .02em; }
+  .top .keys { margin-left: auto; font-size: 15px; line-height: 1; padding: 9px 12px; border-radius: 6px;
+    background: var(--raised); box-shadow: inset 0 0 0 1px var(--rule); }
+  .top .keys .ret { margin-left: .5em; }
+  .crop { left: 40px; top: 92px; width: 800px; border-radius: 6px 6px 0 0; }
+</style></head>
+<body>
+  <div class="top">
+    <div class="tile"><img data-icon alt=""></div>
+    <h1>一次搜索，两个引擎对比</h1>
+    <div class="keys">rust programming<span class="caret"></span><span class="ret">↵</span></div>
+  </div>
+  <!-- 真实截图：左 DuckDuckGo、右 Bing，查询词 rust programming -->
+  <div class="crop" data-crop="0,0,2400,1500"><img src="../raw/split-ddg-bing-rust.png" data-iw="2400" alt=""></div>
+  <script src="crop.js"></script>
+</body></html>

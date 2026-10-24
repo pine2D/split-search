@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="asset-size" content="1400x560">
+<meta name="asset-out" content="store/marquee-1400x560.png">
+<link rel="stylesheet" href="base.css">
+<style>
+  /* 画布左右两格，缝在 x=700；下方真实分屏截图的窗格分界线正好接在画布的缝上。
+     左格放产品名（向缝右对齐），右格放一句话（从缝左起排），沿缝对称。 */
+  .row { position: absolute; left: 0; right: 0; top: 56px; height: 64px; display: grid; grid-template-columns: 1fr 1fr; column-gap: 80px; align-items: center; }
+  .brand { justify-self: end; display: flex; align-items: center; gap: 18px; }
+  .tile { width: 56px; height: 56px; }
+  /* 全套同一层级：产品名 : 标语 ≈ 1.3（README 首图同比例） */
+  .name { font-size: 40px; font-weight: 700; letter-spacing: -.01em; }
+  h1 { font-size: 30px; font-weight: 600; letter-spacing: .03em; }
+  /* 缩放 0.5：源图分屏分界线在 x≈1200 → 100 + 600 = 700 */
+  .crop { left: 100px; top: 168px; width: 1200px; border-radius: 10px 10px 0 0; box-shadow: none; }
+</style></head>
+<body class="split-solid">
+  <div class="row">
+    <div class="brand"><div class="tile"><img data-icon alt=""></div><div class="name">Split Search</div></div>
+    <h1>一次搜索，两个引擎</h1>
+  </div>
+  <!-- 真实截图：左 DuckDuckGo、右 Bing（预置组合），整窗，向下出血 -->
+  <div class="crop" data-crop="0,0,2400,1500"><img src="../raw/split-ddg-bing-rust.png" data-iw="2400" alt=""></div>
+  <script src="crop.js"></script>
+</body></html>

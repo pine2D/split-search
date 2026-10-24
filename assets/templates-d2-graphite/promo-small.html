@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="asset-size" content="440x280">
+<meta name="asset-out" content="store/small-promo-440x280.png">
+<link rel="stylesheet" href="base.css">
+<style>
+  /* 缩到四分之一（110 宽）仍要认得出：图标、一行产品名、一句 7 字标语，其他都不放。
+     底色用略亮一档的石墨（--raised），把图标左格松针绿托出来（不改图标本身）。
+     整组水平居中；图标母版四周有 16/128 的透明边，用负边距按图形本身对齐 */
+  body { background: var(--raised); display: flex; align-items: center; justify-content: center; gap: 20px; padding-bottom: 2px; }
+  .tile { width: 120px; height: 120px; margin: 0 -15px; flex: none; }
+  .copy { display: flex; flex-direction: column; }
+  .name { font-size: 40px; font-weight: 700; line-height: 1; letter-spacing: -.005em; white-space: nowrap; }
+  .tag { margin-top: 14px; font-size: 26px; font-weight: 700; line-height: 1; color: var(--muted); letter-spacing: .02em; }
+</style></head>
+<body>
+  <div class="tile"><img data-icon alt=""></div>
+  <div class="copy"><div class="name">Split Search</div><div class="tag">双引擎分屏搜索</div></div>
+</body></html>

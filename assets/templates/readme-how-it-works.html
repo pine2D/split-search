@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<!-- README 原理图：地址栏/拖拽 → 触发网址 → 原生分屏，底部一行写降级。2 倍输出，纸白不透明底（深色主题下也是一张完整卡片）。 -->
+<meta name="asset-size" content="880x380@2">
+<meta name="asset-out" content="readme/how-it-works.png">
+<link rel="stylesheet" href="base.css">
+<script src="fonts.js"></script>
+<style>
+  /* 三栏等宽 229，栏间距 72（24 | 229 | 72 | 229 | 72 | 229 | 25）。每栏顶上一条 1px 墨线，编号用松针绿数字（这是真的先后顺序）。
+     图都从 y=68 开始，第 3 栏的图底边切在原图第 1127 行（两行之间的空白 1115–1138）；每栏一行说明，三栏说明在同一条线上（y=244）；栏间是一行 ≤4 字的标注加 1px 箭头，竖向居中在图的高度上。 */
+  .col { position: absolute; top: 24px; width: 229px; height: 248px; }
+  .c1 { left: 24px; } .c2 { left: 325px; } .c3 { left: 626px; }
+  h2 { display: flex; align-items: baseline; gap: 8px; padding-top: 8px; border-top: 1px solid var(--ink);
+    font-size: 16px; line-height: 22px; font-weight: 600; white-space: nowrap; }
+  h2 b { font-size: 16px; font-weight: 600; color: var(--pine-ink); font-variant-numeric: tabular-nums; }
+  .fig { position: absolute; left: 0; right: 0; top: 44px; }
+  .crop { position: relative; width: 100%; border-radius: 6px; }
+  .mark { border-radius: 4px; padding: 2px; margin: -3px 0 0 -3px; }
+  .or { margin: 9px 0 8px; font-size: 12px; line-height: 16px; color: var(--ink-3); }
+  .note { position: absolute; left: 0; right: 0; top: 220px; font-size: 13px; line-height: 20px; color: var(--ink-2); white-space: nowrap; }
+  .url { background: #fff; border-radius: 6px; padding: 12px 14px 11px; box-shadow: var(--frame); }
+  .url code { display: block; font: 500 13px/1.5 var(--mono); white-space: nowrap; color: var(--ink); }
+  .url code b { font-weight: 600; color: var(--pine-ink); background: rgba(80, 118, 101, .12); border-radius: 3px; padding: 1px 3px; margin-left: -3px; }
+  .url .k { display: block; margin: 4px 0 10px; padding-top: 4px; border-top: 1px solid var(--rule); font-size: 11.5px; color: var(--ink-3); }
+  .url .k.s { margin-bottom: 0; color: var(--pine-ink); }
+  .arrow { position: absolute; top: 128px; width: 72px; text-align: center; font-size: 11.5px; line-height: 16px; color: var(--ink-2); white-space: nowrap; }
+  .arrow svg { display: block; width: 48px; height: 12px; margin: 4px auto 0; }
+  .a1 { left: 253px; } .a2 { left: 554px; }
+  .fall { position: absolute; left: 24px; right: 25px; top: 316px; display: flex; align-items: baseline; gap: 14px;
+    padding-top: 12px; border-top: 1px solid var(--rule); font-size: 14px; line-height: 22px; color: var(--ink-2); }
+  .fall .tag { flex: none; font-weight: 600; color: var(--ink); }
+</style></head>
+<body>
+  <div class="col c1">
+    <h2><b>1</b><span data-t="how.step1"></span></h2>
+    <div class="fig">
+      <!-- 真实截图片段：地址栏下拉建议（左边界从下拉框内侧开始，不带分屏按钮和选中条） -->
+      <div class="crop" data-crop="238,62,600,136"><img src="../raw/omnibox-suggest.png" data-iw="2400" alt=""></div>
+      <div class="or" data-t="how.or" data-lines="2"></div>
+      <!-- 真实截图片段（拖拽中，尚未松手）：标签栏上的拖拽影像 -->
+      <div class="crop" data-crop="1250,0,480,74"><img src="../raw/drag-to-tabstrip.png" data-iw="2400" alt="">
+        <i class="mark" data-box="1418,10,182,38"></i></div>
+    </div>
+    <p class="note" data-t="how.note1"></p>
+  </div>
+  <div class="arrow a1"><span data-t="how.arrow1" data-lines="2"></span><svg viewBox="0 0 48 12"><path d="M4 6H43M38 2L43 6L38 10" stroke="#507665" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+  <div class="col c2">
+    <h2><b>2</b><span data-t="how.step2"></span></h2>
+    <div class="fig url">
+      <code>https://duckduckgo.com<br>/?q=rust+ownership</code>
+      <span class="k" data-t="how.urlNote" data-lines="1"></span>
+      <code><b>&amp;_ss=ddg,baidu</b></code>
+      <span class="k s" data-t="how.flagNote" data-lines="1"></span>
+    </div>
+    <p class="note" data-t="how.note2"></p>
+  </div>
+  <div class="arrow a2"><span data-t="how.arrow2" data-lines="2"></span><svg viewBox="0 0 48 12"><path d="M4 6H43M38 2L43 6L38 10" stroke="#507665" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+  <div class="col c3">
+    <h2><b>3</b><span data-t="how.step3"></span></h2>
+    <div class="fig">
+      <!-- 真实截图：回车后的分屏，左 DuckDuckGo、右百度。只取两个引擎的页头：DuckDuckGo 窗格整宽 + 百度 logo 和搜索框开头 -->
+      <div class="crop" data-crop="0,0,1640,1127"><img src="../raw/omnibox-result-split.png" data-iw="2400" alt=""></div>
+    </div>
+    <p class="note" data-t="how.note3"></p>
+  </div>
+  <div class="fall"><span class="tag" data-t="how.fallTag" data-lines="1"></span><span data-t="how.fall" data-lines="1"></span></div>
+  <script src="crop.js"></script>
+</body></html>

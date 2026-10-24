@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<!-- README 原理图：地址栏/拖拽 → 触发网址 → 原生分屏，底部一行降级说明。2 倍输出，石墨底不透明（深浅主题下都是一张完整卡片）。 -->
+<meta name="asset-size" content="880x380@2">
+<meta name="asset-out" content="readme/how-it-works.png">
+<link rel="stylesheet" href="base.css">
+<style>
+  /* 网格：32 | 240 | 48 | 240 | 48 | 240 | 32。三栏的图块同高（68–232），说明统一在图块下方 24px（y=256）。
+     截图片段一律按 0.5 缩放：2 倍输出时原图一个像素正好对一个像素，不重采样。 */
+  .col { position: absolute; top: 32px; width: 240px; }
+  .c1 { left: 32px; } .c2 { left: 320px; } .c3 { left: 608px; }
+  h2 { display: flex; align-items: baseline; gap: 10px; height: 22px; font-size: 15px; font-weight: 700; line-height: 22px; letter-spacing: .02em; white-space: nowrap; }
+  h2 b { font: 600 15px/22px var(--mono); color: var(--accent); }
+  .vis { height: 164px; margin-top: 14px; }
+  .desc { margin-top: 24px; font-size: 12px; line-height: 18px; color: var(--muted); white-space: nowrap; }
+  .crop { position: relative; width: 100%; border-radius: 4px; }
+  .mark { border-width: 1.5px; border-radius: 4px; padding: 2px; margin: -3.5px 0 0 -3.5px; }
+
+  /* 第 1 栏：地址栏一行 / 或 / 标签栏落点 / 拖到标签栏 / 选中的文字，五块同宽 240 */
+  .c1 .vis { display: flex; flex-direction: column; justify-content: space-between; }
+  .c1 .or, .c1 .up { display: flex; align-items: center; justify-content: center; gap: 6px; height: 16px; font-size: 11px; line-height: 16px; color: var(--dim); }
+  .c1 .up { color: var(--muted); }
+  .c1 .up svg { width: 9px; height: 13px; }
+  .sel { display: flex; justify-content: center; padding: 8px 0; border-radius: 4px; background: #fff; box-shadow: 0 0 0 1px var(--frame); }
+  .sel .crop { width: 180px; border-radius: 0; box-shadow: none; }
+
+  /* 第 2 栏：触发网址 */
+  .url { display: flex; flex-direction: column; justify-content: center; padding: 0 14px; border-radius: 6px; background: var(--raised); box-shadow: inset 0 0 0 1px var(--rule); }
+  .url code { display: block; font: 400 12.5px/1.5 var(--mono); color: var(--ink); white-space: nowrap; }
+  .url code.ss { color: var(--accent); }
+  .url .k { display: block; margin: 4px 0 10px; padding-top: 5px; border-top: 1px solid var(--rule); font-size: 11px; line-height: 16px; color: var(--dim); }
+  .url .k.s { margin-bottom: 0; color: var(--muted); }
+
+  /* 第 3 栏：分屏示意，不放截图；窗格标签用引擎 id（与 _ss 一致） */
+  .split { display: flex; gap: 8px; padding: 10px; border-radius: 6px; background: var(--raised); box-shadow: inset 0 0 0 1px var(--rule); }
+  .pane { flex: 1; display: flex; flex-direction: column; gap: 9px; padding: 11px 12px; border-radius: 4px; background: var(--ground); box-shadow: inset 0 0 0 1px var(--rule); }
+  .pane .id { font: 500 11px/14px var(--mono); color: var(--accent); }
+  .pane .q { margin-bottom: 4px; font: 400 12px/16px var(--mono); color: var(--ink); white-space: nowrap; }
+  .pane i { display: block; height: 4px; border-radius: 2px; background: var(--rule); }
+
+  .arrow { position: absolute; top: 128px; width: 48px; text-align: center; font-size: 10.5px; line-height: 1.35; color: var(--muted); }
+  .arrow svg { display: block; width: 32px; height: 10px; margin: 5px auto 0; }
+  .a1 { left: 272px; } .a2 { left: 560px; }
+
+  .fall { position: absolute; left: 32px; right: 32px; top: 300px; padding-top: 18px; border-top: 1px solid var(--rule);
+    font-size: 12px; line-height: 18px; color: var(--muted); }
+</style></head>
+<body>
+  <div class="col c1">
+    <h2><b>1</b>地址栏输入，或拖到标签栏</h2>
+    <div class="vis">
+      <!-- 真实截图片段：地址栏输入行（不含下拉建议） -->
+      <div class="crop" data-crop="236,62,480,66"><img src="../raw/omnibox-suggest.png" data-iw="2400" alt=""></div>
+      <span class="or">或</span>
+      <!-- 真实截图片段（拖拽中，尚未松手）：标签栏上的拖拽影像 -->
+      <div class="crop" data-crop="1268,0,480,74"><img src="../raw/drag-to-tabstrip.png" data-iw="2400" alt="">
+        <i class="mark" data-box="1420,10,178,34"></i></div>
+      <span class="up">拖到标签栏<svg viewBox="0 0 14 22"><path d="M7 20V3M2 8L7 3L12 8" stroke="#9fbdaf" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <!-- 真实截图片段：正文里选中的文字，白底卡片留出左右内边距 -->
+      <div class="sel"><div class="crop" data-crop="648,592,360,44"><img src="../raw/drag-to-tabstrip.png" data-iw="2400" alt=""></div></div>
+    </div>
+    <p class="desc">都走 Chrome 的默认搜索</p>
+  </div>
+  <div class="arrow a1">Chrome<br>拼出<svg viewBox="0 0 32 10"><path d="M1 5H29M25 1.5L29.5 5L25 8.5" stroke="#9ba49f" stroke-width="1.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+  <div class="col c2">
+    <h2><b>2</b>触发网址</h2>
+    <div class="vis url">
+      <code>https://duckduckgo.com<br>/?q=rust+ownership</code>
+      <span class="k">左侧引擎的真实搜索网址</span>
+      <code class="ss">&amp;_ss=ddg,bing</code>
+      <span class="k s">标记：左 ddg，右 bing</span>
+    </div>
+    <p class="desc">在 Chrome 里添加为网站搜索</p>
+  </div>
+  <div class="arrow a2">扩展<br>接管<svg viewBox="0 0 32 10"><path d="M1 5H29M25 1.5L29.5 5L25 8.5" stroke="#9ba49f" stroke-width="1.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+  <div class="col c3">
+    <h2><b>3</b>Chrome 原生分屏</h2>
+    <div class="vis split">
+      <div class="pane"><span class="id">ddg</span><span class="q">rust ownership</span><i style="width:88%"></i><i style="width:64%"></i><i style="width:76%"></i><i style="width:52%"></i></div>
+      <div class="pane"><span class="id">bing</span><span class="q">rust ownership</span><i style="width:80%"></i><i style="width:92%"></i><i style="width:58%"></i><i style="width:70%"></i></div>
+    </div>
+    <p class="desc">左侧真实搜索，右侧新标签</p>
+  </div>
+  <p class="fall">扩展未生效时，触发网址就是一次普通搜索</p>
+  <script src="crop.js"></script>
+</body></html>
