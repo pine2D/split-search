@@ -8,6 +8,7 @@ import { PROFILE_DIR, CHROME_BIN, EXT_ID } from "./config.mjs";
 import { join } from "node:path";
 import * as ext from "./ext.mjs";
 import * as se from "./settings-se.mjs";
+import { useKagi } from "./settings-kagi.mjs";
 import { collectConsole } from "./console.mjs";
 import { STEPS, selectSteps } from "./steps/index.mjs";
 import { runSteps } from "./runner.mjs";
@@ -198,7 +199,8 @@ async function main() {
       // autoOnly：没人看着。授权申请不等人（requestGrant 的 auto）、恢复检查不请用户启用扩展、需要人的回退一律跳过
       autoOnly: !!args.autoOnly,
       // 网站搜索（sse2e 专用条目）：ensure 前自动快照，结束时在 finally 里恢复
-      se: se.bindSettings(() => rt.browser),
+      // useKagi：T12 把自动发现的 Kagi 条目带上 _ss 并设为默认（settings-kagi.mjs，默认引擎记进快照，收尾改回）
+      se: { ...se.bindSettings(() => rt.browser), useKagi: () => useKagi(rt.browser) },
       // 记下真正开始过的步骤：收尾清单只列它们让用户改过的设置
       onStepStart: step => { rt.started.push(step); },
       // B4、T8 这类会撤销授权/停用扩展的步骤之后，确认扩展可用、授权齐全（见 recover.mjs）

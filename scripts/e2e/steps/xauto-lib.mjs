@@ -27,7 +27,7 @@ export async function settingsRetry(ctx, fn, { tries = 3, waitMs = 2000 } = {}) 
   for (let n = 1; n <= tries; n++) {
     try { return await fn(); }
     catch (e) {
-      if (ctx.signal?.aborted) throw e;
+      if (ctx.signal?.aborted || e.kind === "missing") throw e; // missing：设置里根本没有要操作的条目，重试没用
       last = e;
       if (n < tries) await sleep(waitMs);
     }

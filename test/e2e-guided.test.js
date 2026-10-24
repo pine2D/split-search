@@ -243,13 +243,13 @@ test("withNeeds: 只包装 needs 含 kagi 的步骤", () => {
 // ---- 登记与排序 ----
 const KINDS = {
   B1: "assist", T1: "assist", T2: "assist", T3: "assist", T4: "assist", "T5-DRAG": "assist",
-  "T6-NTP": "judge", T9: "assist", T11: "assist", T12: "judge", T14: "assist",
+  "T6-NTP": "judge", T11: "assist", T12: "judge", T14: "assist",
 };
 
 test("STEPS: assist/judge 步骤都已登记、类型正确，排在对应编号处，B15 仍最后", () => {
   const byId = Object.fromEntries(STEPS.map(s => [s.id, s]));
   // xauto 步骤登记的是真实输入版本，人工版本在 fallback 里
-  const XA = ["T1", "T2", "T3", "T4", "T5-DRAG", "T6-NTP", "T11", "T14"];
+  const XA = ["T1", "T2", "T3", "T4", "T5-DRAG", "T6-NTP", "T11", "T12", "T14"];
   for (const id of XA) assert.equal(byId[id]?.kind, "xauto", id);
   for (const [id, kind] of Object.entries(KINDS)) assert.equal((byId[id]?.fallback ?? byId[id])?.kind, kind, id);
   const ids = STEPS.map(s => s.id);
@@ -257,7 +257,8 @@ test("STEPS: assist/judge 步骤都已登记、类型正确，排在对应编号
   assert.equal(ids[0], "B1");
   assert.ok(ids.indexOf("T5") < ids.indexOf("T5-DRAG") && ids.indexOf("T5-DRAG") < ids.indexOf("T6"));
   assert.ok(ids.indexOf("B4") < ids.indexOf("B5"));
-  for (const id of ["T9", "T12", "T14"]) assert.ok((byId[id].fallback ?? byId[id]).needs.includes("kagi"), id);
+  for (const id of ["T12", "T14"]) assert.ok(byId[id].fallback.needs.includes("kagi"), id);
+  assert.equal(byId.T9.kind, "auto"); // T9 只有登录要人：开头 kagiGate
 });
 
 test("selectSteps: --auto-only 排除全部 assist/judge 步骤", () => {

@@ -81,7 +81,7 @@ export function kagiLoggedIn(href) {
 // 开一个后台标签打开 /settings，等它加载完（新目标先是 about:blank，跳过），返回最终网址后关掉。
 // 只在开始时和用户点“我已完成”之后各做一次：未登录时这条跳转链会重写 Kagi 的会话 cookie（OAuth state），
 // 用户登录期间反复探测可能让登录失败
-async function probeKagi(ctx) {
+export async function probeKagi(ctx) {
   const { client } = ctx.browser;
   const { targetId } = await client.send("Target.createTarget", { url: KAGI_PROBE, background: true });
   try {
@@ -140,6 +140,15 @@ export async function ensureKagi(ctx, { probe = probeKagi, tabLoggedIn = kagiTab
     if (targetId) await client.send("Target.closeTarget", { targetId }).catch(() => {});
     await focusGuide(ctx).catch(() => {});
   }
+}
+
+// 自动步骤（T9、xauto 的 T12）用：已登录返回 null；否则返回跳过/失败的结果。
+// --auto-only 只探测一次、不等人，没登录就跳过；引导式运行按 ensureKagi 请用户登录
+export async function kagiGate(ctx, { probe = probeKagi, ensure = ensureKagi } = {}) {
+  if (!ctx.autoOnly) return ensure(ctx);
+  const href = await probe(ctx).catch(e => `（打不开：${e.message}）`);
+  return kagiLoggedIn(href) ? null
+    : { status: "skip", detail: `Kagi 未登录（${KAGI_PROBE} 最终停在 ${href}）；--auto-only 不等登录，请先在引导式运行（npm run e2e）里登录 Kagi` };
 }
 
 // 把 needs 含 "kagi" 的步骤包一层：先确认 Kagi 已登录

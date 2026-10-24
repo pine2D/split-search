@@ -1,10 +1,11 @@
-// 需要人参与的步骤（一）：T1/T2 地址栏；T3(a) 真实拖拽；T6 新标签页子项；T9 Kagi；T11 右键搜索。
+// 需要人参与的步骤（一）：T1/T2 地址栏；T3(a) 真实拖拽；T6 新标签页子项；T11 右键搜索（都是 xauto 的回退）；T9 Kagi（auto，只有登录要人）。
 // 左侧 Google 停在人机验证页（/sorry，continue 是期望的搜索）也算分屏已建成，见 captcha.mjs。
 // 期望值以 docs/acceptance-v0.1.md 为准，默认组合 Google ｜ Bing。用户改 chrome://settings，脚本只看标签/分屏状态。
 import { splitPairs, resetTabs, openTab, waitState, summarize } from "./util.mjs";
 import { assist, judge, focusGuide } from "./guided.mjs";
 import { googleLeft, sorryNote } from "./captcha.mjs";
 import { L } from "./labels.mjs";
+import { kagiGate } from "./setup.mjs";
 
 export const G = "www.google.com", BING = "www.bing.com";
 export const GB_TRIGGER = "https://www.google.com/search?q=%s&_ss=google,bing";
@@ -109,8 +110,11 @@ const T6_NTP = {
 };
 
 const T9 = {
-  id: "T9", title: "已登录的 Kagi 带 _ss：Kagi ｜ Google 分屏，结果页正常", kind: "assist", needs: ["kagi"], timeoutFactor: 2,
+  // 只有登录 Kagi 要人：auto 步骤，开头经 kagiGate 确认登录（--auto-only 没登录就跳过）
+  id: "T9", title: "已登录的 Kagi 带 _ss：Kagi ｜ Google 分屏，结果页正常", kind: "auto", needs: [], timeoutFactor: 5,
   async run(ctx) {
+    const gate = await kagiGate(ctx);
+    if (gate) return gate;
     await prepare(ctx);
     await openTab(ctx, "https://kagi.com/search?q=split+test&_ss=kagi,google");
     const p = await waitState(ctx, st => splitPairs(st).find(([l, r]) => hostOf(l.url) === "kagi.com" && hostOf(r.url) === G),
