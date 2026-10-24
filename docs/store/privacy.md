@@ -2,7 +2,7 @@
 
 > 状态：草稿，待审。
 > 前半部分是控制台“隐私做法”标签页各栏的填写建议。审核员读英文，所以可粘贴的文字用英文，说明用中文。后半部分 (f) 是隐私政策全文（中英两版），需要托管在公开网址上。
-> 依据：`src/manifest.json`、`src/background.js`、`src/go.js`、`src/lib/rules.js`、`src/lib/engines.js`、`src/chrome/config-store.js`、`src/chrome/split-actions.js`、`src/options/ui.js`（核对日期 2026-10-24，对应 v0.1.0）。提交在 v0.3（2026-10-24 用户决定），提交前按 v0.3 代码重新核对“代码事实速查”：v0.2 会新增读取扩展包内 `_locales` 的 `fetch`（i18n 方案 5.4）。
+> 依据：`src/manifest.json`、`src/background.js`、`src/go.js`、`src/lib/rules.js`、`src/lib/engines.js`、`src/chrome/config-store.js`、`src/chrome/split-actions.js`、`src/chrome/i18n.js`、`src/options/ui.js`（核对日期 2026-10-24，对应 v0.1.0）。提交在 v0.3（2026-10-24 用户决定），提交前按 v0.3 代码重新核对“代码事实速查”：v0.2 会新增读取扩展包内 `_locales` 的 `fetch`（i18n 方案 5.4）。
 
 > **重点说明（已定，2026-10-24）**
 > - **数据使用披露一项都不勾，包括“网页浏览记录”（Web history）。** 理由和风险见 (d)。
@@ -18,7 +18,7 @@
 | 只有一条 DNR 动态规则（id 1）：只匹配带 `_ss=` 参数的 `main_frame` 请求，`requestDomains` 只含可作左侧的引擎的 hostname（DNR 也会匹配它们的子域名），动作是重定向到本扩展的 `go.html?u=<原网址>`。不拦截、不改请求头和响应头 | `src/lib/rules.js`、`src/background.js` |
 | `chrome.storage.sync` 只存设置：`customEngines`（id、名称、网址模板）、`presetOverrides`（名称、网址、隐藏）、`order`、`defaultPair` | `src/lib/engines.js` `mergeConfig`、`src/options/edits.js` |
 | `chrome.storage.session` 只存本扩展所建拆分视图的标签页 id 配对（`split:<tabId>` → 另一侧 tabId），仅在内存中，浏览器关闭即清空 | `src/chrome/split-actions.js` `recordPair` |
-| 扩展代码不发任何网络请求（没有 `fetch`、`XMLHttpRequest`、`WebSocket`、`sendBeacon`），也没有 `eval` 或远程脚本 | 全仓 `src/` 检索 |
+| 唯一的 `fetch` 读取扩展包内的 `_locales/*/messages.json`（`chrome-extension://` 地址），没有任何外部请求；没有 `XMLHttpRequest`、`WebSocket`、`sendBeacon`，也没有 `eval` 或远程脚本 | `src/chrome/i18n.js`；`test/i18n-catalog.test.js` 的 fetch 守门 |
 | 查询词只在 `go.html` 里从触发网址解析出来，用来拼右侧引擎网址，然后在标签页中打开左右两个引擎；不保存 | `src/go.js`、`src/lib/trigger.js` |
 | 读取拆分视图另一侧标签页的 `url`，只用来比较它的 origin 是否属于用户的引擎（判断是不是本扩展的拆分视图）；只有已授权 origin 上的标签页才读得到 | `src/lib/split-decision.js`、`src/go.js` `gatherContext` |
 | 复制按钮用 `navigator.clipboard.writeText` 写入触发网址或 `chrome://settings/searchEngines`；不读剪贴板 | `src/options/ui.js` |
@@ -55,7 +55,7 @@ chrome.storage.sync stores only the user's settings: custom search engines (id, 
 ### Host permissions（optional_host_permissions）
 
 ```text
-No host access is granted at install. The manifest lists https://*/* and http://*/* only as optional host permissions so that users can add any search engine. At runtime the extension requests access only to each selected engine's exact origin (for example https://www.google.com/*), and only when the user clicks the "授权" (Grant) button on the settings page; wildcard hosts are never requested. Access to the left engine's origin is required because a declarativeNetRequest redirect needs host permission for the request URL. For granted origins, Chrome also exposes the URL of tabs in the current split view, which the extension compares by origin to recognize its own split; it does not use the tabs permission. Users can revoke access at any time in chrome://extensions.
+No host access is granted at install. The manifest lists https://*/* and http://*/* only as optional host permissions so that users can add any search engine. At runtime the extension requests access only to each selected engine's exact origin (for example https://www.google.com/*), and only when the user clicks the Grant button next to each engine on the settings page (the button label follows the interface language); wildcard hosts are never requested. Access to the left engine's origin is required because a declarativeNetRequest redirect needs host permission for the request URL. For granted origins, Chrome also exposes the URL of tabs in the current split view, which the extension compares by origin to recognize its own split; it does not use the tabs permission. Users can revoke access at any time in chrome://extensions.
 ```
 
 字数：774
@@ -229,7 +229,7 @@ Your browser sends your search terms directly to the two engines you chose, exac
 
 - declarativeNetRequest: redirects only search URLs that carry the extension's marker parameter "_ss" to the extension's own page. It never blocks requests or modifies request or response headers.
 - storage: stores the settings and split records described above.
-- Site access: no site access is granted at install. Access to a specific search engine's site is requested only when you click "授权" (Grant) on the settings page. You can revoke it at any time in chrome://extensions.
+- Site access: no site access is granted at install. Access to a specific search engine's site is requested only when you click the Grant button next to an engine on the settings page. You can revoke it at any time in chrome://extensions.
 
 The extension does not run in Incognito windows.
 

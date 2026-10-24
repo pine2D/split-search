@@ -33,12 +33,15 @@
 
 2026-10-24 用户决定 v0.1 跳过这一节，T3(b)（从外部 Windows 应用拖入）和 Windows 环境本身的问题因此在 v0.1 未覆盖。以下保留作以后的参考。
 
-WSL 覆盖不到 Windows 环境本身，以及从 Windows 应用拖入。在 Windows Chrome 155+ 里做这 4 项：
+WSL 覆盖不到 Windows 环境本身，以及从 Windows 应用拖入。在 Windows Chrome 155+ 里做这 6 项：
 
 1. 在 WSL 运行 `bash scripts/sync-to-windows.sh`；`chrome://extensions` 里“加载未打包的扩展程序”选 `D:\APP\Chrome-Extensions\split-search`（已加载过就点“重新加载”，不要移除重装），核对扩展 ID 为 `alngkkgnobglnfbhcplhpaflcgfiajnj`，并在设置页横幅里授权 Google 和 Bing。
 2. 在 `chrome://settings/searchEngines` 添加网站搜索 `gb`（网址 `https://www.google.com/search?q=%s&_ss=google,bing`）并设为默认，然后从记事本拖一段文字到标签栏（T3b）：出现 Google ｜ Bing 分屏。
 3. 在普通网页上选中一段文字，拖到标签栏两个标签之间：出现 Google ｜ Bing 分屏。
 4. 在地址栏直接输入关键词回车（用默认引擎 `gb`）：出现 Google ｜ Bing 分屏。
+
+5. Chrome 切到英文界面后，设置页（语言保持“跟随浏览器”）、go.html、工具栏按钮标题都是英文（i18n 方案 9.4）。
+6. Chrome 保持中文、设置页语言选西班牙语：设置页和 go.html 出错页变成西班牙语，工具栏按钮标题仍是中文（符合 i18n 方案 5.1 的限制）。
 
 结束后把默认搜索引擎改回原来的，删掉 `gb`。
 
