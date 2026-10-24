@@ -12,5 +12,3 @@ A Chrome extension that opens one search in two engines side by side, using Chro
 - No data collected, no servers, no analytics.
 
 [Privacy Policy](privacy)
-
-<!-- TODO after publishing: add the Chrome Web Store link here, e.g. [Install from the Chrome Web Store](https://chromewebstore.google.com/detail/...) -->

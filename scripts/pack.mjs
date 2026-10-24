@@ -51,11 +51,11 @@ async function main() {
   const manifest = readJson(join(SRC, "manifest.json"), "src/manifest.json");
   const files = listFiles(SRC);
 
-  // 商店公钥
+  // 商店公钥：npm run 把 cwd 设成仓库根，相对路径按用户执行命令的目录（INIT_CWD）解析
   let storeKey = null;
   if (opts.storeKey) {
     let text;
-    try { text = readFileSync(resolve(opts.storeKey), "utf8"); } catch (e) { die(`读不到公钥文件 ${opts.storeKey}：${e.message}`); }
+    try { text = readFileSync(resolve(process.env.INIT_CWD || process.cwd(), opts.storeKey), "utf8"); } catch (e) { die(`读不到公钥文件 ${opts.storeKey}：${e.message}`); }
     const r = parsePublicKey(text);
     if (!r.ok) die(`${opts.storeKey}：${r.error}`);
     if (r.key === manifest.key) die("--store-key 给的是源码里的开发公钥，应使用 CWS 后台“软件包 → 公钥”里的商店公钥");

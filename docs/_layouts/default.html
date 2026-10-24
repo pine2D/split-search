@@ -29,7 +29,7 @@ footer { padding-top: 12px; padding-bottom: 32px; border-top: 1px solid var(--li
 <footer>
 <a href="https://github.com/pine2D/split-search">GitHub</a> ·
 <a href="https://github.com/pine2D/split-search/issues">Issues</a> ·
-<a href="{{ '/privacy' | relative_url }}">Privacy Policy</a>
+{% if page.lang == 'zh-CN' %}<a href="{{ '/privacy.zh-CN.html' | relative_url }}">隐私政策</a>{% else %}<a href="{{ '/privacy' | relative_url }}">Privacy Policy</a>{% endif %}
 </footer>
 </body>
 </html>

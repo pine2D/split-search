@@ -9,7 +9,7 @@ lang: zh-CN
 [English](privacy)
 
 生效日期：2026-10-24  
-本政策网址：https://pine2d.github.io/split-search/privacy
+本政策网址：https://pine2d.github.io/split-search/privacy.zh-CN.html
 
 Split Search（以下简称“本扩展”）是由 pine2D 开发的 Chrome 扩展，用两个搜索引擎在 Chrome 拆分视图中打开同一次搜索。本政策说明本扩展如何处理你的数据。
 

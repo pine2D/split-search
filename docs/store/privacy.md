@@ -141,7 +141,7 @@ Because the extension never builds or accesses a list of visited pages, and the 
 
 ## (f) 隐私政策全文
 
-> 占位符已在托管副本里填好：`{{PRIVACY_POLICY_URL}}` = `https://pine2d.github.io/split-search/privacy`、`{{CONTACT_URL}}` = `https://github.com/pine2D/split-search/issues`、`{{EFFECTIVE_DATE}}` = 2026-10-24。此处保留占位符作模板；托管副本另在标题下加了中英互链。作者署名 pine2D。
+> 占位符已在托管副本里填好：`{{PRIVACY_POLICY_URL}}` = `https://pine2d.github.io/split-search/privacy`、`{{CONTACT_URL}}` = `https://github.com/pine2D/split-search/issues`、`{{EFFECTIVE_DATE}}` = 2026-10-24。此处保留占位符作模板；托管副本另在标题下加了中英互链，中文副本的“本政策网址”填的是中文页 `https://pine2d.github.io/split-search/privacy.zh-CN.html`（与模板唯一不同之处）。作者署名 pine2D。
 
 ### 简体中文
 
