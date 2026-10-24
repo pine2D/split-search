@@ -35,11 +35,17 @@ export async function settingsRetry(ctx, fn, { tries = 3, waitMs = 2000 } = {}) 
   throw Object.assign(new Error(`设置页操作 ${tries} 次都没成功（${last?.message ?? last}；可能是机器负载高），本步跳过`), { kind: "skip" });
 }
 
-// 固定为 normal 1600×1000（每次都检查，重启或用户动过窗口后也能恢复）
+// 固定为 normal 1600×1000（每次都检查，重启或用户动过窗口后也能恢复）。
+// 嵌套显示（没有窗口管理器）还把窗口移回左上角：屏幕正好 2400×1500，Chrome 新开窗口会错开约 30px（层叠），
+// 测试窗口若是这样一个窗口，右侧就伸出屏幕，标签栏截图被裁（实测整次 --auto-only 里 T3/T4 报“截图大小不符”）
 export async function fixWindow(ctx, targetId) {
   const { client } = ctx.browser;
   const { windowId, bounds } = await client.send("Browser.getWindowForTarget", { targetId });
   if (bounds.windowState !== "normal") await client.send("Browser.setWindowBounds", { windowId, bounds: { windowState: "normal" } });
+  if (ctx.gx?.nested && (bounds.left !== 0 || bounds.top !== 0)) {
+    await client.send("Browser.setWindowBounds", { windowId, bounds: { left: 0, top: 0 } });
+    await sleep(300);
+  }
   if (bounds.width !== WIN_W || bounds.height !== WIN_H) {
     await client.send("Browser.setWindowBounds", { windowId, bounds: { width: WIN_W, height: WIN_H } });
     await sleep(400);

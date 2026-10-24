@@ -108,3 +108,18 @@ test("STEPS: B4、B14、T8 是 auto，--auto-only 也跑；B4、T8 仍标 restor
   const auto = selectSteps(STEPS, { autoOnly: true, xinput: false }).map(s => s.id);
   for (const id of ["B4", "B14", "T8"]) assert.ok(auto.includes(id), id);
 });
+
+test("fixWindow: 嵌套显示把错开的测试窗口移回左上角（否则右侧伸出屏幕、标签栏截图被裁）；host 模式不动位置", async () => {
+  const { fixWindow } = await import("../scripts/e2e/steps/xauto-lib.mjs");
+  const run = async (nested, bounds) => {
+    const sent = [];
+    const client = { send: async (m, p) => { sent.push([m, p]); return m === "Browser.getWindowForTarget" ? { windowId: 9, bounds } : {}; } };
+    await fixWindow({ browser: { client }, gx: { nested } }, "T");
+    return sent.slice(1).map(([, p]) => p.bounds);
+  };
+  const ok = { windowState: "normal", left: 0, top: 0, width: 1600, height: 1000 };
+  assert.deepEqual(await run("xvfb", ok), []);
+  assert.deepEqual(await run("xvfb", { ...ok, left: 29, top: 29 }), [{ left: 0, top: 0 }]);
+  assert.deepEqual(await run(false, { ...ok, left: 29, top: 29 }), []);
+  assert.deepEqual(await run("xephyr", { ...ok, windowState: "maximized", left: 0, top: 0, width: 1600, height: 1000 }), [{ windowState: "normal" }]);
+});
