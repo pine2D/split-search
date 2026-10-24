@@ -126,6 +126,7 @@ export async function activate(ctx, targetId) {
 export async function focusGuide(ctx) {
   const t = (await pageTargets(ctx.browser)).find(x => x.url.startsWith(guideUrl(ctx.port)));
   if (t) return activate(ctx, t.targetId);
+  if (ctx.autoOnly) return; // --auto-only 不打开向导页（没人看）
   await ctx.browser.client.send("Target.createTarget", { url: guideUrl(ctx.port) });
 }
 
@@ -157,18 +158,37 @@ export function abortable(ctx, p) {
   return Promise.race([p, stop]).finally(off);
 }
 
-// 由脚本发起授权申请（CDP 带用户手势），用户只需在弹框里点“允许”。返回是否已授权；被中断时抛出
-export async function requestGrant(ctx, origins, { title = "授权", why = "" } = {}) {
+// 由脚本发起授权申请（CDP 带用户手势）。返回是否已授权；被中断时抛出。
+// 先不等人试一次（auto）：测试配置里这些网站都授权过（permissions.remove 只是暂时撤销，“已授予”记录还在），
+// Chrome 直接批准、不弹框（perm-dialog spike）。AUTO_GRANT_MS 内没有结果说明弹出了原生授权框——脚本不点原生对话框，
+// 关掉发起申请的设置页让对话框随之关闭；引导式运行再申请一次并请用户点“允许”，--auto-only 直接返回 false
+export const AUTO_GRANT_MS = 15000;
+export async function requestGrant(ctx, origins, o = {}) {
+  const ok = await requestOnce(ctx, origins, { ...o, auto: true });
+  if (ok || ctx.autoOnly || stoppedCtx(ctx)) return ok;
+  return requestOnce(ctx, origins, { ...o, auto: false });
+}
+async function requestOnce(ctx, origins, { title = "授权", why = "", auto }) {
   const hosts = [...new Set(origins.map(o => o.replace(/^\w+:\/\//, "").replace(/\/\*$/, "")))];
-  ctx.guide.setStep({ title, instruction: `${why}即将弹出 Chrome 的授权框（${hosts.join("、")}），请点“允许（Allow）”。允许后脚本自动继续。`, buttons: [] });
-  await sleep(1500);
+  if (auto) ctx.guide?.setStep?.({ title, buttons: [], instruction: `${why}脚本重新申请授权（${hosts.join("、")}；之前授权过的网站 Chrome 直接批准，不弹框）。` });
+  else {
+    ctx.guide.setStep({ title, instruction: `${why}即将弹出 Chrome 的授权框（${hosts.join("、")}），请点“允许（Allow）”。允许后脚本自动继续。`, buttons: [] });
+    await sleep(1500);
+  }
   await ctx.browser.evalExt("true"); // 确保有设置页
   const opt = (await pageTargets(ctx.browser)).find(t => t.url.startsWith(OPT_PREFIX));
   if (opt) await activate(ctx, opt.targetId); // 授权框挂在设置页所在的标签上
   let ok = false;
   try {
     ok = await abortable(ctx, ctx.browser.evalExt(`chrome.permissions.request({ origins: ${JSON.stringify(origins)} })`,
-      { userGesture: true, timeoutMs: GRANT_TIMEOUT_MS }));
+      { userGesture: true, timeoutMs: auto ? AUTO_GRANT_MS : GRANT_TIMEOUT_MS }));
+  } catch (e) {
+    if (!auto || stoppedCtx(ctx)) throw e;
+    for (const t of (await pageTargets(ctx.browser)).filter(x => x.url.startsWith(OPT_PREFIX))) {
+      await ctx.browser.client.send("Target.closeTarget", { targetId: t.targetId }).catch(() => {});
+    }
+    ctx.log?.(`  ${title}：${AUTO_GRANT_MS / 1000} 秒内没有批准（多半弹出了原生授权框：测试配置里没有这些网站的已授予记录），已关掉设置页，不点原生对话框`);
+    ok = false;
   } finally { await focusGuide(ctx).catch(() => {}); }
   return ok === true && (await contains(ctx.browser, origins)) === true;
 }

@@ -195,6 +195,8 @@ async function main() {
       browser, guide: server.guide, ext: ext.bindExt(browser, { port: args.port }), port: args.port,
       timeoutMs: args.timeoutMs, abortSignal: abort.signal, log, consoleErrors: col?.errors ?? [], consoleCollector: col ?? undefined,
       stopReason: () => rt.stopReason, install, gx,
+      // autoOnly：没人看着。授权申请不等人（requestGrant 的 auto）、恢复检查不请用户启用扩展、需要人的回退一律跳过
+      autoOnly: !!args.autoOnly,
       // 网站搜索（sse2e 专用条目）：ensure 前自动快照，结束时在 finally 里恢复
       se: se.bindSettings(() => rt.browser),
       // 记下真正开始过的步骤：收尾清单只列它们让用户改过的设置

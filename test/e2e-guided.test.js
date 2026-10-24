@@ -219,10 +219,16 @@ test("ensureGrants: auto-only 缺授权只报缺失、不弹框；引导式带�
   assert.equal(req.length, 1);
   assert.equal(req[0].opts.userGesture, true);
   assert.match(req[0].expr, /engine-a\.localhost:8765.*kagi\.com/);
-  assert.match(g2.steps[0].instruction, /请点“允许（Allow）”/);
+  // 先不等人申请一次（之前授权过的网站 Chrome 直接批准），成功就不再出“请点允许”的说明
+  assert.match(g2.steps[0].instruction, /不弹框/);
+  assert.ok(!g2.steps.some(s => /请点“允许（Allow）”/.test(s.instruction ?? "")));
 
-  const r3 = await ensureGrants({ browser: fakeBrowser(false), guide: fakeGuide(), port: 8765 }, { autoOnly: false });
+  // 没批准：引导式运行再申请一次并请用户点“允许”
+  const b3 = fakeBrowser(false), g3 = fakeGuide();
+  const r3 = await ensureGrants({ browser: b3, guide: g3, port: 8765 }, { autoOnly: false });
   assert.equal(r3.ok, false);
+  assert.equal(b3.calls.filter(c => c.expr?.includes("permissions.request")).length, 2);
+  assert.ok(g3.steps.some(s => /请点“允许（Allow）”/.test(s.instruction ?? "")));
 });
 
 test("withNeeds: 只包装 needs 含 kagi 的步骤", () => {
@@ -236,8 +242,8 @@ test("withNeeds: 只包装 needs 含 kagi 的步骤", () => {
 
 // ---- 登记与排序 ----
 const KINDS = {
-  B1: "assist", B4: "assist", T1: "assist", T2: "assist", T3: "assist", T4: "assist", "T5-DRAG": "assist",
-  "T6-NTP": "judge", T8: "assist", T9: "assist", T11: "assist", T12: "judge", T14: "assist",
+  B1: "assist", T1: "assist", T2: "assist", T3: "assist", T4: "assist", "T5-DRAG": "assist",
+  "T6-NTP": "judge", T9: "assist", T11: "assist", T12: "judge", T14: "assist",
 };
 
 test("STEPS: assist/judge 步骤都已登记、类型正确，排在对应编号处，B15 仍最后", () => {

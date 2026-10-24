@@ -1,9 +1,11 @@
 // 会撤销授权或停用扩展的步骤（restores: true，即 B4、T8）结束后，由 run.mjs 经运行器的 afterStep 调用：
 // 不受单步超时限制，无论步骤通过、失败、跳过还是超时都执行。确认扩展可用、一次性授权齐全；
-// 缺授权就由脚本发起申请（用户点“允许”），被拒绝再申请一次；仍不行返回原因，run.mjs 据此设 stopReason，
+// 扩展不可用先经 chrome://extensions 详情页自动启用（ext-webui.mjs），仍不行才请用户启用（--auto-only 不等人，直接判未恢复）；
+// 缺授权就由脚本发起申请（之前授权过的网站 Chrome 直接批准；真弹框时引导式运行请用户点“允许”），被拒绝再申请一次；仍不行返回原因，run.mjs 据此设 stopReason，
 // 剩余步骤以该原因跳过，而不是一个个超时、给出误导性的失败原因。
 import { GRANT_ORIGINS } from "../config.mjs";
 import { userWait, extAlive, contains, requestGrant, focusGuide } from "./guided.mjs";
+import { ensureEnabled, waitAlive } from "../ext-webui.mjs";
 
 const ENABLE_TEXT = "Split Search 目前不可用（可能还处于停用状态）。请打开 chrome://extensions，把 Split Search 的开关打开（启用）。\n"
   + "后面的步骤都依赖它；启用后脚本自动继续。";
@@ -11,13 +13,15 @@ const ENABLE_TEXT = "Split Search 目前不可用（可能还处于停用状态�
 // deps 可注入，便于单测
 export async function ensureRecovered(ctx, deps = {}) {
   const { alive = () => extAlive(ctx.browser), has = o => contains(ctx.browser, o), request = requestGrant, wait = userWait,
-    focus = () => focusGuide(ctx).catch(() => {}) } = deps;
+    focus = () => focusGuide(ctx).catch(() => {}),
+    enable = async () => (await ensureEnabled(ctx.browser)) && waitAlive(alive) } = deps;
   const origins = GRANT_ORIGINS(ctx.port);
   // 运行被中断（Ctrl+C）时立即返回，不再等授权框；下次运行的一次性授权检查会兜底
   const stopped = () => !!(ctx.abortSignal?.aborted || ctx.signal?.aborted);
   const INTERRUPTED = { ok: false, reason: "中断", detail: "运行被中断，未完成恢复检查（下次运行 npm run e2e 会重新检查并申请授权）" };
   if (stopped()) return INTERRUPTED;
-  if (!(await alive())) {
+  if (!(await alive()) && !(await enable())) {
+    if (ctx.autoOnly) return { ok: false, reason: "扩展未恢复", detail: "扩展不可用，经扩展详情页自动启用也没成功（--auto-only 不等人）" };
     await focus();
     const r = await wait(ctx, {
       title: "恢复：启用扩展", what: "扩展已启用", hint: null, buttons: ["skip"], copyText: "chrome://extensions",

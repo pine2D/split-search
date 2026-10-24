@@ -1,15 +1,13 @@
-// 需要人参与的步骤（一）：B4 横幅授权；T1/T2 地址栏；T3(a) 真实拖拽；T6 新标签页子项；T9 Kagi；T11 右键搜索。
+// 需要人参与的步骤（一）：T1/T2 地址栏；T3(a) 真实拖拽；T6 新标签页子项；T9 Kagi；T11 右键搜索。
 // 左侧 Google 停在人机验证页（/sorry，continue 是期望的搜索）也算分屏已建成，见 captcha.mjs。
 // 期望值以 docs/acceptance-v0.1.md 为准，默认组合 Google ｜ Bing。用户改 chrome://settings，脚本只看标签/分屏状态。
 import { splitPairs, resetTabs, openTab, waitState, summarize } from "./util.mjs";
-import { guarded, openOptions } from "./optpage.mjs";
-import { assist, judge, focusGuide, activate, contains, GRANT_TIMEOUT_MS } from "./guided.mjs";
+import { assist, judge, focusGuide } from "./guided.mjs";
 import { googleLeft, sorryNote } from "./captcha.mjs";
 import { L } from "./labels.mjs";
 
 export const G = "www.google.com", BING = "www.bing.com";
 export const GB_TRIGGER = "https://www.google.com/search?q=%s&_ss=google,bing";
-const GB_ORIGINS = ["https://www.google.com/*", "https://www.bing.com/*"];
 export const SETTINGS = "chrome://settings/searchEngines";
 
 export const parse = s => { try { return new URL(s); } catch { return null; } };
@@ -29,39 +27,6 @@ export const RETRY_NOTE = "做错了或现场乱了，点“重试”：脚本�
 
 // 每个 assist 步骤开头：清理现场、把向导页切到前台
 export async function prepare(ctx) { const base = await resetTabs(ctx); await focusGuide(ctx); return base; }
-
-const B4 = {
-  id: "B4", title: "设置页横幅授权：一次申请 Google 和 Bing", kind: "assist", needs: [], timeoutFactor: 2,
-  restores: true, timeoutExtraMs: GRANT_TIMEOUT_MS,
-  async run(ctx) {
-    return guarded(ctx, ["defaultPair"], async () => {
-      await ctx.ext.eval(`chrome.storage.sync.set({ defaultPair: ["google", "bing"] }).then(() => true)`);
-      await ctx.ext.eval(`chrome.permissions.remove({ origins: ${JSON.stringify(GB_ORIGINS)} })`);
-      const page = await openOptions(ctx.browser);
-      try {
-        const label = await page.until(`return document.querySelector("#banner button")?.textContent`, 8000).catch(() => null);
-        if (!label) return { status: "fail", detail: "撤销 Google、Bing 授权后，设置页没有出现授权横幅" };
-        const problems = [];
-        if (!label.includes("Google") || !label.includes("Bing")) problems.push(`横幅按钮应同时提到 Google 和 Bing，实际“${label}”`);
-        // 先在向导页显示说明，停顿一下再把设置页切到前台（否则说明落在后台的向导页上）
-        const r = await assist(ctx, {
-          title: "B4 横幅授权", what: "Google 和 Bing 都已授权", hint: null, afterShow: () => activate(ctx, page.targetId),
-          instruction: `即将切到设置页（约 2 秒后），请先记住下面的步骤，做完回到本页。\n脚本已撤销 Google、Bing 的授权，并打开了设置页。\n`
-            + `1. 点设置页顶部黄色横幅里的“${label}”；\n`
-            + `2. 确认弹出的权限框里同时列出 www.google.com 和 www.bing.com，点${L.allow}；\n3. 回到向导页。`,
-          probe: () => contains(ctx.browser, GB_ORIGINS),
-        });
-        if (r.status !== "pass") return r;
-        const gone = await page.until(`return document.getElementById("banner").children.length === 0`, 5000).then(() => true, () => false);
-        if (!gone) problems.push("授权后横幅没有消失");
-        return problems.length ? { status: "fail", detail: problems.join("；") } : { status: "pass", detail: `横幅“${label}”一次申请了两个网站；允许后横幅消失` };
-      } finally {
-        // 没完成时的授权恢复由 run.mjs 的步骤后检查（restores: true，recover.mjs）负责，不受本步超时限制
-        await page.close();
-      }
-    });
-  },
-};
 
 const T1 = {
   id: "T1", title: "地址栏快捷字词 gb：Google ｜ Bing 分屏", kind: "assist", needs: [], timeoutFactor: 4, cleanup: ["default", "gb"],
@@ -174,4 +139,4 @@ const T11 = {
   },
 };
 
-export const ASSISTED_STEPS = [B4, T1, T2, T3, T6_NTP, T9, T11]; // T4、T5-DRAG 在 assisted-drag.mjs
+export const ASSISTED_STEPS = [T1, T2, T3, T6_NTP, T9, T11]; // T4、T5-DRAG 在 assisted-drag.mjs
