@@ -2,7 +2,8 @@
 // 把 assets/templates/*.html 渲染成尺寸精确的 PNG（商店截图、宣传图块、README 配图）。Node 24，无依赖。
 //
 // 用法：node scripts/store/render-assets.mjs [--icon <svg>] [--only a,b] [--out <dir>] [--tmp <dir>] [--list]
-//   --icon <svg>  图标文件（默认 assets/templates/icon-placeholder.svg）；选定图标后用它重渲宣传图块
+//   --icon <svg>  图标文件（默认是占位的方案 2：assets/icon-proposals/v2-pane-magnifier/icon.svg）；
+//                 选定图标后传它的 icon.svg 重渲，例如 --icon assets/icon-proposals/v4-split-lens/icon.svg
 //   --only a,b    只渲染这些模板（文件名去掉 .html）
 //   --out <dir>   输出根目录（默认 assets/）；模板声明的相对输出路径接在它后面
 //   --tmp <dir>   放临时 Chrome 配置的目录（默认系统临时目录），结束后删除
@@ -24,11 +25,12 @@ import { createClient } from "../e2e/cdp.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const TEMPLATES = join(ROOT, "assets/templates");
+const DEFAULT_ICON = join(ROOT, "assets/icon-proposals/v2-pane-magnifier/icon.svg"); // 占位，图标选定后改这里或用 --icon
 const CHROME = "/opt/google/chrome/google-chrome";
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 export function parseArgs(argv) {
-  const o = { icon: join(TEMPLATES, "icon-placeholder.svg"), only: null, out: join(ROOT, "assets"), tmp: tmpdir(), list: false };
+  const o = { icon: DEFAULT_ICON, only: null, out: join(ROOT, "assets"), tmp: tmpdir(), list: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i], v = () => { if (i + 1 >= argv.length) throw new Error(`${a} 缺少参数`); return argv[++i]; };
     if (a === "--icon") o.icon = resolve(v());
@@ -178,7 +180,7 @@ async function renderOne(client, t, icon) {
 
 async function main() {
   const o = parseArgs(process.argv.slice(2));
-  if (o.help) { console.log(readFileSync(fileURLToPath(import.meta.url), "utf8").split("\n").slice(1, 9).join("\n")); return; }
+  if (o.help) { console.log(readFileSync(fileURLToPath(import.meta.url), "utf8").split("\n").slice(1, 10).join("\n")); return; }
   let list = readTemplates();
   if (o.only) {
     const miss = o.only.filter(n => !list.some(t => t.name === n));

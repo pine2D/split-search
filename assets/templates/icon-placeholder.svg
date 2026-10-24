@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
-  <!-- 占位图标：选定正式图标后用渲染脚本的 icon 参数替换 -->
-  <rect x="8" y="8" width="112" height="112" rx="26" fill="#1a73e8"/>
-  <rect x="26" y="30" width="34" height="68" rx="8" fill="#fff"/>
-  <rect x="68" y="30" width="34" height="68" rx="8" fill="#fff" opacity=".72"/>
-</svg>

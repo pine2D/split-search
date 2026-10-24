@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="asset-size" content="1280x800">
+<meta name="asset-out" content="store/screenshot-5.png">
+<link rel="stylesheet" href="base.css">
+<style>
+  .url { position: absolute; left: 50%; top: 186px; transform: translateX(-50%); white-space: nowrap;
+    background: #fff; color: var(--ink); border-radius: 14px; padding: 16px 26px; font: 500 26px/1 var(--mono);
+    box-shadow: 0 16px 40px rgba(20, 12, 90, .35); }
+  .url b { color: var(--coral); font-weight: 700; }
+  .url small { display: block; font: 600 17px/1 var(--font); color: var(--muted); margin-bottom: 10px; letter-spacing: .04em; }
+  .col { position: absolute; top: 330px; width: 560px; }
+  .col.l { left: 56px; } .col.r { left: 664px; }
+  .col h2 { font-size: 28px; font-weight: 700; display: flex; align-items: center; gap: 12px; }
+  .col h2 i { font-style: normal; font-size: 18px; font-weight: 700; padding: 4px 12px; border-radius: 999px; background: rgba(255,255,255,.18); }
+  .col .crop { position: relative; margin-top: 16px; width: 560px; }
+  .col p { margin-top: 16px; font-size: 22px; opacity: .9; }
+  svg.flow { position: absolute; left: 0; top: 0; width: 1280px; height: 800px; }
+</style></head>
+<body class="bg-iris">
+  <header class="store-head">
+    <h1>其他设备与无痕窗口：自动退化为普通搜索</h1>
+  </header>
+  <svg class="flow" viewBox="0 0 1280 800">
+    <defs><marker id="h" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#fff"/></marker></defs>
+    <path d="M560 270 C 470 290, 360 290, 336 316" fill="none" stroke="#fff" stroke-width="4" marker-end="url(#h)" opacity=".9"/>
+    <path d="M720 270 C 810 290, 920 290, 944 316" fill="none" stroke="#fff" stroke-width="4" marker-end="url(#h)" opacity=".9"/>
+  </svg>
+  <div class="url"><small>触发网址 = 左侧引擎的真实搜索网址 + 一个标记参数</small>duckduckgo.com/?q=rust+programming<b>&amp;_ss=ddg,bing</b></div>
+  <div class="col l">
+    <h2>装了 Split Search 的 Chrome</h2>
+    <!-- 真实截图：触发网址经扩展建成的分屏，左 DuckDuckGo、右 Bing -->
+    <div class="crop" data-crop="0,0,2400,1500"><img src="../raw/split-ddg-bing-rust.png" data-iw="2400" alt=""></div>
+    <p>左右分屏对比</p>
+  </div>
+  <div class="col r">
+    <h2>其他设备 · 无痕窗口 <i>扩展未生效</i></h2>
+    <!-- 真实截图的页面区域：同一网址的 DuckDuckGo 结果页（只取网页内容，不含浏览器界面） -->
+    <div class="crop" data-crop="14,132,1090,681"><img src="../raw/split-ddg-bing-rust.png" data-iw="2400" alt=""></div>
+    <p>就是一次普通的 DuckDuckGo 搜索，不报错</p>
+  </div>
+  <script src="crop.js"></script>
+</body></html>

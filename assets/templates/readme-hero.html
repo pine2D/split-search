@@ -1,18 +1,22 @@
 <!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8">
-<!-- README 首图：在 GitHub 正文里约 880px 宽显示，2 倍输出保证清晰；不是广告，只说明“它长什么样”，文字少 -->
-<meta name="asset-size" content="1200x660@2">
+<!-- README 首图：GitHub 正文约 880px 宽，2 倍输出。整张不透明（深浅主题都清楚），只说明“它长什么样”，一句话价值主张。 -->
+<meta name="asset-size" content="880x440@2">
 <meta name="asset-out" content="readme/hero.png">
 <link rel="stylesheet" href="base.css">
 <style>
-  body { background: #eef1f5; }
-  .shot { left: 40px; top: 40px; width: 1120px; height: 540px; border-radius: 10px; }
-  .shot > img { height: auto; }
-  .cap { position: absolute; left: 40px; right: 40px; bottom: 26px; display: flex; justify-content: space-between;
-    font-size: 17px; color: var(--muted); }
-  .cap b { color: var(--ink); font-weight: 600; }
+  .line { position: absolute; left: 0; right: 0; top: 0; height: 74px; display: flex; align-items: center; justify-content: center;
+    gap: 14px; font-size: 24px; font-weight: 700; }
+  .tile { width: 36px; height: 36px; border-radius: 9px; box-shadow: 0 4px 12px rgba(20, 12, 90, .3); }
+  .crop { left: 36px; top: 74px; width: 808px; border-radius: 10px 10px 0 0; }
+  .lab { position: absolute; top: 398px; padding: 4px 12px; border-radius: 999px; background: var(--ink); color: #fff;
+    font-size: 14px; font-weight: 600; box-shadow: 0 4px 12px rgba(0, 0, 0, .25); }
+  .lab.l { left: 214px; } .lab.r { left: 630px; }
 </style></head>
-<body>
-  <div class="shot"><img src="../raw/omnibox-result-split.png" alt=""></div>
-  <div class="cap"><span>左：<b>DuckDuckGo</b>　右：<b>百度</b>（自定义引擎）</span><span>Chrome 原生分屏 · 两侧都是普通标签页</span></div>
+<body class="bg-iris">
+  <div class="line"><div class="tile"><img data-icon alt=""></div>地址栏或拖拽搜索，两个引擎在原生分屏里左右对比</div>
+  <!-- 真实截图：左 DuckDuckGo、右 Bing，查询词 rust programming -->
+  <div class="crop" data-crop="0,0,2400,1100"><img src="../raw/split-ddg-bing-rust.png" data-iw="2400" alt=""></div>
+  <div class="lab l">左：DuckDuckGo</div><div class="lab r">右：Bing</div>
+  <script src="crop.js"></script>
 </body></html>

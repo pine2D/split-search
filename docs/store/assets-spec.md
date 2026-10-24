@@ -28,40 +28,37 @@
 | 可访问性 | 控制台不提供替代文字字段，信息要在详细说明里写全 | 每张图都写 `alt`，说清图里在演示什么 |
 | 目的 | 营销：一眼看出“两个引擎、左右分屏” | 说明：讲清机制、设置步骤和降级行为 |
 
-## 3. 计划文件清单
+## 3. 文件清单（已生成）
 
-文件名是计划，制作时可以调整，但请同步更新本表。
+全部图片由 `assets/templates/*.html` 经 `node scripts/store/render-assets.mjs` 渲染，画面里的浏览器和网页都是 `assets/raw/` 中的真实截图（见 `assets/raw/captions.md`），模板只做裁切、缩放、外框和标注。输出是不带透明通道的 PNG。
 
-### 商店（`docs/store/assets/`，图标除外）
+图标目前用的是**占位**：方案 2（`assets/icon-proposals/v2-pane-magnifier/icon.svg`）。选定图标后只需重渲：
 
-| 文件 | 尺寸 | 内容 |
-|---|---|---|
-| `src/icons/icon-16.png`、`icon-32.png`、`icon-48.png`、`icon-128.png` | 16/32/48/128 | 扩展图标（候选方案选定后导出）；128 版同时作为商店图标 |
-| `docs/store/assets/screenshot-1-split.png` | 1280×800 | 主图：Google ｜ Bing 原生分屏的结果页，顶部一行标题“一次搜索，两个引擎左右对比” |
-| `docs/store/assets/screenshot-2-omnibox.png` | 1280×800 | 地址栏输入关键词（或“快捷字词 + 空格 + 关键词”）即将回车的瞬间 |
-| `docs/store/assets/screenshot-3-drag.png` | 1280×800 | 选中网页文字拖到标签栏 |
-| `docs/store/assets/screenshot-4-options.png` | 1280×800 | 设置页：默认组合、触发网址卡片、引擎列表和授权状态 |
-| `docs/store/assets/screenshot-5-site-search.png` | 1280×800 | `chrome://settings/searchEngines` 中添加网站搜索、设为默认 |
-| `docs/store/assets/promo-small-440x280.png` | 440×280 | 图标加左右分屏的抽象图形，不放字或只放产品名 |
-| `docs/store/assets/promo-marquee-1400x560.png` | 1400×560 | 可选：与小宣传图同一视觉，横向展开 |
-
-截图中出现的引擎结果页使用真实页面截图时，注意不要露出账号头像、个人信息或个性化推荐；搜索词选中性词语。
-
-### README（`docs/images/`）
-
-| 文件 | 建议尺寸 | 内容与 alt 草稿 |
-|---|---|---|
-| `docs/images/readme-hero-light.png` / `readme-hero-dark.png` | 1760×约 1000 | 浏览器窗口中两个引擎左右分屏的效果图。alt：“在 Chrome 原生分屏中，左侧 Google、右侧 Bing 同时显示同一关键词的搜索结果” |
-| `docs/images/demo-drag.gif` | 宽 880–1280，几秒循环 | 拖拽文字到标签栏后打开分屏的过程。alt：“把选中的文字拖到标签栏，自动打开左右分屏” |
-| `docs/images/how-it-works-light.svg` / `how-it-works-dark.svg` | 矢量 | 流程图：地址栏或拖拽 → 触发网址（左侧真实搜索网址 + `_ss`）→ 扩展重定向到 go.html → 左右分屏；另一条支线：其他设备或无痕窗口 → 普通左侧搜索。alt 用一句话复述流程 |
-| `docs/images/setup-steps-light.png` / `setup-steps-dark.png` | 1760 宽 | 带编号标注的设置页截图，对应 README“三步上手”的授权、复制触发网址、添加网站搜索。alt：“设置页上的三个步骤：授权引擎、复制触发网址、添加到 Chrome 网站搜索” |
-
-README 中的写法示例：
-
-```html
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/images/readme-hero-dark.png">
-  <img src="docs/images/readme-hero-light.png" width="880"
-       alt="在 Chrome 原生分屏中，左侧 Google、右侧 Bing 同时显示同一关键词的搜索结果">
-</picture>
+```bash
+node scripts/store/render-assets.mjs --icon assets/icon-proposals/<方案目录>/icon.svg
 ```
+
+（也可以改脚本里的 `DEFAULT_ICON`。）图标放在白色圆角底板上，任何一个方案都能用；用到图标的是小宣传图、顶部宣传图和 README 首图。
+
+### 商店（`assets/store/`）
+
+| 文件 | 尺寸 | 模板 | 内容 |
+|---|---|---|---|
+| `screenshot-1.png` | 1280×800 | `store-1-split` | “一次搜索，两个引擎左右对比”：DuckDuckGo ｜ 百度分屏整窗 |
+| `screenshot-2.png` | 1280×800 | `store-2-omnibox` | “地址栏照常搜索，回车就分屏”：地址栏下拉建议，框出“DuckDuckGo ｜ 百度 搜索” |
+| `screenshot-3.png` | 1280×800 | `store-3-drag` | “选中文字，拖到标签栏”：拖拽中的真实画面加箭头，右下角小图是松手后的分屏 |
+| `screenshot-4.png` | 1280×800 | `store-4-engines` | “引擎自己选，组合随意配”：设置页的引擎列表和“添加到 Chrome”卡片 |
+| `screenshot-5.png` | 1280×800 | `store-5-fallback` | “其他设备与无痕窗口：自动退化为普通搜索”：同一个触发网址，装了扩展是分屏，没生效时是普通 DuckDuckGo 结果页（右图只取网页区域） |
+| `small-promo-440x280.png` | 440×280 | `promo-small` | 图标、产品名、“双引擎分屏搜索” |
+| `marquee-1400x560.png` | 1400×560 | `promo-marquee` | 图标、产品名、“一次搜索 两个引擎左右对比”，右侧分屏截图出血 |
+
+商店图标 128×128 和 `src/icons/` 的 16/32/48/128 等图标选定后再导出（要改 manifest，另行确认）。
+
+### README（`assets/readme/`）
+
+| 文件 | 尺寸 | 模板 | 内容 |
+|---|---|---|---|
+| `hero.png` | 1760×880（显示 880 宽） | `readme-hero` | 一句话价值主张加 DuckDuckGo ｜ Bing 分屏截图。整张不透明的紫色底，GitHub 浅色和深色主题下都是一张完整卡片，所以不需要 `<picture>` 两套 |
+| `how-it-works.png` | 1760×760（显示 880 宽） | `readme-how-it-works` | 地址栏或拖拽 → 触发网址（真实搜索网址 + `_ss`）→ 原生分屏，下方是“扩展未生效时”的降级支线。浅色不透明底 |
+
+演示 GIF 暂缺：`assets/raw/` 里拖拽流程只有“拖拽中”和“松手后”两张静态图，没有连续帧，拼成 GIF 只是幻灯片，所以没有做。以后要做，先用屏幕录制拍下真实的拖拽过程，再用 ffmpeg（palettegen）转成 3 MB 以内的 GIF，放在 `assets/readme/demo.gif`。

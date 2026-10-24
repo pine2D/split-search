@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="asset-size" content="1280x800">
+<meta name="asset-out" content="store/screenshot-3.png">
+<link rel="stylesheet" href="base.css">
+<style>
+  .main { left: 40px; top: 158px; width: 1200px; border-radius: 14px 14px 0 0; }
+  .after { left: 812px; top: 524px; width: 420px; border-radius: 12px; outline: 4px solid #fff; }
+  .p2 { left: 830px; top: 492px; }
+</style></head>
+<body class="bg-iris">
+  <header class="store-head">
+    <h1>选中文字，拖到标签栏</h1>
+    <p>松手即用两个引擎打开分屏</p>
+  </header>
+  <!-- 真实截图：拖拽中（选中“Graydon Hoare”，拖拽影像已到标签栏，尚未松手）；箭头和框是标注 -->
+  <div class="crop main" data-crop="0,0,1650,1100"><img src="../raw/drag-to-tabstrip.png" data-iw="2400" alt="">
+    <i class="mark" data-box="692,588,182,50"></i>
+    <i class="mark" data-box="1416,2,186,48"></i>
+    <svg class="ann">
+      <defs><marker id="h" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse">
+        <path d="M0 0L10 5L0 10z" fill="#f26b3a"/></marker></defs>
+      <path d="M884 596 C 1120 560, 1470 400, 1508 70" fill="none" stroke="#f26b3a" stroke-width="9"
+        stroke-dasharray="22 16" stroke-linecap="round" marker-end="url(#h)"/>
+    </svg>
+  </div>
+  <!-- 真实截图：松手后的结果，左 DuckDuckGo、右百度 -->
+  <div class="crop after" data-crop="0,0,2400,1500"><img src="../raw/drag-result-split.png" data-iw="2400" alt=""></div>
+  <div class="pill p2">松手后</div>
+  <script src="crop.js"></script>
+</body></html>

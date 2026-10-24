@@ -1,17 +1,34 @@
-/* 模板共用样式：画布尺寸由各模板 <meta name="asset-size"> 决定，这里只管字体、配色和常用块 */
+/* 模板共用样式：画布尺寸由各模板 <meta name="asset-size"> 决定，这里只管字体、配色和常用块。
+   配色取自图标提案的品牌紫（#6A5CFF）与辅色橙（#F26B3A）；不用 Google 蓝，避免像 Google 官方物料。 */
 :root {
-  --ink: #1f2328; --muted: #57606a; --brand: #1a73e8; --brand-2: #0b57d0;
-  --bg: #f3f6fb; --card: #ffffff; --line: #d8dee8;
-  --font: "Sarasa UI SC", "Source Han Sans SC", "Noto Sans CJK SC", sans-serif;
+  --iris: #6a5cff; --iris-d: #4b3fe0; --iris-dd: #2b2391; --coral: #f26b3a;
+  --ink: #1b1838; --muted: #5a5878; --paper: #f5f4ff; --line: #dcd9f5;
+  --font: "Sarasa UI SC", "Source Han Sans SC", "Source Han Sans SC VF", "Noto Sans CJK SC", sans-serif;
+  --mono: "Noto Sans Mono", "DejaVu Sans Mono", monospace;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { width: 100%; height: 100%; overflow: hidden; }
-body { font-family: var(--font); color: var(--ink); background: var(--bg); -webkit-font-smoothing: antialiased; }
-.icon { display: block; object-fit: contain; }
-/* 截图外框：圆角 + 阴影，内部 img 用 object-position 选取片段 */
-.shot { position: absolute; overflow: hidden; border-radius: 12px; background: #fff;
-  box-shadow: 0 1px 2px rgba(16, 24, 40, .08), 0 18px 48px rgba(16, 24, 40, .18); border: 1px solid rgba(16, 24, 40, .08); }
-.shot > img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top left; }
-.kicker { font-size: 15px; font-weight: 600; letter-spacing: .08em; color: var(--brand); }
-.title { font-weight: 700; letter-spacing: -.01em; line-height: 1.2; }
-.sub { color: var(--muted); line-height: 1.55; }
+body { position: relative; font-family: var(--font); color: var(--ink); background: var(--paper); -webkit-font-smoothing: antialiased; }
+.bg-iris { background: radial-gradient(120% 140% at 0% 0%, #7d70ff 0%, var(--iris-d) 48%, var(--iris-dd) 100%); color: #fff; }
+
+/* 图标放在白色圆角底板上：方案 1–5 是透明底的紫色图形，直接放紫底上会看不见 */
+.tile { display: grid; place-items: center; background: #fff; border-radius: 24%;
+  box-shadow: 0 10px 30px rgba(20, 12, 90, .35); }
+.tile > img { width: 84%; height: 84%; display: block; }
+
+/* 截图片段：data-crop="x,y,w,h" 是原图像素坐标，容器宽度决定缩放，高度由 crop.js 按比例算出（data-h="fill" 时用容器自身高度）。
+   容器里的 .mark（data-box="x,y,w,h"）和 svg.ann（viewBox 用原图坐标）同样按原图坐标定位。 */
+.crop { position: absolute; overflow: hidden; background: #fff; border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(20, 12, 90, .12), 0 24px 60px rgba(20, 12, 90, .32); }
+.crop > img { position: absolute; max-width: none; display: block; }
+.crop > svg.ann { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; }
+.mark { position: absolute; border: 4px solid var(--coral); border-radius: 10px;
+  box-shadow: 0 0 0 4px rgba(242, 107, 58, .22); }
+
+/* 商店截图：顶部一行大标题，下面是真实截图，截图向下出血 */
+.store-head { position: absolute; left: 0; right: 0; top: 0; height: 158px; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; text-align: center; }
+.store-head h1 { font-size: 50px; font-weight: 700; letter-spacing: .01em; line-height: 1.15; }
+.store-head p { font-size: 22px; margin-top: 10px; opacity: .86; }
+.pill { position: absolute; padding: 8px 18px; border-radius: 999px; background: var(--coral); color: #fff;
+  font-size: 22px; font-weight: 700; white-space: nowrap; box-shadow: 0 8px 22px rgba(242, 107, 58, .4); }
