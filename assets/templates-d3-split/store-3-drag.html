@@ -5,17 +5,16 @@
 <link rel="stylesheet" href="base.css">
 <style>
   .main { left: 40px; top: 152px; width: 1200px; border-radius: 10px 10px 0 0; }
-  /* 松手后的分屏：小图贴右下，白色 6px 边框把它和底图分开 */
-  /* 松手后的分屏：白色小卡片贴右下、向下出血，避开拖拽箭头；卡片上沿一行说明 */
-  .card { position: absolute; left: 856px; top: 586px; width: 384px; height: 240px; background: #fff; border-radius: 10px 10px 0 0;
-    padding: 10px 10px 0; z-index: 2; box-shadow: 0 0 0 1px var(--rule), 0 12px 32px rgba(30, 39, 35, .16); }
-  .card .lab { position: static; margin: 0 2px 8px; }
-  .card .crop { position: relative; width: 100%; border-radius: 4px; box-shadow: 0 0 0 1px var(--rule); }
+  /* 松手后的分屏：白色小卡片贴右下、向下出血，整块盖住维基百科的 Rust 信息框（不露半个）。
+     卡片里是两个窗格顶部的局部（两个搜索框里都是“Graydon Hoare”），同为 0.45 倍 */
+  .card { left: 856px; top: 512px; width: 384px; }
+  .pair > .crop { width: 179px; }
 </style></head>
 <body class="split-light">
   <header class="head l"><h1>选中文字，拖到标签栏</h1></header>
-  <header class="head r fn-below"><p>触发网址设为默认后，松手就用两个引擎分屏</p><p class="fn">示例右侧“百度”为自行添加的引擎</p></header>
-  <!-- 真实截图：拖拽中（选中“Graydon Hoare”，拖拽影像已到标签栏，尚未松手）；箭头和框是标注 -->
+  <header class="head r"><p>触发网址设为默认后，松手就用两个引擎分屏</p></header>
+  <!-- 真实截图：拖拽中（选中“Graydon Hoare”，拖拽影像已到标签栏，尚未松手）；箭头和框是标注。
+       箭头从选区上沿出发，先向上穿过两行正文，再沿标题右侧的空白走到落点，不经过右侧信息框 -->
   <div class="crop main" data-crop="0,0,1650,1100"><img src="../raw/drag-to-tabstrip.png" data-iw="2400" alt="">
     <!-- 修补：盖掉 Xvfb 下黑底的标签插入箭头（见 assets/raw/captions.md） -->
     <img class="patch" src="../raw/patches/drag-to-tabstrip-397-61.png" data-box="397,61,32,31" alt="">
@@ -24,12 +23,15 @@
     <svg class="ann">
       <defs><marker id="h" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="3.2" markerHeight="3.2" orient="auto-start-reverse">
         <path d="M0 0L10 5L0 10z" fill="#507665"/></marker></defs>
-      <path d="M884 596 C 1120 560, 1470 400, 1508 66" fill="none" stroke="#507665" stroke-width="3.6"
+      <path d="M840 582 C 850 330, 1490 380, 1509 66" fill="none" stroke="#507665" stroke-width="3.2"
         stroke-dasharray="10 9" stroke-linecap="round" marker-end="url(#h)"/>
     </svg>
   </div>
-  <!-- 真实截图：松手后的结果，左 DuckDuckGo、右百度 -->
-  <div class="card"><div class="lab">松手后 <span>左 DuckDuckGo，右百度</span></div>
-    <div class="crop" data-crop="0,0,2400,1500"><img src="../raw/drag-result-split.png" data-iw="2400" alt=""></div></div>
+  <!-- 真实截图：松手后的结果，左 DuckDuckGo、右百度；各取窗格左上角一段 -->
+  <div class="card"><div class="lab">松手后 <span>右侧“百度”为自行添加的引擎</span></div>
+    <div class="pair">
+      <div class="crop" data-crop="16,136,398,600"><img src="../raw/drag-result-split.png" data-iw="2400" alt=""></div>
+      <div class="crop" data-crop="1216,136,398,600"><img src="../raw/drag-result-split.png" data-iw="2400" alt=""></div>
+    </div></div>
   <script src="crop.js"></script>
 </body></html>

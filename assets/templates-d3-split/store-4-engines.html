@@ -4,20 +4,17 @@
 <meta name="asset-out" content="store/screenshot-4.png">
 <link rel="stylesheet" href="base.css">
 <style>
-  /* 一格一件事：左格是引擎列表，右格是组合与触发网址。两张截图同为 0.5 倍、等高，顶边对齐 */
-  .lab { top: 186px; }
-  .lab.l { left: 40px; } .lab.r { left: 680px; }
-  .crop { top: 218px; width: 560px; }
+  /* 一格一件事：左格是引擎列表，右格是组合与触发网址。两张截图同为 0.52 倍、等宽等高，
+     顶边在 y=232（与截图 5 同一档），在页头下方的空间里上下居中。卡片自带标题，不另加标注 */
+  .crop { top: 232px; width: 560px; }
   .crop.l { left: 40px; } .crop.r { left: 680px; }
 </style></head>
 <body class="split-light">
   <header class="head l"><h1>引擎自己选，组合随意配</h1></header>
   <header class="head r"><p>预置 5 个引擎，也能用网址模板添加</p></header>
-  <div class="lab l">搜索引擎 <span>授权、排序、编辑</span></div>
-  <div class="lab r">添加到 Chrome <span>每个组合一条触发网址</span></div>
-  <!-- 真实截图：设置页“搜索引擎”卡片（授权状态、排序、编辑） -->
-  <div class="crop l" data-crop="640,501,1120,890"><img src="../raw/options-engines.png" data-iw="2400" alt=""></div>
+  <!-- 真实截图：设置页“搜索引擎”卡片（授权状态、排序、编辑），只取卡片内容 -->
+  <div class="crop l" data-crop="662,488,1076,892"><img src="../raw/options-engines.png" data-iw="2400" alt=""></div>
   <!-- 真实截图：设置页“添加到 Chrome”卡片：默认组合、其他组合和设置步骤前四步 -->
-  <div class="crop r" data-crop="640,578,1120,890"><img src="../raw/options-top.png" data-iw="2400" alt=""></div>
+  <div class="crop r" data-crop="662,578,1076,892"><img src="../raw/options-top.png" data-iw="2400" alt=""></div>
   <script src="crop.js"></script>
 </body></html>
