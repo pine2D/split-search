@@ -5,7 +5,7 @@ import { resetTabs, findPair, waitState, siteX, nonce, openTab, trigger, expectP
 import { dragText } from "../gesture.mjs";
 import { contextMenuPick, omnibox, primeClick } from "../gesture-ui.mjs";
 import { selectionCenter } from "../screen.mjs";
-import { mockEntry, useDefault, fixWindow, testWindow, tabSpan, withAttempts, xauto, assertAscii } from "./xauto-lib.mjs";
+import { mockEntry, useDefault, useEntry, fixWindow, testWindow, tabSpan, withAttempts, xauto, assertAscii } from "./xauto-lib.mjs";
 import { ASSISTED_STEPS } from "./assisted.mjs";
 import { DRAG_STEPS } from "./assisted-drag.mjs";
 
@@ -38,7 +38,7 @@ const omniUrl = ctx => siteX(ctx.port, `/omni?n=${nonce()}`);
 const T1 = xauto({
   id: "T1", title: "地址栏快捷字词 sse2e：A ｜ B 分屏（真实键盘）",
   async run(ctx) {
-    await ctx.se.ensure(mockEntry(ctx.port));
+    await useEntry(ctx, mockEntry(ctx.port));
     return withAttempts(ctx, async () => {
       await resetTabs(ctx);
       const { text, q } = query("xkw");

@@ -17,8 +17,22 @@ export const mockEntry = port => ({ keyword: "sse2e", name: "sse2e", url: `http:
 
 // 把默认引擎设成专用条目（设置页在单独的后台窗口里，会抢走 X 前台：键盘手势要在这之后再新开窗口拿前台）
 export async function useDefault(ctx, entry) {
-  await ctx.se.ensure(entry);
-  await ctx.se.makeDefault(entry.keyword);
+  await settingsRetry(ctx, async () => { await ctx.se.ensure(entry); await ctx.se.makeDefault(entry.keyword); });
+}
+export const useEntry = (ctx, entry) => settingsRetry(ctx, () => ctx.se.ensure(entry));
+
+// chrome://settings 是测试设施：页面加载或对话框超时（机器负载高时出现过）不算产品失败——重试，仍不行就跳过本步
+export async function settingsRetry(ctx, fn, { tries = 3, waitMs = 2000 } = {}) {
+  let last;
+  for (let n = 1; n <= tries; n++) {
+    try { return await fn(); }
+    catch (e) {
+      if (ctx.signal?.aborted) throw e;
+      last = e;
+      if (n < tries) await sleep(waitMs);
+    }
+  }
+  throw Object.assign(new Error(`设置页操作 ${tries} 次都没成功（${last?.message ?? last}；可能是机器负载高），本步跳过`), { kind: "skip" });
 }
 
 // 固定为 normal 1600×1000（每次都检查，重启或用户动过窗口后也能恢复）

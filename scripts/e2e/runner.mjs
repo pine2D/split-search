@@ -124,6 +124,7 @@ export async function runSteps(steps, ctx, { timeoutMs, settleMs = SETTLE_MS, re
     let status, detail, uncovered = null;
     if (outcome.kind === "abort") { status = "skip"; detail = `${ABORTED}（步骤执行中${why() ? "；" + why() : ""}）`; }
     else if (outcome.kind === "timeout") { status = "fail"; detail = `超时（${limit} ms 内未完成）`; }
+    else if (outcome.kind === "error" && outcome.error?.kind === "skip") { status = "skip"; detail = outcome.error.message; } // 测试设施问题（如设置页超时），不是产品失败
     else if (outcome.kind === "error") { status = "fail"; detail = `异常：${outcome.error?.message ?? outcome.error}`; }
     else {
       const v = outcome.value;

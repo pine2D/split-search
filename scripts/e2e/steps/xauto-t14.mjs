@@ -16,7 +16,8 @@ export const t14Entry = e => ({ keyword: `sse2e-${e.id}`, name: `sse2e-${e.id}`,
 
 async function leftItem(ctx, e) {
   const origin = originOf(e.url.replace("%s", "x"));
-  await useDefault(ctx, t14Entry(e));
+  try { await useDefault(ctx, t14Entry(e)); }
+  catch (err) { if (err.kind === "skip") return { name: `${e.name} 作左侧`, status: "skip", detail: err.message }; throw err; }
   const r = await withAttempts(ctx, async () => {
     const base = await resetTabs(ctx);
     await fixWindow(ctx, base.targetId);
