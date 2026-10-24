@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 import { readlinkSync } from "node:fs";
-import { join, dirname } from "node:path";
+import { join, dirname, resolve } from "node:path";
 import { createClient } from "./cdp.mjs";
 import { CHROME_BIN, CHROME_ARGS, PROFILE_DIR, EXT_ID } from "./config.mjs";
 import { prepareFontconfig } from "./fonts.mjs";
@@ -29,7 +29,7 @@ export async function launch({ headless = false, restoreSession = false, profile
   if (lock.locked) throw new Error(`测试配置已被占用（pid ${lock.pid}），请先关闭使用它的 Chrome`);
   // 9P 挂载（WSL 的 /mnt/c）上的字体会让渲染进程卡在同步字体请求上、CDP 无响应，测试浏览器不用它们（fonts.mjs）。
   // 配置写在测试配置旁边（不在配置目录里）
-  const fontEnv = prepareFontconfig({ dir: dirname(profileDir) });
+  const fontEnv = prepareFontconfig({ dir: resolve(dirname(profileDir)) });
   // detached：Chrome 自成进程组，终端 Ctrl+C 只发给运行器，由它先恢复 storage 再关浏览器
   const proc = spawn(bin, CHROME_ARGS(profileDir, { headless, restoreSession }),
     { stdio: ["ignore", "ignore", "ignore", "pipe", "pipe"], detached: true, env: { ...process.env, ...fontEnv } });
