@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>多语言出图对比</title>
+<!-- 四种语言的 d1「纸白 · 精排」出图并排对照。样式保持中性灰；所有图片按原比例缩放，未裁切。
+     渲染成 locales-compare.png：无头 Chrome，宽 1800，整页高度取 <html data-h>（见 assets-spec.md 第 4 节）。 -->
+<style>
+  :root {
+    --page: #E9E9E9;
+    --ink: #1F1F1F;
+    --ink-2: #555555;
+    --ink-3: #7A7A7A;
+    --rule: #D2D2D2;
+    --frame: rgba(0,0,0,.16);
+    --gap: 24px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--page); }
+  html { overflow: hidden; }
+  body {
+    width: 1800px;
+    padding: 56px 48px 40px;
+    font-family: "Sarasa UI SC", sans-serif;
+    color: var(--ink);
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  header.sheet { display: grid; grid-template-columns: 1fr auto; column-gap: 40px; align-items: end; padding-bottom: 28px; border-bottom: 1px solid var(--rule); }
+  header.sheet h1 { font-size: 34px; font-weight: 600; line-height: 1.2; }
+  header.sheet p { margin-top: 8px; color: var(--ink-2); font-size: 17px; }
+  header.sheet .legend { color: var(--ink-3); font-size: 15px; text-align: right; line-height: 1.6; }
+
+  section.loc { padding: 34px 0 40px; }
+  section.loc + section.loc { border-top: 1px solid var(--rule); }
+  .head { display: flex; align-items: baseline; gap: 24px; margin-bottom: 20px; }
+  .head h2 { font-size: 26px; font-weight: 600; line-height: 1.25; white-space: nowrap; }
+  .head h2 .id { font-family: "Sarasa Fixed SC", monospace; font-size: 16px; font-weight: 400; color: var(--ink-3); margin-left: 12px; }
+  .head .idea { color: var(--ink-2); font-size: 16px; }
+
+  .row { display: flex; gap: var(--gap); align-items: flex-start; }
+  .row + .row { margin-top: 22px; }
+  figure img { display: block; border: 1px solid var(--frame); background: #fff; }
+  figcaption { margin-top: 6px; font-size: 14px; color: var(--ink-2); line-height: 1.35; }
+  figcaption b { font-weight: 600; color: var(--ink); margin-right: 6px; }
+  .tiles { display: flex; flex-direction: column; gap: 18px; width: 442px; flex: none; }
+  /* 宽度含 2px 描边，图片内容本身按准确比例缩放 */
+  .t100 img { width: 442px; height: 282px; }
+  .t50 img { width: 222px; height: 142px; }
+  .marquee img { width: 1238px; height: 496px; }   /* 1236 × 494，1400 × 560 的 88.3% */
+  .shot img { width: 552px; height: 346px; }       /* 550 × 344，1280 × 800 的 43% */
+  .hero img { width: 552px; height: 277px; }       /* 550 × 275，1760 × 880 的 31% */
+</style>
+</head>
+<body>
+
+<header class="sheet">
+  <div>
+    <h1>多语言出图对比 · d1 纸白精排</h1>
+    <p>同一套模板，四种语言各渲染 9 张：小宣传图、顶部宣传图、截图 1–5、README 首图（原理图未列）。</p>
+  </div>
+  <div class="legend">
+    小宣传图按 100% 与 50% 显示，其余按原比例缩小，未裁切<br>
+    截图里的浏览器与网页仍是中文原始截图，v0.3 前按语言重拍<br>
+    译文是草稿；小宣传图与顶部宣传图商店只能传一张
+  </div>
+</header>
+
+<section class="loc" id="zh_CN">
+  <div class="head">
+    <h2>简体中文<span class="id">zh_CN · 源语言</span></h2>
+    <p class="idea">文案源；扩展 v0.2 的 _locales 源语言。</p>
+  </div>
+  <div class="row">
+    <div class="tiles">
+      <figure class="t100"><img src="../store/zh_CN/small-promo-440x280.png" alt=""><figcaption><b>小宣传图</b>440 × 280，100%</figcaption></figure>
+      <figure class="t50"><img src="../store/zh_CN/small-promo-440x280.png" alt=""><figcaption><b>50%</b>商店列表观感</figcaption></figure>
+    </div>
+    <figure class="marquee"><img src="../store/zh_CN/marquee-1400x560.png" alt=""><figcaption><b>顶部宣传图</b>1400 × 560</figcaption></figure>
+  </div>
+  <div class="row shots">
+    <figure class="shot"><img src="../store/zh_CN/screenshot-1.png" alt=""><figcaption><b>截图 1</b>分屏整窗</figcaption></figure>
+    <figure class="shot"><img src="../store/zh_CN/screenshot-2.png" alt=""><figcaption><b>截图 2</b>地址栏</figcaption></figure>
+    <figure class="shot"><img src="../store/zh_CN/screenshot-3.png" alt=""><figcaption><b>截图 3</b>拖拽</figcaption></figure>
+  </div>
+  <div class="row shots">
+    <figure class="shot"><img src="../store/zh_CN/screenshot-4.png" alt=""><figcaption><b>截图 4</b>引擎设置</figcaption></figure>
+    <figure class="shot"><img src="../store/zh_CN/screenshot-5.png" alt=""><figcaption><b>截图 5</b>降级</figcaption></figure>
+    <figure class="hero"><img src="../readme/hero.png" alt=""><figcaption><b>README 首图</b>readme/hero.png</figcaption></figure>
+  </div>
+</section>
+
+<section class="loc" id="en">
+  <div class="head">
+    <h2>English<span class="id">en · default_locale</span></h2>
+    <p class="idea">全球英文，美式拼写；句首大写，直接称 you；Chrome 界面术语照 en-US。</p>
+  </div>
+  <div class="row">
+    <div class="tiles">
+      <figure class="t100"><img src="../store/en/small-promo-440x280.png" alt=""><figcaption><b>小宣传图</b>440 × 280，100%</figcaption></figure>
+      <figure class="t50"><img src="../store/en/small-promo-440x280.png" alt=""><figcaption><b>50%</b>商店列表观感</figcaption></figure>
+    </div>
+    <figure class="marquee"><img src="../store/en/marquee-1400x560.png" alt=""><figcaption><b>顶部宣传图</b>1400 × 560</figcaption></figure>
+  </div>
+  <div class="row shots">
+    <figure class="shot"><img src="../store/en/screenshot-1.png" alt=""><figcaption><b>截图 1</b>分屏整窗</figcaption></figure>
+    <figure class="shot"><img src="../store/en/screenshot-2.png" alt=""><figcaption><b>截图 2</b>地址栏</figcaption></figure>
+    <figure class="shot"><img src="../store/en/screenshot-3.png" alt=""><figcaption><b>截图 3</b>拖拽</figcaption></figure>
+  </div>
+  <div class="row shots">
+    <figure class="shot"><img src="../store/en/screenshot-4.png" alt=""><figcaption><b>截图 4</b>引擎设置</figcaption></figure>
+    <figure class="shot"><img src="../store/en/screenshot-5.png" alt=""><figcaption><b>截图 5</b>降级</figcaption></figure>
+    <figure class="hero"><img src="../readme/en/hero.png" alt=""><figcaption><b>README 首图</b>readme/en/hero.png</figcaption></figure>
+  </div>
+</section>
+
+<section class="loc" id="zh_TW">
+  <div class="head">
+    <h2>繁體中文（台灣）<span class="id">zh_TW</span></h2>
+    <p class="idea">台湾用语、繁体字；Chrome 界面术语照 zh-TW（分割畫面、網址列、分頁列）。</p>
+  </div>
+  <div class="row">
+    <div class="tiles">
+      <figure class="t100"><img src="../store/zh_TW/small-promo-440x280.png" alt=""><figcaption><b>小宣传图</b>440 × 280，100%</figcaption></figure>
+      <figure class="t50"><img src="../store/zh_TW/small-promo-440x280.png" alt=""><figcaption><b>50%</b>商店列表观感</figcaption></figure>
+    </div>
+    <figure class="marquee"><img src="../store/zh_TW/marquee-1400x560.png" alt=""><figcaption><b>顶部宣传图</b>1400 × 560</figcaption></figure>
+  </div>
+  <div class="row shots">
+    <figure class="shot"><img src="../store/zh_TW/screenshot-1.png" alt=""><figcaption><b>截图 1</b>分屏整窗</figcaption></figure>
+    <figure class="shot"><img src="../store/zh_TW/screenshot-2.png" alt=""><figcaption><b>截图 2</b>地址栏</figcaption></figure>
+    <figure class="shot"><img src="../store/zh_TW/screenshot-3.png" alt=""><figcaption><b>截图 3</b>拖拽</figcaption></figure>
+  </div>
+  <div class="row shots">
+    <figure class="shot"><img src="../store/zh_TW/screenshot-4.png" alt=""><figcaption><b>截图 4</b>引擎设置</figcaption></figure>
+    <figure class="shot"><img src="../store/zh_TW/screenshot-5.png" alt=""><figcaption><b>截图 5</b>降级</figcaption></figure>
+    <figure class="hero"><img src="../readme/zh_TW/hero.png" alt=""><figcaption><b>README 首图</b>readme/zh_TW/hero.png</figcaption></figure>
+  </div>
+</section>
+
+<section class="loc" id="es">
+  <div class="head">
+    <h2>Español<span class="id">es · 中性国际西语</span></h2>
+    <p class="idea">用 tú，句首大写，不加句号；术语取 es 与 es-419 通用说法。marquee 标题与小宣传图标签有 i18n/es.css 局部调字号。</p>
+  </div>
+  <div class="row">
+    <div class="tiles">
+      <figure class="t100"><img src="../store/es/small-promo-440x280.png" alt=""><figcaption><b>小宣传图</b>440 × 280，100%</figcaption></figure>
+      <figure class="t50"><img src="../store/es/small-promo-440x280.png" alt=""><figcaption><b>50%</b>商店列表观感</figcaption></figure>
+    </div>
+    <figure class="marquee"><img src="../store/es/marquee-1400x560.png" alt=""><figcaption><b>顶部宣传图</b>1400 × 560</figcaption></figure>
+  </div>
+  <div class="row shots">
+    <figure class="shot"><img src="../store/es/screenshot-1.png" alt=""><figcaption><b>截图 1</b>分屏整窗</figcaption></figure>
+    <figure class="shot"><img src="../store/es/screenshot-2.png" alt=""><figcaption><b>截图 2</b>地址栏</figcaption></figure>
+    <figure class="shot"><img src="../store/es/screenshot-3.png" alt=""><figcaption><b>截图 3</b>拖拽</figcaption></figure>
+  </div>
+  <div class="row shots">
+    <figure class="shot"><img src="../store/es/screenshot-4.png" alt=""><figcaption><b>截图 4</b>引擎设置</figcaption></figure>
+    <figure class="shot"><img src="../store/es/screenshot-5.png" alt=""><figcaption><b>截图 5</b>降级</figcaption></figure>
+    <figure class="hero"><img src="../readme/es/hero.png" alt=""><figcaption><b>README 首图</b>readme/es/hero.png</figcaption></figure>
+  </div>
+</section>
+
+<script>
+  // 渲染辅助：把整页高度写进 DOM，供截图脚本读取
+  addEventListener("load", () => document.documentElement.setAttribute("data-h", Math.ceil(document.documentElement.scrollHeight)));
+</script>
+</body>
+</html>

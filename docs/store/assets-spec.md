@@ -46,7 +46,7 @@ node scripts/store/render-assets.mjs --icon assets/icon-proposals/<方案目录>
 
 用到图标的是小宣传图、顶部宣传图（放在纸白圆角底板上）和 README 首图（直接放在纸底上）。d1 模板没有 `.tile` 白底板，`--no-tile` 对它不起作用。
 
-### 商店（`assets/store/<locale>/`，现有 `zh_CN/`）
+### 商店（`assets/store/<locale>/`，现有 `zh_CN/`、`en/`、`zh_TW/`、`es/`）
 
 | 文件 | 尺寸 | 模板 | 内容 |
 |---|---|---|---|
@@ -80,7 +80,16 @@ node scripts/store/render-assets.mjs --icon assets/icon-proposals/<方案目录>
   node scripts/store/render-assets.mjs --locale all     # i18n/ 里有 json 的全部语言
   ```
 
-  目前只有 `zh_CN.json`；`en`、`zh_TW`、`es` 的译文待补（草稿，v0.3 前 zh_CN 源文案润色后重译）。
+  四种语言都已出图（2026-10-24），每种 9 张：商店 7 张（截图 1–5、小宣传图、顶部宣传图）+ README 2 张（`hero.png`、`how-it-works.png`）。译文是草稿，v0.3 前 zh_CN 源文案润色后重译。
+
+  | 语言 | 文案 | 商店图 | README 图 | 说明 |
+  |---|---|---|---|---|
+  | `zh_CN` | `i18n/zh_CN.json` | `assets/store/zh_CN/` | `assets/readme/` | 源语言 |
+  | `en` | `i18n/en.json` | `assets/store/en/` | `assets/readme/en/` | 全球英文、美式拼写，sentence case |
+  | `zh_TW` | `i18n/zh_TW.json` | `assets/store/zh_TW/` | `assets/readme/zh_TW/` | 台湾用语、繁体，术语照 Chrome zh-TW |
+  | `es` | `i18n/es.json` + `i18n/es.css` | `assets/store/es/` | `assets/readme/es/` | 中性国际西语（tú）；`es.css` 把 marquee 标题降到 46px、小宣传图标签降到 20px |
+
+  四种语言并排对照：`assets/proposals/locales-compare.png`（源文件 `locales-compare.html`，无头 Chrome 宽 1800 整页截图；图片改了要重截）。共用模板与 `base.css` 没有为译文改动，zh_CN 重渲后与提交的图逐字节一致。
 - **提交前必做（v0.3）：4 种语言都要重拍真实截图**。`assets/raw/` 的截图是中文 Chrome 界面、中文扩展界面（设置页）、旧的字母“S”图标，地址栏和拖拽两组右侧引擎是自行添加的“百度”。换了文案的 en / zh_TW / es 图片里，浏览器和网页仍是中文，不能直接上传。重拍时每种语言用 `--lang=<locale>` 启动 Chrome（界面语言跟着变），扩展界面用 v0.2 的本地化版本，装正式图标，右侧尽量换成预置引擎；再按语言重渲全部图片。
 - **宣传图不能按语言区分**：CWS 的小宣传图（440×280）和顶部宣传图（1400×560）全站只有一张，但 d1 的这两张都带一句文案（`small.tag`、`marquee.*`），渲染会每种语言各出一张。i18n 方案第 11 节写的是“宣传图不分语言，图上尽量不放文字，必须放就只放英文产品名”，两者冲突：提交前要决定上传哪种语言的版本（倾向 `en`，与 `default_locale` 一致），或者另做一版不带文案的宣传图。
 
