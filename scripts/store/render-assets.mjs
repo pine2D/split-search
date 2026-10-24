@@ -18,7 +18,7 @@
 //   <meta name="asset-out" content="store/screenshot-1.png">   相对输出根目录的路径
 //   图标占位：<img data-icon>（渲染时 src 换成图标），或 CSS 里用 var(--icon)（url(...) 形式）
 //   文案：<el data-t="shot1.title"></el>，渲染时换成 i18n/<l>.json 里同名键的文字（纯文本；值里的 \n 变成 <br>）。
-//     缺键直接报错；文字超出所在块、定位容器或画布也报错（多半是译文太长，改译文或 i18n/<l>.css）。
+//     缺键直接报错；文字超出所在块、定位容器或画布，或行数超过元素的 data-lines，也报错（多半是译文太长，改译文或 i18n/<l>.css）。
 //     <html lang> 设为 zh-CN / en / zh-TW / es；有 i18n/<l>.css 就追加进页面（用 :lang() 调字号、字距、折行）。
 //   文件名以 _ 开头的模板（例如 _base.html）不渲染。
 // 输出是去掉 alpha 通道的 24 位 PNG（Chrome 网上应用店的宣传图块要求不透明），尺寸不符直接报错。
@@ -199,7 +199,8 @@ const checkOverflow = `(() => {
   const out = [], W = innerWidth, H = innerHeight, r = document.createRange();
   for (const el of document.querySelectorAll("[data-t]")) {
     r.selectNodeContents(el);
-    const t = r.getBoundingClientRect(), boxes = [];
+    const t = r.getBoundingClientRect(), boxes = [], n = new Set([...r.getClientRects()].filter(x => x.width).map(x => Math.round(x.top))).size;
+    if (el.dataset.lines && n > +el.dataset.lines) { out.push(el.dataset.t + " 占 " + n + " 行，最多 " + el.dataset.lines + " 行"); continue; }
     if (getComputedStyle(el).display !== "inline") boxes.push(["所在块", el.getBoundingClientRect()]);
     if (el.offsetParent) boxes.push(["定位容器", el.offsetParent.getBoundingClientRect()]);
     boxes.push(["画布", { left: 0, top: 0, right: W, bottom: H }]);

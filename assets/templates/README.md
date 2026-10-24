@@ -77,7 +77,7 @@ node scripts/store/render-assets.mjs --list     # 只列模板、尺寸和输出
 - 换行：值里写 `\n`，渲染时变成 `<br>`（例如 `marquee.title` 的 `"一次搜索，\n两个引擎对比"`）。不要在值里写 `<br>`，会原样显示。
 - 字体：`base.css` 按 `<html lang>` 选字族，zh-CN / en / es 用 Sarasa UI SC，zh-TW 用 Sarasa UI TC；`fonts.js` 检查当前语言要用的字族。
 - 微调：需要按语言改字号、字距、折行时，建 `i18n/<locale>.css`（有就自动加载），规则用 `:lang()` 限定，例如 `:root:lang(es) .head h1 { font-size: 36px; }`。
-- 检查：渲染时缺键直接报错（不会退回中文）；文字超出所在块、定位容器或画布也报错，命令以非零码退出。
+- 检查：渲染时缺键直接报错（不会退回中文）；文字超出所在块、定位容器或画布也报错；会自动折行的元素带 `data-lines="n"`，译文折成超过 n 行同样报错。命令以非零码退出。
 
 ```bash
 node scripts/store/render-assets.mjs --locale zh_CN   # 默认；store → assets/store/zh_CN/，README → assets/readme/
