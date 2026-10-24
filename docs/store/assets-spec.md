@@ -46,7 +46,7 @@ node scripts/store/render-assets.mjs --icon assets/icon-proposals/<方案目录>
 
 模板把图标放在白色圆角底板上；自带底板的图标（如方案 6）加 `--no-tile`，避免“板中板”。用到图标的是小宣传图、顶部宣传图和 README 首图。
 
-### 商店（`assets/store/`）
+### 商店（`assets/store/<locale>/`，现有 `zh_CN/`）
 
 | 文件 | 尺寸 | 模板 | 内容 |
 |---|---|---|---|
@@ -60,7 +60,7 @@ node scripts/store/render-assets.mjs --icon assets/icon-proposals/<方案目录>
 
 商店图标 128×128 直接上传 `src/icons/icon-128.png`。
 
-### README（`assets/readme/`）
+### README（`assets/readme/`；zh_CN 在根下，其他语言在 `assets/readme/<locale>/`）
 
 | 文件 | 尺寸 | 模板 | 内容 |
 |---|---|---|---|

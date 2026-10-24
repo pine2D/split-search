@@ -2,7 +2,9 @@
    强调色只有两种用法：#507665 的 1px 线框 / 箭头，和 #3E5D50 的文字；实心松针绿块只用在小宣传图左格和顶部宣传图左栏。
    不用渐变、发光和大面积彩色；截图放在 1px 细边框里，阴影只起“浮起一点”的作用。
    网格：商店截图 1280×800，左右边距 48；页头一栏左对齐（标题下面一行副标题）；截图上缘 y=148，向下出血，切口落在两行文字之间。
-   字体：只用更纱黑体（Sarasa UI SC / Sarasa Fixed SC）定稿。fonts.js 在截图前检查这两个字体，没装就报错退出，避免换机器后悄悄退回别的字体、改变折行。 */
+   字体：只用更纱黑体定稿，按 <html lang>（渲染时由 --locale 设定）选字族：zh-CN、en、es 用 Sarasa UI SC（拉丁部分即 Inter），zh-TW 用 Sarasa UI TC；
+   代码一律 Sarasa Fixed SC（只有网址）。fonts.js 在截图前检查 --font / --mono 的首选字族，没装就报错退出，避免换机器后悄悄退回别的字体、改变折行。
+   各语言的字号、字距、折行微调写在 i18n/<locale>.css，用 :lang() 限定。 */
 :root {
   --paper: #f4f3ef;   /* 底色 */
   --ink: #1d2320;     /* 标题、正文 */
@@ -15,6 +17,7 @@
   --mono: "Sarasa Fixed SC", monospace;
   --frame: 0 0 0 1px rgba(29, 35, 32, .13), 0 4px 12px rgba(29, 35, 32, .06);
 }
+:root:lang(zh-TW) { --font: "Sarasa UI TC", sans-serif; }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { width: 100%; height: 100%; overflow: hidden; }
 body { position: relative; font-family: var(--font); color: var(--ink); background: var(--paper);

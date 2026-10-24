@@ -67,3 +67,24 @@ node scripts/store/render-assets.mjs --list     # 只列模板、尺寸和输出
 - 截图 2、3 的结果分屏只显示到百度窗格的 logo 和搜索框，百度一侧的正文被块的右缘截掉；要两侧都完整，就得把整窗缩到约 0.29，字会读不清。
 - `assets/raw/` 里地址栏和拖拽两组截图的右侧是自定义引擎“百度”（这台机器上 Bing 对中文查询会弹人机验证）。要换成预置引擎，需要重拍。
 - 截图里设置页标签仍是 Chrome 生成的灰底“S”图标（`assets/raw/` 拍摄时还没有正式图标），上架前要重拍，见 `docs/store/assets-spec.md` 第 1 节。
+
+## 多语言（i18n/）
+
+画面里所有要翻译的文字都在 `i18n/<locale>.json`（`zh_CN` 是源语言，另有 `en`、`zh_TW`、`es`，与扩展 v0.2 的 `_locales` 同名）。模板里只留不翻译的东西：产品名 Split Search、引擎名、网址、步骤编号。
+
+- 文件格式：平铺的 `{ "键": "文字" }`，键按图分组（`small.*`、`marquee.*`、`hero.*`、`how.*`、`shot1.*`…`shot5.*`）。所有语言的键集合必须与 `zh_CN.json` 完全相同，`test/store-i18n.test.js` 会检查，模板里用到的 `data-t` 键也必须都在 `zh_CN.json` 里。
+- 模板写法：`<h1 data-t="shot1.title"></h1>`，渲染时整段换成文字（纯文本，不解析 HTML）。要和不翻译的部分并排时，把 `data-t` 放在单独的 `<span>` 上，例如 `<h2><b>1</b><span data-t="how.step1"></span></h2>`。
+- 换行：值里写 `\n`，渲染时变成 `<br>`（例如 `marquee.title` 的 `"一次搜索，\n两个引擎对比"`）。不要在值里写 `<br>`，会原样显示。
+- 字体：`base.css` 按 `<html lang>` 选字族，zh-CN / en / es 用 Sarasa UI SC，zh-TW 用 Sarasa UI TC；`fonts.js` 检查当前语言要用的字族。
+- 微调：需要按语言改字号、字距、折行时，建 `i18n/<locale>.css`（有就自动加载），规则用 `:lang()` 限定，例如 `:root:lang(es) .head h1 { font-size: 36px; }`。
+- 检查：渲染时缺键直接报错（不会退回中文）；文字超出所在块、定位容器或画布也报错，命令以非零码退出。
+
+```bash
+node scripts/store/render-assets.mjs --locale zh_CN   # 默认；store → assets/store/zh_CN/，README → assets/readme/
+node scripts/store/render-assets.mjs --locale en      # store → assets/store/en/，README → assets/readme/en/
+node scripts/store/render-assets.mjs --locale zh_TW
+node scripts/store/render-assets.mjs --locale es
+node scripts/store/render-assets.mjs --locale all     # i18n/ 里有 json 的全部语言
+```
+
+小宣传图和顶部宣传图在 CWS 不能按语言区分，但这里每种语言都会出一张，上传哪一张提交时再定（见 `docs/store/assets-spec.md`）。
