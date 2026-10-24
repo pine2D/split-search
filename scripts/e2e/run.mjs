@@ -5,6 +5,7 @@ import { parseArgs } from "./args.mjs";
 import { checkProfileLock, launch } from "./browser.mjs";
 import { startServer } from "./server.mjs";
 import { PROFILE_DIR, CHROME_BIN, EXT_ID } from "./config.mjs";
+import { join } from "node:path";
 import * as ext from "./ext.mjs";
 import * as se from "./settings-se.mjs";
 import { collectConsole } from "./console.mjs";
@@ -12,7 +13,8 @@ import { STEPS, selectSteps } from "./steps/index.mjs";
 import { runSteps } from "./runner.mjs";
 import { makeRestart } from "./restart.mjs";
 import { redact } from "./report.mjs";
-import { teardown, writePartialReportSync, exitCodeOf } from "./teardown.mjs";
+import { teardown, writePartialReportSync, exitCodeOf, stopDisplaySync } from "./teardown.mjs";
+import { prepareDisplay, describeDisplay } from "./display.mjs";
 import xinput from "./xinput.mjs";
 import { releaseHeldSync, releaseAfterClose } from "./gesture.mjs";
 import { openGuide, installGuide, ensureGrants, cleanupPrompt, cleanupItems, cleanupNote, cleanupText } from "./steps/setup.mjs";
@@ -21,6 +23,7 @@ import { extAlive } from "./steps/guided.mjs";
 import { L } from "./steps/labels.mjs";
 import { fixWindow } from "./steps/xauto-lib.mjs";
 
+const DISPLAY_PID_FILE = join(ext.OUT_DIR, "display.pid");
 // 终端输出一律脱敏（网址里的 token/session 等参数值）
 const log = m => console.log(redact(m));
 const warn = m => console.error(redact(m));
@@ -46,21 +49,32 @@ function preconditionMessage(ens, args) {
 }
 
 async function main() {
-  let args, steps, xa = { ok: false, reason: "未检查" };
-  try {
-    args = parseArgs(process.argv.slice(2));
-    xa = await xinput.available({ headless: args.headless, noXinput: args.noXinput });
-    steps = selectSteps(STEPS, { ...args, xinput: xa.ok });
-  } catch (e) {
+  let args;
+  try { args = parseArgs(process.argv.slice(2)); }
+  catch (e) {
     if (e.code === "HELP") { log(e.message); return 0; }
     warn(e.message);
     return 2;
   }
-  if (!steps.length) { warn("没有可执行的步骤：检查 --only 与 --auto-only 的组合（--auto-only 只保留自动步骤，以及 xinput 可用时的 xauto 步骤）。"); return 2; }
-
+  // 先查配置锁再清理遗留的显示服务器：配置被占用时可能是另一次运行，它的服务器不能动
   const lock = checkProfileLock(PROFILE_DIR);
   if (lock.locked) {
     warn(`前置条件缺失：测试配置正被另一个 Chrome 占用（pid ${lock.pid}）。\n请关闭使用 ${PROFILE_DIR} 的 Chrome 后重试。`);
+    return 2;
+  }
+  // 嵌套显示（display.mjs）：必须早于 launch() 和 xinput.available()，它们都按 process.env.DISPLAY 连接。
+  // 嵌套模式下浏览器有窗口（xvfb 本身不可见），所以不再无头；退回 host 时保持原来的无头规则
+  const disp = await prepareDisplay(args, { pidFile: DISPLAY_PID_FILE, log });
+  args.headless = args.headless && disp.mode === "host";
+  log(`显示：${describeDisplay(disp)}`);
+  let steps, xa = { ok: false, reason: "未检查" };
+  try {
+    xa = await xinput.available({ headless: args.headless, noXinput: args.noXinput });
+    steps = selectSteps(STEPS, { ...args, xinput: xa.ok });
+  } catch (e) { warn(e.message); await disp.stop(); return 2; }
+  if (!steps.length) {
+    warn("没有可执行的步骤：检查 --only 与 --auto-only 的组合（--auto-only 只保留自动步骤，以及 xinput 可用时的 xauto 步骤）。");
+    await disp.stop();
     return 2;
   }
 
@@ -68,13 +82,13 @@ async function main() {
   const abort = new AbortController();
   let signalName = null, server = null;
   const startedAt = new Date();
-  const notes = [];
+  const notes = [...disp.notes];
   // 运行时状态（重启会替换 browser/col）。orphanErrors：重启后收集器没能启用时，保留重启前的错误；
   // stopReason：浏览器不可用时设置，运行器据此跳过剩余步骤
   const rt = { browser: null, col: null, closing: false, browserDead: false, restartFailed: false, stopReason: null, orphanErrors: null, notes, ctx: null, started: [] };
   // 收尾记录（teardown.mjs）。partial：运行器边跑边写的结果；网站搜索：Chrome 要正常退出才保证改动写进磁盘
   // （实测 SIGTERM 会丢最后几秒），所以恢复只做到“读回核对”并保留快照，正常关闭浏览器之后才删
-  const s = { args, steps, startedAt, chromeVersion: null, storage: null, snapshotTaken: false, results: null, partial: [],
+  const s = { display: disp, args, steps, startedAt, chromeVersion: null, storage: null, snapshotTaken: false, results: null, partial: [],
     signalName: null, aborted: () => abort.signal.aborted, cleanupConfirmed: false, seTouched: false, seFailed: false, seVerified: false };
   const reportDeps = { outDir: ext.OUT_DIR, log, warn };
   const onSignal = sig => {
@@ -82,6 +96,7 @@ async function main() {
       warn(`\n再次收到 ${sig}，立即退出。若已做快照，它保留在 ${ext.SNAPSHOT_FILE}（网站搜索：${se.SE_SNAPSHOT_FILE}），下次启动会自动恢复。`);
       if (releaseHeldSync() === "stuck") warn("真实输入的鼠标左键可能仍按着（测试浏览器也会随之退出）：请把光标移到桌面空白处（不在任何 Linux 窗口上），再运行 xdotool mouseup 1。");
       try { writePartialReportSync(rt, s, reportDeps); } catch (e) { warn(`写部分报告失败：${e.message}`); }
+      if (stopDisplaySync(s)) warn(`已停止嵌套显示服务器 ${disp.display}`);
       process.exit(sig === "SIGINT" ? 130 : 143);
     }
     signalName = s.signalName = sig;
@@ -202,7 +217,9 @@ async function main() {
     await teardown(rt, s, {
       ext, extAlive, se, exists: existsSync, cleanupItems, cleanupNote, cleanupText, ...reportDeps,
       afterClose: async () => (rt.ctx?.gx ? releaseAfterClose(xinput, rt.ctx.gx.root) : "none"),
+      stopDisplay: disp.stop,
     }).catch(e => warn(`收尾出错：${e?.stack || e}`));
+    await disp.stop().catch(() => {}); // 幂等：teardown 中途出错时兜底
     await server?.close().catch(() => {});
   }
 

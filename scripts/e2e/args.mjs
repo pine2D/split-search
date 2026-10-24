@@ -8,12 +8,15 @@ export const USAGE = `用法：npm run e2e -- [选项]
   --port <端口>      模拟服务端口，默认 ${DEFAULT_PORT}（改端口后需要重新授权）
   --timeout <毫秒>   单步超时，默认 120000
   --no-xinput        不用真实鼠标/键盘（xdotool）：xauto 步骤改用人工协助版本
+  --display <方式>   测试浏览器所在的显示：xephyr（独立可见窗口）、xvfb（不可见）、host（当前桌面）；
+                     默认引导式用 xephyr，--auto-only 用 xvfb（加 --headed 时用 xephyr）；不可用时退回 host
   --help             显示本说明`;
 
+const DISPLAY_MODES = ["xephyr", "xvfb", "host"];
 const fail = msg => { throw new Error(`${msg}\n\n${USAGE}`); };
 
 export function parseArgs(argv) {
-  const out = { autoOnly: false, headless: false, only: null, port: DEFAULT_PORT, timeoutMs: 120000, noXinput: false };
+  const out = { autoOnly: false, headless: false, only: null, port: DEFAULT_PORT, timeoutMs: 120000, noXinput: false, display: null };
   let headed = false;
   for (let i = 0; i < argv.length; i++) {
     const raw = argv[i];
@@ -29,6 +32,12 @@ export function parseArgs(argv) {
       case "--auto-only": out.autoOnly = true; break;
       case "--headed": headed = true; break;
       case "--no-xinput": out.noXinput = true; break;
+      case "--display": {
+        const v = value();
+        if (!DISPLAY_MODES.includes(v)) fail(`--display 只能是 ${DISPLAY_MODES.join(" / ")}：${v}`);
+        out.display = v;
+        break;
+      }
       case "--only": {
         const ids = value().split(",").map(s => s.trim().toUpperCase()).filter(Boolean);
         if (!ids.length) fail("--only 需要至少一个步骤编号");

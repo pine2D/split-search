@@ -1,6 +1,6 @@
 // run.mjs 的收尾（finally）：恢复 storage、恢复网站搜索、收尾清单、关浏览器、写报告；第二次 Ctrl+C 时同步写出部分报告。
 // rt：run.mjs 的运行时状态（browser、col、closing、browserDead、restartFailed、restarting、started、notes）；
-// s：收尾要用的运行记录（args、steps、startedAt、chromeVersion、storage、snapshotTaken、results、partial、signalName、aborted、
+// s：收尾要用的运行记录（display（display.mjs 的 prepareDisplay 结果）、args、steps、startedAt、chromeVersion、storage、snapshotTaken、results、partial、signalName、aborted、
 //    cleanupConfirmed、seTouched、seFailed、seVerified）。依赖全部经 d 注入，便于单测。
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -147,8 +147,15 @@ export function exitCodeOf(s, rt, fatal) {
 
 const reportData = (rt, s, results) => ({
   startedAt: s.startedAt, args: s.args, results, consoleErrors: rt.col?.errors ?? rt.orphanErrors ?? [],
-  chromeVersion: s.chromeVersion, storage: s.storage, notes: rt.notes,
+  chromeVersion: s.chromeVersion, storage: s.storage, notes: rt.notes, display: s.display ? displayInfo(s.display) : null,
 });
+// 报告只要描述字段，不带 stop 等函数
+const displayInfo = ({ mode, display, size, reason }) => ({ mode, display, size, ...(reason ? { reason } : {}) });
+
+// 第二次 Ctrl+C：同步停掉嵌套显示服务器（process.kill + 删 pid 文件，见 display.mjs 的 stopSync）。返回是否发了信号
+export function stopDisplaySync(s) {
+  try { return !!s.display?.stopSync?.(); } catch { return false; }
+}
 
 // 第二次 Ctrl+C：来不及恢复，同步写出部分报告后由调用方立即退出（writeFileSync 全程同步）
 export function writePartialReportSync(rt, s, d) {
@@ -167,6 +174,11 @@ export async function teardown(rt, s, d) {
   await restoreSettingsStep(rt, s, d);
   cleanupStep(rt, s, d);
   await closeStep(rt, s, d);
+  // 嵌套显示服务器在浏览器关掉（含 afterClose 松开鼠标键）之后才停
+  if (d.stopDisplay) {
+    try { await d.stopDisplay(); }
+    catch (e) { rt.notes.push(`停止嵌套显示服务器失败：${e.message}`); (d.warn ?? noop)(rt.notes.at(-1)); }
+  }
   if (s.snapshotTaken || s.results) {
     const results = s.results ?? fillResults(s.steps ?? [], s.partial ?? []);
     s.results = results;

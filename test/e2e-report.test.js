@@ -102,3 +102,13 @@ test("renderReport: 说明里有 ``` 时代码块围栏更长；多行备注缩�
   assert.match(md, /## 未覆盖[\s\S]*T3\(b\)[\s\S]*T9\(b\)[\s\S]*T13\(f\)[\s\S]*T15/);
   assert.ok(json.uncovered.length >= 2);
 });
+
+test("renderReport: 头部写显示方式；退回 host 时附原因；json 里带 display", () => {
+  const { md, json } = renderReport({ ...base, display: { mode: "xvfb", display: ":90", size: "2400x1500" } });
+  assert.match(md, /^- 显示：xvfb :90（2400x1500）$/m);
+  assert.deepEqual(json.display, { mode: "xvfb", display: ":90", size: "2400x1500" });
+  const fb = renderReport({ ...base, display: { mode: "host", display: ":0", reason: "Xvfb 启动失败：boom" } });
+  assert.match(fb.md, /^- 显示：host :0（退回 host：Xvfb 启动失败：boom）$/m);
+  assert.equal(renderReport(base).json.display, null);
+  assert.match(renderReport(base).md, /^- 显示：未知$/m);
+});

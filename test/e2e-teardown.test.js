@@ -4,7 +4,7 @@ import { mkdtempSync, rmSync, readdirSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
-  restoreStorageStep, restoreSettingsStep, closeStep, cleanupStep, fillResults, writePartialReportSync, teardown,
+  restoreStorageStep, restoreSettingsStep, closeStep, cleanupStep, fillResults, writePartialReportSync, teardown, stopDisplaySync,
 } from "../scripts/e2e/teardown.mjs";
 
 const mkRt = (o = {}) => ({ browser: { close: async () => ({ graceful: true }) }, col: null, browserDead: false, restartFailed: false,
@@ -140,4 +140,31 @@ test("closeStep: 关闭浏览器后处理仍按着的鼠标键，结果写进备
   const rt3 = mkRt();
   await closeStep(rt3, mkS(), { se: {}, afterClose: async () => "none" });
   assert.deepEqual(rt3.notes, []);
+});
+
+test("teardown: 浏览器关掉之后才停嵌套显示服务器，停的出错只记备注；报告照写", () => withOut(async dir => {
+  const order = [];
+  const rt = mkRt({ browser: { close: async () => { order.push("close"); return { graceful: true }; } } });
+  const s = mkS({ snapshotTaken: true, storage: { before: "a" }, steps: [] });
+  const d = {
+    ext: { SNAPSHOT_FILE: "/x", restoreStorage: async () => ({ digest: "a", equal: true }) }, extAlive: async () => true,
+    se: { SE_SNAPSHOT_FILE: SE_FILE }, exists: () => false, cleanupItems: () => [], cleanupNote: () => null, cleanupText: () => "", outDir: dir,
+    afterClose: async () => { order.push("afterClose"); return "none"; },
+    stopDisplay: async () => { order.push("stopDisplay"); },
+  };
+  await teardown(rt, s, d);
+  assert.deepEqual(order, ["close", "afterClose", "stopDisplay"]);
+  assert.equal(s.reportWritten, true);
+  const rt2 = mkRt();
+  await teardown(rt2, mkS({ snapshotTaken: true, storage: { before: "a" } }), { ...d, stopDisplay: async () => { throw new Error("kill 失败"); } });
+  assert.match(rt2.notes.join("\n"), /停止嵌套显示服务器失败：kill 失败/);
+}));
+
+test("stopDisplaySync: 第二次 Ctrl+C 时同步停掉服务器；没有服务器时不动", () => {
+  const calls = [];
+  assert.equal(stopDisplaySync({ display: { stopSync: () => { calls.push("stop"); return true; } } }), true);
+  assert.deepEqual(calls, ["stop"]);
+  assert.equal(stopDisplaySync({ display: null }), false);
+  assert.equal(stopDisplaySync({}), false);
+  assert.equal(stopDisplaySync({ display: { stopSync: () => { throw new Error("x"); } } }), false);
 });

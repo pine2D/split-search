@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { parseArgs, USAGE } from "../scripts/e2e/args.mjs";
 
 test("parseArgs: 默认值", () => {
-  assert.deepEqual(parseArgs([]), { autoOnly: false, headless: false, only: null, port: 8765, timeoutMs: 120000, noXinput: false });
+  assert.deepEqual(parseArgs([]), { autoOnly: false, headless: false, only: null, port: 8765, timeoutMs: 120000, noXinput: false, display: null });
   assert.equal(parseArgs(["--no-xinput"]).noXinput, true);
   assert.match(USAGE, /--no-xinput/);
 });
@@ -43,4 +43,14 @@ test("parseArgs: 非法输入抛出并附中文用法", () => {
 
 test("parseArgs: --help 抛出 code=HELP", () => {
   assert.throws(() => parseArgs(["--help"]), e => e.code === "HELP" && e.message === USAGE);
+});
+
+test("parseArgs: --display 只接受 xephyr / xvfb / host", () => {
+  assert.equal(parseArgs(["--display", "xephyr"]).display, "xephyr");
+  assert.equal(parseArgs(["--display=xvfb"]).display, "xvfb");
+  assert.equal(parseArgs(["--auto-only", "--display", "host"]).display, "host");
+  assert.throws(() => parseArgs(["--display", "wayland"]), e => /--display/.test(e.message) && e.message.includes(USAGE));
+  assert.throws(() => parseArgs(["--display", ":0"]), /--display/);
+  assert.throws(() => parseArgs(["--display"]), /缺少取值/);
+  assert.match(USAGE, /--display/);
 });

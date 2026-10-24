@@ -1,4 +1,5 @@
 // 报告生成（纯函数）：同一份内容输出 Markdown 与 JSON。所有写进报告或终端的文字先经 redact 脱敏
+import { describeDisplay } from "./display.mjs";
 const KIND = { auto: "自动", assist: "协助", judge: "判断" };
 // degrade：预期降级（T14 引擎的 SW 接管导航，按 G5 退化为普通左侧搜索），单独计数，不算失败、不影响退出码
 const STATUS = { pass: "✅ 通过", fail: "❌ 失败", skip: "⏭ 跳过", degrade: "↘️ 预期降级" };
@@ -63,12 +64,13 @@ export function renderReport(input) {
   const results = redactDeep(input.results);
   const consoleErrors = redactDeep(input.consoleErrors ?? []);
   const notes = redactDeep(input.notes ?? []);
+  const display = input.display ? redactDeep(input.display) : null;
   const summary = summarize(results);
   // 本次运行里跳过或预期降级的子项（summarize 给出，runner 带进结果；步骤整体仍可能判通过）
   const uncoveredItems = results.flatMap(r => (Array.isArray(r.uncovered) ? r.uncovered : []).map(i => ({ id: r.id, ...i })));
   const json = {
     startedAt: iso(startedAt), finishedAt: iso(finishedAt), chromeVersion: chromeVersion ?? null, args,
-    summary, results, consoleErrors, storage: storage ?? null, notes, uncovered: UNCOVERED,
+    display, summary, results, consoleErrors, storage: storage ?? null, notes, uncovered: UNCOVERED,
     uncoveredItems,
   };
 
@@ -76,6 +78,7 @@ export function renderReport(input) {
   md.push("# Split Search 端到端验收报告", "");
   md.push(`- 开始：${json.startedAt ?? "-"}${json.finishedAt ? `；结束：${json.finishedAt}` : ""}`);
   md.push(`- 浏览器：${chromeVersion ?? "未知"}`);
+  md.push(`- 显示：${describeDisplay(display)}`);
   md.push(`- 参数：\`${JSON.stringify(args)}\``);
   md.push(`- 汇总：共 ${summary.total} 步，通过 ${summary.pass}，失败 ${summary.fail}，跳过 ${summary.skip}，预期降级 ${summary.degrade}`, "");
 
