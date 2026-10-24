@@ -11,9 +11,9 @@
 - [x] manifest 图标：方案 3 形状 + c6 pine-fog 配色，已接入 `src/icons/` 并在 manifest 声明；宣传图已用它重渲（见 `assets-spec.md` 第 1 节）。商店图标上传 `src/icons/icon-128.png`。
 - [x] ~~按 4 种语言重拍截图~~ 宣传截图暂时只做英文（2026-10-24 用户决定）：`assets/raw/en/` 已用带新图标的 v0.2 扩展、英文 Chrome 界面重拍，`--locale en` 已重渲（见 `assets-spec.md` 第 4 节）。
 - [ ] 上传截图、小宣传图、顶部宣传图时只用 `assets/store/en/`。CWS 对所有语言显示同一组截图，除非为某种语言另行上传本地化截图；其他语言（zh_CN、zh_TW、es）的截图暂不维护，`assets/store/zh_CN|zh_TW|es/` 里仍是中文浏览器界面，不要上传。
-- [ ] **改 manifest 简介**：`description` 改成下方“简介”一节的采用版本，先用 humanizer 和 lieflat-less-ai-tone 润色定稿；v0.2 起它是 `zh_CN` 的 `ext_description`，其他语言照译（各 ≤132 字符）。
+- [x] manifest 简介：v0.2 起是各语言的 `ext_description`（`__MSG_ext_description__`），4 种语言已定稿（各 ≤132 字符）。
 - [x] 详细说明【使用限制】已把“界面仅提供简体中文”改为一句“设置页可以切换语言”；`listing.en.md` 的两处同改。
-- [ ] 待办：写 `listing.zh-TW.md`（台湾用词）和 `listing.es.md`，在 v0.2/v0.3 期间完成。
+- [x] `listing.en.md`、`listing.zh-TW.md`、`listing.es.md` 已按精炼版中文写好（2026-10-24 用户确认）。
 - [ ] 隐私政策托管到公开网址，替换 `privacy.md` 中的占位符。
 - [ ] 隐私做法标签页：数据使用披露**一项都不勾（含“网页浏览记录”）**，并附上 `privacy.md` (d) 的英文审核说明。
 - [x] 面向用户的文案统一润色：zh-CN 的简介和详细说明已过 lieflat-less-ai-tone 和 humanizer-zh（2026-10-24）。其他语言按 CLAUDE.md“文案”一节各自润色。
