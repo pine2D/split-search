@@ -23,8 +23,11 @@ import { makeAfterStep } from "./steps/recover.mjs";
 import { extAlive } from "./steps/guided.mjs";
 import { L } from "./steps/labels.mjs";
 import { fixWindow } from "./steps/xauto-lib.mjs";
+import { ensureEnabled, waitAlive } from "./ext-webui.mjs";
 
 const DISPLAY_PID_FILE = join(ext.OUT_DIR, "display.pid");
+// 经 chrome://extensions 详情页启用扩展，再等扩展页能执行脚本（extAlive 失败时会关掉停用期间打开、停在错误页的扩展页）
+const enableExt = async b => (await ensureEnabled(b)) && waitAlive(() => extAlive(b));
 // 终端输出一律脱敏（网址里的 token/session 等参数值）
 const log = m => console.log(redact(m));
 const warn = m => console.error(redact(m));
@@ -147,9 +150,12 @@ async function main() {
     const setupCtx = { browser, guide: server.guide, port: args.port, timeoutMs: args.timeoutMs, abortSignal: abort.signal, log };
     if (!args.autoOnly) await openGuide(browser, args.port);
 
-    let ens = await ext.ensureExtension(browser, { autoOnly: args.autoOnly });
-    // 已登记但设置页一时打不开：多半是冷启动慢，稍等再试一次，别直接进入“启用扩展”引导
-    if (!ens.ok && ens.hint) { await new Promise(r => setTimeout(r, 3000)); ens = await ext.ensureExtension(browser, { autoOnly: args.autoOnly }); }
+    // 已登记但设置页打不开：先稍等重试（冷启动慢），仍不行多半是上次中断留下的停用状态，经扩展详情页启用后再查
+    const ens = await ext.ensureExtensionUp(() => ext.ensureExtension(browser), { enable: () => enableExt(browser) });
+    if (ens.reenabled) {
+      notes.push("启动时扩展处于停用状态（多半是上次运行在 T8(b) 停用期间被强制退出），已经经 chrome://extensions 详情页重新启用");
+      log(notes.at(-1));
+    }
     let install = null;
     if (!ens.ok && ens.reason === "not-installed" && !args.autoOnly) {
       log("扩展未安装：请按向导页的说明加载（一次性）");
@@ -226,7 +232,7 @@ async function main() {
     notes.push(`运行出错：${e.message}`);
   } finally {
     await teardown(rt, s, {
-      ext, extAlive, se, exists: existsSync, cleanupItems, cleanupNote, cleanupText, ...reportDeps,
+      ext, extAlive, se, exists: existsSync, enableExt, cleanupItems, cleanupNote, cleanupText, ...reportDeps,
       afterClose: async () => (rt.ctx?.gx ? releaseAfterClose(xinput, rt.ctx.gx.root) : "none"),
       stopDisplay: disp.stop,
     }).catch(e => warn(`收尾出错：${e?.stack || e}`));

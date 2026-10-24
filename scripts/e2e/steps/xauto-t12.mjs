@@ -20,7 +20,8 @@ export const T12_WORDS = ["xkagi", "xkagikw"];
 // Kagi ｜ Bing 分屏：左 kagi.com/search、右 Bing，两侧 q 都是 text（左侧去掉了 _ss）
 export const kagiBingPair = (st, text) => splitPairs(st).find(([l, r]) => isSearch(l.url, "kagi.com", text) && isSearch(r.url, BING, text));
 
-// 回车前截地址栏下拉框（仅供参考）：嵌套显示截整屏（下拉框可能是单独的弹出窗口），host 模式只截测试窗口
+// 回车前截地址栏下拉框（仅供参考）：嵌套显示截整屏（下拉框是单独的弹出窗口）；host 模式只截测试窗口（不截 :0 的整屏），
+// 截出来的图里多半没有下拉框，说明里注明
 async function suggestShot(ctx, wid, tag) {
   await new Promise(r => setTimeout(r, 1500)); // 等联想返回
   const file = join(OUT_DIR, `t12-suggest-${tag}.png`);
@@ -35,7 +36,8 @@ async function item(ctx, { tag, word, typed }) {
     await omnibox(ctx, { text: assertAscii(typed(text)), url: siteX(ctx.port, `/omni?n=${nonce()}`),
       beforeEnter: async ({ wid }) => { shot = await suggestShot(ctx, wid, tag); } });
     const p = await waitState(ctx, st => kagiBingPair(st, text), `Kagi ｜ Bing 分屏（${text}）`, { timeoutMs: 30000 });
-    return { status: "pass", detail: `${fmt(p)}${shot ? `；地址栏联想截图（仅供参考）：${shot}` : "；联想截图没保存成功"}` };
+    const note = ctx.gx.nested ? "" : "，host 模式只截测试窗口、多半不含下拉框";
+    return { status: "pass", detail: `${fmt(p)}${shot ? `；地址栏联想截图（仅供参考${note}）：${shot}` : "；联想截图没保存成功"}` };
   });
 }
 

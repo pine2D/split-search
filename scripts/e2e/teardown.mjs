@@ -19,6 +19,19 @@ export async function waitRestarting(rt, ms = 30000) {
 const browserGone = rt => rt.browserDead || !rt.browser;
 const goneWhy = rt => (rt.browserDead ? (rt.restartFailed ? "浏览器重启失败" : "浏览器已退出") : "浏览器不可用（重启期间运行被中断）");
 
+// 收尾前先确认扩展可用：T8(b) 停用期间被中断时，步骤的 finally 可能没赶在收尾前重新启用（运行器只等 SETTLE_MS，
+// 中断时也不跑步骤后的恢复检查）。只在开始过 restores 步骤（B4、T8）时检查；不可用就经 chrome://extensions 详情页启用，
+// 否则恢复 storage 会失败，下次启动还会把停用误报成“未安装”。d: { enableExt(browser) → bool, extAlive, log, warn }
+export async function reenableStep(rt, s, d) {
+  const { log = noop, warn = noop } = d;
+  if (!d.enableExt || browserGone(rt) || !rt.started.some(st => st.restores)) return;
+  if (await d.extAlive(rt.browser).catch(() => false)) return;
+  const ok = await d.enableExt(rt.browser).catch(() => false);
+  rt.notes.push(ok ? "收尾时扩展不可用（多半是 T8(b) 停用期间运行被中断），已经经 chrome://extensions 详情页重新启用"
+    : "收尾时扩展不可用，经 chrome://extensions 详情页重新启用也没成功；下次启动会再尝试启用");
+  (ok ? log : warn)(rt.notes.at(-1));
+}
+
 // d: { ext: { restoreStorage, SNAPSHOT_FILE }, extAlive, log, warn }
 export async function restoreStorageStep(rt, s, d) {
   const { log = noop, warn = noop } = d;
@@ -172,6 +185,7 @@ export function writePartialReportSync(rt, s, d) {
 // d：上面各步的依赖合在一起，另加 outDir
 export async function teardown(rt, s, d) {
   await waitRestarting(rt, d.restartWaitMs);
+  await reenableStep(rt, s, d);
   await restoreStorageStep(rt, s, d);
   await restoreSettingsStep(rt, s, d);
   cleanupStep(rt, s, d);

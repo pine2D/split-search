@@ -2,7 +2,8 @@
 // 包一层记录调用，用 CDP Input.dispatchMouseEvent（可信事件，带用户激活）点横幅按钮。
 // 判定：恰好一次申请、同时含 www.google.com 与 www.bing.com（对应“一个权限框同时列出两个网站”），之后两者授权生效、横幅消失。
 // 测试配置里这两个网站之前授权过，permissions.remove 只是暂时撤销，Chrome 再次申请时直接批准、不弹框（perm-dialog spike）。
-// 万一弹出了原生授权框：引导式运行请用户点“允许”（原来的 assist 做法）；--auto-only 不点原生对话框，关掉设置页、判跳过。
+// 设置页开在单独的新窗口里：授权框挂在浏览器窗口上，只关标签它还留着，关掉窗口才随之消失（perm-dialog spike 第 4 条）。
+// 万一弹出了原生授权框：引导式运行请用户点“允许”（原来的 assist 做法）；--auto-only 不点原生对话框，关掉设置页窗口、判跳过。
 import { guarded, openOptions } from "./optpage.mjs";
 import { assist, activate, contains, AUTO_GRANT_MS, GRANT_TIMEOUT_MS } from "./guided.mjs";
 import { L } from "./labels.mjs";
@@ -47,7 +48,7 @@ export const B4 = {
     return guarded(ctx, ["defaultPair"], async () => {
       await ctx.ext.eval(`chrome.storage.sync.set({ defaultPair: ["google", "bing"] }).then(() => true)`);
       await ctx.ext.eval(`chrome.permissions.remove({ origins: ${JSON.stringify(GB_ORIGINS)} })`);
-      const page = await openOptions(ctx.browser);
+      const page = await openOptions(ctx.browser, { newWindow: true });
       let closed = false;
       try {
         const label = await page.until(`return document.querySelector("#banner button")?.textContent`, 8000).catch(() => null);
@@ -62,12 +63,12 @@ export const B4 = {
         let how = "Chrome 直接批准（之前授权过，不弹框）";
         if (!(await waitGranted(ctx, AUTO_GRANT_MS))) {
           if (ctx.autoOnly) {
-            await page.close(); closed = true; // 关掉设置页，原生授权框随之关闭
-            return { status: "skip", detail: `点了横幅“${label}”，${AUTO_GRANT_MS / 1000} 秒内没有批准，多半弹出了原生授权框（测试配置里没有这两个网站的已授予记录）；--auto-only 不点原生对话框，已关掉设置页（之后的恢复检查会再申请）` };
+            await page.close(); closed = true; // 关掉设置页（它独占的窗口随之关闭），原生授权框也跟着关闭
+            return { status: "skip", detail: `点了横幅“${label}”，${AUTO_GRANT_MS / 1000} 秒内没有批准，多半弹出了原生授权框（测试配置里没有这两个网站的已授予记录）；--auto-only 不点原生对话框，已关掉设置页窗口、授权框随之关闭（之后的恢复检查会再申请）` };
           }
           const r = await assist(ctx, {
             title: "B4 横幅授权", what: "Google 和 Bing 都已授权", hint: null, afterShow: () => activate(ctx, page.targetId),
-            instruction: `脚本点了设置页横幅“${label}”，Chrome 弹出了授权框（约 2 秒后切到设置页）。\n`
+            instruction: `脚本点了设置页横幅“${label}”，Chrome 在单独的“Split Search 设置”窗口里弹出了授权框（约 2 秒后切到那个窗口）。\n`
               + `请确认权限框里同时列出 www.google.com 和 www.bing.com，点${L.allow}，再回到向导页。`,
             probe: () => contains(ctx.browser, GB_ORIGINS),
           });

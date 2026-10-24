@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { startServer } from "../scripts/e2e/server.mjs";
-import { userWait, assist, judge } from "../scripts/e2e/steps/guided.mjs";
+import { userWait, assist, judge, requestGrant } from "../scripts/e2e/steps/guided.mjs";
 import { b1Verdict, kagiLoggedIn, ensureKagi, cleanupItems, cleanupNote, FIXTURES_NOTE, ensureGrants, withNeeds } from "../scripts/e2e/steps/setup.mjs";
 import { ensureRecovered, makeAfterStep } from "../scripts/e2e/steps/recover.mjs";
 import { runSteps } from "../scripts/e2e/runner.mjs";
@@ -190,45 +190,73 @@ test("收尾：T8(d) 站点访问只在 assist 回退路径真的做过时才提
 });
 const byIdStub = () => ({ id: "T1", cleanup: ["default", "gb"] });
 
-function fakeBrowser(grantedAfterRequest) {
+// 授权申请从独占新窗口的设置页发起（ctx.openGrantPage 注入）；request 的结果：true 批准、false 拒绝、"hang" 弹框没人点
+function fakeBrowser(outcome) {
   const calls = [];
   let granted = false;
-  return {
-    calls,
+  const b = {
+    calls, closed: 0,
     client: { send: async m => { calls.push(m); return m === "Target.getTargets" ? { targetInfos: [] } : {}; } },
     evalExt: async (expr, opts = {}) => {
       calls.push({ expr, opts });
       if (expr.includes("permissions.contains")) return granted;
-      if (expr.includes("permissions.request")) { granted = grantedAfterRequest; return granted; }
       return true;
     },
   };
+  b.page = { targetId: "grant-win", close: async () => { b.closed++; },
+    ev: async (expr, opts = {}) => {
+      calls.push({ expr, opts, page: true });
+      if (outcome === "hang") return new Promise(r => { b.release = v => { granted = v; r(v); }; });
+      granted = outcome; return granted;
+    } };
+  return b;
 }
 const fakeGuide = () => ({ steps: [], setStep(s) { this.steps.push(s); }, waitAnswer: () => new Promise(() => {}), cancel() {} });
+const grantCtx = (b, g, o = {}) => ({ browser: b, guide: g, port: 8765, openGrantPage: async () => b.page, autoGrantMs: 50, ...o });
 
 test("ensureGrants: auto-only 缺授权只报缺失、不弹框；引导式带用户手势申请一次", async () => {
   const b1 = fakeBrowser(true);
-  const r1 = await ensureGrants({ browser: b1, guide: fakeGuide(), port: 8765 }, { autoOnly: true });
+  const r1 = await ensureGrants(grantCtx(b1, fakeGuide()), { autoOnly: true });
   assert.equal(r1.ok, false);
   assert.ok(!b1.calls.some(c => c.expr?.includes("permissions.request")));
 
   const b2 = fakeBrowser(true), g2 = fakeGuide();
-  const r2 = await ensureGrants({ browser: b2, guide: g2, port: 8765 }, { autoOnly: false });
+  const r2 = await ensureGrants(grantCtx(b2, g2), { autoOnly: false });
   assert.deepEqual([r2.ok, r2.requested], [true, true]);
   const req = b2.calls.filter(c => c.expr?.includes("permissions.request"));
   assert.equal(req.length, 1);
+  assert.equal(req[0].page, true, "从申请窗口里的设置页发起");
   assert.equal(req[0].opts.userGesture, true);
   assert.match(req[0].expr, /engine-a\.localhost:8765.*kagi\.com/);
-  // 先不等人申请一次（之前授权过的网站 Chrome 直接批准），成功就不再出“请点允许”的说明
+  assert.equal(b2.closed, 1, "用完关掉申请窗口");
+  // 先不等人申请一次（之前授权过的网站 Chrome 直接批准），成功就不再出“Chrome 弹出了授权框”的说明
   assert.match(g2.steps[0].instruction, /不弹框/);
-  assert.ok(!g2.steps.some(s => /请点“允许（Allow）”/.test(s.instruction ?? "")));
+  assert.ok(!g2.steps.some(s => /Chrome 弹出了授权框/.test(s.instruction ?? "")));
 
-  // 没批准：引导式运行再申请一次并请用户点“允许”
+  // 被拒绝：不重弹（恢复检查自己会再申请），关掉窗口
   const b3 = fakeBrowser(false), g3 = fakeGuide();
-  const r3 = await ensureGrants({ browser: b3, guide: g3, port: 8765 }, { autoOnly: false });
+  const r3 = await ensureGrants(grantCtx(b3, g3), { autoOnly: false });
   assert.equal(r3.ok, false);
-  assert.equal(b3.calls.filter(c => c.expr?.includes("permissions.request")).length, 2);
-  assert.ok(g3.steps.some(s => /请点“允许（Allow）”/.test(s.instruction ?? "")));
+  assert.equal(b3.calls.filter(c => c.expr?.includes("permissions.request")).length, 1);
+  assert.equal(b3.closed, 1);
+});
+
+test("requestGrant: 弹框没人点——auto-only 到点关掉申请窗口返回 false；引导式换说明继续等同一个对话框，用户允许即通过", async () => {
+  const b1 = fakeBrowser("hang");
+  const t0 = Date.now();
+  assert.equal(await requestGrant(grantCtx(b1, fakeGuide(), { autoOnly: true }), ["http://a/*"]), false);
+  assert.ok(Date.now() - t0 < 1000);
+  assert.equal(b1.closed, 1, "关掉窗口，原生授权框随之关闭");
+
+  const b2 = fakeBrowser("hang"), g2 = fakeGuide();
+  const p = requestGrant(grantCtx(b2, g2), ["http://a/*"]);
+  await new Promise(r => setTimeout(r, 150));
+  assert.match(g2.steps.at(-1).instruction, /Chrome 弹出了授权框.*请点“允许（Allow）”/);
+  assert.equal(b2.closed, 0, "引导式不关窗口、不重弹");
+  b2.release(true);
+  assert.equal(await p, true);
+  assert.equal(b2.calls.filter(c => c.expr?.includes("permissions.request")).length, 1, "只申请一次");
+  assert.equal(b2.closed, 1);
 });
 
 test("withNeeds: 只包装 needs 含 kagi 的步骤", () => {

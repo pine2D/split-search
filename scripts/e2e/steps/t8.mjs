@@ -1,16 +1,20 @@
 // T8 优雅降级（auto）：模拟引擎 ea | eb，每项做完先恢复再做下一项。
 // (a) 无痕：CDP Target.createBrowserContext 建 off-the-record 上下文，在里面打开触发网址：普通左侧搜索、导航记录里没有 go.html；
-// (b) 停用：经 chrome://extensions 详情页的开关停用（ext-webui.mjs），触发网址是普通搜索；finally 里一定重新启用；
+// (b) 停用：经 chrome://extensions 详情页的开关停用（ext-webui.mjs），触发网址是普通搜索；finally 里一定重新启用。
+//     停用期间只读 CDP 目标、不新开扩展页（停用时新开的扩展页要等满 10 秒才知道不可用），整段可被中断：
+//     中断后立刻进 finally 重新启用，停用窗口不超过 ~10 秒，落在运行器的收尾期限（SETTLE_MS 15 秒）以内；
+//     万一仍没赶上（第二次 Ctrl+C、浏览器卡住），收尾（teardown.mjs）和下次启动（ext.ensureExtensionUp）还会经详情页再启用；
 // (c)(e) 撤销左/右侧授权：脚本撤销、脚本触发；恢复时重新申请（之前授权过，Chrome 直接批准、不弹框）；
 // (d) 站点访问“点击时”：读详情页结构，本扩展只有逐站开关、没有“点击时”下拉 → 记“不适用”。
 // (a)(b)(d) 的自动版本遇到测试设施问题（kind "infra"）时，引导式运行回退到 t8-manual.mjs 的人工版本，--auto-only 判跳过。
 import { GRANT_ORIGINS, HOSTS } from "../config.mjs";
 import { splitPairs, trigger, engineA, nonce, resetTabs, openTab, waitState, pageTargets, summarize, sleep, GO_PREFIX } from "./util.mjs";
-import { extAlive, contains, requestGrant, GRANT_TIMEOUT_MS } from "./guided.mjs";
+import { extAlive, extTargets, contains, requestGrant, abortable, GRANT_TIMEOUT_MS } from "./guided.mjs";
 import { openDetails, withDetails, onClickVerdict, ensureEnabled, waitAlive, infra } from "../ext-webui.mjs";
 import { SETTLE_MS, sub, expectPlain, incognitoManual, disabledManual, onClickManual } from "./t8-manual.mjs";
 
 const origin = (ctx, h) => `http://${h}:${ctx.port}/*`;
+const stopped = ctx => !!(ctx.signal?.aborted || ctx.abortSignal?.aborted);
 
 // 自动版本做不了（测试设施问题）时：引导式运行改由人工完成，--auto-only 判跳过
 export async function autoOr(ctx, auto, manual) {
@@ -44,8 +48,19 @@ export function otrVerdict({ url, ctxId, target, history, right = [], splits = 0
     : { status: "pass", detail: `无痕（CDP off-the-record 上下文）里是普通左侧搜索，未分屏，导航记录 ${history.length} 条、没有 go.html：${url}` };
 }
 
+// 纯逻辑：前提核对。扩展详情页的“在无痕模式下启用”（incognitoAccess）必须没打开，否则测的不是用户默认看到的行为。
+// 返回 { fail?, note }；读不到（详情页打不开）不判失败，只在说明里注明
+export function incognitoPrecondition(access) {
+  if (access?.error) return { note: `（未能读取详情页的“在无痕模式下启用”：${access.error}）` };
+  if (!access || typeof access.isActive !== "boolean") return { note: "（详情页没有给出“在无痕模式下启用”的状态）" };
+  if (access.isActive) return { fail: "前提不成立：测试配置里打开了扩展的“在无痕模式下启用”，与 manifest 的 incognito: not_allowed 不符，这一项测的不是用户看到的行为" };
+  return { note: `（详情页确认“在无痕模式下启用”未打开${access.isEnabled ? "" : "，也打不开：manifest incognito: not_allowed"}）` };
+}
+
 async function incognitoAuto(ctx) {
   const { client } = ctx.browser;
+  const pre = incognitoPrecondition(await withDetails(ctx.browser, p => p.incognito()).catch(e => ({ error: e.message })));
+  if (pre.fail) return { status: "fail", detail: pre.fail };
   await resetTabs(ctx);
   let ctxId;
   try { ({ browserContextId: ctxId } = await client.send("Target.createBrowserContext", {})); }
@@ -65,32 +80,46 @@ async function incognitoAuto(ctx) {
     }
     const right = pages.filter(x => x.url.startsWith(`http://${HOSTS.b}:${ctx.port}/`)).map(x => x.url);
     const splits = splitPairs(await ctx.ext.state()).length;
-    return otrVerdict({ url, ctxId, target: t && { url: t.url, browserContextId: t.browserContextId }, history, right, splits });
+    const v = otrVerdict({ url, ctxId, target: t && { url: t.url, browserContextId: t.browserContextId }, history, right, splits });
+    return { ...v, detail: `${v.detail}${pre.note}` };
   } finally {
     await client.send("Target.disposeBrowserContext", { browserContextId: ctxId }).catch(() => {});
   }
 }
 
-async function disabledAuto(ctx) {
-  await resetTabs(ctx);
-  const page = await openDetails(ctx.browser);
+// 停用期间的检查：扩展的页面和 SW 目标随停用消失（只读 CDP 目标），触发网址是普通搜索（只凭 CDP 判）
+async function disabledChecks(ctx) {
+  const left = () => extTargets(ctx.browser);
+  const gone = await ctx.browser.waitFor(async () => (await left()).length === 0, { timeoutMs: 3000, intervalMs: 200 }).then(() => true, () => false);
+  if (!gone) return { status: "fail", detail: `详情页读回已停用，但扩展的页面/Service Worker 仍在：${(await left()).map(t => `${t.type} ${t.url}`).join("、")}` };
+  return expectPlain(ctx, `t8b+${nonce()}`, { useExt: false });
+}
+
+// deps 可注入，便于单测
+export async function disabledAuto(ctx, { open = openDetails, check = disabledChecks, enable = ensureEnabled,
+  alive = () => extAlive(ctx.browser), reset = resetTabs } = {}) {
+  await reset(ctx);
+  const page = await open(ctx.browser);
   let r, how;
   try {
     await page.setEnabled(false);
-    // 连续两次不可用才算真停用（扩展页执行不了脚本）
-    r = (await extAlive(ctx.browser)) || (await extAlive(ctx.browser))
-      ? { status: "fail", detail: "详情页读回已停用，但扩展页仍能执行脚本" }
-      : await expectPlain(ctx, `t8b+${nonce()}`, { useExt: false });
+    ctx.log?.("  T8(b)：扩展已停用（经详情页开关），检查期间被中断也会立即重新启用");
+    r = await abortable(ctx, check(ctx));
+  } catch (e) {
+    if (!stopped(ctx)) throw e;
+    r = { status: "skip", detail: "停用期间运行被中断" };
   } finally {
     how = await page.setEnabled(true).catch(e => `详情页开关失败：${e.message}`);
     await page.close();
+    ctx.log?.(`  T8(b)：重新启用扩展：${how}`);
   }
-  const alive = () => extAlive(ctx.browser);
+  const via = { toggle: "详情页开关", management: "chrome.management.setEnabled 兜底", unchanged: "已是启用" }[how];
+  // 中断：不再等扩展页能执行脚本（收尾要在期限内结束），重新启用没成功时收尾和下次启动还会再试
+  if (stopped(ctx)) return { ...r, detail: `${r.detail}；${via ? `已重新启用（${via}）` : `重新启用没成功（${how}），收尾时会再经详情页启用`}` };
   let ok = await waitAlive(alive);
-  if (!ok) ok = (await ensureEnabled(ctx.browser)) && (await waitAlive(alive));
+  if (!ok) ok = (await enable(ctx.browser)) && (await waitAlive(alive));
   if (!ok) return { status: "fail", detail: `${r.detail}；但扩展没有重新启用（${how}），后续步骤会失败` };
-  const via = { toggle: "详情页开关", management: "chrome.management.setEnabled 兜底", unchanged: "已是启用" }[how] ?? how;
-  return { ...r, detail: `经扩展详情页开关停用（读回 DISABLED）后：${r.detail}；已重新启用（${via}）` };
+  return { ...r, detail: `经扩展详情页开关停用（读回 DISABLED）后：${r.detail}；已重新启用（${via ?? how}）` };
 }
 
 async function onClickAuto(ctx) {
@@ -133,8 +162,10 @@ export const T8 = {
       await sub("(a) 无痕窗口", () => autoOr(ctx, () => incognitoAuto(ctx), () => incognitoManual(ctx))),
       await sub("(b) 停用扩展", () => autoOr(ctx, () => disabledAuto(ctx), () => disabledManual(ctx))),
     ];
-    items.push(...await revoke(ctx));
-    items.push(await sub("(d) 站点访问“点击时”", () => autoOr(ctx, () => onClickAuto(ctx), () => onClickManual(ctx))));
+    // 被中断后不再撤销授权、不再开详情页：运行器已在收尾，后面这些只会和恢复 storage 并发
+    if (!stopped(ctx)) items.push(...await revoke(ctx));
+    if (!stopped(ctx)) items.push(await sub("(d) 站点访问“点击时”", () => autoOr(ctx, () => onClickAuto(ctx), () => onClickManual(ctx))));
+    if (stopped(ctx)) return summarize(items);
     // 收尾核对：后面的步骤依赖扩展启用且授权齐全。授权不全时先申请一次再判
     const alive = await extAlive(ctx.browser);
     const has = async () => (await contains(ctx.browser, GRANT_ORIGINS(ctx.port)).catch(() => false)) === true;

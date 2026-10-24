@@ -33,7 +33,7 @@ export function onClickVerdict(info) {
   throw infra("扩展详情页里认不出“站点访问”区块（既没有逐站开关列表，也没有站点访问下拉）");
 }
 
-// 打开详情页（后台新窗口）。返回 { state(), setEnabled(on), siteAccess(), close() }
+// 打开详情页（后台新窗口）。返回 { state(), setEnabled(on), siteAccess(), incognito(), close() }
 export async function openDetails(browser, { timeoutMs = 15000 } = {}) {
   const { client } = browser;
   let targetId, sid;
@@ -64,7 +64,10 @@ export async function openDetails(browser, { timeoutMs = 15000 } = {}) {
       .catch(() => { throw infra("点开关和 chrome.management.setEnabled 都没能重新启用扩展"); });
     return "management";
   };
-  return { targetId, state, setEnabled, siteAccess: () => ev(SITE_ACCESS), close };
+  // “在无痕模式下启用”：data.incognitoAccess = { isEnabled（用户能不能打开）, isActive（是否已打开）}；
+  // incognito: "not_allowed" 时实测 { isEnabled: false, isActive: false }，详情页也没有这个开关
+  const incognito = () => ev(`(() => { ${DEEP} return dv().data.incognitoAccess ?? null; })()`);
+  return { targetId, state, setEnabled, siteAccess: () => ev(SITE_ACCESS), incognito, close };
 }
 
 export async function withDetails(browser, fn) {
