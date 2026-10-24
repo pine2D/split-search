@@ -75,7 +75,7 @@ split-search/
 │   ├── sync-to-windows.sh        rsync src/ → D 盘镜像目录
 │   └── e2e/                      引导式端到端验收（Node 24，无依赖）：run.mjs 入口、cdp/browser 管道 CDP、
 │                                 server.mjs 模拟引擎与向导页、runner/report、steps/*.mjs 各步骤（setup.mjs 安装/授权/Kagi 登录/收尾）、
-│                                 display.mjs 嵌套显示（Xephyr/Xvfb）起停与遗留清理
+│                                 display.mjs 嵌套显示（Xephyr/Xvfb）起停与遗留清理、fonts.mjs 测试浏览器屏蔽 9P 挂载上的字体
 ├── src/                          扩展根目录（加载这个目录）
 │   ├── manifest.json
 │   ├── background.js             SW：重建 DNR 规则、打开设置页
@@ -152,6 +152,7 @@ split-search/
   - 预期降级：T14 某引擎作左侧时，触发前就读到该 origin 的 SW、没分屏、左侧停在该引擎上并带着查询词（网址或标题带查询词，或该标签自己的主框架跳转链经过触发网址——Perplexity 的 SPA 会改写网址），并且没有扩展接管过这次触发的反证（任何跳转链里出现带本次查询词的 `go.html?u=`、触发后新增扩展控制台错误、新出现不在分屏里的 Google 标签——go.js 分屏失败时 `location.replace(左侧)` 的结果和普通搜索长得一样，靠这些区分；没有控制台收集器时不判降级），记 `degrade`（预期降级）：单独计数、不算失败、退出码 0；没检测到 SW 仍是失败。多子项步骤里跳过/预期降级的子项，步骤整体通过或预期降级时写在说明第一行；无论步骤结果如何，都列进报告“未覆盖”小节。
 - 运行前快照 `chrome.storage.sync` 到 `.e2e/storage-snapshot.json`，结束（含中断）后恢复；遗留快照下次启动先恢复。报告在 `.e2e/report-*.md|json`，网址里的 token/session/sid/auth/key/code、access_token 等 `*_token`、session_id/sessionid、`google_abuse` 等 `*_abuse` 与含 exemption 的参数值（含一次、两次百分号编码嵌套在 next=、r=、continue= 里的），以及单独出现的 `…ABUSE_EXEMPTION=…`（含用户 IP）脱敏为 `***`，终端与向导页同样。失败诊断除扩展读到的标签外，还列出 CDP 页面目标网址（扩展读不到的标签按窗口与网址对应）和步骤页面的主框架跳转链（控制台收集器在页面会话上 Network.enable 记录，没有时用 Page.getNavigationHistory）。左侧 Google 停在人机验证页（/sorry，`continue` 解码后是期望的搜索）算分屏已建成（`steps/captcha.mjs`）；脚本自己准备现场的等待，“重试”都会重新准备并重新记下判定用的 id。B4、T8 之后脚本自动核对扩展已启用、授权齐全，恢复不了就跳过剩余步骤。Kagi 登录检查打开 `https://kagi.com/settings`，只有最终停在 kagi.com/settings 才算已登录；用户登录期间只读现有标签的网址、不再发起导航（未登录时那条跳转链会重写会话 cookie，可能打断登录），用户点“我已完成”后再探测一次。
 - 已知事实：扩展 SW 空闲约 30 秒就被回收，扩展 API 一律在扩展页（设置页）里经 CDP 执行（`browser.evalExt`），不要 attach SW；控制台收集器 attach 了 SW，调试会话让它一直存活，所以 e2e 测不到 SW 回收后冷启动的问题（靠 Windows 冒烟或手测）；必须直接 spawn `/opt/google/chrome/google-chrome`，`~/.local/bin/google-chrome` 包装脚本会 nohup 后台化、破坏调试管道；启动参数不得含 `--enable-automation`；正式版 Chrome 忽略 `--load-extension`。
+- 已知事实：WSL 的 `/etc/fonts/local.conf` 把 `/mnt/c/Windows/Fonts`（9P）列为字体目录时，Chrome 浏览器进程匹配字体要对候选字体文件逐个 `access()`（每次一趟 9P 往返），渲染进程主线程在同步字体请求上等它，期间该页的 CDP `Runtime.evaluate` 全部没有回复（平时约 2 秒，Windows 侧忙时十几秒以上，表现为启动时“Runtime.evaluate 超时”、设置页“没有加载出来”）。所以 `launch()` 经 `FONTCONFIG_FILE` 给测试浏览器一份生成的配置（`~/.cache/split-search-e2e/fonts.conf`：include 原配置 + `rejectfont` 排除所有 9p/drvfs 挂载点下的字体），不改系统配置；测试浏览器里只有 Linux 侧字体（中文用 Noto Sans CJK）。复现：并行跑几个只读的 `find /mnt/c/Windows/System32 /mnt/c/Windows/WinSxS -maxdepth 3` 让 9P 变慢，修复前 `--only B5` 12 次失败 10 次，修复后 37 次全过。
 
 ## 提交
 
