@@ -8,6 +8,7 @@
 
 提交时机：**v0.3 时提交（2026-10-24 用户决定）**，v0.1、v0.2 不提交。提交时带 4 种语言的详情：`en`（默认）、`zh_CN`、`zh_TW`、`es`，见 `docs/superpowers/specs/2026-10-24-i18n-design.md`。
 
+- [ ] `npm run pack -- --smoke` 生成上传包（`dist/split-search-<版本>.zip`）。首次上传不带 key；之后的版本加 `--store-key <商店公钥文件>`。
 - [x] manifest 图标：方案 3 形状 + c6 pine-fog 配色，已接入 `src/icons/` 并在 manifest 声明；宣传图已用它重渲（见 `assets-spec.md` 第 1 节）。商店图标上传 `src/icons/icon-128.png`。
 - [x] ~~按 4 种语言重拍截图~~ 宣传截图暂时只做英文（2026-10-24 用户决定）：`assets/raw/en/` 已用带新图标的 v0.2 扩展、英文 Chrome 界面重拍，`--locale en` 已重渲（见 `assets-spec.md` 第 4 节）。
 - [ ] 上传截图、小宣传图、顶部宣传图时只用 `assets/store/en/`。CWS 对所有语言显示同一组截图，除非为某种语言另行上传本地化截图；其他语言（zh_CN、zh_TW、es）的截图暂不维护，`assets/store/zh_CN|zh_TW|es/` 里仍是中文浏览器界面，不要上传。

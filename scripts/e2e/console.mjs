@@ -12,11 +12,12 @@ const NAV_MAX = 12, NAV_PAGES = 60;
 const argText = a => (a.type === "string" ? a.value : a.value !== undefined ? JSON.stringify(a.value) : a.description ?? "");
 
 // carry：浏览器重启前的收集器，沿用它的错误列表、去重集合与附着计数（B15 要覆盖整次运行）
-export async function collectConsole(browser, { carry } = {}) {
+// extId：认扩展页面与未捕获异常用的扩展 id（发布包冒烟装出的 id 与开发版不同）
+export async function collectConsole(browser, { carry, extId = EXT_ID } = {}) {
   const { client } = browser;
   const errors = carry?.errors ?? [];
   const seen = carry?.seen ?? new Set();
-  const extPrefix = `chrome-extension://${EXT_ID}/`;
+  const extPrefix = `chrome-extension://${extId}/`;
   const sessions = new Set();
   const base = carry?.stats() ?? { attached: 0, extAttached: 0 };
   let attached = base.attached, extAttached = base.extAttached; // 历次附着的会话数（会话 detach 后 sessions 会减少）

@@ -69,7 +69,8 @@ split-search/
 ├── CLAUDE.md                     项目约定
 ├── README.md                     面向用户的简介与安装
 ├── .gitignore
-├── package.json                  "test": "node --test"、"e2e": "node scripts/e2e/run.mjs"
+├── package.json                  "test": "node --test"、"e2e": "node scripts/e2e/run.mjs"、"pack": "node scripts/pack.mjs"
+├── dist/                         发布 ZIP（npm run pack 生成，不进 git）
 ├── docs/acceptance-v0.1.md       v0.1 验收：跑 e2e（Windows 冒烟 v0.1 不做，2026-10-24 用户决定）；B/T 表注明覆盖方式
 ├── docs/i18n/chrome-terms.md     Chrome 术语表：各语言功能术语以此为准（由 scripts/i18n/chrome-terms.mjs 生成）
 ├── docs/store/                   商店详情（各语言）、隐私做法与隐私政策、图片素材规格
@@ -77,6 +78,9 @@ split-search/
 ├── assets/                       商店与 README 图片：templates/ 模板、raw/ 真实截图、store/ 与 readme/ 成品、icon-proposals/ 图标提案
 ├── scripts/
 │   ├── gen-key.sh                打印扩展 ID；manifest 无 key 时才生成公钥写入（不保留私钥）
+│   ├── pack.mjs                  发布打包：检查 → 临时目录改写 manifest（去掉 key 或换商店公钥）→ dist/ 的 ZIP
+│   ├── pack-lib.mjs              打包纯逻辑：manifest 改写、发布前检查、公钥校验与扩展 ID 计算
+│   ├── pack-smoke.mjs            --smoke：一次性 Chrome 配置里装 ZIP 做安装冒烟（复用 e2e 的 browser/cdp/console/fonts）
 │   ├── sync-to-windows.sh        rsync src/ → D 盘镜像目录
 │   ├── i18n/chrome-terms.mjs     从 Chrome 的 locales/*.pak 取各语言界面原文，生成术语表
 │   ├── store/render-assets.mjs   把 assets/templates 渲染成商店与 README 图片（无头 Chrome，无依赖）
@@ -107,7 +111,7 @@ split-search/
 │   ├── chrome/i18n.js            页内文案加载器：t()，fetch 读包内 _locales，按 uiLocale 切换
 │   ├── chrome/config-store.js    storage.sync 读写封装；新增顶层键 uiLocale（"auto"|"en"|"zh_CN"|"zh_TW"|"es"）
 │   └── chrome/split-actions.js   分屏动作执行（tabs / windows / storage.session 薄封装）
-└── test/                         node --test（每个 lib 一个文件，另有 manifest、config-store、split-actions、options-edits、options-ui；i18n.test.js、chrome-i18n.test.js、i18n-catalog.test.js（4 种语言 key 对齐与 fetch 守门）、errors.test.js、i18n-pak.test.js（Chrome 术语表脚本）、store-i18n.test.js（宣传图文案键对齐）；e2e-*.test.js 测 e2e 脚本，其中 e2e-i18n.test.js 测 I18N 步骤）
+└── test/                         node --test（每个 lib 一个文件，另有 manifest、config-store、split-actions、options-edits、options-ui；i18n.test.js、chrome-i18n.test.js、i18n-catalog.test.js（4 种语言 key 对齐与 fetch 守门）、errors.test.js、i18n-pak.test.js（Chrome 术语表脚本）、store-i18n.test.js（宣传图文案键对齐）；e2e-*.test.js 测 e2e 脚本，其中 e2e-i18n.test.js 测 I18N 步骤；pack.test.js 测发布打包）
 ```
 
 纯逻辑放 `src/lib/`（不碰 `chrome.*`），`src/chrome/` 是对 `chrome.*` 的薄封装，页面脚本只负责编排。
@@ -118,7 +122,7 @@ split-search/
 - `permissions` 只能是 `["declarativeNetRequest", "storage"]`。禁止 `tabs`，禁止必需的 `host_permissions`。
 - `optional_host_permissions: ["https://*/*", "http://*/*"]`。运行时只为引擎的精确 origin（`<origin>/*`）申请。
 - `web_accessible_resources: [{ "resources": ["go.html"], "matches": ["<all_urls>"], "use_dynamic_url": true }]`。
-- manifest 里固定 `key`（公钥），不得修改：扩展 ID 只由它决定，改了 ID 就变，已有授权和 `storage.sync` 数据都会对不上。不保留私钥：私钥只在自签 `.crx` 时才用得上，本项目走“加载未打包的扩展程序”和 CWS 上传，都不需要。
+- manifest 里固定 `key`（公钥），不得修改：扩展 ID 只由它决定，改了 ID 就变，已有授权和 `storage.sync` 数据都会对不上。不保留私钥：私钥只在自签 `.crx` 时才用得上，本项目走“加载未打包的扩展程序”和 CWS 上传，都不需要。发布包里的 `key` 由 `npm run pack` 处理（去掉或换成商店公钥，见“命令”），源码里的不动。
 - 无构建工具、无运行时依赖。`src/lib/` 不得引用 `chrome`。JS 单文件不超过 300 行（`test/` 下的测试文件不受此限）。
 - 标记参数名为 `_ss`，值为 `<左id>,<右id>`，要兼容 `%2C`。引擎 id 必须匹配 `/^[a-z0-9-]{1,20}$/`，创建后不可修改。
 - DNR 规则 id 固定为 `1`。`regexSubstitution` 写死为 `chrome-extension://<chrome.runtime.id>/go.html?u=\0`，不得使用 `runtime.getURL()`。
@@ -132,7 +136,9 @@ split-search/
 - `npm test`：等价于 `node --test`，自动发现 `**/*.test.js`。Node 24 上不能写成 `node --test test/`（会报 MODULE_NOT_FOUND）。
 - `npm run e2e`：引导式端到端验收（测试浏览器在一个独立的 Xephyr 窗口里，只在提示时需要人操作），见下节。`npm run e2e -- --auto-only` 只跑自动步骤（默认在不可见的 Xvfb 里、无人值守，xauto 照跑）；`--only B5,T7` 只跑指定步骤；`--timeout <毫秒>` 单步等待时长（默认 120000）；`--headed` 让 auto-only 改用可见的 Xephyr 窗口（退回 host 时则是不再无头）；`--no-xinput` 不用真实鼠标键盘，xauto 步骤改用人工协助版本；`--display <xephyr|xvfb|host>` 指定测试浏览器所在的显示（见下节“显示”）。
 - `bash scripts/sync-to-windows.sh`：同步 `src/` 到 D 盘镜像目录。
-- `bash scripts/gen-key.sh`：打印扩展 ID（`alngkkgnobglnfbhcplhpaflcgfiajnj`）。只有 manifest 里没有 `key` 时才会生成一把一次性密钥并写入公钥；已有 `key` 时绝不改动。将来上架 CWS 时，商店用自己的密钥签名并分配商店 ID；如果要让开发版和商店版并存，参照 `~/projects/Pinboard-Bookmark-Enhanced/CLAUDE.md` 的“扩展 ID 分层”：源码保留开发公钥，打发布 ZIP 时再换成 CWS 后台给出的公钥。
+- `bash scripts/gen-key.sh`：打印扩展 ID（`alngkkgnobglnfbhcplhpaflcgfiajnj`）。只有 manifest 里没有 `key` 时才会生成一把一次性密钥并写入公钥；已有 `key` 时绝不改动。源码始终保留这把开发公钥（开发 ID）。上架 CWS 的 ID 分层：首次上传用不带 key 的包（`npm run pack`），商店分配 ID；上传后在 CWS 后台“软件包 → 公钥”复制商店公钥，存到 git 以外的本地文件；之后的版本都用 `npm run pack -- --store-key <文件>` 打包，商店 ID 保持不变，开发版与商店版可并存。
+- `npm run pack`：发布打包，生成 `dist/split-search-<版本>.zip`（`dist/` 不进 git），打印大小、sha256 和 key 情况；同一份源码打出的 ZIP 逐字节相同（时间戳取最近一次改动 `src/` 的提交）。不改动 `src/`：复制到临时目录，manifest 默认去掉 `key`；`--store-key <文件>` 改写成商店公钥（PEM 或 base64，校验是 DER 编码的 RSA 公钥，打印对应扩展 ID；给的是开发公钥会中止）。发布前检查（不过即中止）：manifest 与 `package.json` 版本一致；硬约束里的 manifest 字段（版本、无痕、权限、可选 host 权限、`web_accessible_resources`）与上文一致，且没有 `host_permissions`；每种语言的 `messages.json` 能解析、有 manifest 引用的全部 `__MSG_…__`，`name` ≤75、`description` ≤132 字符；manifest 引用的图标、SW、设置页、go.html 存在；`src/` 里只有运行时文件（没有点文件、测试、`.DS_Store` 之类）；`src/` 在 git 里没有未提交改动（`--allow-dirty` 改为警告）。
+- `npm run pack -- --smoke`：打包后把 ZIP 解压到临时目录，在一次性 Chrome 配置（无头、`--disable-sync`、no-first-run、管道 CDP，参数与字体配置同 e2e 的 `launch()`）里用 `Extensions.loadUnpacked` 装上，核对：没有 manifest 错误和安装警告（chrome://extensions 的 `developerPrivate.getExtensionInfo`）、SW 起得来、设置页以英文渲染且没有显示成 key 的文字、全程没有 `[split-search]` 控制台错误、go.html 收到格式不对的 `_ss` 显示出错页；带 `--store-key` 时还核对装出的 ID 等于商店 ID。临时配置和解压目录用完即删，只关自己起的浏览器，不碰 e2e 测试配置或真实配置。
 
 ## 测试纪律
 
