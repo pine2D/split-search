@@ -4,7 +4,7 @@
 
 ## 状态：等多语言版本上线后再提交
 
-控制台里每种语言的详情对应扩展包中的一个 `_locales/<语言代码>` 目录，当前 `src/` 没有 `_locales`。已决定：首期多语言（英文、繁体中文、简体中文及全球使用人数前五的其他语言）随 i18n 版本上线，届时再提交本文件，见 `docs/superpowers/specs/*-i18n-design.md`。i18n 上线后，下文“settings page in Simplified Chinese only”两处要删掉，文案统一用 humanizer 和 lieflat-less-ai-tone 润色（待办）。
+控制台里每种语言的详情对应扩展包中的一个 `_locales/<语言代码>` 目录，当前 `src/` 没有 `_locales`。已决定：首期多语言（英文、简体中文、繁体中文、西班牙语，设置页可切换语言）随 i18n 版本（v0.2）上线，届时再提交本文件，见 `docs/superpowers/specs/2026-10-24-i18n-design.md`（首次提交时机见该方案第 13 节问题 5）。i18n 上线后，下文“settings page in Simplified Chinese only”两处要删掉，改为一句说明设置页可以切换语言；文案统一用 humanizer 和 lieflat-less-ai-tone 润色（待办）。
 
 字数按 Unicode 字符计。
 
