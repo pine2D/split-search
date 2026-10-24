@@ -1,10 +1,10 @@
-# 商店详情：English（草稿）
+# 商店详情：English
 
-> 状态：草稿，待审。
+> 状态：定稿（2026-10-24 用户确认），随 v0.2.0 提交（模式 B 已取消，2026-10-24 用户决定）。
 
-## 状态：v0.3 时提交（2026-10-24 用户决定）
+## 提交说明
 
-控制台里每种语言的详情对应扩展包中的一个 `_locales/<语言代码>` 目录。v0.2 加入 `_locales`（`en`、`zh_CN`、`zh_TW`、`es`，设置页可切换语言），v0.3 首次提交时 4 种语言的详情一起提交，英文是默认语言（`default_locale: en`），见 `docs/superpowers/specs/2026-10-24-i18n-design.md`。英文文案按 CLAUDE.md“文案”一节用 humanizer 润色。其余必做项见 `listing.zh-CN.md`“提交前必做”。
+控制台里每种语言的详情对应扩展包中的一个 `_locales/<语言代码>` 目录。v0.2 加入 `_locales`（`en`、`zh_CN`、`zh_TW`、`es`，设置页可切换语言），首次提交（v0.2.0）时 4 种语言的详情一起提交，英文是默认语言（`default_locale: en`），见 `docs/superpowers/specs/2026-10-24-i18n-design.md`。英文文案按 CLAUDE.md“文案”一节用 humanizer 润色。其余必做项见 `listing.zh-CN.md`“提交前必做”。
 
 字数按 Unicode 字符计。
 
@@ -64,4 +64,4 @@ Split Search collects no data. It has no servers, analytics or ads. Your search 
 ## Category / Language
 
 - Category: **Tools**（备选 Functionality & UI），与中文详情一致。
-- Language: English（默认语言，v0.3 提交）。
+- Language: English（默认语言）。

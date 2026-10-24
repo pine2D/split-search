@@ -1,6 +1,6 @@
 # 图片素材规格与清单
 
-> 状态：草稿，待审。规格摘自 Chrome 开发者文档《Supplying images》和《Complete your listing information》（developer.chrome.com/docs/webstore/images、…/cws-dashboard-listing，2026-10-24 查阅）。上传前请再对一遍控制台的实时提示。
+> 状态：定稿，随 v0.2.0 提交（2026-10-24）。规格摘自 Chrome 开发者文档《Supplying images》和《Complete your listing information》（developer.chrome.com/docs/webstore/images、…/cws-dashboard-listing，2026-10-24 查阅）。上传前请再对一遍控制台的实时提示。
 
 ## 1. Chrome 网上应用店图片要求
 
@@ -17,7 +17,7 @@
 - 形状沿用方案 3（两块实心圆角窗格 + 白色搜索框横条），配色 c6 “pine-fog”：左格松针绿 `#507665`，右格暖雾灰 `#8C8881`。对比度等数据见 `notes.md`。
 - 来源：`assets/icon-proposals/v3-colors/c6-pine-fog/`（`icon.svg` 是 128 母版，16/32 是按像素网格调整的版本）。`assets/icon-proposals/` 其余方案留作历史。
 - 接入：`src/icons/icon-{16,32,48,128}.png`，在 manifest 的 `icons`（16/32/48/128）和 `action.default_icon`（16/32）中声明；`test/manifest.test.js` 核对文件存在且 PNG 尺寸与声明一致。`render-assets.mjs` 的默认图标已改为 c6 的 `icon.svg`，小宣传图、顶部宣传图和 README 首图已用它重渲。
-- **提交前必做（v0.3 上架前）**：`assets/raw/` 的共用真实截图是装上图标之前拍的，设置页标签页的图标是 Chrome 生成的灰底字母“S”，地址栏扩展标识和授权框里是默认拼图图标。凡是画面里带“Split Search 设置”标签页、设置页地址栏或授权框的图都受影响（至少 `screenshot-1`、`screenshot-4`、marquee 和 README 首图）。~~上架前要用带新图标的扩展重拍~~ 英文已重拍（2026-10-24）：`assets/raw/en/` 用带 c6 图标的 v0.2 扩展拍摄，`--locale en` 的图片都用它，见第 4 节。其他语言的截图暂不维护，不重拍。
+- ~~提交前必做~~ 已解决（2026-10-24）：上架只用英文图，`assets/raw/en/` 已用带新图标的 v0.2 扩展重拍、`assets/store/en/` 已重渲；下面说的旧问题只留在不上传的 zh_CN/zh_TW/es 套图里。原记录：`assets/raw/` 的共用真实截图是装上图标之前拍的，设置页标签页的图标是 Chrome 生成的灰底字母“S”，地址栏扩展标识和授权框里是默认拼图图标。凡是画面里带“Split Search 设置”标签页、设置页地址栏或授权框的图都受影响（至少 `screenshot-1`、`screenshot-4`、marquee 和 README 首图）。~~上架前要用带新图标的扩展重拍~~ 英文已重拍（2026-10-24）：`assets/raw/en/` 用带 c6 图标的 v0.2 扩展拍摄，`--locale en` 的图片都用它，见第 4 节。其他语言的截图暂不维护，不重拍。
 - ~~提交前待定：宣传图紫色渐变与橙色标注和 c6 不成一套~~ 已解决（2026-10-24）：定稿方向 d1「纸白 · 精排」，强调色就是图标左格的松针绿 `#507665`，见第 4 节。
 
 ## 2. 商店图片与 README 图片的区别

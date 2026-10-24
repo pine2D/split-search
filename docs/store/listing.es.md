@@ -1,6 +1,6 @@
-# 商店详情：Español（草稿）
+# 商店详情：Español
 
-> 状态：草稿，待审。v0.3 提交（2026-10-24 用户决定），其余必做项见 `listing.zh-CN.md`“提交前必做”。
+> 状态：定稿（2026-10-24 用户确认），随 v0.2.0 提交，其余必做项见 `listing.zh-CN.md`“提交前必做”。
 > 源文案：`listing.zh-CN.md` 的详细说明（2026-10-24 定稿）。中性国际西语，用 tú；Chrome 菜单名在 es 与 es-419 不同时写作 «es» («es-419»)，与 `src/_locales/es/messages.json` 一致。已过 content-l10n 本地化质检和母语标准审校，未经西语母语者审阅。
 > 字数按 Unicode 字符计。
 

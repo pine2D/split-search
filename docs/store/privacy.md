@@ -1,6 +1,6 @@
-# 隐私做法与隐私政策（草稿）
+# 隐私做法与隐私政策
 
-> 状态：草稿，待审。
+> 状态：定稿，随 v0.2.0 提交；公开版本在 `docs/privacy.md`、`docs/privacy.zh-CN.md`（GitHub Pages）。
 > 前半部分是控制台“隐私做法”标签页各栏的填写建议。审核员读英文，所以可粘贴的文字用英文，说明用中文。后半部分 (f) 是隐私政策全文（中英两版），需要托管在公开网址上。
 > 依据：`src/manifest.json`、`src/background.js`、`src/go.js`、`src/lib/rules.js`、`src/lib/engines.js`、`src/chrome/config-store.js`、`src/chrome/split-actions.js`、`src/chrome/i18n.js`、`src/options/ui.js`（核对日期 2026-10-24，对应 v0.2；v0.2 已新增读取扩展包内 `_locales` 的 `fetch`，见 i18n 方案 5.4）。提交在 v0.3（2026-10-24 用户决定），提交前按 v0.3 代码重新核对“代码事实速查”。
 
