@@ -7,6 +7,7 @@ import { startServer } from "./server.mjs";
 import { PROFILE_DIR, CHROME_BIN, EXT_ID } from "./config.mjs";
 import { join } from "node:path";
 import * as ext from "./ext.mjs";
+import { useSourceDir, verifySourceDir } from "./ext-source.mjs";
 import * as se from "./settings-se.mjs";
 import { useKagi } from "./settings-kagi.mjs";
 import { collectConsole } from "./console.mjs";
@@ -168,8 +169,16 @@ async function main() {
     } else if (!ens.ok) { warn(preconditionMessage(ens, args)); return 2; }
     if (abort.signal.aborted) return signalName ? (signalName === "SIGINT" ? 130 : 143) : 1;
 
-    await ext.reloadExtension(browser);
-    log("扩展已重新加载（使用磁盘上的最新代码）");
+    // 测试配置里的扩展可能装自另一个检出：改为本检出的 src/，紧接着的 reload 让改动持久（ext-source.mjs）
+    const src = await useSourceDir(browser, { srcDir: ext.SRC_DIR });
+    if (!src.ok) { warn(preconditionMessage(src, args)); return 2; }
+    try { await ext.reloadExtension(browser); }
+    catch (e) {
+      if (src.switched) warn(`改装目录后重新加载失败：扩展可能仍是临时装载，下次启动会被 Chrome 移除（授权随之丢失），届时需重新做一次性准备`);
+      throw e;
+    }
+    if (src.switched) { notes.push(`测试配置里的扩展原来装自 ${src.from ?? "（未知）"}，已改为本检出的 ${ext.SRC_DIR}`); log(notes.at(-1)); }
+    log(`扩展已重新加载（使用磁盘上的最新代码：${await verifySourceDir(browser, { srcDir: ext.SRC_DIR })}）`);
     if (await ext.restorePendingSnapshot(browser, ext.SNAPSHOT_FILE)) {
       log("发现上次遗留的 storage 快照，已先恢复");
       notes.push("启动时发现上次遗留的 storage 快照，已先恢复");
