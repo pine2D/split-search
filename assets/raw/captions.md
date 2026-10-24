@@ -57,3 +57,29 @@ convert drag-to-tabstrip.png \
 - 这台机器上 Bing 对中文查询会弹出人机验证（“最后一步 / 请验证您是真人”），所以中文场景的右侧换成了百度。补拍时，中文查询不要用 Bing 作右侧。
 - 截图里引擎页面的内容（DuckDuckGo 的 Search Assist、百度的 AI 摘要、“大家还在搜”等）都是网站当时实际返回的结果，没有改过。
 - 横向滚动条是 Linux 版 Chrome 的普通滚动条。Windows 上的效果以实拍为准。
+
+## 英文截图（en/）
+
+2026-10-24 用户决定宣传截图暂时只做英文。`en/` 是同一套画面的英文版，`render-assets.mjs --locale en` 用它们替换上面的同名图（其他语言仍用上面的中文截图，见 `docs/store/assets-spec.md` 第 4 节）。
+
+拍摄环境（与上面不同之处）：
+
+- Google Chrome 155.0.8059.84（Linux），界面语言英文：启动参数加 `--lang=en-US`、环境变量 `LANGUAGE=en_US:en`。独立 Xvfb 屏幕 2400×1500、缩放 1.5，窗口 1600×1000 CSS 像素，`import -window root` 截整屏，没有鼠标指针。
+- 用 e2e 的隔离测试配置 `~/.cache/split-search-e2e/profile`（`--disable-sync`，不登录 Chrome 账号），全程经 `scripts/e2e` 的模块：`display.mjs` 起私有 Xvfb，`browser.mjs` 启动，`ext-source.mjs` 改装本检出（feat/v0.2）的 `src/`，`settings-se.mjs` 加网站搜索并设默认，`xinput.mjs` 真实拖拽和键盘输入，`teardown.mjs` 的恢复步骤收尾：`storage.sync` 读回与快照一致，默认搜索引擎改回运行前的那个、删掉 `sse2e` 条目，扩展改回运行前装自的目录。测试配置的 Accept-Language 是 `en-US,en,zh-CN`，DuckDuckGo 和 Bing 都返回英文页面，没有加 `kl`、`setlang` 之类的参数。
+- 扩展版本 0.2（带 c6 正式图标），`storage.sync` 临时写成 `uiLocale: "en"`、默认组合 DuckDuckGo ｜ Bing、引擎排序 DuckDuckGo、Bing、Google、Kagi、Perplexity。测试配置里五个预置引擎都已授权，所以设置页里全部显示“Access granted”。
+- 网站搜索：名称 `DuckDuckGo | Bing`（设置页建议的名称）、网址 `https://duckduckgo.com/?q=%s&_ss=ddg,bing`、快捷字词 `sse2e`，设为默认。右侧全部是预置的 Bing，没有百度。
+
+| 文件 | 内容 |
+|---|---|
+| `en/options-top.png` | 设置页首屏（英文界面）：标题、语言下拉框、默认组合、“Add to Chrome”卡片里的触发网址 |
+| `en/options-engines.png` | 设置页滚动到“Search engines”卡片，卡片上缘与中文版同高（左右比中文版偏左 11px，模板用 `data-crop-en`） |
+| `en/options-fullpage.png` | 设置页整页（CDP `Page.captureScreenshot`），2376×3312 |
+| `en/split-ddg-bing-rust.png` | 新标签打开触发网址 `https://duckduckgo.com/?q=rust+programming&_ss=ddg,bing`，扩展建成 DuckDuckGo ｜ Bing 拆分视图；标签栏里是“Split Search settings”和两个分屏标签 |
+| `en/drag-to-tabstrip.png` | 英文维基百科“Rust (programming language)”，在正文“Software developer Graydon Hoare created Rust…”里选中“Graydon Hoare”（不是链接），用 xdotool 真实按下拖到标签栏空白处（落点 1460,30），没松手时截图。第一个标签旁同样有 Xvfb 下的黑底插入箭头（x≈411），不在任何裁切范围里 |
+| `en/drag-result-split.png` | 松手后：默认搜索引擎（触发网址）打开新标签，扩展建成 DuckDuckGo ｜ Bing 拆分视图，查询词“Graydon Hoare” |
+| `en/omnibox-suggest.png` | 在上一张的左侧地址栏输入“rust ownership”，下拉建议“rust ownership - DuckDuckGo \| Bing Search”（行的位置与中文版相同） |
+| `en/omnibox-result-split.png` | 回车后扩展在原分屏里更新两侧，查询词“rust ownership” |
+
+两次拍摄：第一次拍了全部 8 张，但拖拽落点（1509,30）离选区太远，商店截图 3 的左块装不下选区和拖拽影像；第二次只把落点改到 1460,30 重拍拖拽和地址栏两组。`en/drag-to-tabstrip.png` 取第二次的；`en/drag-result-split.png`、`en/omnibox-*.png` 取第一次的（同一流程、同一查询词，第二次的地址栏下拉多了一条第一次留下的历史记录）。
+
+每张都逐一看过：没有中文、没有账号头像（右上角是未登录的默认图标）、没有 Kagi 或其他网站的令牌、IP 和浏览历史。网页内容是网站当时实际返回的结果，没有改过。

@@ -9,7 +9,9 @@
 提交时机：**v0.3 时提交（2026-10-24 用户决定）**，v0.1、v0.2 不提交。提交时带 4 种语言的详情：`en`（默认）、`zh_CN`、`zh_TW`、`es`，见 `docs/superpowers/specs/2026-10-24-i18n-design.md`。
 
 - [x] manifest 图标：方案 3 形状 + c6 pine-fog 配色，已接入 `src/icons/` 并在 manifest 声明；宣传图已用它重渲（见 `assets-spec.md` 第 1 节）。商店图标上传 `src/icons/icon-128.png`。
-- [ ] 用带新图标的扩展重拍 `assets/raw/` 截图、重渲全部图片（现有截图里是 Chrome 生成的字母图标，见 `assets-spec.md` 第 1 节），并按 4 种语言出图（i18n 方案 9.3 冒烟步骤的截图，经 `scripts/store` 合成）。
+- [x] ~~按 4 种语言重拍截图~~ 宣传截图暂时只做英文（2026-10-24 用户决定）：`assets/raw/en/` 已用带新图标的 v0.2 扩展、英文 Chrome 界面重拍，`--locale en` 已重渲（见 `assets-spec.md` 第 4 节）。
+- [ ] 上传截图、小宣传图、顶部宣传图时只用 `assets/store/en/`。CWS 对所有语言显示同一组截图，除非为某种语言另行上传本地化截图；其他语言（zh_CN、zh_TW、es）的截图暂不维护，`assets/store/zh_CN|zh_TW|es/` 里仍是中文浏览器界面，不要上传。
+- [ ] 英文截图里右侧都是 Bing，没有百度：详细说明里“部分截图右侧的‘百度’就是这样添加的”（`listing.en.md` 的 “the Baidu engine in some screenshots was added this way”）不再成立，提交前删掉。
 - [ ] **改 manifest 简介**：`description` 改成下方“简介”一节的采用版本，先用 humanizer 和 lieflat-less-ai-tone 润色定稿；v0.2 起它是 `zh_CN` 的 `ext_description`，其他语言照译（各 ≤132 字符）。
 - [x] 详细说明【使用限制】已把“界面仅提供简体中文”改为一句“设置页可以切换语言”；`listing.en.md` 的两处同改。
 - [ ] 待办：写 `listing.zh-TW.md`（台湾用词）和 `listing.es.md`，在 v0.2/v0.3 期间完成。

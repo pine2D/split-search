@@ -3,7 +3,7 @@
 //
 // 用法：node scripts/store/render-assets.mjs [--locale <zh_CN|en|zh_TW|es|all>] [--icon <svg>] [--no-tile] [--only a,b] [--templates <dir>] [--out <dir>] [--tmp <dir>] [--list]
 //   --locale <l>  文案语言（默认 zh_CN）：读 <模板目录>/i18n/<l>.json，all = i18n/ 里有 json 的全部语言。
-//                 输出：store/… → assets/store/<l>/…；readme/… → zh_CN 仍是 assets/readme/…，其他语言 assets/readme/<l>/…
+//                 输出：store/… → assets/store/<l>/…；readme/… → zh_CN 仍是 assets/readme/…，其他语言 assets/readme/<l>/…；截图优先用 assets/raw/<l>/ 的同名图（见 rawSet）
 //   --icon <svg>  图标文件（默认是选定的 c6 松针绿：assets/icon-proposals/v3-colors/c6-pine-fog/icon.svg，
 //                 与 src/icons/ 同源）；试别的图标时传它的 icon.svg 或 .png
 //   --no-tile     图标自带底板（如方案 6）时用：去掉模板里的白色圆角底板，避免“板中板”
@@ -65,16 +65,12 @@ export function parseSize(s) {
   return { width: +m[1], height: +m[2], scale: m[3] ? +m[3] : 1 };
 }
 
-const meta = (html, name) => {
-  const re = new RegExp(`<meta\\s+name=["']${name}["']\\s+content=["']([^"']*)["']`, "i");
-  return re.exec(html)?.[1] ?? null;
-};
+const meta = (html, name) => new RegExp(`<meta\\s+name=["']${name}["']\\s+content=["']([^"']*)["']`, "i").exec(html)?.[1] ?? null;
 
 // 模板声明的 "store/screenshot-1.png" → 该语言的输出路径（相对 assets/）
 export function localizedOut(out, locale) {
   const [top, ...rest] = out.split("/");
-  if (!rest.length || (top === "readme" && locale === SOURCE_LOCALE)) return out;
-  return [top, locale, ...rest].join("/");
+  return !rest.length || (top === "readme" && locale === SOURCE_LOCALE) ? out : [top, locale, ...rest].join("/");
 }
 
 // i18n/<l>.json：平铺的 { 键: 文字 }，值必须是字符串
@@ -87,16 +83,19 @@ export function loadStrings(dir, locale) {
   return strings;
 }
 
-export function resolveLocales(locale, dir = TEMPLATES) {
-  if (locale !== "all") return [locale];
-  return Object.keys(LOCALES).filter(l => existsSync(join(dir, "i18n", `${l}.json`)));
+export const resolveLocales = (locale, dir = TEMPLATES) =>
+  locale !== "all" ? [locale] : Object.keys(LOCALES).filter(l => existsSync(join(dir, "i18n", `${l}.json`)));
+
+// 某语言自己的真实截图：<模板目录>/../raw/<l>/ 里的 PNG（目前只有 en）替换模板里 ../raw/ 的同名图，其余仍用共用的；
+// 页面里 <html data-raw="<l>">，crop.js 改读 data-crop-<l> / data-box-<l> / data-d-<l> / data-text-<l>（截图里的位置、网址不同）
+export function rawSet(dir, locale) {
+  const d = join(dir, "../raw", locale);
+  return existsSync(d) ? { set: locale, files: readdirSync(d).filter(f => f.endsWith(".png")).sort() } : null;
 }
 
 export function readTemplates(dir = TEMPLATES) {
   return readdirSync(dir).filter(f => f.endsWith(".html") && !f.startsWith("_")).sort().map(f => {
-    const html = readFileSync(join(dir, f), "utf8");
-    const name = basename(f, ".html");
-    const size = meta(html, "asset-size");
+    const html = readFileSync(join(dir, f), "utf8"), name = basename(f, ".html"), size = meta(html, "asset-size");
     if (!size) throw new Error(`${f} 缺少 <meta name="asset-size">`);
     return { name, file: join(dir, f), ...parseSize(size), out: meta(html, "asset-out") || `${name}.png` };
   });
@@ -175,13 +174,12 @@ async function launch(tmpRoot) {
 
 function iconDataUrl(file) {
   if (!existsSync(file)) throw new Error(`找不到图标：${file}`);
-  const ext = extname(file).toLowerCase();
-  const mime = ext === ".svg" ? "image/svg+xml" : ext === ".png" ? "image/png" : null;
+  const mime = { ".svg": "image/svg+xml", ".png": "image/png" }[extname(file).toLowerCase()];
   if (!mime) throw new Error("图标只支持 .svg 或 .png");
   return `data:${mime};base64,${readFileSync(file).toString("base64")}`;
 }
 
-// 页面里执行：设语言、加语言样式、填文案、查溢出。L = { lang, css, strings }
+// 页面里执行：设语言、加语言样式、换该语言的截图并重排裁切（crop.js）、填文案。L = { lang, css, strings, raw }
 const applyLocale = L => `(async () => {
   const L = ${JSON.stringify(L)};
   document.documentElement.lang = L.lang;
@@ -194,6 +192,10 @@ const applyLocale = L => `(async () => {
     el.replaceChildren(...v.split("\\n").flatMap((s, i) => i ? [document.createElement("br"), s] : [s]));
   }
   if (missing.length) throw new Error("i18n 缺少文案：" + missing.join("，"));
+  if (L.raw) document.documentElement.dataset.raw = L.raw.set;
+  for (const img of L.raw ? document.querySelectorAll('img[src^="../raw/"]') : []) {
+    const f = img.getAttribute("src").slice(7); if (L.raw.files.includes(f)) img.src = "../raw/" + L.raw.set + "/" + f; }
+  window.layoutCrops?.();
 })()`;
 const checkOverflow = `(() => {
   const out = [], W = innerWidth, H = innerHeight, r = document.createRange();
@@ -278,7 +280,7 @@ async function main() {
       const css = existsSync(join(o.templates, "i18n", `${l}.css`)) ? `i18n/${l}.css` : null;
       for (const t of list) {
         try {
-          const png = await renderOne(b.client, t, icon, o.noTile, { lang: LOCALES[l], css, strings: strings[l] });
+          const png = await renderOne(b.client, t, icon, o.noTile, { lang: LOCALES[l], css, strings: strings[l], raw: rawSet(o.templates, l) });
           const info = pngInfo(png), W = Math.round(t.width * t.scale), H = Math.round(t.height * t.scale);
           if (info.width !== W || info.height !== H) throw new Error(`输出 ${info.width}x${info.height}，应为 ${W}x${H}`);
           const file = dest(t, l);
