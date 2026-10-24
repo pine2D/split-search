@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<!-- README 原理图：地址栏/拖拽 → 触发网址 → 原生分屏，另画一条降级支线。2 倍输出，石墨底不透明（深浅主题下都是一张完整卡片）。 -->
+<meta name="asset-size" content="880x380@2">
+<meta name="asset-out" content="readme/how-it-works.png">
+<link rel="stylesheet" href="base.css">
+<style>
+  /* 三栏网格：32 | 248 | 48 | 224 | 48 | 248 | 32；步骤编号是真实的先后顺序 */
+  .col { position: absolute; top: 28px; }
+  .c1 { left: 32px; width: 248px; } .c2 { left: 328px; width: 224px; } .c3 { left: 600px; width: 248px; }
+  h2 { display: flex; align-items: baseline; gap: 10px; height: 22px; font-size: 15px; font-weight: 700; line-height: 22px; letter-spacing: .02em; }
+  h2 b { font: 600 15px/22px var(--mono); color: var(--accent); }
+  .crop { position: relative; width: 100%; margin-top: 14px; border-radius: 5px; }
+  .mark { border-width: 1.5px; border-radius: 4px; padding: 2px; margin: -3.5px 0 0 -3.5px; }
+  .or { margin-top: 8px; font-size: 11px; line-height: 14px; color: var(--dim); text-align: center; }
+  .drag { display: flex; flex-direction: column-reverse; }
+  .drag .crop { margin-top: 0; }
+  /* 选中文字一段按标签栏同比例（约 0.52）显示，不撑满栏宽 */
+  .drag .crop.sel { width: 186px; align-self: center; }
+  .drag .up { display: flex; align-items: center; justify-content: center; gap: 6px; height: 26px; font-size: 11px; color: var(--muted); }
+  .drag .up svg { width: 10px; height: 14px; }
+  .desc { margin-top: 12px; font-size: 11.5px; line-height: 1.65; color: var(--muted); }
+  .url { margin-top: 14px; padding: 12px 12px 10px; border-radius: 6px; background: var(--raised); box-shadow: inset 0 0 0 1px var(--rule); }
+  .url code { display: block; font: 400 12.5px/1.5 var(--mono); color: var(--ink); white-space: nowrap; }
+  .url code.ss { color: var(--accent); }
+  .url .k { display: block; margin: 3px 0 9px; padding-top: 4px; border-top: 1px solid var(--rule); font-size: 11px; color: var(--dim); }
+  .url .k.s { margin-bottom: 0; border-color: rgba(159, 189, 175, .45); color: var(--muted); }
+  .arrow { position: absolute; top: 96px; width: 48px; text-align: center; font-size: 10.5px; line-height: 1.35; color: var(--muted); }
+  .arrow svg { display: block; width: 32px; height: 10px; margin: 5px auto 0; }
+  .a1 { left: 280px; } .a2 { left: 552px; }
+  .fall { position: absolute; left: 328px; right: 32px; top: 306px; height: 48px; display: flex; align-items: center; gap: 12px; padding: 0 14px;
+    border: 1px dashed #4a5551; border-radius: 6px; font-size: 12px; line-height: 1.5; color: var(--muted); }
+  .fall b { font-weight: 500; color: var(--ink); }
+  .fall .tag { flex: none; font-size: 11px; font-weight: 500; color: var(--ink); padding: 2px 8px; border-radius: 4px; background: var(--raised); box-shadow: inset 0 0 0 1px var(--rule); }
+</style></head>
+<body>
+  <div class="col c1">
+    <h2><b>1</b>地址栏输入，或拖到标签栏</h2>
+    <!-- 真实截图片段：地址栏下拉建议（左边界从下拉框内侧开始，不带分屏按钮和选中条） -->
+    <div class="crop" data-crop="238,62,520,136"><img src="../raw/omnibox-suggest.png" data-iw="2400" alt=""></div>
+    <div class="or">或</div>
+    <!-- 真实截图片段（拖拽中，尚未松手）：只取“选中的文字”和“标签栏落点”两处，分开放大 -->
+    <div class="drag">
+      <div class="crop sel" data-crop="648,584,360,52"><img src="../raw/drag-to-tabstrip.png" data-iw="2400" alt=""></div>
+      <span class="up">拖到标签栏<svg viewBox="0 0 14 22"><path d="M7 20V3M2 8L7 3L12 8" stroke="#9fbdaf" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <div class="crop" data-crop="1250,0,480,74"><img src="../raw/drag-to-tabstrip.png" data-iw="2400" alt="">
+        <i class="mark" data-box="1424,16,170,28"></i></div>
+    </div>
+  </div>
+  <div class="arrow a1">Chrome<br>拼出<svg viewBox="0 0 32 10"><path d="M1 5H29M25 1.5L29.5 5L25 8.5" stroke="#9ba49f" stroke-width="1.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+  <div class="col c2">
+    <h2><b>2</b>触发网址</h2>
+    <div class="url">
+      <code>https://duckduckgo.com<br>/?q=rust+ownership</code>
+      <span class="k">左侧引擎的真实搜索网址</span>
+      <code class="ss">&amp;_ss=ddg,baidu</code>
+      <span class="k s">标记：左 ddg，右 baidu</span>
+    </div>
+    <p class="desc">它是你在 Chrome“网站搜索”里添加的条目。设为默认后，地址栏和拖拽都会用它；不设默认时，只有“快捷字词 + 空格 + 关键词”会用它。</p>
+  </div>
+  <div class="arrow a2">扩展<br>接管<svg viewBox="0 0 32 10"><path d="M1 5H29M25 1.5L29.5 5L25 8.5" stroke="#9ba49f" stroke-width="1.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+  <div class="col c3">
+    <h2><b>3</b>Chrome 原生分屏</h2>
+    <!-- 真实截图：回车后的分屏，左 DuckDuckGo、右百度 -->
+    <div class="crop" data-crop="0,0,2400,1500"><img src="../raw/omnibox-result-split.png" data-iw="2400" alt=""></div>
+    <p class="desc">左侧打开真实搜索，右侧新开一个标签，两者组成分屏；都是普通标签页，登录状态照常。</p>
+  </div>
+  <div class="fall"><span class="tag">扩展未生效时</span><span>同步到的其他设备、无痕窗口、扩展停用或未授权：这条网址就是<b>一次普通的 DuckDuckGo 搜索</b>，不会出错。</span></div>
+  <script src="crop.js"></script>
+</body></html>

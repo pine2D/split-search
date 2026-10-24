@@ -1,0 +1,47 @@
+/* d2-graphite（石墨 · 专业）：深石墨底、灰白字，松针绿与暖雾灰只作安静的点缀。
+   低饱和：大面积颜色 OKLCH chroma ≤ 0.02；唯一强调色 --accent（浅松针，chroma ≈ 0.04）只用于标注线、光标和触发标记。
+   不用渐变、发光和大投影；截图用 1px 浅色细框与底色分开。 */
+:root {
+  --ground: #1b2120;  /* 石墨底，略带绿 */
+  --raised: #242b29;  /* 输入框、面板 */
+  --rule:   #343d3a;  /* 分隔细线 */
+  --frame:  rgba(232, 238, 234, .26); /* 截图细框 */
+  --ink:    #eceeea;  /* 主文字 */
+  --muted:  #9ba49f;  /* 副文字 */
+  --dim:    #818b87;  /* 次要说明（对底色约 4.6:1） */
+  --pine:   #507665;  /* 图标左格 */
+  --fog:    #8c8881;  /* 图标右格 */
+  --accent: #9fbdaf;  /* 浅松针：唯一强调色 */
+  --font: "Noto Sans SC", "Source Han Sans SC", "Noto Sans CJK SC", sans-serif;
+  --mono: "Sarasa Fixed SC", "Noto Sans Mono CJK SC", "Noto Sans Mono", monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 100%; height: 100%; overflow: hidden; }
+body { position: relative; font-family: var(--font); color: var(--ink); background: var(--ground);
+  -webkit-font-smoothing: antialiased; font-kerning: normal; }
+
+/* 图标直接放在石墨底上，不加白色底板（--no-tile 时同样处理） */
+.tile { display: block; }
+.tile > img { width: 100%; height: 100%; display: block; }
+
+/* 截图片段：data-crop="x,y,w,h" 是原图像素坐标，容器宽度决定缩放（见 crop.js）。 */
+.crop { position: absolute; overflow: hidden; background: #fff; border-radius: 8px;
+  box-shadow: 0 0 0 1px var(--frame); }
+.crop > img { position: absolute; max-width: none; display: block; }
+.crop > svg.ann { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; }
+/* 标注框：细线、低饱和，深色描边保证在白色网页上也清楚 */
+.mark { position: absolute; border: 2px solid #3f6656; border-radius: 6px; padding: 3px; box-sizing: content-box;
+  margin: -5px 0 0 -5px; }
+
+/* 商店截图：左对齐标题区，截图在 64px 边距内，向下出血 */
+.head { position: absolute; left: 64px; right: 64px; top: 48px; }
+.head h1 { font-size: 46px; font-weight: 700; line-height: 1.12; letter-spacing: .02em; }
+.head p { margin-top: 14px; font-size: 21px; font-weight: 400; line-height: 1.4; color: var(--muted); letter-spacing: .01em; }
+
+/* 键入：等宽字，像一次地址栏输入 */
+.keys { font-family: var(--mono); color: var(--ink); white-space: nowrap; }
+.keys .caret { display: inline-block; width: .08em; height: 1.05em; margin: 0 .18em 0 .06em; vertical-align: -.17em; background: var(--accent); }
+.keys .ret { color: var(--accent); }
+
+/* 角落小注 */
+.note { position: absolute; font-size: 15px; line-height: 1.3; color: var(--dim); white-space: nowrap; }

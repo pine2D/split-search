@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="asset-size" content="1280x800">
+<meta name="asset-out" content="store/screenshot-5.png">
+<link rel="stylesheet" href="base.css">
+<style>
+  /* 同一条触发网址分成两支：左为装了扩展（分屏），右为扩展未生效（普通搜索）。两张图同高，底边留 64px */
+  .url { position: absolute; left: 64px; right: 64px; top: 192px; height: 64px; display: flex; align-items: center; justify-content: center;
+    border-radius: 8px; background: var(--raised); box-shadow: inset 0 0 0 1px var(--rule); font-size: 25px; }
+  .url .ss { color: var(--accent); }
+  svg.fork { position: absolute; left: 0; top: 0; width: 1280px; height: 800px; }
+  .col { position: absolute; top: 300px; width: 564px; }
+  .col.l { left: 64px; } .col.r { left: 652px; }
+  .col h2 { height: 24px; font-size: 20px; font-weight: 700; line-height: 24px; white-space: nowrap; text-align: center; }
+  .col h2 span { margin-left: 12px; font-weight: 400; color: var(--muted); }
+  .col .crop { position: relative; margin-top: 16px; width: 564px; }
+</style></head>
+<body>
+  <header class="head">
+    <h1>扩展未生效，照常搜索</h1>
+    <p>无痕窗口和其他设备上，触发网址就是一次普通搜索</p>
+  </header>
+  <div class="url keys">duckduckgo.com/?q=rust+programming<span class="ss">&amp;_ss=ddg,bing</span></div>
+  <svg class="fork" viewBox="0 0 1280 800" fill="none" stroke="#6c7672" stroke-width="1.5">
+    <path d="M640 256V272M346 288V280Q346 272 354 272H926Q934 272 934 280V288"/>
+  </svg>
+  <div class="col l">
+    <h2>装了 Split Search<span>左右分屏</span></h2>
+    <!-- 真实截图：触发网址经扩展建成的分屏，左 DuckDuckGo、右 Bing；只取两个窗格的上半部分（缩放约 0.31） -->
+    <div class="crop" data-crop="20,130,1800,1265"><img src="../raw/split-ddg-bing-rust.png" data-iw="2400" alt=""></div>
+  </div>
+  <div class="col r">
+    <h2>无痕窗口、其他设备<span>普通 DuckDuckGo 搜索</span></h2>
+    <!-- 真实截图的页面区域：同一网址的 DuckDuckGo 结果页（只取网页内容，不含浏览器界面；缩放约 0.52） -->
+    <div class="crop" data-crop="14,132,1090,766"><img src="../raw/split-ddg-bing-rust.png" data-iw="2400" alt=""></div>
+  </div>
+  <script src="crop.js"></script>
+</body></html>

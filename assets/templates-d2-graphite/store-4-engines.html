@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="asset-size" content="1280x800">
+<meta name="asset-out" content="store/screenshot-4.png">
+<link rel="stylesheet" href="base.css">
+<style>
+  /* 设置页两处，带左右的页面灰底一起裁，都按 1152 宽（缩放 0.67）上下排：上为默认组合与触发网址，下为引擎列表（向下出血） */
+  .combo { left: 64px; top: 184px; width: 1152px; }
+  .engines { left: 64px; top: 396px; width: 1152px; border-radius: 8px 8px 0 0; }
+</style></head>
+<body>
+  <header class="head">
+    <h1>引擎自己选，组合随意配</h1>
+    <p>预置 5 个引擎，也能用网址模板添加</p>
+  </header>
+  <!-- 真实截图：设置页“添加到 Chrome”卡片的默认组合（触发网址 + 复制） -->
+  <div class="crop combo" data-crop="340,592,1720,288"><img src="../raw/options-top.png" data-iw="2400" alt="">
+    <i class="mark" data-box="692,712,1022,56"></i>
+  </div>
+  <!-- 真实截图：设置页“搜索引擎”卡片（授权状态、排序、编辑） -->
+  <div class="crop engines" data-crop="340,500,1720,900"><img src="../raw/options-engines.png" data-iw="2400" alt=""></div>
+  <script src="crop.js"></script>
+</body></html>
