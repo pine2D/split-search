@@ -80,7 +80,7 @@ node scripts/store/render-assets.mjs --icon assets/icon-proposals/<方案目录>
   node scripts/store/render-assets.mjs --locale all     # i18n/ 里有 json 的全部语言
   ```
 
-  四种语言都已出图（2026-10-24），每种 9 张：商店 7 张（截图 1–5、小宣传图、顶部宣传图）+ README 2 张（`hero.png`、`how-it-works.png`）。译文是草稿，v0.3 前 zh_CN 源文案润色后重译。只有 `en` 的画面是英文截图（见下面“宣传截图暂时只做英文”），其他语言的图片里浏览器和网页仍是中文。
+  四种语言都已出图（2026-10-24），每种 9 张：商店 7 张（截图 1–5、小宣传图、顶部宣传图）+ README 2 张（`hero.png`、`how-it-works.png`）。只有 `en` 的画面是英文截图（见下面“宣传截图暂时只做英文”），其他语言的图片里浏览器和网页仍是中文。
 
   | 语言 | 文案 | 商店图 | README 图 | 说明 |
   |---|---|---|---|---|

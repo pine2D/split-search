@@ -106,7 +106,7 @@ split-search/
 │   ├── chrome/i18n.js            页内文案加载器：t()，fetch 读包内 _locales，按 uiLocale 切换
 │   ├── chrome/config-store.js    storage.sync 读写封装；新增顶层键 uiLocale（"auto"|"en"|"zh_CN"|"zh_TW"|"es"）
 │   └── chrome/split-actions.js   分屏动作执行（tabs / windows / storage.session 薄封装）
-└── test/                         node --test（每个 lib 一个文件，另有 manifest、config-store、split-actions、options-edits、options-ui；i18n.test.js、chrome-i18n.test.js、i18n-catalog.test.js（4 种语言 key 对齐与 fetch 守门）、errors.test.js；e2e-*.test.js 测 e2e 脚本）
+└── test/                         node --test（每个 lib 一个文件，另有 manifest、config-store、split-actions、options-edits、options-ui；i18n.test.js、chrome-i18n.test.js、i18n-catalog.test.js（4 种语言 key 对齐与 fetch 守门）、errors.test.js、i18n-pak.test.js（Chrome 术语表脚本）、store-i18n.test.js（宣传图文案键对齐）；e2e-*.test.js 测 e2e 脚本，其中 e2e-i18n.test.js 测 I18N 步骤）
 ```
 
 纯逻辑放 `src/lib/`（不碰 `chrome.*`），`src/chrome/` 是对 `chrome.*` 的薄封装，页面脚本只负责编排。
@@ -144,7 +144,7 @@ split-search/
 - 目标（2026-10-24 用户决定）：整次运行除了偶尔重新登录 Kagi 不需要人。B4、B14、T8、T9 是 auto，T12 是 xauto（--auto-only 都会跑）；剩下需要人的只有首次安装（B1，一次性准备）、Kagi 登录，以及各步骤的回退路径：`--no-xinput`/xinput 不可用时 xauto 换回 assist/judge 版本；自动版本遇到测试设施问题（详情页打不开、结构认不出、找不到 Kagi 条目，错误 kind `infra`/`missing`）时，引导式运行回退到人工版本，`--auto-only` 判跳过并写明原因。
 - 测试配置固定为 `~/.cache/split-search-e2e/profile`：全新、独立，`--disable-sync`、不登录 Chrome 账号；绝不读写 `~/.config/google-chrome`、`~/.chrome-debug-profile` 或任何 Windows 配置。运行前要关掉占用这个配置的 Chrome。
 - 一次性准备（首次 `npm run e2e` 时由向导带着做，结果保存在测试配置里）：在 `chrome://extensions` 开发者模式下“加载未打包的扩展程序”加载仓库的 `src/`（CDP `Extensions.loadUnpacked` 单独装的是临时扩展、重启就没了，所以首次必须手动加载；这一步也验证 B1）；点一次授权框（`config.mjs` 的 `GRANT_ORIGINS`：四个模拟 host + 五个预置引擎）；需要 Kagi 的步骤前在 kagi.com 登录（只登录网站）。
-- 测的是哪份代码（`ext-source.mjs`）：测试配置只能登记一个本扩展，可能装自另一个检出（主检出或别的 worktree）。每次启动后，登记路径不是本检出的 `src/` 时，先用 CDP `Extensions.loadUnpacked` 就地改装本检出的 `src/`（同一 id，授权、storage、Kagi 登录和网站搜索都保留），紧接着的 `chrome.runtime.reload()` 把这个临时装载转成持久登记，再经 `Extensions.getExtensions` 核对装载路径，不一致即中止；收尾时（恢复 storage 和网站搜索之后、关浏览器之前）用同样的办法改回运行前的目录。运行前的目录记在本检出的 `.e2e/ext-source.json`，改回后才删；没改回成的，下次从本检出运行时由收尾接着改回。所以从哪个检出运行就测哪个检出，别的检出（不论带不带这套逻辑）之后运行，测的仍是它自己。改装到 reload 完成之间约 1 秒，若此时被强制退出，扩展停在临时装载，下次启动会被 Chrome 移除；状态文件会记下这件事，启动时据此提示重新做一次性准备。
+- 测的是哪份代码（`ext-source.mjs`）：测试配置只能登记一个本扩展，可能装自另一个检出（主检出或别的 worktree）。每次启动后，登记路径不是本检出的 `src/` 时，先用 CDP `Extensions.loadUnpacked` 就地改装本检出的 `src/`（同一 id，授权、storage、Kagi 登录和网站搜索都保留），紧接着的 `chrome.runtime.reload()` 把这个临时装载转成持久登记，再经 `Extensions.getExtensions` 核对装载路径，不一致即中止；收尾时（恢复 storage 和网站搜索之后、关浏览器之前）用同样的办法改回运行前的目录。运行前的目录记在本检出的 `.e2e/ext-source.json`，改回后才删；没改回成的，下次从本检出运行时由收尾接着改回。所以从哪个检出运行就测哪个检出，别的检出（不论带不带这套逻辑）之后运行，测的仍是它自己。改装后 reload 抛错（loadUnpacked 已成功）时，收尾仍会再试一次改回运行前的目录并 reload。改装到 reload 完成之间约 1 秒，若此时被强制退出，扩展停在临时装载，下次启动会被 Chrome 移除；状态文件会记下这件事，启动时据此提示重新做一次性准备。
 - `--auto-only` 的前提：上面的一次性准备已完成（扩展已安装、授权齐全），否则报“前置条件缺失”退出码 2。它不等 Kagi 登录：T9、T12 开头经 `kagiGate`（setup.mjs）探测一次，没登录就跳过并写明原因；引导式运行仍由向导带着登录。
 - 显示（设计 `docs/superpowers/specs/2026-10-24-e2e-nested-display-design.md`，代码 `display.mjs`）：`--display <xephyr|xvfb|host>` 决定测试 Chrome 跑在哪个 X 服务器上。测试配置、登录态、授权在三种显示下通用。
   - `xephyr`：嵌套的独立可见窗口（标题 `e2e 测试显示 :N`），屏幕 2400×1500，即 CSS 1600×1000 乘以包装脚本固定的 1.5 倍缩放。它的指针和键盘与用户桌面分开，自动步骤和需要用户操作的步骤都在这个窗口里进行。引导式运行（`npm run e2e`）和 `--auto-only --headed` 默认用它。
@@ -166,6 +166,7 @@ split-search/
   - 网站搜索：xauto 用 `sse2e`（模拟引擎 A ｜ B）与 `sse2e-<引擎 id>`（T14）专用条目，经 CDP 操作 `chrome://settings/searchEngines` 自动添加、设默认；改动前快照到 `.e2e/settings-snapshot.json`（只记默认引擎的 keyword/name、专用快捷字词和 `scriptDefaults`，不记网址），结束（含中断）删除专用条目，只在本次改过默认引擎时才改回；遗留快照下次启动先恢复。不动用户的其他条目，唯一例外是 T12（`settings-kagi.mjs`）：Chrome 自动发现的 Kagi 条目（快捷字词 `kagi.com`、网址 host 为 kagi.com）——在页面里给它的网址追加或改写 `_ss=kagi,bing`（网址带 Kagi 私有 token，读取和改写都在 chrome://settings 页面内完成，不传回 Node），并设为默认；设默认前把它记进快照的 `scriptDefaults`，收尾当前默认是它（且不是运行前的默认）时同样改回，之后 T14 把默认切到专用条目时也不会把它当成“要恢复的默认”。找不到这个条目（或它在“未使用的快捷字词”里）时 `--auto-only` 跳过，引导式运行回退到人工 T12。T12 用真实键盘在地址栏 (a) 直接输入、(b) 输入 `kagi.com 关键词` 进入快捷字词模式，都要 Kagi ｜ Bing 分屏；回车前截地址栏下拉框存 `.e2e/t12-suggest-default.png`、`t12-suggest-keyword.png`（嵌套显示截整屏；host 模式只截测试窗口、不截 :0 整屏，下拉框是单独的弹出窗口，截图里多半没有它；只供参考，联想有无不判通过/失败）。
   - 窗口：只有选中了 xauto 步骤时才把测试窗口固定为 normal 1600×1000（每个 xauto 尝试前再核对），没有 xauto 步骤时不动窗口尺寸。坐标一律由 CDP 页面坐标换算（`(screenX + outerWidth − innerWidth + clientX)·dpr`），不用 `getwindowgeometry` 的 Position（它把窗口装饰算进去）；例外有两个：一是右键菜单这种 override-redirect 窗口（没有装饰，Position 可信），点击前还要核对指针确实在菜单上、离右键点不超过 80px；二是嵌套模式的指针归位，用测试窗口的 Position 算中心（没有窗口管理器，没有装饰），之后靠读回断言把关。
   - 预期降级：T14 某引擎作左侧时，触发前就读到该 origin 的 SW、没分屏、左侧停在该引擎上并带着查询词（网址或标题带查询词，或该标签自己的主框架跳转链经过触发网址——Perplexity 的 SPA 会改写网址），并且没有扩展接管过这次触发的反证（任何跳转链里出现带本次查询词的 `go.html?u=`、触发后新增扩展控制台错误、新出现不在分屏里的 Google 标签——go.js 分屏失败时 `location.replace(左侧)` 的结果和普通搜索长得一样，靠这些区分；没有控制台收集器时不判降级），记 `degrade`（预期降级）：单独计数、不算失败、退出码 0；没检测到 SW 仍是失败。多子项步骤里跳过/预期降级的子项，步骤整体通过或预期降级时写在说明第一行；无论步骤结果如何，都列进报告“未覆盖”小节。
+- I18N（`steps/i18n.mjs`，auto，`--auto-only` 会跑）：en、zh_CN、zh_TW、es 逐一打开设置页和 go.html 出错页，核对 `lang`、没有显示成 key 的文字、没有横向和按钮内容溢出；再测页内切换（不刷新、2 秒内）、连切 en → zh_TW 停在最后一次、第二个设置页跟随，以及 `uiLocale = "auto"` 时 `t()` 与 `chrome.i18n.getMessage` 逐 key 相同。它会改写 `storage.sync` 的 `uiLocale`，用 `guarded` 写回步骤前的值（中断时由 storage 快照兜底）。截图存 `.e2e/i18n/<locale>-options.png`、`<locale>-go-error.png`。
 - 运行前快照 `chrome.storage.sync` 到 `.e2e/storage-snapshot.json`，结束（含中断）后恢复；遗留快照下次启动先恢复。报告在 `.e2e/report-*.md|json`，网址里的 token/session/sid/auth/key/code、access_token 等 `*_token`、session_id/sessionid、`google_abuse` 等 `*_abuse` 与含 exemption 的参数值（含一次、两次百分号编码嵌套在 next=、r=、continue= 里的），以及单独出现的 `…ABUSE_EXEMPTION=…`（含用户 IP）、Google 人机验证页 `/sorry/…` 的 `q`（编码了访问者 IP 的令牌）脱敏为 `***`，终端与向导页同样。失败诊断除扩展读到的标签外，还列出 CDP 页面目标网址（扩展读不到的标签按窗口与网址对应）和步骤页面的主框架跳转链（控制台收集器在页面会话上 Network.enable 记录，没有时用 Page.getNavigationHistory）。左侧 Google 停在人机验证页（/sorry，`continue` 解码后是期望的搜索）算分屏已建成（`steps/captcha.mjs`）；脚本自己准备现场的等待，“重试”都会重新准备并重新记下判定用的 id。B4、T8 之后脚本自动核对扩展已启用、授权齐全（扩展不可用先经 chrome://extensions 详情页自动启用，缺授权自动重新申请），恢复不了就跳过剩余步骤（`--auto-only` 不请用户启用扩展）。Kagi 登录检查打开 `https://kagi.com/settings`，只有最终停在 kagi.com/settings 才算已登录；用户登录期间只读现有标签的网址、不再发起导航（未登录时那条跳转链会重写会话 cookie，可能打断登录），用户点“我已完成”后再探测一次。
 - 授权框与扩展管理页（2026-10-24 在 Xvfb 上实测）：
   - `chrome.permissions.remove` 撤销的可选 host 权限只是从“生效中”拿掉，仍留在配置的“已授予”记录里；再 `permissions.request` 同样的 origin，Chrome 直接批准、不弹框（实测 12 ms）。一次性授权检查保证这些 origin 运行前都生效，所以 B4、T8(c)(e) 的恢复、步骤后的恢复检查都不需要点授权框。`requestGrant`（guided.mjs）只申请一次，从独占一个新窗口的设置页发起；15 秒内没批准才说明弹了原生框：`--auto-only` 关掉这个窗口（对话框随之关闭）、返回 false；引导式运行换成“请点允许”的说明，继续等同一个对话框（不关掉重弹，开头的说明也已写明“万一弹框请点允许”），中断时同样关掉窗口。
@@ -189,7 +190,7 @@ split-search/
   - en：humanizer；
   - es：content-l10n 做本地化质检（翻译腔、机器腔），再按母语标准审校（中性国际西语，用 tú）。
 - 顺序：中文源文案先润色定稿 → 各语言按市场转写（不逐字直译）→ 每种语言单独润色一轮。改了中文源文案，其他语言跟着重做这一流程。
-- 宣传图文字改完要重新出图（`node scripts/store/render-assets.mjs --locale all`），渲染器会报出溢出和超行。
+- 宣传图文字改完要重新出图（`node scripts/store/render-assets.mjs --locale <语言>`，`all` 为全部），渲染器会报出溢出和超行。目前只维护 `en` 的商店截图（2026-10-24 用户决定）：其他语言的图可以重渲，但不上传，`assets/store/zh_TW|es`、`assets/readme/es` 停在旧模板文案上属于有意为之（见 `docs/store/assets-spec.md` 第 4 节）。
 
 ## 提交
 
