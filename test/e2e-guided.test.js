@@ -236,7 +236,7 @@ test("withNeeds: 只包装 needs 含 kagi 的步骤", () => {
 
 // ---- 登记与排序 ----
 const KINDS = {
-  B1: "assist", B4: "assist", B14: "judge", T1: "assist", T2: "assist", T3: "assist", T4: "assist", "T5-DRAG": "assist",
+  B1: "assist", B4: "assist", T1: "assist", T2: "assist", T3: "assist", T4: "assist", "T5-DRAG": "assist",
   "T6-NTP": "judge", T8: "assist", T9: "assist", T11: "assist", T12: "judge", T14: "assist",
 };
 

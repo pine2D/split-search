@@ -12,6 +12,7 @@ import { ASSISTED_STEPS } from "./assisted.mjs";
 import { ASSISTED_2 } from "./assisted-2.mjs";
 import { DRAG_STEPS } from "./assisted-drag.mjs";
 import { T8 } from "./t8.mjs";
+import { B14 } from "./b14.mjs";
 import { B1, withNeeds } from "./setup.mjs";
 import { XAUTO_STEPS } from "./xauto.mjs";
 import { XAUTO_T14 } from "./xauto-t14.mjs";
@@ -32,7 +33,7 @@ export const sortSteps = steps => [...steps].sort((a, b) => (a.last ? 1 : 0) - (
 const XAUTO = [...XAUTO_STEPS, ...XAUTO_T14].map(x => ({ ...x, fallback: withNeeds(x.fallback) }));
 const replaced = new Set(XAUTO.map(x => x.id));
 const MANUAL = [...ASSISTED_STEPS, ...DRAG_STEPS, ...ASSISTED_2].filter(s => !replaced.has(s.id));
-export const STEPS = sortSteps([...OPTIONS_STEPS, ...FLOW_STEPS, B1, ...MANUAL, T8].map(withNeeds).concat(XAUTO));
+export const STEPS = sortSteps([...OPTIONS_STEPS, ...FLOW_STEPS, B1, B14, ...MANUAL, T8].map(withNeeds).concat(XAUTO));
 
 // xinput：真实输入可用（xinput.available().ok）。可用 → xauto 版本，否则换成 fallback（不算失败）。
 // autoOnly 只留不需要人的步骤：auto，以及（可用时的）xauto
