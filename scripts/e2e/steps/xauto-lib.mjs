@@ -2,7 +2,7 @@
 // 测试窗口定位（页面标题 token → X 窗口 id，手势前取好、手势中不再找）、固定窗口尺寸、网站搜索专用条目、ASCII 校验。
 // xauto 步骤形状：{ id, title, kind: "xauto", fallback: <assist/judge 步骤>, run }，xinput 不可用时由 selectSteps 换成 fallback。
 import { sleep, evalIn, nonce } from "./util.mjs";
-import { REASON_STUCK, REASON_SNAP, SNAP_GUIDE, held, releaseHeld } from "../gesture.mjs";
+import { REASON_STUCK, isSnap, snapReason, snapGuide, held, releaseHeld } from "../gesture.mjs";
 import { measureTab } from "../screen.mjs";
 
 export const WIN_W = 1600, WIN_H = 1000;
@@ -79,7 +79,7 @@ async function stuckGuide(ctx) {
 // status degrade（T14 的预期降级：触发前有 SW、没分屏、左侧停在引擎上带着查询词）是确定结论，不重试；但之前有真实失败时
 // 不享受通过那样的例外，仍判失败（例如第 1 次 SW 还没注册、没分屏判失败，第 1 次访问引擎后 SW 才注册，第 2 次的降级不能把它盖掉）。
 // final(r)：返回 true 的失败同样是确定结论，不再重试。detail 第一行写明第几次尝试。
-// 指针被拉回真实光标位置（REASON_SNAP）时向导页提示把手从鼠标上拿开，再重试
+// 指针被拉回真实光标位置（REASON_SNAP）时向导页提示把手从鼠标上拿开（嵌套模式：把光标移出 Xephyr 窗口），再重试
 export async function withAttempts(ctx, attempt, { max = 3, final = () => false } = {}) {
   const fails = [];
   let real = false;
@@ -111,9 +111,10 @@ export async function withAttempts(ctx, attempt, { max = 3, final = () => false 
       return { ...r, detail: `第 ${n} 次尝试${verb}${prev()}：${r.detail}`, attempt: n };
     }
     if (!r.env) real = true;
-    else if (String(r.detail).startsWith(REASON_SNAP)) {
-      ctx.log?.(`  ${REASON_SNAP}`);
-      ctx.guide?.setStep?.({ title: REASON_SNAP, instruction: SNAP_GUIDE, buttons: [] });
+    else if (isSnap(r.detail)) {
+      const nested = !!ctx.gx?.nested;
+      ctx.log?.(`  ${snapReason(nested)}`);
+      ctx.guide?.setStep?.({ title: snapReason(nested), instruction: snapGuide(nested), buttons: [] });
     }
     fails.push(`第 ${n} 次${r.env ? "（环境）" : ""} ${r.detail.split("\n")[0]}`);
   }

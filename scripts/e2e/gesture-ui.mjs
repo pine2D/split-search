@@ -27,15 +27,15 @@ export function menuRows(rgb, width, height, { dark = 300, minGap = 6 } = {}) {
 // 在 at（选区中心，屏幕坐标）右键，等菜单窗口出现，按文字行定位第 itemIndex 项，悬停截图确认该行高亮后点击。
 // expectItems：菜单至少要有的项数（结构不符判“环境不支持”）
 export async function contextMenuPick(ctx, { at, itemIndex, expectItems, wid, menuWaitMs = 3000 }) {
-  const { xi, sleep, root } = deps(ctx);
+  const { xi, sleep, root, nested } = deps(ctx);
   if (!wid) throw new Error("contextMenuPick 需要事先取好的测试窗口 id");
   const home = await readyMouse(ctx, wid);
   const pid = pidOf(ctx);
   const before = new Set(await xi.pidWindows(pid));
-  await moveToIn(xi, at.x, at.y, wid, "右键位置", { pid, root, home });
+  await moveToIn(xi, at.x, at.y, wid, "右键位置", { pid, root, home, nested });
   await xi.click(3, { expectWindow: wid });
   const dismiss = async () => { // 在页面里（测试窗口）左键点一下关闭菜单
-    await moveToIn(xi, at.x, at.y + 400, wid, "关闭菜单的位置", { pid }).then(() => xi.click(1, { expectWindow: wid })).catch(() => {});
+    await moveToIn(xi, at.x, at.y + 400, wid, "关闭菜单的位置", { pid, nested }).then(() => xi.click(1, { expectWindow: wid })).catch(() => {});
   };
   let menu = null;
   const end = Date.now() + menuWaitMs;
@@ -54,7 +54,7 @@ export async function contextMenuPick(ctx, { at, itemIndex, expectItems, wid, me
     const { centers, left } = menuRows(shot, r.width, r.height);
     if (centers.length < Math.max(expectItems ?? 0, itemIndex + 1)) throw gestureError("env", `菜单只认出 ${centers.length} 项，少于预期的 ${expectItems}`);
     const y = r.y + centers[itemIndex], x = r.x + left + 40;
-    const p = await moveTo(xi, x, y);
+    const p = await moveTo(xi, x, y, { nested });
     if (p.window !== menu) throw gestureError("env", `指针不在菜单上（在窗口 ${p.window}，菜单可能已被关掉）`);
     await sleep(250);
     // 高亮核对：文字左侧留白处（不会有字），悬停项应比另一项暗
@@ -70,14 +70,16 @@ export async function contextMenuPick(ctx, { at, itemIndex, expectItems, wid, me
   }
 }
 
-// 地址栏：新开窗口拿前台（断言 getactivewindow），Ctrl+L → 输入 ASCII → Delete（去掉行内自动补全）→ 回车 / Alt+回车。
+// 地址栏：新开窗口拿前台（断言 getactivewindow；嵌套显示没有窗口管理器，用 getwindowfocus，焦点没过去就在新窗口页面中心点一下），Ctrl+L → 输入 ASCII → Delete（去掉行内自动补全）→ 回车 / Alt+回车。
 // 每次按键前断言前台仍是这个窗口。设置页（后台窗口）会抢走前台，所以网站搜索要在调用本手势之前改好
 export async function omnibox(ctx, { text, altEnter = false, url }) {
-  const { xi, sleep, profileDir } = deps(ctx);
+  const { xi, sleep, profileDir, nested } = deps(ctx);
   if ((await idle(xi, { sleep, ...ctx.gx.idleOpts })) === "busy") throw gestureError("skip", REASON_BUSY);
   let nf;
-  try { nf = await newFocusedWindow(ctx.browser, url, { xi, profileDir }); }
-  catch (e) { throw gestureError("env", `${e.message}（Windows 没把前台给新窗口，键盘手势做不了）`); }
+  try { nf = await newFocusedWindow(ctx.browser, url, { xi, profileDir, nested, ...ctx.gx.focusOpts }); }
+  catch (e) {
+    throw gestureError("env", `${e.message}${nested ? "（嵌套显示里新窗口没拿到焦点，键盘手势做不了，未按任何键）" : "（Windows 没把前台给新窗口，键盘手势做不了）"}`);
+  }
   const { wid } = nf;
   try {
     await sleep(300);
@@ -97,9 +99,9 @@ export async function omnibox(ctx, { text, altEnter = false, url }) {
 // 在测试窗口的页面空白处左键点一下（不在标签栏、不在选区上）：实测窗口刚被设置页抢走前台后，第一次右键弹出的菜单会立刻关掉，
 // 先点一下页面再右键就稳定。点完会清掉页面选区，调用方之后再建选区
 export async function primeClick(ctx, at, wid) {
-  const { xi, root } = deps(ctx);
+  const { xi, root, nested } = deps(ctx);
   const home = await readyMouse(ctx, wid);
-  await moveToIn(xi, at.x, at.y, wid, "页面空白处", { pid: pidOf(ctx), root, home });
+  await moveToIn(xi, at.x, at.y, wid, "页面空白处", { pid: pidOf(ctx), root, home, nested });
   await xi.click(1, { expectWindow: wid });
   await deps(ctx).sleep(300);
 }

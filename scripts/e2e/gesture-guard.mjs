@@ -177,7 +177,9 @@ export function releaseHeldSync({ env = process.env, exec = execFileSync } = {})
     const ours = w => byPid.has(w) || sameClient(w, g.wid);
     if (list("--onlyvisible", "--name", "").some(w => !g.before.has(w) && !ours(w))) return "stuck";
     let act = null;
-    try { act = String(x("getactivewindow")).trim(); } catch { act = null; }
+    // 嵌套显示没有窗口管理器，getactivewindow 报错：同 xinput.activeWindow 退回 getwindowfocus
+    try { act = String(x("getactivewindow")).trim(); }
+    catch { try { act = String(x("getwindowfocus")).trim(); } catch { act = null; } }
     if (act && act !== g.active0 && !ours(act)) return "stuck";
     if (g.tree) {
       const info = (...a) => String(exec("xwininfo", a.map(String), { env, timeout: 2000, encoding: "utf8" }));

@@ -94,7 +94,10 @@ async function main() {
   const onSignal = sig => {
     if (signalName) {
       warn(`\n再次收到 ${sig}，立即退出。若已做快照，它保留在 ${ext.SNAPSHOT_FILE}（网站搜索：${se.SE_SNAPSHOT_FILE}），下次启动会自动恢复。`);
-      if (releaseHeldSync() === "stuck") warn("真实输入的鼠标左键可能仍按着（测试浏览器也会随之退出）：请把光标移到桌面空白处（不在任何 Linux 窗口上），再运行 xdotool mouseup 1。");
+      if (releaseHeldSync() === "stuck") {
+        warn(disp.mode !== "host" ? `真实输入的鼠标左键可能仍按着：只在嵌套显示 ${disp.display} 里，它随嵌套显示服务器一起停止，不影响你的桌面。`
+          : "真实输入的鼠标左键可能仍按着（测试浏览器也会随之退出）：请把光标移到桌面空白处（不在任何 Linux 窗口上），再运行 xdotool mouseup 1。");
+      }
       try { writePartialReportSync(rt, s, reportDeps); } catch (e) { warn(`写部分报告失败：${e.message}`); }
       if (stopDisplaySync(s)) warn(`已停止嵌套显示服务器 ${disp.display}`);
       process.exit(sig === "SIGINT" ? 130 : 143);
@@ -112,8 +115,10 @@ async function main() {
     try { server = await startServer({ port: args.port }); }
     catch (e) { warn(`前置条件缺失：${e.message}`); return 2; }
     log(`模拟服务与向导页：http://127.0.0.1:${args.port}/guide`);
-    log(xa.ok ? "真实输入（xinput）：可用，xauto 步骤用真实鼠标/键盘自动执行——测试期间请把光标停在测试浏览器窗口里、不要动鼠标键盘"
-      : `真实输入（xinput）：不可用（${xa.reason}），xauto 步骤改用人工协助版本`);
+    const nestedHint = disp.mode === "xephyr" ? "，请不要把光标停在 Xephyr 窗口上" : "";
+    log(!xa.ok ? `真实输入（xinput）：不可用（${xa.reason}），xauto 步骤改用人工协助版本`
+      : disp.mode !== "host" ? `真实输入（xinput）：可用，xauto 步骤在嵌套显示 ${disp.display} 里用真实鼠标/键盘自动执行，不影响你的桌面${nestedHint}`
+        : "真实输入（xinput）：可用，xauto 步骤用真实鼠标/键盘自动执行——测试期间请把光标停在测试浏览器窗口里、不要动鼠标键盘");
 
     // 只认当前这一个浏览器进程的退出：重启时旧进程的退出不算“中途退出”
     const watchExit = b => b.proc.once("exit", () => {
@@ -179,7 +184,8 @@ async function main() {
     // 真实输入：读一次 X 根窗口 id（判断光标是否在任何 X 窗口上），窗口固定为 normal 1600×1000（xauto 步骤每次也会再核对）
     let gx = null;
     if (xa.ok && steps.some(st => st.kind === "xauto")) {
-      gx = { xi: xinput, root: await xinput.rootWindow(), profileDir: PROFILE_DIR, stop: null };
+      // nested：嵌套显示（Xephyr/Xvfb）下手势层自己移动指针、用慢节奏拖拽、焦点走 getwindowfocus（gesture.mjs）
+      gx = { xi: xinput, root: await xinput.rootWindow(), profileDir: PROFILE_DIR, stop: null, nested: disp.mode !== "host" };
       const page = (await browser.targets()).find(t => t.type === "page");
       if (page) await fixWindow({ browser }, page.targetId).catch(e => notes.push(`固定窗口尺寸失败：${e.message}`));
     }

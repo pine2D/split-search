@@ -147,15 +147,27 @@ export async function tabRect(browser, ext, wid, tabId, opts) {
   return (await measureTab(browser, ext, wid, tabId, opts)).rect;
 }
 
+// 嵌套模式：新窗口出现 clickAfterMs 后焦点仍不在它上面，就在它的页面中心左键点一下（只点一次）。
+// 移动后、点击前断言指针在这个新窗口上（xi.click 的 expectWindow），不在就抛错、不点
+async function focusClick(browser, targetId, wid, xi) {
+  const m = await metrics(browser, targetId);
+  const c = cssToScreen(m, m.innerWidth / 2, m.innerHeight / 2);
+  await xi.move(c.x, c.y);
+  try { await xi.click(1, { expectWindow: wid }); }
+  catch (e) { throw new Error(`新窗口没拿到焦点，想在它的页面中心 ${c.x},${c.y} 点一下，但${e.message}`); }
+  return c;
+}
+
 // 新开窗口（Windows 前台随之切过来），断言 getactivewindow 是新出现的窗口之一（只出现一个时就是它）；
 // 否则关掉它、等它的 X 窗口消失，再抛错（免得调用方紧接着找窗口时多算一个）。
 // WSLg 下 windowactivate 无效，键盘手势只能在这样的窗口里做（spike §1.4：184–267ms 内拿到前台）。
-export async function newFocusedWindow(browser, url, { xi = defaultXi, profileDir = PROFILE_DIR, timeoutMs = 5000, intervalMs = 100 } = {}) {
+// nested（嵌套显示，没有窗口管理器）：activeWindow 走 getwindowfocus；焦点没过去就点一下页面中心（focusClick）再等
+export async function newFocusedWindow(browser, url, { xi = defaultXi, profileDir = PROFILE_DIR, timeoutMs = 5000, intervalMs = 100, nested = false, clickAfterMs = 500 } = {}) {
   const pid = browser.proc.pid;
   const before = new Set(await xi.listWindows(pid, profileDir));
   const t0 = Date.now();
   const { targetId } = await browser.client.send("Target.createTarget", { url, newWindow: true });
-  let fresh = [], act = null;
+  let fresh = [], act = null, seenAt = 0, clicked = null;
   const closeIt = async () => {
     await browser.client.send("Target.closeTarget", { targetId }).catch(() => {});
     const end = Date.now() + 3000;
@@ -169,7 +181,11 @@ export async function newFocusedWindow(browser, url, { xi = defaultXi, profileDi
     while (Date.now() - t0 < timeoutMs) {
       fresh = (await xi.listWindows(pid, profileDir)).filter(w => !before.has(w));
       act = await xi.activeWindow();
-      if (act && fresh.includes(act)) return { targetId, wid: act, focusMs: Date.now() - t0 };
+      if (act && fresh.includes(act)) return { targetId, wid: act, focusMs: Date.now() - t0, ...(clicked ? { clicked } : {}) };
+      if (nested && !clicked && fresh.length === 1) {
+        seenAt ||= Date.now();
+        if (Date.now() - seenAt >= clickAfterMs) clicked = await focusClick(browser, targetId, fresh[0], xi);
+      }
       await sleep(intervalMs);
     }
   } catch (e) {
@@ -177,7 +193,7 @@ export async function newFocusedWindow(browser, url, { xi = defaultXi, profileDi
     throw e;
   }
   await closeIt();
-  const err = new Error("新窗口未获得前台");
-  err.detail = { fresh, active: act };
+  const err = new Error(clicked ? `新窗口未获得前台（已在页面中心 ${clicked.x},${clicked.y} 点过一下）` : "新窗口未获得前台");
+  err.detail = { fresh, active: act, clicked };
   throw err;
 }

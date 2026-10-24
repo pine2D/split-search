@@ -79,6 +79,7 @@ const ASCII_RE = /^[\x20-\x7e]*$/;
 const isWid = w => typeof w === "string" && /^\d+$/.test(w);
 const MODIFIERS = ["Control_L", "Control_R", "Alt_L", "Alt_R", "Shift_L", "Shift_R", "Super_L", "Super_R"];
 const lines = s => String(s).split("\n").map(x => x.trim()).filter(Boolean);
+const NO_EWMH = /_NET_ACTIVE_WINDOW/;
 
 export function createXinput({ exec = defaultExec, env = process.env, timeoutMs = DEFAULT_TIMEOUT, debug = false } = {}) {
   const call = (cmd, args, opts = {}) => exec(cmd, args.map(String), { timeout: timeoutMs, env, ...opts });
@@ -128,9 +129,23 @@ export function createXinput({ exec = defaultExec, env = process.env, timeoutMs 
   }
 
   const pointer = async () => parsePointer(await run(["getmouselocation", "--shell"]));
-  const activeWindow = async () => {
-    try { const w = await run(["getactivewindow"]); return isWid(w) ? w : null; }
+  // 前台窗口：先用 getactivewindow（EWMH）。嵌套显示（Xephyr/Xvfb）没有窗口管理器，它报“不支持 _NET_ACTIVE_WINDOW”：
+  // 记在本实例上（focus.noEwmh），之后直接用 getwindowfocus（X 焦点窗口，键盘就送给它）。其他报错只这一次退回 getwindowfocus
+  const focus = { noEwmh: false };
+  const focusWindow = async () => {
+    try { const w = await run(["getwindowfocus"]); return isWid(w) ? w : null; }
     catch { return null; }
+  };
+  const activeWindow = async () => {
+    if (focus.noEwmh) return focusWindow();
+    try {
+      const w = await run(["getactivewindow"]);
+      if (isWid(w)) return w;
+      if (NO_EWMH.test(w)) focus.noEwmh = true;
+    } catch (e) {
+      if (NO_EWMH.test(`${e.message ?? ""}\n${e.stdout ?? ""}\n${e.stderr ?? ""}`)) focus.noEwmh = true;
+    }
+    return focusWindow();
   };
   const windowSize = async wid => {
     if (!isWid(wid)) throw new Error(`窗口 id 不合法：${wid}`);
@@ -235,7 +250,7 @@ export function createXinput({ exec = defaultExec, env = process.env, timeoutMs 
   // 不暴露原始的 run（任意 xdotool 子命令）：调用方只能用带检查的原语。debugRun 只在 debug:true（单测）时提供
   return {
     available, listWindows, findWindow, findWindowByTitle, pidWindows, visibleWindows, stacking, rootChildren, windowTree, mapState, rootWindow, pointer, activeWindow, windowSize, windowRect,
-    assertPointerIn, assertActive, move, down: mouseOp("mousedown"), up: mouseOp("mouseup"), click: mouseOp("click"),
+    focusMode: () => (focus.noEwmh ? "getwindowfocus" : "getactivewindow"), assertPointerIn, assertActive, move, down: mouseOp("mousedown"), up: mouseOp("mouseup"), click: mouseOp("click"),
     key, typeAscii, releaseModifiers, captureRgb, ...(debug ? { debugRun: run } : {}),
   };
 }
