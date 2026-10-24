@@ -1,0 +1,3 @@
+/* es: el título de la marquesina («Una búsqueda, / dos buscadores») no cabe en 360px a 54px.
+   Se baja a 46px sin interletraje; el interlineado conserva la proporción 68/54. */
+:root:lang(es) .copy h1 { font-size: 46px; line-height: 58px; letter-spacing: 0; }
