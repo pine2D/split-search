@@ -1,10 +1,8 @@
 // 引擎列表、已隐藏的预置引擎、新增 / 编辑对话框。
-import { h, authButton, notify } from "./ui.js";
+import { h, ht, authButton, notify, errorText } from "./ui.js";
 import { canBeLeft, describeTemplate, isPresetId } from "./edits.js";
 import { PRESETS } from "../lib/engines.js";
-
-const SITE_SEARCH_HINT =
-  "删除或隐藏前，请先删掉 Chrome 里用到它的网站搜索：它作左侧的会退化为普通搜索，作右侧的会停在“未知引擎”错误页。";
+import { t, setI18nText } from "../chrome/i18n.js";
 
 // ctx: { cfg, granted: Map<id, boolean>, attention: Set<id>, actions, refresh }
 export function renderEngineList(ctx) {
@@ -12,7 +10,7 @@ export function renderEngineList(ctx) {
   const ids = cfg.engines.map(e => e.id);
   const list = h("ol", { class: "engine-list" });
   cfg.engines.forEach((e, i) => list.append(engineRow(e, i, ids.length, ctx)));
-  if (!ids.length) list.append(h("li", { class: "empty" }, "没有可用的引擎"));
+  if (!ids.length) list.append(ht("li", { class: "empty" }, "engine_list_empty"));
   return list;
 }
 
@@ -25,26 +23,26 @@ function engineRow(e, index, total, ctx) {
   const preset = isPresetId(e.id);
 
   const tags = [
-    left ? h("span", { class: "tag tag-ok" }, "可作左侧") : h("span", { class: "tag" }, "仅右侧"),
-    e.id === leftId && h("span", { class: "tag tag-accent" }, "默认左侧"),
-    e.id === rightId && h("span", { class: "tag tag-accent" }, "默认右侧"),
-    !preset && h("span", { class: "tag" }, "自定义"),
+    left ? ht("span", { class: "tag tag-ok" }, "engine_tag_left_ok") : ht("span", { class: "tag" }, "engine_tag_right_only"),
+    e.id === leftId && ht("span", { class: "tag tag-accent" }, "engine_tag_default_left"),
+    e.id === rightId && ht("span", { class: "tag tag-accent" }, "engine_tag_default_right"),
+    !preset && ht("span", { class: "tag" }, "engine_tag_custom"),
   ];
 
   const status = isGranted
-    ? h("span", { class: "perm perm-ok" }, "已授权")
-    : h("span", { class: "perm perm-missing" }, e.id === leftId ? "未授权（必需）" : "未授权");
-  const auth = isGranted ? null : authButton([e], "授权", {
+    ? ht("span", { class: "perm perm-ok" }, "engine_granted")
+    : ht("span", { class: "perm perm-missing" }, e.id === leftId ? "engine_not_granted_required" : "engine_not_granted");
+  const auth = isGranted ? null : authButton([e], ["engine_grant"], {
     cls: "btn btn-small" + (attention.has(e.id) || e.id === leftId ? " btn-attention" : ""),
     onDone: ctx.refresh,
   });
 
-  const blockTitle = inPair ? "默认组合正在使用这个引擎" : null;
+  const blockTitle = inPair ? t("engine_in_pair_title") : null;
   const removeBtn = preset
-    ? h("button", { type: "button", class: "btn btn-small", disabled: inPair, title: blockTitle,
-        onclick: () => actions.hide(e) }, "隐藏")
-    : h("button", { type: "button", class: "btn btn-small btn-danger", disabled: inPair, title: blockTitle,
-        onclick: () => actions.remove(e) }, "删除");
+    ? ht("button", { type: "button", class: "btn btn-small", disabled: inPair, title: blockTitle,
+        onclick: () => actions.hide(e) }, "engine_hide")
+    : ht("button", { type: "button", class: "btn btn-small btn-danger", disabled: inPair, title: blockTitle,
+        onclick: () => actions.remove(e) }, "engine_delete");
 
   return h("li", { class: "engine-row" + (inPair ? " in-pair" : "") },
     h("div", { class: "engine-main" },
@@ -53,31 +51,33 @@ function engineRow(e, index, total, ctx) {
         h("code", { class: "engine-id" }, e.id),
         tags),
       h("div", { class: "engine-url mono" }, e.url),
-      e.leftDiscouraged && h("div", { class: "hint hint-warn" },
-        "建议仅作右侧：该站点的 Service Worker 可能接管导航，作左侧时分屏可能不触发。")),
+      e.leftDiscouraged && ht("div", { class: "hint hint-warn" }, "engine_left_discouraged_hint")),
     h("div", { class: "engine-side" },
       h("div", { class: "perm-line" }, status, auth),
       h("div", { class: "row-actions" },
         h("button", { type: "button", class: "btn btn-small btn-icon", disabled: index === 0,
-          title: "上移", "aria-label": `上移 ${e.name}`, onclick: () => actions.move(e.id, -1) }, "↑"),
+          title: t("engine_move_up"), "aria-label": t("engine_move_up_label", e.name),
+          onclick: () => actions.move(e.id, -1) }, "↑"),
         h("button", { type: "button", class: "btn btn-small btn-icon", disabled: index === total - 1,
-          title: "下移", "aria-label": `下移 ${e.name}`, onclick: () => actions.move(e.id, 1) }, "↓"),
-        h("button", { type: "button", class: "btn btn-small", onclick: () => openEngineDialog("edit", e) },
-          "编辑"),
+          title: t("engine_move_down"), "aria-label": t("engine_move_down_label", e.name),
+          onclick: () => actions.move(e.id, 1) }, "↓"),
+        ht("button", { type: "button", class: "btn btn-small", onclick: () => openEngineDialog("edit", e) },
+          "engine_edit"),
         removeBtn)));
 }
 
 export function renderHiddenList(ctx) {
   const { cfg, actions } = ctx;
-  if (!cfg.hidden.length) return h("p", { class: "muted" }, "没有隐藏的预置引擎。");
+  if (!cfg.hidden.length) return ht("p", { class: "muted" }, "engine_hidden_empty");
   return h("ul", { class: "hidden-list" }, cfg.hidden.map(e =>
     h("li", { class: "hidden-row" },
       h("span", null, h("strong", null, e.name), " ", h("code", { class: "engine-id" }, e.id)),
-      h("button", { type: "button", class: "btn btn-small", onclick: () => actions.restore(e) }, "恢复"))));
+      ht("button", { type: "button", class: "btn btn-small", onclick: () => actions.restore(e) }, "engine_restore"))));
 }
 
-export function confirmRemoval(e, verb) {
-  return confirm(`${verb}“${e.name}”？\n\n${SITE_SEARCH_HINT}`);
+// key: "engine_confirm_hide" | "engine_confirm_delete"，都是带引擎名和网站搜索提示的完整句子
+export function confirmRemoval(key, e) {
+  return confirm(t(key, e.name));
 }
 
 // ---- 新增 / 编辑对话框（静态 DOM，不随列表重渲染，编辑中的内容不会丢） ----
@@ -109,7 +109,7 @@ export function setupEngineDialog(actions) {
       if (result.ok) dlg.close();
       else showErrors(form, result.errors);
     } catch (err) {
-      showErrors(form, { form: err?.message || String(err) });
+      showErrors(form, { form: err });
     } finally {
       save.disabled = false;
     }
@@ -122,18 +122,19 @@ export function openEngineDialog(mode, engine) {
   dialogState = { mode, id: engine?.id ?? null };
   clearErrors(form);
   const isEdit = mode === "edit";
-  document.getElementById("dlg-title").textContent = isEdit ? `编辑引擎：${engine.name}` : "新增引擎";
+  // 按模式写不同 key：切换语言时 applyI18n 按当前 key 和参数重写，不会改回“新增”或丢引擎名
+  if (isEdit) setI18nText(document.getElementById("dlg-title"), "options_dlg_title_edit", engine.name);
+  else setI18nText(document.getElementById("dlg-title"), "options_dlg_title_add");
   field("id").value = isEdit ? engine.id : "";
   field("id").readOnly = isEdit;
   field("name").value = isEdit ? engine.name : "";
   field("url").value = isEdit ? engine.url : "";
-  document.getElementById("dlg-id-hint").textContent = isEdit
-    ? "id 创建后不能修改（它写在已保存的网站搜索网址里）。"
-    : "小写字母、数字和 -，1–20 个字符。创建后不能修改，会写进触发网址。";
+  setI18nText(document.getElementById("dlg-id-hint"), isEdit ? "options_dlg_id_hint_edit" : "options_dlg_id_hint_add");
   const preset = isEdit ? PRESETS.find(p => p.id === engine.id) : null;
   const presetHint = document.getElementById("dlg-preset-hint");
   presetHint.hidden = !preset;
-  presetHint.textContent = preset ? `预置值：${preset.name}，${preset.url}（改回这两个值即恢复预置）` : "";
+  if (preset) setI18nText(presetHint, "options_dlg_preset_hint", preset.name, preset.url);
+  else clearI18nText(presetHint);
   document.getElementById("dlg-edit-hint").hidden = !isEdit;
   showTemplateHint(field("url").value);
   dlg.showModal();
@@ -143,12 +144,13 @@ export function openEngineDialog(mode, engine) {
 function showTemplateHint(url) {
   const el = document.getElementById("dlg-url-status");
   if (!url.trim()) {
-    el.textContent = "";
+    clearI18nText(el);
     el.className = "hint";
     return;
   }
   const d = describeTemplate(url);
-  el.textContent = d.text;
+  if (d.msg) setI18nText(el, ...d.msg);
+  else clearI18nText(el);
   el.className = `hint hint-${d.level}`;
 }
 
@@ -160,9 +162,17 @@ function clearErrors(form) {
   for (const el of form.querySelectorAll("[aria-invalid]")) el.removeAttribute("aria-invalid");
 }
 
+function clearI18nText(el) {
+  el.textContent = "";
+  el.removeAttribute("data-i18n");
+  el.removeAttribute("data-i18n-args");
+}
+
+// errors 的值是 ErrorSpec（edits.js）、异常，或调用方已用 t() 算好的句子
 function showErrors(form, errors) {
   let first = null;
-  for (const [name, msg] of Object.entries(errors || {})) {
+  for (const [name, spec] of Object.entries(errors || {})) {
+    const msg = typeof spec === "string" ? spec : errorText(spec);
     const el = form.querySelector(`.field-error[data-for="${name}"]`);
     if (!el) {
       notify(msg, "error");

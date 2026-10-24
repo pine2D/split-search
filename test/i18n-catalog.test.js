@@ -137,3 +137,35 @@ test("[needs-translation] 只警告", (t) => {
     }
   }
 });
+
+// 去掉注释但保留换行，报错时的行号才对得上。
+const blank = (m) => m.replace(/[^\n]/g, " ");
+function stripComments(text) {
+  return text
+    .replace(/\/\*[\s\S]*?\*\//g, blank)
+    .replace(/<!--[\s\S]*?-->/g, blank)
+    .replace(/(^|\s)\/\/.*$/gm, (m, lead) => lead + blank(m.slice(lead.length)));
+}
+
+test("src 代码里没有汉字（_locales 除外，注释不算）", () => {
+  const hits = [];
+  for (const f of sourceFiles(SRC)) {
+    stripComments(readFileSync(f, "utf8")).split("\n").forEach((line, i) => {
+      if (/[㐀-鿿豈-﫿]/.test(line)) hits.push(`${f.slice(SRC.length)}:${i + 1}`);
+    });
+  }
+  assert.deepEqual(hits, [], `这些行还有汉字：\n${hits.join("\n")}`);
+});
+
+test("fetch 只在 src/chrome/i18n.js，且只读包内文件", () => {
+  const I18N_JS = join(SRC, "chrome", "i18n.js");
+  for (const f of sourceFiles(SRC)) {
+    const text = readFileSync(f, "utf8");
+    if (f === I18N_JS) {
+      assert.ok(/\bfetch\s*\(/.test(text), "i18n.js 里应当有 fetch");
+      assert.ok(!/\bfetch\s*\((?!chrome\.runtime\.getURL\()/.test(text), "i18n.js 的 fetch 必须紧跟 chrome.runtime.getURL(");
+    } else {
+      assert.ok(!/\bfetch\s*\(/.test(text), `${f.slice(SRC.length)} 里出现了 fetch(`);
+    }
+  }
+});
