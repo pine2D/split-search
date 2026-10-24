@@ -15,12 +15,7 @@
 - [x] manifest 简介：v0.2 起是各语言的 `ext_description`（`__MSG_ext_description__`），4 种语言已定稿（各 ≤132 字符）。
 - [x] 详细说明【使用限制】已把“界面仅提供简体中文”改为一句“设置页可以切换语言”；`listing.en.md` 的两处同改。
 - [x] `listing.en.md`、`listing.zh-TW.md`、`listing.es.md` 已按精炼版中文写好（2026-10-24 用户确认）。
-- [ ] 隐私政策托管到公开网址（与 Pinboard 扩展同一做法，GitHub Pages）。`docs/privacy*.md` 已写好、占位符已填（`https://pine2d.github.io/split-search/privacy`）。待用户：
-  1. 在 GitHub 建**公开**仓库 `pine2D/split-search`（免费账号的 Pages 要求公开仓库；名称必须一致，否则网址会变）；
-  2. push main；
-  3. 仓库 Settings → Pages 选 main 分支的 `/docs`；
-  4. 确认 Settings → General → Features 里 Issues 已开启（联系方式指向 Issues）；
-  5. 打开 `https://pine2d.github.io/split-search/privacy`、`…/privacy.zh-CN.html`、`https://github.com/pine2D/split-search/issues` 三个网址确认能访问，然后勾选本项。
+- [x] 隐私政策已托管（2026-10-24）：公开仓库 `pine2D/split-search`，GitHub Pages 发布 main 分支的 `/docs`；`https://pine2d.github.io/split-search/privacy`、`…/privacy.zh-CN.html` 和仓库 Issues 页均已确认可访问，内部文档（superpowers、store、验收文档）返回 404。
 - [ ] 上架后在 `docs/index.md` 末尾加商店链接（`[Install from the Chrome Web Store](https://chromewebstore.google.com/detail/<商店 ID>)`）。
 - [ ] 隐私做法标签页：数据使用披露**一项都不勾（含“网页浏览记录”）**，并附上 `privacy.md` (d) 的英文审核说明。
 - [x] 面向用户的文案统一润色：zh-CN 的简介和详细说明已过 lieflat-less-ai-tone 和 humanizer-zh（2026-10-24）。其他语言按 CLAUDE.md“文案”一节各自润色。
