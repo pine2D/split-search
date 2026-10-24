@@ -18,7 +18,7 @@
 - 来源：`assets/icon-proposals/v3-colors/c6-pine-fog/`（`icon.svg` 是 128 母版，16/32 是按像素网格调整的版本）。`assets/icon-proposals/` 其余方案留作历史。
 - 接入：`src/icons/icon-{16,32,48,128}.png`，在 manifest 的 `icons`（16/32/48/128）和 `action.default_icon`（16/32）中声明；`test/manifest.test.js` 核对文件存在且 PNG 尺寸与声明一致。`render-assets.mjs` 的默认图标已改为 c6 的 `icon.svg`，小宣传图、顶部宣传图和 README 首图已用它重渲。
 - **提交前必做（v0.3 上架前）**：`assets/raw/` 的真实截图是装上图标之前拍的，设置页标签的图标是 Chrome 生成的灰底字母“S”，地址栏扩展标识和授权框里是默认拼图图标。凡是画面里带“Split Search 设置”标签、设置页地址栏或授权框的图都受影响（至少 `screenshot-1`、`screenshot-4`、marquee 和 README 首图）。上架前要用带新图标的扩展重拍，再重渲全部图片。
-- **提交前待定（v0.3 上架前，由用户决定）**：宣传图和 README 首图的背景仍是早先的紫色渐变（`base.css` 的 `--iris*`），截图标注框是橙色 `--coral`，和 c6 pine-fog 图标（松针绿 `#507665` / 暖雾灰 `#8C8881`）不成一套。重渲前确认这两组颜色是否跟着图标调整。
+- ~~提交前待定：宣传图紫色渐变与橙色标注和 c6 不成一套~~ 已解决（2026-10-24）：定稿方向 d1「纸白 · 精排」，强调色就是图标左格的松针绿 `#507665`，见第 4 节。
 
 ## 2. 商店图片与 README 图片的区别
 
@@ -44,7 +44,7 @@
 node scripts/store/render-assets.mjs --icon assets/icon-proposals/<方案目录>/icon.svg
 ```
 
-模板把图标放在白色圆角底板上；自带底板的图标（如方案 6）加 `--no-tile`，避免“板中板”。用到图标的是小宣传图、顶部宣传图和 README 首图。
+用到图标的是小宣传图、顶部宣传图（放在纸白圆角底板上）和 README 首图（直接放在纸底上）。d1 模板没有 `.tile` 白底板，`--no-tile` 对它不起作用。
 
 ### 商店（`assets/store/<locale>/`，现有 `zh_CN/`）
 
@@ -68,6 +68,21 @@ node scripts/store/render-assets.mjs --icon assets/icon-proposals/<方案目录>
 | `how-it-works.png` | 1760×760（显示 880 宽） | `readme-how-it-works` | 地址栏或拖拽 → 触发网址（真实搜索网址 + `_ss`）→ 原生分屏，下方是“扩展未生效时”的降级支线。浅色不透明底 |
 
 演示 GIF 暂缺：`assets/raw/` 里拖拽流程只有“拖拽中”和“松手后”两张静态图，没有连续帧，拼成 GIF 只是幻灯片，所以没有做。以后要做，先用屏幕录制拍下真实的拖拽过程，再用 ffmpeg（palettegen）转成 3 MB 以内的 GIF，放在 `assets/readme/demo.gif`。
+
+## 4. 定稿方向 d1 与多语言出图（2026-10-24）
+
+- **定稿方向**：d1「纸白 · 精排」。`assets/templates/` 就是 d1 模板（原 `assets/templates-d1-paper/`），设计说明在 `assets/templates/README.md`；三个备选方向和当时的渲染图留在 `assets/proposals/` 作历史。第 3 节表格“内容”一栏里的部分描述（紫色底、右下角脚注、截图 4 的叠加卡片等）是 d1 之前的版本，以 `assets/templates/README.md` 和实际图片为准。
+- **多语言出图**：画面文字在 `assets/templates/i18n/<locale>.json`（`zh_CN` 是源语言，键集合由 `test/store-i18n.test.js` 检查）。
+
+  ```bash
+  node scripts/store/render-assets.mjs --locale zh_CN   # 默认；商店图 → assets/store/zh_CN/，README 图 → assets/readme/
+  node scripts/store/render-assets.mjs --locale en      # → assets/store/en/、assets/readme/en/（zh_TW、es 同理）
+  node scripts/store/render-assets.mjs --locale all     # i18n/ 里有 json 的全部语言
+  ```
+
+  目前只有 `zh_CN.json`；`en`、`zh_TW`、`es` 的译文待补（草稿，v0.3 前 zh_CN 源文案润色后重译）。
+- **提交前必做（v0.3）：4 种语言都要重拍真实截图**。`assets/raw/` 的截图是中文 Chrome 界面、中文扩展界面（设置页）、旧的字母“S”图标，地址栏和拖拽两组右侧引擎是自行添加的“百度”。换了文案的 en / zh_TW / es 图片里，浏览器和网页仍是中文，不能直接上传。重拍时每种语言用 `--lang=<locale>` 启动 Chrome（界面语言跟着变），扩展界面用 v0.2 的本地化版本，装正式图标，右侧尽量换成预置引擎；再按语言重渲全部图片。
+- **宣传图不能按语言区分**：CWS 的小宣传图（440×280）和顶部宣传图（1400×560）全站只有一张，但 d1 的这两张都带一句文案（`small.tag`、`marquee.*`），渲染会每种语言各出一张。i18n 方案第 11 节写的是“宣传图不分语言，图上尽量不放文字，必须放就只放英文产品名”，两者冲突：提交前要决定上传哪种语言的版本（倾向 `en`，与 `default_locale` 一致），或者另做一版不带文案的宣传图。
 
 ## Review fixes（2026-10-24）
 
