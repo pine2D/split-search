@@ -1,11 +1,12 @@
 // 触发网址的生成与解析。纯逻辑，不得引用 chrome。
 import { ID_PATTERN, validateTemplate } from "./engines.js";
+import { fail, codedError } from "./errors.js";
 
 export const MARKER = "_ss";
 
 export function buildTriggerTemplate(left, rightId) {
   const v = validateTemplate(left.url);
-  if (!v.ok || !v.canBeLeft) throw new Error(`${left.name} 不能作为左侧引擎`);
+  if (!v.ok || !v.canBeLeft) throw codedError("not_left", left.name);
   const sep = left.url.includes("?") ? "&" : "?";
   return `${left.url}${sep}${MARKER}=${left.id},${rightId}`;
 }
@@ -33,20 +34,20 @@ export function stripMarker(originalUrl) {
 
 export function parseTrigger(originalUrl, engines) {
   let u;
-  try { u = new URL(originalUrl); } catch { return { ok: false, error: "网址格式不正确" }; }
+  try { u = new URL(originalUrl); } catch { return fail("bad_url"); }
   const raw = u.searchParams.get(MARKER);
   const ids = raw === null ? [] : raw.split(",");
   if (ids.length !== 2 || !ids.every(id => ID_PATTERN.test(id))) {
-    return { ok: false, error: "标记参数格式不对" };
+    return fail("marker_format");
   }
   const [left, right] = ids.map(id => engines.find(e => e.id === id));
   for (const [i, e] of [left, right].entries()) {
-    if (!e) return { ok: false, error: `未知引擎：${ids[i]}` };
+    if (!e) return fail("unknown_engine", ids[i]);
   }
   const v = validateTemplate(left.url);
-  if (!v.ok || !v.canBeLeft) return { ok: false, error: `${left.name} 不能作为左侧引擎` };
+  if (!v.ok || !v.canBeLeft) return fail("not_left", left.name);
   if (!u.searchParams.has(v.leftParam)) {
-    return { ok: false, error: "触发网址与当前模板不一致，请到设置页重新复制" };
+    return fail("template_mismatch");
   }
   return { ok: true, left, right, query: u.searchParams.get(v.leftParam) };
 }

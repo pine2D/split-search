@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync, existsSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { ERROR_CODES } from "../src/lib/errors.js";
 
 const SRC = new URL("../src/", import.meta.url).pathname;
 const LOCALES_DIR = join(SRC, "_locales");
@@ -78,14 +79,16 @@ function sourceFiles(dir) {
   return out;
 }
 
-const KEY_RE = /["'`]((?:ext|go|options|engine|guide|notice|err|common|lang)_[a-z0-9_]+)["'`]/g;
+// 错误码不是 key（如 engine_gone 撞上 engine_ 前缀）：跳过 errors.js 和直接传给 fail/spec/codedError 的字面量。
+const KEY_RE = /(?<!\b(?:fail|spec|codedError)\()["'`]((?:ext|go|options|engine|guide|notice|err|common|lang)_[a-z0-9_]+)["'`]/g;
 const ATTR_RE = /data-i18n-attr="([^"]*)"/g;
+const ERRORS_JS = join(SRC, "lib", "errors.js");
 
 function referencedKeys() {
   const refs = new Set();
   for (const f of sourceFiles(SRC)) {
     const text = readFileSync(f, "utf8");
-    for (const m of text.matchAll(KEY_RE)) refs.add(m[1]);
+    if (f !== ERRORS_JS) for (const m of text.matchAll(KEY_RE)) refs.add(m[1]);
     if (f.endsWith(".html")) {
       for (const m of text.matchAll(/data-i18n="([^"]+)"/g)) refs.add(m[1]);
       for (const m of text.matchAll(ATTR_RE)) {
@@ -105,10 +108,26 @@ test("引用的 key 都存在", () => {
   for (const k of referencedKeys()) assert.ok(defined.has(k), `代码引用了不存在的 key：${k}`);
 });
 
-test("没有未被引用的 key", () => {
+test("没有未被引用的 key；err_* 必须对应 ERROR_CODES", () => {
   const refs = referencedKeys();
-  // err_* 由任务 5 的 ERROR_CODES 引用，任务 5 收紧。
-  for (const k of keysOf("zh_CN")) assert.ok(k.startsWith("err_") || refs.has(k), `未被引用的 key：${k}`);
+  for (const k of keysOf("zh_CN")) {
+    if (k.startsWith("err_")) assert.ok(ERROR_CODES.includes(k.slice(4)), `err_* 没有对应的错误码：${k}`);
+    else assert.ok(refs.has(k), `未被引用的 key：${k}`);
+  }
+});
+
+test("每个 ERROR_CODES 都有 err_<code>", () => {
+  const defined = new Set(keysOf("zh_CN"));
+  for (const c of ERROR_CODES) assert.ok(defined.has(`err_${c}`), `缺少 err_${c}`);
+});
+
+test("代码里产生的错误码都已登记", () => {
+  const found = [];
+  for (const f of sourceFiles(SRC)) {
+    for (const m of readFileSync(f, "utf8").matchAll(/\b(?:fail|spec|codedError)\("([a-z_]+)"/g)) found.push(m[1]);
+  }
+  assert.ok(found.length > 0);
+  for (const c of found) assert.ok(ERROR_CODES.includes(c), `未登记的错误码：${c}`);
 });
 
 test("[needs-translation] 只警告", (t) => {

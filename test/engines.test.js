@@ -24,7 +24,7 @@ test("validateTemplate: _ss 是保留参数，左右侧模板都拒绝", () => {
   for (const url of ["https://a.com/?q=%s&_ss=a,b", "https://a.com/wiki/%s?_ss=a,b", "https://a.com/?_ss=%s", "https://a.com/?q=%s&_ss"]) {
     const r = validateTemplate(url);
     assert.equal(r.ok, false, url);
-    assert.match(r.error, /_ss.*保留参数/);
+    assert.equal(r.error.code, "tpl_reserved_param");
   }
   assert.equal(validateTemplate("https://a.com/?q=%s&x_ss=1").ok, true);
 });
@@ -32,20 +32,26 @@ test("validateTemplate: 域名不能含 *、不能是 IPv6 字面量", () => {
   for (const url of ["https://*/?q=%s", "https://*.example.com/?q=%s", "https://a*b.com/wiki/%s"]) {
     const r = validateTemplate(url);
     assert.equal(r.ok, false, url);
-    assert.match(r.error, /\*/);
+    assert.equal(r.error.code, "tpl_wildcard_host");
   }
   for (const url of ["https://[::1]/?q=%s", "http://[2001:db8::1]:8080/s?q=%s"]) {
     const r = validateTemplate(url);
     assert.equal(r.ok, false, url);
-    assert.match(r.error, /IPv6/);
+    assert.equal(r.error.code, "tpl_ipv6");
   }
   assert.equal(validateTemplate("http://127.0.0.1:8080/?q=%s").ok, true);
 });
 test("validateTemplate: 不合格", () => {
-  assert.equal(validateTemplate("ftp://a.com/?q=%s").ok, false);
-  assert.equal(validateTemplate("https://a.com/?q=").ok, false);
-  assert.equal(validateTemplate("https://a.com/?q=%S").ok, false);
-  assert.equal(validateTemplate("not a url %s").ok, false);
+  const cases = [
+    ["ftp://a.com/?q=%s", "tpl_bad_scheme"],
+    ["https://a.com/?q=", "tpl_no_placeholder"],
+    ["https://a.com/?q=%S", "tpl_no_placeholder"],
+    [undefined, "tpl_no_placeholder"],
+    ["not a url %s", "bad_url"],
+  ];
+  for (const [url, code] of cases) {
+    assert.deepEqual(validateTemplate(url), { ok: false, error: { code, args: [] } }, url);
+  }
 });
 test("mergeConfig: 空存储返回预置引擎和默认组合", () => {
   const c = mergeConfig({});

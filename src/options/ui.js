@@ -1,5 +1,7 @@
 // 设置页的 DOM 小工具。所有文字都用 textContent / 文本节点写入，不用 innerHTML。
 import { engineOrigin } from "../lib/engines.js";
+import { errorKey } from "../lib/errors.js";
+import { t } from "../chrome/i18n.js";
 
 export function h(tag, props, ...children) {
   const el = document.createElement(tag);
@@ -35,16 +37,10 @@ export function notify(text, kind = "ok", { sticky = false } = {}) {
   if (!sticky) setTimeout(close, kind === "error" ? 8000 : 3500);
 }
 
-// chrome.storage.sync 的配额错误是英文常量名，翻译成用户看得懂的说明
-const QUOTA_ERRORS = [
-  [/MAX_WRITE_OPERATIONS_PER_(MINUTE|HOUR)/, "保存过于频繁，请稍后再试"],
-  [/QUOTA_BYTES/, "同步存储空间已满，请删除一些自定义引擎或缩短名称和网址后再试"],
-];
-
+// 认得出的错误（错误码、storage.sync 配额常量）按当前语言显示，其余原样显示 message
 export function errorText(err) {
-  const text = err?.message || String(err);
-  for (const [re, zh] of QUOTA_ERRORS) if (re.test(text)) return zh;
-  return text;
+  const key = errorKey(err);
+  return key ? t(...key) : (err?.message ?? String(err));
 }
 
 export function copyButton(getText, label = "复制") {

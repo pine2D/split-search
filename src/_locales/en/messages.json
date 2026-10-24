@@ -6,5 +6,143 @@
   "ext_action_title": {
     "message": "Split Search 设置",
     "description": "Tooltip of the toolbar button. [needs-translation]"
+  },
+  "engine_tpl_ok": {
+    "message": "可作左侧或右侧",
+    "description": "Live hint under the URL template field in the engine dialog: the template can be used on either side of the split view. [needs-translation]"
+  },
+  "engine_tpl_right_only": {
+    "message": "只能作右侧。可作左侧的网址要求：小写 %s 恰好出现一次，并且是某个查询参数的完整值（如 ?q=%s），该参数名只出现一次，网址不含 #",
+    "description": "Live hint under the URL template field: the template can only be used on the right side. Contains the full 'can be left side' rule; keep the rule wording identical to err_default_left_url. Do not translate %s, ?q=%s or #. [needs-translation]"
+  },
+  "err_bad_url": {
+    "message": "网址格式不正确",
+    "description": "Error: the URL (template or trigger URL) cannot be parsed. [needs-translation]"
+  },
+  "err_tpl_no_placeholder": {
+    "message": "网址中必须包含小写 %s",
+    "description": "Error in the URL template field: the template lacks the lowercase %s placeholder. Do not translate %s. [needs-translation]"
+  },
+  "err_tpl_bad_scheme": {
+    "message": "网址必须以 http:// 或 https:// 开头",
+    "description": "Error in the URL template field: the template does not use http or https. [needs-translation]"
+  },
+  "err_tpl_no_host": {
+    "message": "网址缺少域名",
+    "description": "Error in the URL template field: the template has no host name. [needs-translation]"
+  },
+  "err_tpl_wildcard_host": {
+    "message": "域名不能包含 *，请填写具体的网站地址",
+    "description": "Error in the URL template field: the host name contains a * wildcard. [needs-translation]"
+  },
+  "err_tpl_ipv6": {
+    "message": "不支持 IPv6 地址，请改用域名",
+    "description": "Error in the URL template field: the host is an IPv6 address literal. [needs-translation]"
+  },
+  "err_tpl_reserved_param": {
+    "message": "_ss 是保留参数，网址中不能包含它",
+    "description": "Error in the URL template field: the template contains the reserved _ss parameter. Do not translate _ss. [needs-translation]"
+  },
+  "err_marker_format": {
+    "message": "标记参数格式不对",
+    "description": "Error page after a search: the _ss marker parameter in the trigger URL is malformed. [needs-translation]"
+  },
+  "err_unknown_engine": {
+    "message": "未知引擎：$ENGINE_ID$",
+    "description": "Error page after a search: the trigger URL names an engine id that does not exist (deleted or hidden). [needs-translation]",
+    "placeholders": {
+      "ENGINE_ID": {
+        "content": "$1",
+        "example": "baidu"
+      }
+    }
+  },
+  "err_not_left": {
+    "message": "$ENGINE$ 不能作为左侧引擎",
+    "description": "Error: the named engine's URL template cannot be used as the left side of a split view. [needs-translation]",
+    "placeholders": {
+      "ENGINE": {
+        "content": "$1",
+        "example": "Wikipedia"
+      }
+    }
+  },
+  "err_template_mismatch": {
+    "message": "触发网址与当前模板不一致，请到设置页重新复制",
+    "description": "Error page after a search: the trigger URL no longer matches the left engine's current template; the user must copy the trigger URL again from the settings page. [needs-translation]"
+  },
+  "err_config_too_large": {
+    "message": "配置过大，无法保存：$KEY$",
+    "description": "Error when saving settings: one stored item exceeds chrome.storage.sync's per-item size limit. The placeholder is an internal storage key name (not translated). [needs-translation]",
+    "placeholders": {
+      "KEY": {
+        "content": "$1",
+        "example": "customEngines"
+      }
+    }
+  },
+  "err_name_required": {
+    "message": "请填写名称",
+    "description": "Error in the engine dialog: the name field is empty. [needs-translation]"
+  },
+  "err_name_too_long": {
+    "message": "名称不能超过 $MAX$ 个字符",
+    "description": "Error in the engine dialog: the name is longer than the maximum number of characters. [needs-translation]",
+    "placeholders": {
+      "MAX": {
+        "content": "$1",
+        "example": "40"
+      }
+    }
+  },
+  "err_id_format": {
+    "message": "id 只能由小写字母、数字和 - 组成，长度 1–20",
+    "description": "Error in the engine dialog: the engine id has invalid characters or length. [needs-translation]"
+  },
+  "err_id_taken": {
+    "message": "id “$ID$” 已被占用，请换一个",
+    "description": "Error in the engine dialog: another engine already uses this id. [needs-translation]",
+    "placeholders": {
+      "ID": {
+        "content": "$1",
+        "example": "baidu"
+      }
+    }
+  },
+  "err_engine_gone": {
+    "message": "找不到这个引擎，它可能已在其他设备上被删除",
+    "description": "Error in the engine dialog: the engine being edited no longer exists (probably deleted on another synced device). [needs-translation]"
+  },
+  "err_default_left_url": {
+    "message": "不能保存：这个引擎是默认组合的左侧，而新网址不能作为左侧。可作左侧的网址要求：小写 %s 恰好出现一次，并且是某个查询参数的完整值（如 ?q=%s），该参数名只出现一次，网址不含 #。如果确实要用这个网址，请先把默认组合的左侧换成其他引擎。",
+    "description": "Error in the engine dialog: the engine is the left side of the default pair and the new URL cannot be a left side. Contains the full 'can be left side' rule; keep the rule wording identical to engine_tpl_right_only. Do not translate %s, ?q=%s or #. [needs-translation]"
+  },
+  "err_only_preset_hide": {
+    "message": "只有预置引擎可以隐藏",
+    "description": "Error: only preset engines can be hidden. [needs-translation]"
+  },
+  "err_pair_uses_hide": {
+    "message": "默认组合正在使用这个引擎，不能隐藏",
+    "description": "Error: the engine cannot be hidden because the default pair uses it. [needs-translation]"
+  },
+  "err_only_custom_delete": {
+    "message": "只有自定义引擎可以删除",
+    "description": "Error: only custom engines can be deleted. [needs-translation]"
+  },
+  "err_pair_uses_delete": {
+    "message": "默认组合正在使用这个引擎，不能删除",
+    "description": "Error: the engine cannot be deleted because the default pair uses it. [needs-translation]"
+  },
+  "err_pair_missing": {
+    "message": "所选引擎不存在，可能已被删除或隐藏",
+    "description": "Error when setting the default pair: a selected engine no longer exists (deleted or hidden). [needs-translation]"
+  },
+  "err_quota_rate": {
+    "message": "保存过于频繁，请稍后再试",
+    "description": "Error when saving settings: chrome.storage.sync write rate limit reached. [needs-translation]"
+  },
+  "err_quota_bytes": {
+    "message": "同步存储空间已满，请删除一些自定义引擎或缩短名称和网址后再试",
+    "description": "Error when saving settings: chrome.storage.sync total storage quota is full. [needs-translation]"
   }
 }

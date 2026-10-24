@@ -25,7 +25,7 @@ test("saveKeys 只写传入的键，loadConfig 反映排序", async () => {
 test("超过 8192 字节时拒绝且不调用 set", async () => {
   const area = fakeArea();
   const big = [{ id: "x", name: "x", url: "https://e.com/?q=%s", pad: "a".repeat(9000) }];
-  await assert.rejects(saveKeys({ order: ["ddg"], customEngines: big }, area), /配置过大/);
+  await assert.rejects(saveKeys({ order: ["ddg"], customEngines: big }, area), { code: "config_too_large", args: ["customEngines"] });
   assert.equal(area.setCalls.length, 0);
 });
 test("loadRaw 原样返回 presetOverrides", async () => {
@@ -37,7 +37,7 @@ test("单项上限按 键名 + JSON 值 计：恰好 8192 字节通过，8193 �
   const area = fakeArea();
   await saveKeys({ k: "a".repeat(8189) }, area);
   assert.equal(area.setCalls.length, 1);
-  await assert.rejects(saveKeys({ k: "a".repeat(8190) }, area), /配置过大/);
+  await assert.rejects(saveKeys({ k: "a".repeat(8190) }, area), { code: "config_too_large" });
   assert.equal(area.setCalls.length, 1);
 });
 test("多字节字符按 UTF-8 字节计", async () => {
@@ -45,7 +45,7 @@ test("多字节字符按 UTF-8 字节计", async () => {
   const name = "中".repeat(2731); // 2731 个字符，8193 字节
   const big = [{ id: "x", name, url: "https://e.com/?q=%s" }];
   assert.ok(JSON.stringify(big).length < 8192);
-  await assert.rejects(saveKeys({ customEngines: big }, area), /配置过大/);
+  await assert.rejects(saveKeys({ customEngines: big }, area), { code: "config_too_large" });
   assert.equal(area.setCalls.length, 0);
 });
 test("loadConfig 按预置顺序返回引擎和默认组合", async () => {

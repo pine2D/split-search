@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { PRESETS, ID_PATTERN, isIdTaken } from "../src/lib/engines.js";
 import {
-  addEngine, editEngine, hideEngine, deleteEngine, restoreEngine, setDefaultPair, LEFT_RULE,
+  addEngine, editEngine, hideEngine, deleteEngine, restoreEngine, setDefaultPair, describeTemplate,
 } from "../src/options/edits.js";
 
 const preset = (id) => PRESETS.find(p => p.id === id);
@@ -18,7 +18,7 @@ test("默认组合引用的预置引擎不能隐藏", () => {
 test("默认组合引用的自定义引擎不能删除", () => {
   const raw = { customEngines: [baidu], defaultPair: ["baidu", "google"] };
   const r = deleteEngine(raw, "baidu");
-  assert.equal(r.ok, false); assert.match(r.error, /默认组合/);
+  assert.equal(r.ok, false); assert.equal(r.error.code, "pair_uses_delete");
   assert.equal(deleteEngine({ customEngines: [baidu] }, "baidu").ok, true);
 });
 test("预置引擎不能删除、自定义引擎不能隐藏", () => {
@@ -27,7 +27,7 @@ test("预置引擎不能删除、自定义引擎不能隐藏", () => {
 });
 test("默认左侧引擎改成不能作左侧的网址时拒绝保存", () => {
   const r = editEngine({}, "google", { name: "Google", url: "https://www.google.com/search/%s" });
-  assert.equal(r.ok, false); assert.match(r.errors.url, /默认组合的左侧/);
+  assert.equal(r.ok, false); assert.equal(r.errors.url.code, "default_left_url");
   const custom = { customEngines: [baidu], defaultPair: ["baidu", "google"] };
   assert.equal(editEngine(custom, "baidu", { name: "百度", url: "https://www.baidu.com/s/%s" }).ok, false);
   // 默认右侧可以改成仅右侧的网址
@@ -63,11 +63,11 @@ test("新增引擎的 id 校验", () => {
   const input = { name: "百度", url: baidu.url };
   for (const id of ["Baidu", "", "a b", "a".repeat(21), "百度"]) {
     const r = addEngine({}, { ...input, id });
-    assert.equal(r.ok, false, id); assert.match(r.errors.id, /小写字母/);
+    assert.equal(r.ok, false, id); assert.equal(r.errors.id.code, "id_format");
     assert.equal(ID_PATTERN.test(id), false, id);
   }
   const taken = addEngine({ presetOverrides: { bing: { hidden: true } } }, { ...input, id: "bing" });
-  assert.equal(taken.ok, false); assert.match(taken.errors.id, /已被占用/);
+  assert.equal(taken.ok, false); assert.deepEqual(taken.errors.id, { code: "id_taken", args: ["bing"] });
   assert.equal(isIdTaken("bing", { presetOverrides: { bing: { hidden: true } } }), true);
   assert.equal(addEngine({ customEngines: [baidu] }, { ...input, id: "baidu" }).ok, false);
   const ok = addEngine({ customEngines: [baidu] }, { ...input, id: "baidu-2" });
@@ -75,14 +75,29 @@ test("新增引擎的 id 校验", () => {
   assert.deepEqual(ok.patch.customEngines.map(e => e.id), ["baidu", "baidu-2"]);
 });
 test("新增引擎的网址校验沿用 validateTemplate", () => {
-  assert.match(addEngine({}, { id: "x", name: "X", url: "https://*.x.com/?q=%s" }).errors.url, /\*/);
-  assert.match(addEngine({}, { id: "x", name: "X", url: "https://x.com/?q=%s&_ss=x,y" }).errors.url, /保留参数/);
+  assert.equal(addEngine({}, { id: "x", name: "X", url: "https://*.x.com/?q=%s" }).errors.url.code, "tpl_wildcard_host");
+  assert.equal(addEngine({}, { id: "x", name: "X", url: "https://x.com/?q=%s&_ss=x,y" }).errors.url.code, "tpl_reserved_param");
 });
 test("设置默认组合：左侧必须能作左侧", () => {
   const wiki = { id: "wiki", name: "Wiki", url: "https://en.wikipedia.org/wiki/%s" };
   assert.equal(setDefaultPair({ customEngines: [wiki] }, "wiki", "kagi").ok, false);
   assert.deepEqual(setDefaultPair({ customEngines: [wiki] }, "kagi", "wiki").patch, { defaultPair: ["kagi", "wiki"] });
 });
-test("LEFT_RULE 说明参数名只能出现一次", () => {
-  assert.match(LEFT_RULE, /只出现一次/);
+test("名称必填且不超过 NAME_MAX；找不到引擎时报 form 错误", () => {
+  assert.deepEqual(addEngine({}, { id: "x", name: " ", url: baidu.url }).errors, { name: { code: "name_required", args: [] } });
+  assert.deepEqual(addEngine({}, { id: "x", name: "a".repeat(41), url: baidu.url }).errors, { name: { code: "name_too_long", args: ["40"] } });
+  assert.deepEqual(editEngine({}, "gone", { name: "X", url: baidu.url }), { ok: false, errors: { form: { code: "engine_gone", args: [] } } });
+});
+test("隐藏、删除、默认组合的错误码", () => {
+  assert.deepEqual(hideEngine({}, "google").error, { code: "pair_uses_hide", args: [] });
+  assert.deepEqual(hideEngine({ customEngines: [baidu] }, "baidu").error, { code: "only_preset_hide", args: [] });
+  assert.deepEqual(deleteEngine({}, "bing").error, { code: "only_custom_delete", args: [] });
+  assert.deepEqual(setDefaultPair({}, "google", "nope").error, { code: "pair_missing", args: [] });
+  const wiki = { id: "wiki", name: "Wiki", url: "https://en.wikipedia.org/wiki/%s" };
+  assert.deepEqual(setDefaultPair({ customEngines: [wiki] }, "wiki", "kagi").error, { code: "not_left", args: ["Wiki"] });
+});
+test("describeTemplate 返回 level 和消息 key", () => {
+  assert.deepEqual(describeTemplate("https://x.com/s/%s"), { level: "warn", msg: ["engine_tpl_right_only"] });
+  assert.deepEqual(describeTemplate(" https://x.com/?q=%s "), { level: "ok", msg: ["engine_tpl_ok"] });
+  assert.deepEqual(describeTemplate("https://*.x.com/?q=%s"), { level: "error", msg: ["err_tpl_wildcard_host"] });
 });
