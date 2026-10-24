@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync, readdirSync, existsSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { ERROR_CODES } from "../src/lib/errors.js";
+import { validateTemplate } from "../src/lib/engines.js";
 
 const SRC = new URL("../src/", import.meta.url).pathname;
 const LOCALES_DIR = join(SRC, "_locales");
@@ -130,11 +131,21 @@ test("代码里产生的错误码都已登记", () => {
   for (const c of found) assert.ok(ERROR_CODES.includes(c), `未登记的错误码：${c}`);
 });
 
-test("[needs-translation] 只警告", (t) => {
+test("任何 description 都不含 [needs-translation]", () => {
+  const hits = [];
   for (const l of langs) {
     for (const [k, v] of Object.entries(catalogs[l])) {
-      if (v.description.includes("[needs-translation]")) t.diagnostic(`${l}/${k} needs-translation`);
+      if (v.description.includes("[needs-translation]")) hits.push(`${l}/${k}`);
     }
+  }
+  assert.deepEqual(hits, [], `这些条目还没翻译：\n${hits.join("\n")}`);
+});
+
+test("每种语言的网址示例值都能放左侧", () => {
+  for (const l of langs) {
+    const url = catalogs[l].options_dlg_url_placeholder.message;
+    const r = validateTemplate(url);
+    assert.ok(r.ok && r.canBeLeft, `${l} 的 options_dlg_url_placeholder 不能放左侧：${url}`);
   }
 });
 

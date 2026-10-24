@@ -672,7 +672,7 @@
     "description": "Sentence shown right after notice_added / notice_saved when the engine's site is not granted yet. The quoted button is engine_grant."
   },
   "notice_template_changed": {
-    "message": "“$NAME$”的网址已修改：以该引擎为左侧的网站搜索网址需要重新复制（用下方“触发网址”重新生成），并替换 Chrome 设置里对应网站搜索的网址。",
+    "message": "“$NAME$”的网址已修改：以该引擎为左侧的网站搜索，需要在本页重新复制触发网址，并替换 Chrome 设置里对应网站搜索的网址。",
     "description": "Sticky notice after an engine's URL changed: site searches that use it on the left must be copied again and replaced in Chrome's settings.",
     "placeholders": {
       "NAME": {
