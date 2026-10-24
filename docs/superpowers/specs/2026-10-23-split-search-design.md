@@ -69,16 +69,20 @@
 触发网址 = **左侧引擎的真实搜索网址 + 标记参数 `_ss=<左id>,<右id>`**，例如：
 
 ```
-https://kagi.com/search?q=%s&_ss=kagi,google
+https://www.google.com/search?q=%s&_ss=google,bing
 ```
 
-- 只有满足以下条件的引擎模板才能当左侧：
+- 所有引擎模板（无论左右）都必须满足：
   - 协议是 http 或 https；
-  - 小写 `%s` **恰好出现一次，并且作为某个 query 参数的完整值**（如 `q=%s`）；
-  - 不含 `#`；
-  - 不含 `_ss` 参数。
+  - 含小写 `%s`；
+  - 域名非空、不含 `*`，且不是 IPv6 字面量（不以 `[` 开头）；
+  - 不含 `_ss` 参数（保留给标记参数）。
 
-  只用作右侧的引擎，只要求是 http 或 https 且含 `%s`。
+  只满足以上条件的模板只能当右侧。
+- 能当左侧的模板还要额外满足：
+  - 小写 `%s` **恰好出现一次，并且作为某个 query 参数的完整值**（如 `q=%s`）；
+  - `%s` 所在的参数名只出现一次；
+  - 不含 `#`。
 - 禁止 `#` 的理由：如果标记参数落进片段，并且新网址和当前页只差片段（例如在单页应用的引擎页上再搜一次），Chrome 只做同文档导航，不发网络请求，DNR 拦不到，分屏就不能可靠触发。
 - 扩展没生效时，这就是一次普通的左侧引擎搜索，满足 G5。
 
@@ -113,13 +117,13 @@ https://kagi.com/search?q=%s&_ss=kagi,google
 - `permissions.request` 只能由用户手势触发：`onInstalled` 只负责调用 `runtime.openOptionsPage()`，用户在设置页点“授权”按钮后才发起请求。授权状态每次都用 `permissions.contains` 实时查询，不缓存。
 - `web_accessible_resources: [{ resources: ["go.html"], matches: ["<all_urls>"], use_dynamic_url: true }]`。从网页拖拽文字时，导航带有来源页的 initiator，所以必须列入 WAR，`matches` 也不要收窄。`use_dynamic_url` 只能防止网页直接链接 go.html，防不住带 `_ss` 的引擎链接（见 5.5）。
 - `incognito: "not_allowed"`，`minimum_chrome_version: "155"`。
-- **`key`**：在 manifest 里固定公钥，保证扩展 ID 稳定。原因：已解压扩展的 ID 由加载路径决定，路径一变，已授权的权限和 `storage.sync` 就对不上了，换机器也无法互通。私钥不进仓库。
+- **`key`**：在 manifest 里固定公钥，保证扩展 ID 稳定。原因：已解压扩展的 ID 由加载路径决定，路径一变，已授权的权限和 `storage.sync` 就对不上了，换机器也无法互通。扩展 ID 只由这个公钥决定，私钥只在自签 `.crx` 时才需要，不保留。
 
 ## 5. 行为细节
 
 ### 5.1 数据模型（`chrome.storage.sync`）
 
-- 预置引擎（Kagi、Google、Bing、DuckDuckGo、Perplexity）**只写在代码里**，读取时与存储合并，不写入存储。这样可以避免新设备在 `onInstalled` 时写入的预置值覆盖从其他设备同步过来的配置。
+- 预置引擎（按顺序：Google、Bing、DuckDuckGo、Perplexity、Kagi；默认组合为 Google ｜ Bing）**只写在代码里**，读取时与存储合并，不写入存储。这样可以避免新设备在 `onInstalled` 时写入的预置值覆盖从其他设备同步过来的配置。
 - 存储内容只包括用户的改动：`customEngines`、`presetOverrides`（改名、改模板、隐藏）、`order`、`defaultPair`。单项不能超过 8192 字节；排序要防抖，一次写入，避开每分钟 120 次的写入上限。
 - `id` 只能由小写字母、数字和 `-` 组成，创建后**不可修改**，因为它会写进已保存的网站搜索网址。默认组合正在引用的引擎不能删除。
 - 修改某个引擎的模板后，设置页要提示：已存进 Chrome 的、以它为左侧的网站搜索网址需要重新复制。
@@ -144,7 +148,7 @@ https://kagi.com/search?q=%s&_ss=kagi,google
 
 ### 5.4 设置页（options_ui，整页打开）
 
-- 引擎列表：增删改，`id` 只能在新建时填；可排序。按 4.1 校验 URL 模板，并标出哪些引擎可以当左侧。
+- 引擎列表：增删改，`id` 只能在新建时填；可排序。按 4.1 校验 URL 模板：所有模板都必须是 http/https、含小写 `%s`、域名非空且不含 `*`、不是 IPv6 字面量、不含 `_ss` 参数，否则不能保存；并标出哪些引擎可以当左侧（4.1 的左侧附加条件，含“`%s` 所在参数名只出现一次”）。
 - 授权：每个引擎显示授权状态，提供授权按钮；保存引擎或修改默认组合时引导用户授权。
 - 默认组合：左、右两个下拉框。
 - 组合生成器与引导：生成触发网址并提供复制按钮，图文说明“打开 `chrome://settings/searchEngines` → 在网站搜索里添加 → 设为默认”的步骤，并写明 G5 的降级行为和 5.6 的副作用。
@@ -220,5 +224,7 @@ https://kagi.com/search?q=%s&_ss=kagi,google
 | 接受网页链接触发和残留 `_ss` 的风险；启用 `use_dynamic_url` | Claude | 危害小；排除 initiator 会让从引擎页拖拽失效 |
 | 用 `location.replace` 离开 go.html，加防重入 | Claude | 防止后退或恢复会话时重复分屏 |
 | `%s` 只能作为 query 参数值出现一次（仅限左侧引擎） | Claude | 关键词可以用 URLSearchParams 无损反解，避开 path 编码的歧义 |
+| 所有模板禁用 `_ss`、通配符域名和 IPv6 字面量 | Claude | 防止自引用循环、宽泛 host 授权和整条 DNR 规则失效 |
 | 预置引擎只写在代码里；manifest 固定 `key` | Claude | 防止同步覆盖；扩展 ID 稳定，授权才不会丢 |
 | 不用构建工具、用 `node --test`、单文件不超过 300 行、镜像到 D 盘 | Claude | 与用户现有扩展项目保持一致 |
+| 默认组合改为 Google ｜ Bing，Kagi 排最后 | 用户 | Kagi 用户群小 |

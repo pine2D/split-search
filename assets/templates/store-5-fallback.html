@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="asset-size" content="1280x800">
+<meta name="asset-out" content="store/screenshot-5.png">
+<link rel="stylesheet" href="base.css">
+<script src="fonts.js"></script>
+<style>
+  /* 同一个触发网址，两种结果，上下两行对照，左边一栏写说明。两张截图同一缩放 0.39：
+     上 = 装了扩展的分屏（两个窗格的上部，原图 y 137–701，切在 698–704 的空白里）；
+     下 = 扩展没生效时的普通 DuckDuckGo 结果页（只取网页区域，出血到原图第 937 行，空白 931–947）。下图只有上图一半宽，正好是“一个引擎”和“两个引擎”的差别 */
+  .url { position: absolute; left: 48px; right: 48px; top: 148px; height: 56px; display: flex; align-items: center; gap: 24px;
+    padding: 0 24px; background: #fff; border-radius: 8px; box-shadow: var(--frame); }
+  .url span { font-size: 15px; color: var(--ink-3); white-space: nowrap; }
+  .url code { font: 500 22px/1 var(--mono); color: var(--ink); white-space: nowrap; }
+  .url code b { font-weight: 600; color: var(--pine-ink); background: rgba(80, 118, 101, .12); border-radius: 4px; padding: 2px 4px; margin-left: 1px; }
+  .row { position: absolute; left: 48px; width: 232px; }
+  .row h2 { font-size: 20px; line-height: 28px; font-weight: 600; white-space: nowrap; }
+  .row p { margin-top: 6px; font-size: 16px; line-height: 24px; color: var(--ink-2); }
+  .r1 { top: 236px; } .r2 { top: 488px; }
+  .s1 { left: 312px; top: 236px; width: 920px; }
+  .s2 { left: 312px; top: 488px; bottom: 0; width: 425px; border-radius: 8px 8px 0 0; }
+</style></head>
+<body>
+  <header class="head">
+    <h1 data-t="shot5.title"></h1>
+    <p data-t="shot5.sub"></p>
+  </header>
+  <div class="url"><span data-t="shot5.url"></span><code>duckduckgo.com/?q=rust+programming<b>&amp;_ss=ddg,bing</b></code></div>
+  <div class="row r1"><h2 data-t="shot5.row1"></h2><p data-t="shot5.row1Sub" data-lines="2"></p></div>
+  <!-- 真实截图：触发网址经扩展建成的分屏，左 DuckDuckGo、右 Bing；只取两个窗格的上部 -->
+  <div class="crop s1" data-crop="20,137,2360,564"><img src="../raw/split-ddg-bing-rust.png" data-iw="2400" alt=""></div>
+  <div class="row r2"><h2 data-t="shot5.row2"></h2><p data-t="shot5.row2Sub" data-lines="2"></p></div>
+  <!-- 真实截图的页面区域：同一网址的 DuckDuckGo 结果页（只取网页内容，不含浏览器界面） -->
+  <div class="crop s2" data-crop="14,137,1090,800" data-h="fill"><img src="../raw/split-ddg-bing-rust.png" data-iw="2400" alt=""></div>
+  <script src="crop.js"></script>
+</body></html>

@@ -1,0 +1,38 @@
+:root {
+  --bg: #f5f6f8; --card: #fff; --fg: #1d2129; --muted: #697386; --line: #dde1e8;
+  --accent: #2563eb; --ok: #15803d; --bad: #b91c1c; --warn: #a16207;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #14161a; --card: #1e2127; --fg: #e6e8ec; --muted: #9aa3b2; --line: #333844;
+    --accent: #60a5fa; --ok: #4ade80; --bad: #f87171; --warn: #fbbf24; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.6 system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+main { max-width: 760px; margin: 0 auto; padding: 24px 16px 48px; }
+h1 { font-size: 20px; margin: 0 0 4px; }
+h2 { font-size: 22px; margin: 4px 0 8px; }
+h3 { font-size: 14px; margin: 0 0 8px; color: var(--muted); }
+.progress { color: var(--muted); font-size: 14px; margin-bottom: 16px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; margin-bottom: 16px; }
+.step-no { color: var(--accent); font-size: 13px; font-weight: 600; }
+.instruction { margin: 0 0 12px; white-space: pre-wrap; }
+.sample { font-size: 32px; line-height: 1.5; padding: 20px; margin: 8px 0 12px; border: 2px dashed var(--accent);
+  border-radius: 8px; user-select: text; -webkit-user-select: text; cursor: grab; word-break: break-all; }
+.copy-row { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
+.copy-row code { flex: 1; padding: 6px 10px; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; user-select: all; word-break: break-all; }
+.buttons { display: flex; gap: 10px; flex-wrap: wrap; }
+.btn { font: inherit; padding: 8px 18px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--fg); cursor: pointer; }
+.btn:hover { border-color: var(--accent); }
+.btn:disabled { opacity: .5; cursor: default; }
+.btn.pass, .btn.done { background: var(--ok); border-color: var(--ok); color: #fff; }
+.btn.fail, .btn.nosplit { background: var(--bad); border-color: var(--bad); color: #fff; }
+.results { list-style: none; margin: 0; padding: 0; font-size: 14px; }
+.results li { padding: 4px 0; border-top: 1px solid var(--line); display: flex; gap: 8px; }
+.results li:first-child { border-top: 0; }
+.st { font-weight: 600; min-width: 3.5em; }
+.st.pass { color: var(--ok); } .st.fail { color: var(--bad); } .st.skip, .st.retry, .st.degrade { color: var(--warn); }
+.detail { color: var(--muted); }
+/* 深色下 --ok/--bad 是亮色底，白字对比度不足（约 1.9:1），改用深色字；放在最后以覆盖上面的 #fff */
+@media (prefers-color-scheme: dark) {
+  .btn.pass, .btn.done, .btn.fail, .btn.nosplit { color: #0b0f14; }
+}

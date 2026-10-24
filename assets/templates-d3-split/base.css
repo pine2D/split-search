@@ -1,0 +1,58 @@
+/* d3-split：画布本身就是分屏。左格松针绿系、右格暖雾灰系，中间一条 2px 白缝，和图标两格之间的缝一样。
+   大面积颜色 OKLCH 彩度都 ≤0.051；唯一强调色是图标的松针绿 --pine，只用于细标注线和触发网址里的 _ss。
+   深色两格的右格用比图标略深的 --fog-deep：白字对比从 3.5:1 提到 4.65:1，缩小后仍清楚；图标本身不改色。
+   不用渐变装饰、不用光晕；截图只加 1px 细边和很淡的投影。 */
+:root {
+  /* 图标原色：宣传图（小宣传图、marquee、README 首图）的两格底色 */
+  --pine: #507665; --fog: #8C8881; --fog-deep: #78746D;
+  /* 浅色两格：商店截图和原理图的底色 */
+  --pine-mist: #DFE7E2; --fog-mist: #E9E7E2; --seam: #FFFFFF;
+  --ink: #1E2723; --ink-2: #4D5852; --paper: #F5F5F2; --rule: rgba(30, 39, 35, .14);
+  --font: "Sarasa UI SC", "Source Han Sans SC", "Noto Sans CJK SC", sans-serif;
+  --mono: "Sarasa Mono SC", "Noto Sans Mono", monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 100%; height: 100%; overflow: hidden; }
+body { position: relative; font-family: var(--font); color: var(--ink); background: var(--paper);
+  -webkit-font-smoothing: antialiased; font-kerning: normal; }
+
+/* 分屏画布：硬分界（不是渐变过渡），缝宽 2px，正好落在画布正中 */
+.split-light { background: linear-gradient(90deg, var(--pine-mist) 0 calc(50% - 1px), var(--seam) calc(50% - 1px) calc(50% + 1px), var(--fog-mist) calc(50% + 1px)); }
+.split-solid { color: #fff; background: linear-gradient(90deg, var(--pine) 0 calc(50% - 1px), var(--seam) calc(50% - 1px) calc(50% + 1px), var(--fog-deep) calc(50% + 1px)); }
+
+/* 图标放在白色圆角底板上 */
+.tile { display: grid; place-items: center; background: #fff; border-radius: 22%; }
+.tile > img { width: 84%; height: 84%; display: block; }
+.no-tile .tile { background: none; overflow: visible; }
+.no-tile .tile > img { width: 133.4%; height: 133.4%; }
+
+/* 截图片段（坐标约定见 crop.js） */
+.crop { position: absolute; overflow: hidden; background: #fff; border-radius: 8px;
+  box-shadow: 0 0 0 1px var(--rule), 0 1px 2px rgba(30, 39, 35, .06), 0 10px 28px rgba(30, 39, 35, .08); }
+.crop > img { position: absolute; max-width: none; display: block; }
+.crop > svg.ann { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; }
+.mark { position: absolute; border: 2px solid var(--pine); border-radius: 6px; }
+
+/* 商店截图页头：左格放标题，右格放一行说明，两者汉字字形下沿对齐（y≈97）；左右各距缝 40px 起排 */
+.head { position: absolute; top: 0; height: 132px; display: flex; flex-direction: column; justify-content: flex-end; padding-bottom: 30px; }
+.head.l { left: 40px; width: 560px; }
+.head.r { left: 680px; width: 560px; }
+.head h1 { font-size: 38px; line-height: 46px; font-weight: 600; letter-spacing: .01em; }
+.head p { font-size: 18px; line-height: 27px; color: var(--ink-2); margin-bottom: -1px; }
+
+/* 标注文字：不用胶囊色块，只是小号深色字 */
+.lab { position: absolute; font-size: 15px; line-height: 20px; font-weight: 600; color: var(--ink); white-space: nowrap; }
+.lab span { font-weight: 400; color: var(--ink-2); }
+
+/* 白色小卡片：上沿一行标注，下面是同一比例的截图片段；向下出血 */
+.card { position: absolute; background: #fff; border-radius: 10px 10px 0 0; padding: 10px 10px 0; z-index: 2;
+  box-shadow: 0 0 0 1px var(--rule), 0 10px 28px rgba(30, 39, 35, .08); }
+.card > .lab { position: static; margin: 0 2px 8px; }
+.card .crop { position: relative; border-radius: 4px; box-shadow: 0 0 0 1px var(--rule); }
+/* 分屏的两个窗格：各取一段、同一比例，中间留 6px，像浏览器两窗格之间的缝 */
+.pair { display: flex; gap: 6px; }
+.pair > .crop { flex: none; }
+
+/* 脚注：贴在截图右下角的小白条 */
+.fn { position: absolute; z-index: 3; background: #fff; border-radius: 6px; padding: 5px 10px; font-size: 13px; line-height: 18px;
+  color: var(--ink-2); box-shadow: 0 0 0 1px var(--rule); white-space: nowrap; }

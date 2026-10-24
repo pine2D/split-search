@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="asset-size" content="1280x800">
+<meta name="asset-out" content="store/screenshot-1.png">
+<link rel="stylesheet" href="base.css">
+<style>
+  /* 缩放 0.5：源图分屏分界线在 x≈1200 → 40 + 600 = 640，正好接在画布的缝上 */
+  .crop { left: 40px; top: 152px; width: 1200px; border-radius: 10px 10px 0 0; }
+</style></head>
+<body class="split-light">
+  <header class="head l"><h1>一次搜索，两个引擎</h1></header>
+  <header class="head r"><p>Chrome 原生分屏，左右各是一个普通标签页</p></header>
+  <!-- 真实截图：左 DuckDuckGo，右 Bing（都是预置引擎），整窗，向下出血 -->
+  <div class="crop" data-crop="0,0,2400,1500"><img src="../raw/split-ddg-bing-rust.png" data-iw="2400" alt=""></div>
+  <script src="crop.js"></script>
+</body></html>

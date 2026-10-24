@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="asset-size" content="1280x800">
+<meta name="asset-out" content="store/screenshot-5.png">
+<link rel="stylesheet" href="base.css">
+<style>
+  /* 同一条触发网址压在缝上；缝往下把画布分成两种结果：左格装了扩展（分屏），右格扩展未生效（普通搜索）。
+     两张卡片等宽、顶边 y=232、向下出血；里面的截图同为约 0.5 倍 */
+  .url { position: absolute; left: 50%; top: 152px; transform: translateX(-50%); white-space: nowrap; z-index: 2;
+    background: #fff; border-radius: 8px; padding: 15px 24px 14px; font: 500 22px/1 var(--mono); color: var(--ink);
+    box-shadow: 0 0 0 1px var(--rule), 0 8px 24px rgba(30, 39, 35, .08); }
+  .url b { color: var(--pine); font-weight: 700; }
+  .card { top: 232px; width: 560px; }
+  .card.l { left: 40px; } .card.r { left: 680px; }
+  .pair > .crop { width: 267px; }
+  .card.r .crop { width: 540px; }
+</style></head>
+<body class="split-light">
+  <header class="head l"><h1>没装扩展也不出错</h1></header>
+  <header class="head r"><p>其他设备和无痕窗口里，它就是一次普通搜索</p></header>
+  <div class="url">duckduckgo.com/?q=rust+programming<b>&amp;_ss=ddg,bing</b></div>
+  <!-- 真实截图：触发网址经扩展建成的分屏，左 DuckDuckGo、右 Bing；两个窗格各取左边一段，分界落在卡片正中 -->
+  <div class="card l"><div class="lab">装了 Split Search <span>左右分屏</span></div>
+    <div class="pair">
+      <div class="crop" data-crop="14,132,539,1300"><img src="../raw/split-ddg-bing-rust.png" data-iw="2400" alt=""></div>
+      <div class="crop" data-crop="1214,132,539,1300"><img src="../raw/split-ddg-bing-rust.png" data-iw="2400" alt=""></div>
+    </div></div>
+  <!-- 真实截图的页面区域：同一网址的 DuckDuckGo 结果页（只取网页内容，不含浏览器界面） -->
+  <div class="card r"><div class="lab">扩展未生效 <span>普通的 DuckDuckGo 结果页</span></div>
+    <div class="crop" data-crop="14,132,1090,1300"><img src="../raw/split-ddg-bing-rust.png" data-iw="2400" alt=""></div></div>
+  <script src="crop.js"></script>
+</body></html>

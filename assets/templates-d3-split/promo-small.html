@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="asset-size" content="440x280">
+<meta name="asset-out" content="store/small-promo-440x280.png">
+<link rel="stylesheet" href="base.css">
+<style>
+  /* 画布 = 放大的图标：左格松针绿、右格暖雾灰、中间 2px 白缝。
+     图标压在缝上（一次搜索），产品名和标签语沿缝左右分开（两个引擎）。缩到 220×140 仍要认得出。 */
+  .tile { position: absolute; left: 182px; top: 42px; width: 76px; height: 76px; }
+  .row { position: absolute; left: 0; right: 0; display: grid; grid-template-columns: 1fr 1fr; column-gap: 40px; }
+  .row > :first-child { text-align: right; }
+  .name { top: 140px; font-size: 44px; line-height: 52px; font-weight: 700; letter-spacing: -.01em; }
+  /* 标签语 26/700：缩到 220×140 时约 13px，两格白字对比都 ≥4.6:1 */
+  .tag { top: 204px; font-size: 26px; line-height: 34px; font-weight: 700; letter-spacing: .04em; }
+</style></head>
+<body class="split-solid">
+  <div class="tile"><img data-icon alt=""></div>
+  <div class="row name"><span>Split</span><span>Search</span></div>
+  <div class="row tag"><span>一次搜索</span><span>两个引擎</span></div>
+</body></html>

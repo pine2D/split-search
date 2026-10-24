@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<!-- README 原理图：上半是共用的两步（地址栏/拖拽 → 触发网址），下半沿缝分成两种结果：
+     左格扩展生效（原生分屏），右格扩展未生效（普通搜索）。2 倍输出，不透明底。 -->
+<meta name="asset-size" content="880x380@2">
+<meta name="asset-out" content="readme/how-it-works.png">
+<link rel="stylesheet" href="base.css">
+<style>
+  body { background: linear-gradient(180deg, var(--paper) 0 186px, transparent 186px),
+    linear-gradient(90deg, var(--pine-mist) 0 439px, var(--seam) 439px 441px, var(--fog-mist) 441px); }
+  h2 { position: absolute; font-size: 15px; line-height: 22px; font-weight: 600; white-space: nowrap; }
+  h2 b { color: var(--pine); font-weight: 700; margin-right: 8px; }
+  .sub { position: absolute; font-size: 12px; line-height: 18px; color: var(--ink-2); }
+  .crop { border-radius: 6px; box-shadow: 0 0 0 1px var(--rule), 0 4px 14px rgba(30, 39, 35, .08); }
+  .mark { border-width: 1.5px; border-radius: 4px; }
+
+  /* 两列：左列 x=32 起，右列 x=472 起（距缝 32px），上下两半共用同一左边线 */
+  /* 上半：第 1 步（x 32–392）→ 第 2 步（x 472–848） */
+  .h1 { left: 32px; top: 22px; } .h2 { left: 472px; top: 22px; }
+  .omni { left: 32px; top: 56px; width: 360px; }
+  .s1 { left: 32px; top: 146px; width: 360px; }
+  .arrow { position: absolute; left: 394px; top: 84px; width: 76px; white-space: nowrap; text-align: center; font-size: 11px; line-height: 14px; color: var(--ink-2); }
+  .arrow svg { display: block; width: 52px; height: 12px; margin: 4px auto 0; }
+  .url { position: absolute; left: 472px; top: 56px; width: 376px; background: #fff; border-radius: 6px; padding: 12px 14px 10px;
+    box-shadow: 0 0 0 1px var(--rule); }
+  .url code { display: block; font: 500 13.5px/20px var(--mono); color: var(--ink); white-space: nowrap; }
+  .url code b { color: var(--pine); font-weight: 700; }
+  .url span { display: block; font-size: 11.5px; line-height: 16px; color: var(--ink-2); margin: 3px 0 9px; padding-top: 3px; border-top: 1px solid var(--rule); }
+  .url span.s { border-top: 1.5px solid var(--pine); margin-bottom: 0; }
+
+  /* 下半：沿缝分成两种结果，截图向下出血；两边截图同为约 0.345 倍。
+     左边是分屏的两个窗格各取左边一段（中间 6px 缝），右边是同一查询的普通结果页 */
+  .h3 { left: 32px; top: 202px; } .h4 { left: 472px; top: 202px; }
+  .s3 { left: 32px; top: 224px; } .s4 { left: 472px; top: 224px; }
+  .res { position: absolute; top: 252px; width: 376px; border-radius: 6px 6px 0 0; }
+  .res.l { left: 32px; display: flex; gap: 6px; } .res.r { left: 472px; }
+  .res.l > .crop { position: relative; width: 185px; border-radius: 6px 6px 0 0; }
+</style></head>
+<body>
+  <h2 class="h1"><b>1</b>地址栏或拖拽搜索</h2>
+  <!-- 真实截图片段：地址栏下拉建议（左边界从下拉框内侧开始，不带分屏按钮和选中条） -->
+  <div class="crop omni" data-crop="238,62,600,136"><img src="../raw/omnibox-suggest.png" data-iw="2400" alt="">
+    <i class="mark" data-box="244,130,500,60"></i></div>
+  <p class="sub s1">设为默认搜索，或输入“快捷字词 + 空格”触发</p>
+
+  <div class="arrow">Chrome 拼出<svg viewBox="0 0 52 12"><path d="M2 6H48M43 1.5L48.5 6L43 10.5" stroke="#507665" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+
+  <h2 class="h2"><b>2</b>触发网址</h2>
+  <div class="url">
+    <code>https://duckduckgo.com/?q=rust+ownership</code>
+    <span>左侧引擎的搜索网址</span>
+    <code><b>&amp;_ss=ddg,baidu</b></code>
+    <span class="s">分屏标记：左 ddg，右 baidu</span>
+  </div>
+
+  <h2 class="h3"><b>3</b>扩展生效：Chrome 原生分屏</h2>
+  <p class="sub s3">左侧真实搜索，右侧新开一个普通标签</p>
+  <h2 class="h4">扩展未生效：一次普通搜索</h2>
+  <p class="sub s4">其他设备、无痕窗口或扩展停用时，不会出错</p>
+  <!-- 真实截图：回车后的分屏，左 DuckDuckGo、右百度；两个窗格各取左边一段 -->
+  <div class="res l">
+    <div class="crop" data-crop="14,132,536,386"><img src="../raw/omnibox-result-split.png" data-iw="2400" alt=""></div>
+    <div class="crop" data-crop="1214,132,536,386"><img src="../raw/omnibox-result-split.png" data-iw="2400" alt=""></div>
+  </div>
+  <!-- 真实截图的页面区域：同一查询词的 DuckDuckGo 结果页（只取左窗格网页内容，不含浏览器界面） -->
+  <div class="crop res r" data-crop="14,132,1090,386"><img src="../raw/omnibox-result-split.png" data-iw="2400" alt=""></div>
+  <script src="crop.js"></script>
+</body></html>
