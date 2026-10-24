@@ -5,6 +5,12 @@
   "description": "地址栏或拖拽搜索，一键用两个搜索引擎打开原生分屏对比",
   "minimum_chrome_version": "155",
   "incognito": "not_allowed",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0ZNKfhoaeTQJvk8txOrxu1Wq4hmZhmp/4E2vj30HbSQ/YRtVBf1TyCp3i3VUQG5U/ASACVmPXvsBHkNKey+Njh0cSTV5CshU0OUDfbkG31oJzdM0IASE4GHmKAZTrTA1H7ns+QtK1zKCl7zYhUNd4Zn4GBix1TcErn8auhJBW+om8TuNjl2/5D3U74/u8esbsRt4AXdEshhqRtSUsjI8WCTN0QeFn9I7CG6rPPqVWI33Yusgup33XG10n25mk6Wqr0wc6VOXwYFYG4dowHc5PmKQvfVqtWiM06s/6rWNw+EamJaaml01bHp9eWuGdLDVKf0qwhO2BZS8snn9R/0flwIDAQAB",
   "permissions": [
     "declarativeNetRequest",
@@ -34,6 +40,10 @@
     "open_in_tab": true
   },
   "action": {
-    "default_title": "Split Search 设置"
+    "default_title": "Split Search 设置",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png"
+    }
   }
 }

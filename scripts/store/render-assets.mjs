@@ -2,8 +2,8 @@
 // 把 assets/templates/*.html 渲染成尺寸精确的 PNG（商店截图、宣传图块、README 配图）。Node 24，无依赖。
 //
 // 用法：node scripts/store/render-assets.mjs [--icon <svg>] [--no-tile] [--only a,b] [--out <dir>] [--tmp <dir>] [--list]
-//   --icon <svg>  图标文件（默认是占位的方案 2：assets/icon-proposals/v2-pane-magnifier/icon.svg）；
-//                 选定图标后传它的 icon.svg 重渲，例如 --icon assets/icon-proposals/v4-split-lens/icon.svg
+//   --icon <svg>  图标文件（默认是选定的 c6 松针绿：assets/icon-proposals/v3-colors/c6-pine-fog/icon.svg，
+//                 与 src/icons/ 同源）；试别的图标时传它的 icon.svg 或 .png
 //   --no-tile     图标自带底板（如方案 6）时用：去掉模板里的白色圆角底板，避免“板中板”
 //   --only a,b    只渲染这些模板（文件名去掉 .html）
 //   --out <dir>   输出根目录（默认 assets/）；模板声明的相对输出路径接在它后面
@@ -26,7 +26,7 @@ import { createClient } from "../e2e/cdp.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const TEMPLATES = join(ROOT, "assets/templates");
-const DEFAULT_ICON = join(ROOT, "assets/icon-proposals/v2-pane-magnifier/icon.svg"); // 占位，图标选定后改这里或用 --icon
+const DEFAULT_ICON = join(ROOT, "assets/icon-proposals/v3-colors/c6-pine-fog/icon.svg"); // 选定图标（c6），src/icons/*.png 由它导出
 const CHROME = "/opt/google/chrome/google-chrome";
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 

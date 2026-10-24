@@ -12,7 +12,12 @@
 | 顶部宣传图（marquee） | 1400×560 | PNG 或 JPEG | 1 | 可选 | 只有被商店选作首页推荐时才会用到。要求同小宣传图，不能按语言区分 |
 | 宣传视频 | — | YouTube 链接 | 1 | 可选 | 可按语言区分 |
 
-另外，manifest 目前**没有 `icons` 字段**。上架前要在 `src/` 中加入 16、32、48、128 四个尺寸的图标，并在 `icons` 和 `action.default_icon` 中声明（16/32 用于工具栏，48 用于扩展管理页，128 用于安装对话框和商店）。这是**上架阻塞项**，已列入 `listing.zh-CN.md` 开头的“提交前必做”；改 manifest 需要你确认。
+### 选定图标：c6 松针绿（2026-10-24）
+
+- 形状沿用方案 3（两块实心圆角窗格 + 白色搜索框横条），配色 c6 “pine-fog”：左格松针绿 `#507665`，右格暖雾灰 `#8C8881`。对比度等数据见 `notes.md`。
+- 来源：`assets/icon-proposals/v3-colors/c6-pine-fog/`（`icon.svg` 是 128 母版，16/32 是按像素网格调整的版本）。`assets/icon-proposals/` 其余方案留作历史。
+- 接入：`src/icons/icon-{16,32,48,128}.png`，在 manifest 的 `icons`（16/32/48/128）和 `action.default_icon`（16/32）中声明；`test/manifest.test.js` 核对文件存在且 PNG 尺寸与声明一致。`render-assets.mjs` 的默认图标已改为 c6 的 `icon.svg`，小宣传图、顶部宣传图和 README 首图已用它重渲。
+- **提交前必做（v0.3 上架前）**：`assets/raw/` 的真实截图是装上图标之前拍的，设置页标签的图标是 Chrome 生成的灰底字母“S”，地址栏扩展标识和授权框里是默认拼图图标。凡是画面里带“Split Search 设置”标签、设置页地址栏或授权框的图都受影响（至少 `screenshot-1`、`screenshot-4`、marquee 和 README 首图）。上架前要用带新图标的扩展重拍，再重渲全部图片。
 
 ## 2. 商店图片与 README 图片的区别
 
@@ -32,13 +37,13 @@
 
 全部图片由 `assets/templates/*.html` 经 `node scripts/store/render-assets.mjs` 渲染，画面里的浏览器和网页都是 `assets/raw/` 中的真实截图（见 `assets/raw/captions.md`），模板只做裁切、缩放、外框和标注。输出是不带透明通道的 PNG。
 
-图标目前用的是**占位**：方案 2（`assets/icon-proposals/v2-pane-magnifier/icon.svg`）。选定图标后只需重渲：
+图标默认用选定的 c6（见第 1 节）。要试别的图标时：
 
 ```bash
 node scripts/store/render-assets.mjs --icon assets/icon-proposals/<方案目录>/icon.svg
 ```
 
-（也可以改脚本里的 `DEFAULT_ICON`。）模板把图标放在白色圆角底板上，方案 1–5（透明底）都适用；方案 6 自带圆角底板，再放到白底板上会成“板中板”，选它时加 `--no-tile`（去掉白底板、让图标自带的底板铺满）。用到图标的是小宣传图、顶部宣传图和 README 首图。**看图标提案时注意：这三张图里的图标目前是占位的方案 2，不代表推荐。**
+模板把图标放在白色圆角底板上；自带底板的图标（如方案 6）加 `--no-tile`，避免“板中板”。用到图标的是小宣传图、顶部宣传图和 README 首图。
 
 ### 商店（`assets/store/`）
 
@@ -52,7 +57,7 @@ node scripts/store/render-assets.mjs --icon assets/icon-proposals/<方案目录>
 | `small-promo-440x280.png` | 440×280 | `promo-small` | 图标、产品名、“双引擎分屏搜索” |
 | `marquee-1400x560.png` | 1400×560 | `promo-marquee` | 图标、产品名、“一次搜索 两个引擎左右对比”，右侧 DuckDuckGo ｜ Bing 分屏截图出血 |
 
-商店图标 128×128 和 `src/icons/` 的 16/32/48/128 等图标选定后再导出（要改 manifest，另行确认）。
+商店图标 128×128 直接上传 `src/icons/icon-128.png`。
 
 ### README（`assets/readme/`）
 
