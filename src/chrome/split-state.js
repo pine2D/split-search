@@ -88,6 +88,6 @@ export async function inspectTab(tab, engines) {
   const ownership = judgeOwnership({
     tab: { ...tab, splitViewId }, peer, record, peerRecord, engines,
   });
-  if (ownership === "stale" && await recordedPeerGone(record, peer)) await clearPair(tab.id);
+  if (ownership === "stale" && record && await recordedPeerGone(record, peer)) await clearPair(tab.id);
   return { splitViewId, splitTabs, peer, record, peerRecord, ownership };
 }

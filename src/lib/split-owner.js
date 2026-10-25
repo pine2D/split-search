@@ -52,6 +52,8 @@ function recordMatches(tab, peer, record, peerRecord) {
 
 export function judgeOwnership({ tab, peer, record, peerRecord, engines }) {
   if (record) return recordMatches(tab, peer, record, peerRecord) ? "own" : "stale";
+  // 当前标签没记录、对侧却有：这一对拆开过或记录被连带清掉，同样不走兜底
+  if (peerRecord) return "stale";
   // 兜底只认同一个分屏里的两个标签，不依赖调用方先筛过
   const v = peer?.splitViewId;
   if (!Number.isInteger(v) || v === -1 || v !== tab.splitViewId) return "none";

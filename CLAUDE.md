@@ -63,7 +63,7 @@ Chrome MV3 扩展：用户在地址栏搜索，或把文字拖到标签栏时，
           ├─ 当前标签在“本扩展的分屏”中（判定见 spec 5.3）：tabs.update(另一侧, 右侧) → location.replace(左侧)
           └─ 当前标签在其他分屏中：见 spec 5.3
   工具栏弹窗（popup/）与快捷键 cycle-right（默认不绑定，background.js 的 onCommand）：读记录，经 chrome/right-switch.js 把右侧换成指定/下一个引擎，关键词取自记录（只在 storage.session，不进 sync，不外发）。
-  记录在 tabs.onRemoved 时清理。读到失效记录（stale，例如拆开后又拼回去）时，只有记录里的对侧已经关掉才顺手清理；对侧还在就保留两条，这一对一直判“不是本扩展的”，不会落到兜底被覆盖。
+  记录在 tabs.onRemoved 时清理。读到失效记录（stale，例如拆开后又拼回去）时，只有记录里的对侧已经关掉才顺手清理；对侧还在就保留两条，这一对一直判“不是本扩展的”，不会落到兜底被覆盖。当前标签没有记录、对侧却有记录时同样判“不是”；只有两侧都没有记录（如浏览器重启后）才走兜底。
 ```
 
 触发网址 = 左侧引擎真实搜索网址 + 标记参数 `_ss=<左id>,<右id>`，例如 `https://www.google.com/search?q=%s&_ss=google,bing`。

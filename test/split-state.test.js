@@ -213,6 +213,17 @@ test("inspectTab：无记录、对侧是引擎搜索页 → fallback-own", async
   assert.equal((await inspectTab(tab, engines)).ownership, "fallback-own");
 });
 
+test("inspectTab：当前标签无记录、对侧有指回它的记录 → stale，不清理、不抛错", async () => {
+  // 场景：A|B 拆开 → A 另组一对后对方关掉，A 的记录被连带删掉，B 仍指回 A → 用户把 A、B 手动拼回
+  const tab = { id: 1, index: 4, windowId: 9, splitViewId: 8 };
+  const other = { id: 2, index: 5, windowId: 9, splitViewId: 8, url: "https://www.google.com/search?q=q" };
+  installChrome({ tabs: { 1: tab, 2: other }, data: { "split:2": rec(1) } });
+  const info = await inspectTab(tab, engines);
+  assert.equal(info.ownership, "stale");
+  assert.equal(store.has("split:2"), true);
+  assert.ok(!calls.some(c => c[0] === "session.remove"));
+});
+
 test("inspectTab：storage 读失败时当作没有记录", async () => {
   const tab = { id: 1, index: 4, windowId: 9, splitViewId: 7 };
   const other = { id: 2, index: 5, windowId: 9, splitViewId: 7 };

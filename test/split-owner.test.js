@@ -83,6 +83,13 @@ test("judgeOwnership：无记录兜底", () => {
   assert.equal(judgeOwnership({ tab, peer, record: null, peerRecord: null, engines }), "none");
   assert.equal(judgeOwnership({ tab, peer: null, record: null, peerRecord: null, engines }), "none");
 });
+test("judgeOwnership：当前标签无记录但对侧有记录 → stale，不走兜底", () => {
+  const url = "https://www.google.com/search?q=x";
+  const peerRecord = { peer: tab.id, splitViewId: 3, mode: "split", engine: "bing", query: "x" };
+  assert.equal(judgeOwnership({ tab, peer: { ...peer, url }, record: null, peerRecord, engines }), "stale");
+  // 对侧记录指向别的标签，同样说明这一对来历不明
+  assert.equal(judgeOwnership({ tab, peer: { ...peer, url }, record: null, peerRecord: { ...peerRecord, peer: 999 }, engines }), "stale");
+});
 test("judgeOwnership：无记录、对侧像 Google 搜索页，但两者不在同一个分屏 → none", () => {
   const url = "https://www.google.com/search?q=x";
   const j = (t, p) => judgeOwnership({ tab: t, peer: { ...p, url }, record: null, peerRecord: null, engines });
