@@ -3,14 +3,13 @@
 // 所以这里不建标签、不写记录；消息只带标签 id 和引擎 id，不带网址和关键词，SW 自己重新读标签、重新识别。
 import { t, setI18nText } from "../chrome/i18n.js";
 import { safeArgs } from "../lib/safe-error.js";
+import { ERROR_CODES } from "../lib/errors.js";
 
 const $ = (id) => document.getElementById(id);
 const log = (...args) => console.error("[split-search]", ...safeArgs(args));
 
 // 回复 mode 对应的提示；split 不提示（弹窗随后换成对视图）
 const NOTE = { adjacent: "popup_complete_narrow", plain: "popup_complete_plain" };
-// SW 可能回的错误码（lib/errors.js 里各有 err_<code> 文案）；认不出的、发不出去的都按 split_failed 显示
-const CODES = ["not_results_page", "window_unsupported", "split_failed", "message_rejected"];
 
 let pending = false; // 已经发出、还没回复：按钮保持禁用（重绘时也是），避免连点建出两对
 let spent = false;   // 已经补成过一次（含退化成普通标签的 plain，不写记录，重绘后补成区还在）：本次弹窗里按钮一直禁用
@@ -51,7 +50,8 @@ async function onPick(tab, engineId, onDone) {
     onDone();
     return;
   }
-  const code = CODES.includes(reply?.code) ? reply.code : "split_failed";
+  // SW 回的错误码只认 lib/errors.js 的 ERROR_CODES（各有 err_<code> 文案）；认不出的、发不出去的都按 split_failed 显示
+  const code = ERROR_CODES.includes(reply?.code) ? reply.code : "split_failed";
   showError(code);
   // 只有 split_failed 的文案请用户再试一次；其余（页面已变、窗口不支持、被拒）要重新点工具栏按钮
   setDisabled(code !== "split_failed");

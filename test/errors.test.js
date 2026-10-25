@@ -48,3 +48,18 @@ test("errorKey：认不出的错误返回 null", () => {
   assert.equal(errorKey(undefined), null);
   assert.equal(errorKey({ code: "nope", args: [] }), null);
 });
+
+test("⑦ 的回复码只有一个来源：SW 回的每个码都在 ERROR_CODES 里，弹窗直接用 ERROR_CODES、不另列清单", async () => {
+  const { readFileSync } = await import("node:fs");
+  const read = (p) => readFileSync(new URL(`../src/${p}`, import.meta.url), "utf8");
+  const sent = new Set();
+  for (const p of ["chrome/complete-actions.js", "background.js", "lib/messages.js"]) {
+    for (const m of read(p).matchAll(/rejected\("([a-z_]+)"\)|code: "([a-z_]+)"/g)) sent.add(m[1] ?? m[2]);
+  }
+  assert.ok(sent.size >= 4, [...sent].join(","));
+  for (const code of sent) assert.ok(ERROR_CODES.includes(code), code);
+  const popup = read("popup/complete.js");
+  assert.match(popup, /import \{ ERROR_CODES \} from "\.\.\/lib\/errors\.js";/);
+  assert.match(popup, /ERROR_CODES\.includes\(reply\?\.code\)/);
+  assert.doesNotMatch(popup, /\[\s*"not_results_page"/);
+});
