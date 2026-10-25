@@ -36,8 +36,12 @@ test("manifest commands：只有 cycle-right，不绑定默认快捷键，不声
   assert.equal(m.commands["cycle-right"].suggested_key, undefined);
   assert.equal(m.commands._execute_action, undefined);
 });
+test("manifest 工具栏弹窗：action.default_popup 指向 popup/popup.html", () => {
+  assert.equal(m.action.default_popup, "popup/popup.html");
+  assert.ok(existsSync(new URL("../src/" + m.action.default_popup, import.meta.url)), m.action.default_popup);
+});
 test("manifest 引用的文件都存在", () => {
-  for (const path of [m.background.service_worker, m.options_ui.page, "go.html", "go.js"]) {
+  for (const path of [m.background.service_worker, m.options_ui.page, m.action.default_popup, "go.html", "go.js"]) {
     assert.ok(existsSync(new URL("../src/" + path, import.meta.url)), path);
   }
 });

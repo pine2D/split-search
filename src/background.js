@@ -52,7 +52,7 @@ chrome.storage.onChanged.addListener((_changes, areaName) => {
 });
 chrome.permissions.onAdded.addListener(rebuildRules);
 chrome.permissions.onRemoved.addListener(rebuildRules);
-chrome.action.onClicked.addListener(() => chrome.runtime.openOptionsPage());
+// 点工具栏图标打开 action.default_popup（有弹窗时 action.onClicked 不再触发），设置页从弹窗进入。
 // 标签关闭时删掉它的分屏记录；对侧记录只有指回它时才删。clearPair 自己吞掉错误。
 chrome.tabs.onRemoved.addListener((tabId) => { clearPair(tabId); });
 chrome.commands.onCommand.addListener((command) => {

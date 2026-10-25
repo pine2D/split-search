@@ -105,11 +105,12 @@ export function checkLocales(manifest, locales) {
   return errors;
 }
 
-// manifest 引用的文件（图标、SW、设置页、可供网页访问的资源）都要在包里
+// manifest 引用的文件（图标、工具栏弹窗、SW、设置页、可供网页访问的资源）都要在包里
 export function referencedFiles(manifest) {
   const files = new Set();
   for (const p of Object.values(manifest.icons ?? {})) files.add(p);
   for (const p of Object.values(manifest.action?.default_icon ?? {})) files.add(p);
+  if (manifest.action?.default_popup) files.add(manifest.action.default_popup);
   if (manifest.background?.service_worker) files.add(manifest.background.service_worker);
   if (manifest.options_ui?.page) files.add(manifest.options_ui.page);
   for (const w of manifest.web_accessible_resources ?? []) for (const r of w.resources ?? []) files.add(r);

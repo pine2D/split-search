@@ -118,6 +118,17 @@ test("checkReferenced：manifest 引用的图标、SW、设置页、go.html 都�
   assert.deepEqual(errs, ["manifest 引用的文件不存在：icons/icon-48.png"]);
 });
 
+test("checkReferenced：工具栏弹窗页 action.default_popup 也要存在", () => {
+  const all = referencedFiles(manifest);
+  assert.ok(all.includes("popup/popup.html"), "referencedFiles 应包含 popup/popup.html");
+  assert.deepEqual(checkReferenced(manifest, all.filter(p => p !== "popup/popup.html")),
+    ["manifest 引用的文件不存在：popup/popup.html"]);
+  // 没有 default_popup 的 manifest 不凭空要求弹窗文件
+  const noPopup = clone(manifest);
+  delete noPopup.action.default_popup;
+  assert.ok(!referencedFiles(noPopup).includes("popup/popup.html"));
+});
+
 test("checkFileSet：运行时文件通过，点文件、测试、垃圾文件和其他文件拒绝", () => {
   const good = ["manifest.json", "_locales/en/messages.json", "_locales/zh_CN/messages.json", "icons/icon-16.png",
     "background.js", "go.html", "options/options.css", "lib/engines.js"];

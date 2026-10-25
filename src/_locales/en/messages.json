@@ -4,8 +4,8 @@
     "description": "Extension description shown in the Chrome Web Store and chrome://extensions."
   },
   "ext_action_title": {
-    "message": "Split Search settings",
-    "description": "Tooltip of the toolbar button."
+    "message": "Split Search",
+    "description": "Tooltip of the toolbar button, which opens the Split Search popup. Keep the product name Split Search untranslated."
   },
   "go_status_opening": {
     "message": "Opening split view…",
@@ -942,5 +942,45 @@
         "example": "Google"
       }
     }
+  },
+  "popup_not_ours": {
+    "message": "This tab isn’t in a split view opened by Split Search.",
+    "description": "Explains that the toolbar popup has nothing to switch: the current tab is not in a split view that Split Search opened. \"Split view\" must match Chrome's term. Keep Split Search untranslated."
+  },
+  "popup_query_label": {
+    "message": "Search terms",
+    "description": "Toolbar popup: label in front of the search terms of the current split view."
+  },
+  "popup_empty_query": {
+    "message": "(none)",
+    "description": "Toolbar popup: shown instead of the search terms when the search was empty."
+  },
+  "popup_left_label": {
+    "message": "Left",
+    "description": "Toolbar popup: label in front of the engine shown on the left side of the split view."
+  },
+  "popup_right_label": {
+    "message": "Right",
+    "description": "Toolbar popup: label in front of the engine shown on the right side of the split view."
+  },
+  "popup_engine_deleted": {
+    "message": "Deleted engine",
+    "description": "Toolbar popup: shown instead of an engine name when that engine has since been deleted in settings."
+  },
+  "popup_switch_title": {
+    "message": "Switch the right side to",
+    "description": "Toolbar popup: heading above the list of engines; clicking one loads it on the right side."
+  },
+  "popup_no_choices": {
+    "message": "No other engines to switch to.",
+    "description": "Toolbar popup: shown instead of the engine list when there is no other engine to switch to."
+  },
+  "popup_switch_failed": {
+    "message": "Couldn’t switch the right side. Try again.",
+    "description": "Toolbar popup: error shown when loading the chosen engine on the right side failed (for example the tab was just closed)."
+  },
+  "popup_open_options": {
+    "message": "Open settings",
+    "description": "Toolbar popup: button that opens the extension's settings page."
   }
 }

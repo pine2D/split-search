@@ -131,3 +131,7 @@ test("其他命令名被忽略", async () => {
   await press("something-else");
   assert.deepEqual(state.calls, []);
 });
+
+test("有 action.default_popup 时 SW 不再监听 action.onClicked（点图标打开弹窗，设置页从弹窗进入）", () => {
+  assert.equal(listeners["action.onClicked"], undefined);
+});

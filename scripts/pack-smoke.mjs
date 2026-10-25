@@ -1,6 +1,6 @@
 // 发布包安装冒烟：把 ZIP 解压到临时目录，在一次性 Chrome 配置（无头、--disable-sync、no-first-run、管道 CDP）里
 // 用 Extensions.loadUnpacked 装上，核对：没有 manifest 错误和安装警告、SW 起得来、设置页按英文渲染且没有 [split-search]
-// 控制台错误、DNR 规则指向本次装出的 ID、go.html 收到格式不对的 _ss 时显示出错页。临时配置和解压目录用完即删
+// 控制台错误、DNR 规则指向本次装出的 ID、工具栏弹窗按英文渲染、go.html 收到格式不对的 _ss 时显示出错页。临时配置和解压目录用完即删
 // （SIGINT/SIGTERM/SIGHUP 也删；被 SIGKILL 留下的，下次开头清掉）；只关自己起的浏览器，
 // 绝不碰 ~/.cache/split-search-e2e/profile 或真实配置。
 import { spawnSync } from "node:child_process";
@@ -46,6 +46,10 @@ function pruneStale(log) {
     } catch { /* 读不到就留着 */ }
   }
 }
+
+// 页面里显示成 key 的 data-i18n 元素（文案没加载出来时 t() 返回 key 本身）；设置页和弹窗共用
+const rawKeys = page => page.ev(`[...document.querySelectorAll("[data-i18n]")]
+  .filter(el => /^[a-z]+_[a-z0-9_]+$/.test(el.textContent.trim())).map(el => el.getAttribute("data-i18n"))`);
 
 const waitTrue = (b, page, expr, what, timeoutMs = 15000) =>
   b.waitFor(() => page.ev(expr, { timeoutMs: 3000 }), { timeoutMs }).catch(e => { throw new Error(`${what}：${e.message}`); });
@@ -111,8 +115,7 @@ export async function smoke(zipPath, { expectId = null, log = console.log } = {}
     try {
       await waitTrue(b, opt, `document.documentElement.lang === "en" && document.title === ${J(en("options_title"))}
         && !document.documentElement.classList.contains("i18n-pending")`, "设置页按英文渲染");
-      const raw = await opt.ev(`[...document.querySelectorAll("[data-i18n]")]
-        .filter(el => /^[a-z]+_[a-z0-9_]+$/.test(el.textContent.trim())).map(el => el.getAttribute("data-i18n"))`);
+      const raw = await rawKeys(opt);
       await sleep(1500); // 等设置页的异步渲染（读配置、查授权）把可能的错误打出来
       const errs = collector.errors.map(e => e.text);
       const ok = !raw.length && !errs.length;
@@ -129,6 +132,20 @@ export async function smoke(zipPath, { expectId = null, log = console.log } = {}
       record("DNR 规则指向本扩展", sub === wantSub, `regexSubstitution ${sub}`);
     } catch (e) { record("DNR 规则指向本扩展", false, `读不到 id 为 1 的动态规则：${e.message}`); }
     finally { await opt.close(); }
+
+    // 工具栏弹窗页直接当标签打开：活动标签就是它自己，不是本扩展的拆分视图，显示说明文字
+    const pop = await openPage(b, `chrome-extension://${id}/popup/popup.html`);
+    try {
+      const want = en("popup_not_ours");
+      await waitTrue(b, pop, `document.documentElement.lang === "en" && !document.documentElement.classList.contains("i18n-pending")
+        && !document.querySelector("main").classList.contains("loading")`, "弹窗按英文渲染");
+      const raw = await rawKeys(pop);
+      const text = await pop.ev(`document.getElementById("not-ours").hidden ? null : document.getElementById("not-ours").textContent`);
+      const ok = !raw.length && text === want;
+      record("弹窗英文渲染", ok, ok ? `lang en，“${want}”`
+        : [raw.length ? `显示成 key：${raw.join("、")}` : "", text !== want ? `说明文字应为“${want}”，实际 ${J(text)}` : ""].filter(Boolean).join("；"));
+    } catch (e) { record("弹窗英文渲染", false, e.message); }
+    finally { await pop.close(); }
 
     const go = await openPage(b, `chrome-extension://${id}/go.html?u=${BAD_TRIGGER}`);
     try {

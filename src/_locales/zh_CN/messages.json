@@ -4,8 +4,8 @@
     "description": "Extension description shown in the Chrome Web Store and chrome://extensions."
   },
   "ext_action_title": {
-    "message": "Split Search 设置",
-    "description": "Tooltip of the toolbar button."
+    "message": "Split Search",
+    "description": "Tooltip of the toolbar button, which opens the Split Search popup. Keep the product name Split Search untranslated."
   },
   "go_status_opening": {
     "message": "正在打开拆分视图…",
@@ -942,5 +942,45 @@
         "example": "Google"
       }
     }
+  },
+  "popup_not_ours": {
+    "message": "当前标签页不在 Split Search 打开的拆分视图中。",
+    "description": "Explains that the toolbar popup has nothing to switch: the current tab is not in a split view that Split Search opened. \"Split view\" must match Chrome's term. Keep Split Search untranslated."
+  },
+  "popup_query_label": {
+    "message": "关键词",
+    "description": "Toolbar popup: label in front of the search terms of the current split view."
+  },
+  "popup_empty_query": {
+    "message": "（空）",
+    "description": "Toolbar popup: shown instead of the search terms when the search was empty."
+  },
+  "popup_left_label": {
+    "message": "左侧",
+    "description": "Toolbar popup: label in front of the engine shown on the left side of the split view."
+  },
+  "popup_right_label": {
+    "message": "右侧",
+    "description": "Toolbar popup: label in front of the engine shown on the right side of the split view."
+  },
+  "popup_engine_deleted": {
+    "message": "已删除的引擎",
+    "description": "Toolbar popup: shown instead of an engine name when that engine has since been deleted in settings."
+  },
+  "popup_switch_title": {
+    "message": "把右侧换成",
+    "description": "Toolbar popup: heading above the list of engines; clicking one loads it on the right side."
+  },
+  "popup_no_choices": {
+    "message": "没有其他可换的引擎。",
+    "description": "Toolbar popup: shown instead of the engine list when there is no other engine to switch to."
+  },
+  "popup_switch_failed": {
+    "message": "没能换掉右侧，请再试一次。",
+    "description": "Toolbar popup: error shown when loading the chosen engine on the right side failed (for example the tab was just closed)."
+  },
+  "popup_open_options": {
+    "message": "打开设置",
+    "description": "Toolbar popup: button that opens the extension's settings page."
   }
 }

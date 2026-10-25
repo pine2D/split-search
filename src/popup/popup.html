@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en" class="i18n-pending">
+<head>
+  <meta charset="utf-8">
+  <meta name="color-scheme" content="light dark">
+  <title>Split Search</title>
+  <link rel="stylesheet" href="popup.css">
+  <script type="module" src="popup.js"></script>
+</head>
+<body>
+  <main class="loading">
+    <h1 class="brand">Split Search</h1>
+
+    <!-- 不是本扩展的分屏，或读取失败 -->
+    <p id="not-ours" class="muted" data-i18n="popup_not_ours" hidden></p>
+
+    <!-- 本扩展的一对 -->
+    <section id="pair" hidden>
+      <dl class="facts">
+        <dt data-i18n="popup_query_label"></dt>
+        <dd id="query"></dd>
+        <dt data-i18n="popup_left_label"></dt>
+        <dd id="left-engine"></dd>
+        <dt data-i18n="popup_right_label"></dt>
+        <dd id="right-engine"></dd>
+      </dl>
+      <h2 id="choices-title" data-i18n="popup_switch_title"></h2>
+      <ul id="choices" class="choices" aria-labelledby="choices-title"></ul>
+      <p id="no-choices" class="muted" data-i18n="popup_no_choices" hidden></p>
+    </section>
+
+    <p id="error" class="error" role="alert" hidden></p>
+
+    <footer>
+      <button id="open-options" class="btn" type="button" data-i18n="popup_open_options"></button>
+    </footer>
+  </main>
+</body>
+</html>
