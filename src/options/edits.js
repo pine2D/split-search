@@ -98,8 +98,11 @@ export function editEngine(raw, id, input) {
 export function addFromCatalog(raw, entry, locale) {
   const { engines } = mergeConfig(raw);
   if (isAdded(entry, locale, engines)) return fail("catalog_already_added", entry.name);
+  let id;
+  try { id = uniqueId(entry.id, x => isIdTaken(x, raw)); }
+  catch (err) { if (err.code === "id_exhausted") return { ok: false, error: { code: err.code, args: err.args } }; throw err; }
   const engine = {
-    id: uniqueId(entry.id, id => isIdTaken(id, raw)),
+    id,
     name: entry.name,
     url: catalogUrl(entry, locale),
     ...(entry.leftDiscouraged ? { leftDiscouraged: true } : {}),

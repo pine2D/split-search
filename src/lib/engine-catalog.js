@@ -1,6 +1,7 @@
 // 右侧专用引擎库：设置页一键添加的模板清单。数据写在代码里（已在真机验证，见 spec 附录 A），不来自网络。
 // 纯逻辑，不得引用 chrome。
 import { ID_PATTERN } from "./engines.js";
+import { codedError } from "./errors.js";
 
 export const CATEGORIES = [
   { id: "translate", key: "catalog_cat_translate" },
@@ -57,7 +58,8 @@ export function catalogUrl(entry, locale) {
   return url + (entry.suffix?.[locale] ?? "");
 }
 
-// base、base-2、base-3……；截断 base 让总长不超过 20。base 不合法或 99 次都冲突就抛错。
+// base、base-2、base-3……；截断 base 让总长不超过 20。base 不合法（调用方的错）抛普通错误；
+// 99 次都冲突抛错误码 id_exhausted（界面显示 err_id_exhausted）。
 const MAX_TRIES = 99;
 export function uniqueId(base, taken) {
   if (!ID_PATTERN.test(base)) throw new Error("uniqueId: invalid base id");
@@ -67,7 +69,7 @@ export function uniqueId(base, taken) {
     const id = base.slice(0, 20 - suffix.length) + suffix;
     if (ID_PATTERN.test(id) && !taken(id)) return id;
   }
-  throw new Error("uniqueId: no free id");
+  throw codedError("id_exhausted", base);
 }
 
 export function isAdded(entry, locale, engines) {

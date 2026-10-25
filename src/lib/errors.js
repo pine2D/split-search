@@ -5,7 +5,7 @@ export const ERROR_CODES = Object.freeze([
   "tpl_reserved_param", "marker_format", "unknown_engine", "not_left", "template_mismatch",
   "config_too_large", "name_required", "name_too_long", "id_format", "id_taken", "engine_gone",
   "default_left_url", "only_preset_hide", "pair_uses_hide", "only_custom_delete", "pair_uses_delete",
-  "pair_missing", "quota_rate", "quota_bytes", "catalog_already_added",
+  "pair_missing", "quota_rate", "quota_bytes", "catalog_already_added", "id_exhausted",
 ]);
 
 export function spec(code, ...args) {

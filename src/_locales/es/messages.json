@@ -155,6 +155,16 @@
       }
     }
   },
+  "err_id_exhausted": {
+    "message": "El id «$ID$» y sus variantes numeradas ya están en uso; elimina algunos buscadores y vuelve a intentarlo",
+    "description": "Error when adding from the engine catalog: the catalog id and every numbered variant (id-2 … id-99) are already used by other engines.",
+    "placeholders": {
+      "ID": {
+        "content": "$1",
+        "example": "github"
+      }
+    }
+  },
   "err_engine_gone": {
     "message": "No se encuentra este buscador; puede que se haya eliminado en otro dispositivo",
     "description": "Error in the engine dialog: the engine being edited no longer exists (probably deleted on another synced device)."

@@ -155,6 +155,16 @@
       }
     }
   },
+  "err_id_exhausted": {
+    "message": "The id “$ID$” and its numbered variants are all taken. Delete some engines, then try again.",
+    "description": "Error when adding from the engine catalog: the catalog id and every numbered variant (id-2 … id-99) are already used by other engines.",
+    "placeholders": {
+      "ID": {
+        "content": "$1",
+        "example": "github"
+      }
+    }
+  },
   "err_engine_gone": {
     "message": "This engine no longer exists. It may have been deleted on another device.",
     "description": "Error in the engine dialog: the engine being edited no longer exists (probably deleted on another synced device)."

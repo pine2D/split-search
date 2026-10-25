@@ -135,6 +135,14 @@ test("addFromCatalog：id 被占用时加后缀；不带 leftDiscouraged 的条�
   assert.equal(r.patch.customEngines.length, 2);
 });
 
+test("addFromCatalog：id 加编号后全被占用 → 返回 id_exhausted 错误，不写入", () => {
+  const gh = CATALOG.find(e => e.id === "github");
+  const customEngines = ["github", ...Array.from({ length: 98 }, (_, k) => `github-${k + 2}`)]
+    .map(id => ({ id, name: id, url: `https://x${id}.example/?q=%s` }));
+  const r = addFromCatalog({ customEngines }, gh, "en");
+  assert.deepEqual(r, { ok: false, error: { code: "id_exhausted", args: ["github"] } });
+});
+
 test("addFromCatalog：ai 条目写进 cycleExclude（合成条目）", () => {
   const ai = { id: "fakeai", name: "FakeAI", url: "https://ai.example/?q=%s", category: "ai", ai: true };
   const r = addFromCatalog({ cycleExclude: ["x"] }, ai, "en");

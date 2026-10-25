@@ -155,6 +155,16 @@
       }
     }
   },
+  "err_id_exhausted": {
+    "message": "id “$ID$” 和加上编号的写法都已被占用，请先删除一些引擎再添加",
+    "description": "Error when adding from the engine catalog: the catalog id and every numbered variant (id-2 … id-99) are already used by other engines.",
+    "placeholders": {
+      "ID": {
+        "content": "$1",
+        "example": "github"
+      }
+    }
+  },
   "err_engine_gone": {
     "message": "找不到这个引擎，它可能已在其他设备上被删除",
     "description": "Error in the engine dialog: the engine being edited no longer exists (probably deleted on another synced device)."

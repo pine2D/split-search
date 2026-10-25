@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { CATALOG, CATEGORIES, catalogUrl, uniqueId, isAdded } from "../src/lib/engine-catalog.js";
 import { PRESETS, ID_PATTERN, validateTemplate } from "../src/lib/engines.js";
+import { errorKey } from "../src/lib/errors.js";
 
 for (const locale of ["en", "zh_CN", "zh_TW", "es"]) {
   for (const e of CATALOG) {
@@ -78,9 +79,11 @@ test("uniqueId 的基础 id 不合法时抛错", () => {
   assert.throws(() => uniqueId("x".repeat(21), () => false));
 });
 
-test("uniqueId 尝试次数有上限", () => {
-  assert.throws(() => uniqueId("abc", () => true), /uniqueId/);
+test("uniqueId 尝试次数有上限：抛带错误码 id_exhausted 的错误，界面按 err_id_exhausted 显示", () => {
+  assert.throws(() => uniqueId("abc", () => true), e => e.code === "id_exhausted" && e.args[0] === "abc");
+  assert.deepEqual(errorKey(captured(() => uniqueId("abc", () => true))), ["err_id_exhausted", "abc"]);
 });
+const captured = fn => { try { fn(); } catch (e) { return e; } return null; };
 
 test("catalogUrl 遇到未知界面语言时 <target> 和 <lang> 都退回 en", () => {
   const by = Object.fromEntries(CATALOG.map(e => [e.id, e]));
