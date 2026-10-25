@@ -13,6 +13,8 @@ import { EXT_ID as DEV_ID } from "./e2e/config.mjs";
 
 const J = JSON.stringify;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+// 安装时 Chrome 显示的权限警告原文（v0.3 实测只有 DNR 一条；activeTab、contextMenus 不产生警告）。变了就判冒烟失败
+export const EXPECTED_PERMISSION_WARNINGS = ["Block content on any page"];
 // 格式不对的标记（只有一个引擎 id）：期望出错页显示 err_marker_format
 const BAD_TRIGGER = "https://www.google.com/search?q=split&_ss=google";
 
@@ -97,11 +99,15 @@ export async function smoke(zipPath, { expectId = null, log = console.log } = {}
     try {
       const info = await b.waitFor(() => mgr.ev(`new Promise(r => chrome.developerPrivate
         ? chrome.developerPrivate.getExtensionInfo(${J(id)}, i => r(i ? { state: i.state, manifestErrors: i.manifestErrors,
-          installWarnings: i.installWarnings, runtimeErrors: i.runtimeErrors } : null)) : r(null))`, { timeoutMs: 5000 }), { timeoutMs: 15000 });
+          installWarnings: i.installWarnings, runtimeErrors: i.runtimeErrors,
+          permissionWarnings: i.permissions.simplePermissions.map(p => p.message) } : null)) : r(null))`, { timeoutMs: 5000 }), { timeoutMs: 15000 });
       const problems = [...info.manifestErrors.map(e => `manifest 错误：${e.message}`),
         ...info.installWarnings.map(w => `安装警告：${w}`), ...(info.runtimeErrors || []).map(e => `运行时错误：${e.message}`)];
       record("manifest 无错误与警告", info.state === "ENABLED" && !problems.length,
         problems.length ? problems.join("；") : `state ${info.state}`);
+      const warns = info.permissionWarnings;
+      record("权限警告与 v0.3 相同", J(warns) === J(EXPECTED_PERMISSION_WARNINGS),
+        `实际 ${J(warns)}，期望 ${J(EXPECTED_PERMISSION_WARNINGS)}`);
     } catch (e) { record("manifest 无错误与警告", false, `读不到扩展信息：${e.message}`); }
     finally { await mgr.close(); }
 
