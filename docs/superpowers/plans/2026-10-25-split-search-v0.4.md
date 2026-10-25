@@ -42,7 +42,7 @@
 
 ## Spike 结论
 
-第 0 阶段 spike 已于 2026-10-25 完成（Chrome 156.0.8078.47，Linux Xvfb，记录见会话 scratchpad 的 `v04-spikes.md`）。S2、S7 都成立，没有触发 spec 第 4 节的停止条件，⑦ ⑧ 按原设计实现。Task 11b 于同日完成 S9–S12（同一版本 Chrome，Xvfb 2400×1500、dpr 1.5；S11 用一次性配置装本检出的 `src/`，S9、S10、S12 用 e2e 测试配置，做完 storage 已逐键恢复；脚本在会话 scratchpad 的 `spike-11b/`），四项都落在默认分支；S8 待用户手测。
+第 0 阶段 spike 已于 2026-10-25 完成（Chrome 156.0.8078.47，Linux Xvfb，记录见会话 scratchpad 的 `v04-spikes.md`）。S2、S7 都成立，没有触发 spec 第 4 节的停止条件，⑦ ⑧ 按原设计实现。Task 11b 于同日完成 S9–S12（同一版本 Chrome，Xvfb 2400×1500、dpr 1.5；S11 用一次性配置装本检出的 `src/`，S9、S10、S12 用 e2e 测试配置，做完 storage 已逐键恢复；脚本在会话 scratchpad 的 `spike-11b/`），四项都落在默认分支；S8 由用户同日在自己的 Windows Chrome 里手测完成，TinEye、SauceNAO 收进引擎库。
 
 | Spike | 结果 | 对本计划的影响 |
 |---|---|---|
@@ -56,6 +56,7 @@
 | S11 | 默认分支成立，zh_CN 与 en 数值相同。本地 http 页面（英文段落 + http 图片）上真实右键：选区菜单 8 行（复制、复制指向突出显示的内容的链接、使用 Google 搜索、打印、在阅读模式下打开、将所选内容翻译为中文（简体）、**本扩展项**、检查），图片菜单 8 行（在新标签页中打开图片、图片另存为、复制图片、复制图片地址、为此图片创建二维码、使用 Google 智能镜头搜索此图片、**本扩展项**、检查）；扩展页 `contextMenus.removeAll()` 后两种菜单都剩 7 行，少掉的就是倒数第二行（0 起算第 6 行），排在 Chrome 自带项之后、“检查”之前。选区落在别处时在图片上右键：选区还在，但菜单只有图片项、没有子菜单；只有图片在选区里（`selectAllChildren(body)`）时才是 13 行，本扩展两项收进标题为 `Split Search` 的子菜单（0 起算第 11 行）。引擎名 `A&B %s` 显示为 `A&B % s`（`&&` 显示成一个 `&`）；两种语言的默认标题都没有字符被当成助记键（无下划线、无字符丢失）。“翻译所选内容”在 en 界面、英文页面上也出现（Translate selection to English） | Task 13：`MENU_INDEX = { text: 6, image: 6 }`、`MENU_MIN_ITEMS = { text: 8, image: 8 }`；`page-u` 页面的菜单若多出别的项（如链接项），行号会变，`contextMenuPick` 的 `expectItems` 只拦“少于”，所以 T21/T22 的 detail 照写实际行数。Task 7 Step 5（T11 点第 3 项不受影响）、Task 15 Step 1 按默认分支不变。“图片右键前清掉选区”保留：清掉后两种情况都排除。**关菜单的点不能沿用现有 `dismiss` 的 `(at.x, at.y + 400)`**：菜单从右键点向右下展开，8 行菜单高 448–471 X 像素（dpr 1.5），这个点正好落在菜单里本扩展项到“检查”一带（可能点中其中一项），spike 第一轮这样点完菜单没关掉、下一次右键没出菜单；Task 13 的 `dismissMenu` 要点在菜单矩形（`windowRect`）以外的页面位置 |
 | S12 | 成立。e2e 测试配置里 `permissions.contains` 对 `engine-u`、`page-u`、`engine-i` 三个 origin 都是 `false`（`engine-b` 对照为 `true`）；临时加 `eu` 后 DNR 规则的 `requestDomains` 含 `engine-u.localhost`，新标签打开 `engine-u/search?q=x&_ss=eu,eb` 仍不重定向：网址原样带 `_ss`，模拟服务器收到带 `_ss` 的请求。对照：已授权的 `engine-b` 当左侧（`_ss=eb,eu`）会重定向并分屏，**但 `Page.getNavigationHistory` 里同样没有 `go.html`**：go.js 用 `location.replace` 换掉了这一项，只剩去掉 `_ss` 的左侧网址 | Task 12 的 `UNGRANTED_HOSTS` 不变。判“没被重定向”不能只看导航历史里有没有 `go.html`：要用控制台收集器 Network 记下的主框架跳转链，或者同时断言标签网址仍带 `_ss`（或模拟服务器收到了带 `_ss` 的请求） |
 | S10 | 成立。在 `page-u` 标签上经扩展页调 `tabs.create({ url, splitWithTabId })` 和 `tabs.update(另一标签, { url })`（目标 `engine-u` 与已授权的 `engine-b` 都测了），模拟服务器收到的请求都没有 `Referer`（`Sec-Fetch-Site` 分别是 `none`、`cross-site`）。对照：同一页面里点链接跨 origin 打开，带 `Referer: http://page-u.localhost:8765/` | Task 15 Step 2 照写“页面网址不发”；Task 16 Step 6 向用户报告这条结论 |
+| S8 | 用户 2026-10-25 在自己的 Windows Chrome（住宅 IP）里手测：TinEye `search?url=` 跳到 `/search/<hash>` 出结果；SauceNAO `search.php?url=` 直接出结果；Yandex `rpt=imageview&url=` 出结果、未被地区封锁；Lens 对 404 图跳到 `google.<地区>/search?udm=26`，显示“出了点问题 / 该网址中没有图片” | `IMAGE_CATALOG` 加 `tineye`、`saucenao`（controller 单独提交）；Lens 404 不需特别处理 |
 | S9 | activeTab 会让 DNR 规则在那个标签里生效一次。没授权的 `engine-u` 结果页标签：`triggerAction` 前 `tabs.get(id).url` 为空，之后有值（156 上复核 F1：`triggerAction` 和真点图标一样授予 activeTab；它只接受 `type: "tab"` 的目标）。随后同一标签同 origin 导航到 `engine-u/search?q=y9&_ss=eu,eb`：被重定向到 go.html 并建成分屏（左侧去掉 `_ss`，右侧是 `eb`）；经 go.html 往返后 activeTab 失效，`tabs.get(id).url` 又为空。另一个从没触发过 action 的标签打开同类网址不重定向 | 不改设计，Task 16 Step 2 写进已知事实；Task 12 的 G5 降级网址必须用从没触发过 action 的新标签（已这样写） |
 
 e2e 可以复用的办法（不在本计划范围内，记下备用）：`developerPrivate.updateExtensionConfiguration({ pinnedToToolbar: true })` 固定图标后按图标颜色定位、真实点击打开弹窗，能测到 activeTab 路径；菜单项可用 Z、J、K、X 首字母键选中，不和 en 的 Chrome 自带项冲突（本计划不用：zh_CN 与其他语言没核实，Task 13 规定不向菜单发任何按键）。
@@ -66,7 +67,6 @@ e2e 可以复用的办法（不在本计划范围内，记下备用）：`develo
 
 | Spike | 默认分支（本计划按此写） | 在哪做 → 受影响的步骤 |
 |---|---|---|
-| S8 | 引擎库只收 `bing-img`、`yandex-img` | Task 11b Step 5（用户手测）→ Task 4 的 `IMAGE_CATALOG`。S8: 待用户手测（controller 另行询问） |
 | S13 | Lens 活动记录不提 | Task 16 Step 6（发布前，用户手测）→ Task 15 Step 2 |
 
 ---

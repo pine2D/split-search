@@ -4,8 +4,10 @@
 
 export const IMAGE_PRESET = Object.freeze({ id: "lens", name: "Google Lens", url: "https://lens.google.com/uploadbyurl?url=%s" });
 
-// TinEye、SauceNAO 等待真机验证可用后再收（spec 3.5、附录 B）
+// 收录前都在真机点过一遍（spec 3.5、附录 B）；TinEye、SauceNAO 由用户 2026-10-25 用住宅 IP 验证
 export const IMAGE_CATALOG = [
   { id: "bing-img", name: "Bing Visual Search", url: "https://www.bing.com/images/searchbyimage?cbir=sbi&imgurl=%s" },
   { id: "yandex-img", name: "Yandex Images", url: "https://yandex.com/images/search?rpt=imageview&url=%s" },
+  { id: "tineye", name: "TinEye", url: "https://tineye.com/search?url=%s" },
+  { id: "saucenao", name: "SauceNAO", url: "https://saucenao.com/search.php?url=%s" },
 ];
