@@ -14,7 +14,8 @@ export const PRESETS = [
 export const DEFAULT_PAIR = ["google", "bing"];
 export const ID_PATTERN = /^[a-z0-9-]{1,20}$/;
 
-const PLACEHOLDER = "__SS__";
+// 校验模板时 %s 的替身（URL 能解析、不会被编码）；split-owner.js 判定搜索页时共用
+export const PLACEHOLDER = "__SS__";
 
 export function validateTemplate(url) {
   if (typeof url !== "string" || !url.includes("%s")) {

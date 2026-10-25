@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { RECORD_PREFIX, recordKey, parseRecord, makeRecords, looksLikeSearchPage, judgeOwnership } from "../src/lib/split-owner.js";
+import { RECORD_PREFIX, recordKey, parseRecord, makeRecords, looksLikeSearchPage, judgeOwnership, staleMarker } from "../src/lib/split-owner.js";
+import { PLACEHOLDER } from "../src/lib/engines.js";
 
 test("recordKey", () => {
   assert.equal(RECORD_PREFIX, "split:");
@@ -97,4 +98,38 @@ test("judgeOwnership：无记录、对侧像 Google 搜索页，但两者不在�
   assert.equal(j(tab, { ...peer, splitViewId: 8 }), "none");
   assert.equal(j({ ...tab, splitViewId: -1 }, peer), "none");
   assert.equal(j(tab, { ...peer, splitViewId: undefined }), "none");
+});
+
+test("judgeOwnership：两条记录的 mode 或 splitViewId 不一致 → stale", () => {
+  assert.equal(judgeOwnership({ tab, peer, record: rec(2), peerRecord: rec(1, { splitViewId: 8 }), engines }), "stale");
+  assert.equal(judgeOwnership({ tab, peer, record: rec(2), peerRecord: rec(1, { mode: "adjacent", splitViewId: -1 }), engines }), "stale");
+  const t = { ...tab, splitViewId: -1, index: 4 }, p = { ...peer, splitViewId: -1, index: 5 };
+  const adj = (x) => rec(x, { mode: "adjacent", splitViewId: -1 });
+  assert.equal(judgeOwnership({ tab: t, peer: p, record: adj(2), peerRecord: rec(1, { splitViewId: -1 }), engines }), "stale");
+});
+
+test("looksLikeSearchPage：%s 前面只有根路径 / 时不认（否则同 origin 的任何页面都像搜索页）", () => {
+  const tpl = "https://x.example/%s";
+  assert.equal(looksLikeSearchPage("https://x.example/anything", tpl), false);
+  assert.equal(looksLikeSearchPage("https://x.example/", tpl), false);
+  assert.equal(looksLikeSearchPage("https://x.example/s/a", "https://x.example/s/%s"), true);
+  assert.equal(looksLikeSearchPage("https://x.example/sa", "https://x.example/s%s"), true);
+});
+
+test("looksLikeSearchPage：模板里的占位与 engines.js 共用 PLACEHOLDER，网址里恰好含它也不误判", () => {
+  assert.equal(typeof PLACEHOLDER, "string");
+  const tpl = "https://x.example/find?q=%s";
+  assert.equal(looksLikeSearchPage(`https://x.example/${PLACEHOLDER}`, tpl), false);
+  assert.equal(looksLikeSearchPage("https://x.example/find?q=a", tpl), true);
+});
+
+test("staleMarker：形状合法、引擎与关键词保留，任何位置关系下都判 stale", () => {
+  const m = staleMarker(rec(2, { mode: "adjacent", splitViewId: -1, engine: "ea", query: "w" }));
+  assert.deepEqual(m, { peer: 2, splitViewId: -1, mode: "split", engine: "ea", query: "w" });
+  assert.deepEqual(parseRecord(m), m);
+  const back = staleMarker(rec(1, { mode: "adjacent", splitViewId: -1 }));
+  const url = "https://www.google.com/search?q=x";
+  const t = { id: 1, index: 4, windowId: 9, splitViewId: -1 }, p = { id: 2, index: 5, windowId: 9, splitViewId: -1, url };
+  assert.equal(judgeOwnership({ tab: t, peer: p, record: m, peerRecord: back, engines }), "stale"); // 拖回相邻
+  assert.equal(judgeOwnership({ tab: { ...t, splitViewId: 8 }, peer: { ...p, splitViewId: 8 }, record: m, peerRecord: back, engines }), "stale"); // 手动拼成分屏
 });

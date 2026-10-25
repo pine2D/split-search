@@ -1,6 +1,7 @@
 // 分屏归属判定：纯函数，不依赖扩展 API。go.html、弹窗、快捷键共用。
+import { PLACEHOLDER } from "./engines.js";
+
 export const RECORD_PREFIX = "split:";
-const SENTINEL = "SSPLACEHOLDER";
 
 export function recordKey(tabId) {
   return RECORD_PREFIX + tabId;
@@ -23,21 +24,30 @@ export function makeRecords({ a, b, splitViewId, mode, engineA, engineB, query }
   };
 }
 
-// 对侧网址像不像模板的搜索结果页：%s 在查询里比 origin+pathname，在路径里比前缀
+// 永久失效标记：mode "split" 配 splitViewId -1，parseRecord 接受、recordMatches 永远不认。
+// 相邻对被拖开（或夹进别的标签）后改写成它：之后拖回相邻、或用户把这两个标签手动拼成分屏，都不再算本扩展的。
+export function staleMarker(record) {
+  return { ...record, mode: "split", splitViewId: -1 };
+}
+
+// 对侧网址像不像模板的搜索结果页：%s 在查询里比 origin+pathname，在路径里比前缀。
+// 路径前缀只有根路径 "/"（如 https://x.com/%s）时不认：那样同 origin 的任何页面都会算作搜索页
 export function looksLikeSearchPage(url, template) {
   try {
     if (typeof template !== "string" || !template.includes("%s")) return false;
-    const t = new URL(template.replace("%s", SENTINEL));
+    const t = new URL(template.replace("%s", PLACEHOLDER));
     const u = new URL(url);
     if (u.origin !== t.origin) return false;
-    const at = t.pathname.indexOf(SENTINEL);
+    const at = t.pathname.indexOf(PLACEHOLDER);
     if (at === -1) return u.pathname === t.pathname;
-    return u.pathname.startsWith(t.pathname.slice(0, at));
+    const prefix = t.pathname.slice(0, at);
+    return prefix !== "/" && u.pathname.startsWith(prefix);
   } catch {
     return false;
   }
 }
 
+// 两条记录互指，且 mode 与 splitViewId 一致，再按 mode 核对两个标签的实际位置
 function recordMatches(tab, peer, record, peerRecord) {
   if (!peer || !peerRecord) return false;
   if (record.peer !== peer.id || peerRecord.peer !== tab.id) return false;

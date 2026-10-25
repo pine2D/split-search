@@ -12,6 +12,7 @@ function installChrome(fail = {}, extra = {}) {
   calls = [];
   let nextId = 100;
   let creates = 0;
+  let gets = 0;
   const splitMade = new Set();
   const check = (name) => { if (fail[name] === true) throw new Error(`${name} failed`); };
   globalThis.chrome = {
@@ -28,7 +29,10 @@ function installChrome(fail = {}, extra = {}) {
       // 复核用：返回 withTab 当前的 splitViewId，默认与新标签一致
       async get(id) {
         calls.push(["tabs.get", id]);
+        gets++;
         check("get");
+        // extra.getAt(id, n)：第 n 次 tabs.get（从 1 开始）读到的 splitViewId，用来模拟复核时状态还没稳定
+        if (extra.getAt) return { id, splitViewId: extra.getAt(id, gets) };
         // 带 splitWithTabId 新建的标签：复核读到 newGetSplitViewId（默认等于创建时返回的值）
         if (splitMade.has(id)) return { id, splitViewId: extra.newGetSplitViewId ?? extra.newSplitViewId ?? 55 };
         return { id, splitViewId: extra.getSplitViewId ?? 55 };
@@ -50,7 +54,11 @@ function installChrome(fail = {}, extra = {}) {
       },
       async update(id, props) { calls.push(["windows.update", id, props]); check("focus"); },
     },
-    storage: { session: { async set(obj) { calls.push(["session.set", obj]); check("session"); } } },
+    storage: { session: {
+      async set(obj) { calls.push(["session.set", obj]); check("session"); },
+      async get(key) { calls.push(["session.get", key]); return {}; },
+      async remove(keys) { calls.push(["session.remove", keys]); },
+    } },
   };
 }
 const names = () => calls.map(c => c[0]);
@@ -366,22 +374,45 @@ test("join：createSplit 抛错 → 不抛，退回相邻对的复用（adjacent
   assert.ok(console.error.mock.callCount() >= 1);
 });
 
-test("join：复核读到两个标签不在同一个分屏 → 记 adjacent，不写 split", async () => {
+const pairCtx = { tab: { id: 1, index: 3, windowId: 9 }, peer: { id: 2, index: 4, windowId: 9 }, splitViewId: -1, leftUrl: L, rightUrl: R, ...ids };
+
+test("join：createSplit 成功但两次复核都不一致 → 不写任何记录（两个标签可能已在分屏里），清掉旧的相邻记录", async () => {
   installChrome({}, { getSplitViewId: -1 });
-  await join({
-    tab: { id: 1, index: 3, windowId: 9 }, peer: { id: 2, index: 4, windowId: 9 }, splitViewId: -1, leftUrl: L, rightUrl: R, ...ids,
-  });
-  const adj = { mode: "adjacent", splitViewId: -1 };
-  assert.deepEqual(calls.at(-1), ["session.set", { "split:1": rec(2, "kagi", adj), "split:2": rec(1, "google", adj) }]);
+  const out = await join(pairCtx);
+  assert.deepEqual(out, { replaceWith: L });
+  assert.ok(!names().includes("session.set"));
+  assert.equal(names().filter(n => n === "tabs.get").length, 4); // 复核两轮
+  assert.deepEqual(calls.at(-1), ["session.remove", ["split:1"]]);
 });
 
-test("join：复核时 tabs.get 抛错 → 记 adjacent，不抛", async () => {
+test("join：复核时 tabs.get 一直抛错 → 不写记录，不抛", async () => {
   installChrome({ get: true });
-  const out = await join({
-    tab: { id: 1, index: 3, windowId: 9 }, peer: { id: 2, index: 4, windowId: 9 }, splitViewId: -1, leftUrl: L, rightUrl: R, ...ids,
-  });
+  const out = await join(pairCtx);
   assert.deepEqual(out, { replaceWith: L });
-  assert.equal(calls.at(-1)[1]["split:1"].mode, "adjacent");
+  assert.ok(!names().includes("session.set"));
+});
+
+test("join：第一轮复核还没稳定、稍等再读一致 → 写 split 记录", async () => {
+  installChrome({}, { getAt: (id, n) => (n <= 2 ? -1 : 66) });
+  const t0 = Date.now();
+  await join(pairCtx);
+  assert.ok(Date.now() - t0 <= 1000);
+  assert.deepEqual(calls.at(-1), ["session.set", { "split:1": rec(2, "kagi", { splitViewId: 66 }), "split:2": rec(1, "google", { splitViewId: 66 }) }]);
+});
+
+test("createPaired：第一轮复核不一致、第二轮一致 → 返回该 splitViewId", async () => {
+  installChrome({}, { getAt: (id, n) => (n === 1 ? -1 : 55) });
+  const res = await createPaired(R, { id: 1, index: 3, windowId: 9 });
+  assert.equal(res.splitViewId, 55);
+  assert.equal(names().filter(n => n === "tabs.get").length, 4);
+});
+
+test("new：窄窗口下 tabs.create 抛错 → openNew 照常抛出，由 go.js 兜底打开左侧", async () => {
+  installChrome({ create: () => true });
+  await assert.rejects(openNew({ tab: { id: 1, index: 3, windowId: 9 }, win: { width: 800 }, leftUrl: L, rightUrl: R, ...ids, narrowEnabled: true }),
+    /create failed/);
+  assert.ok(!names().includes("session.set"));
+  await assert.rejects(createPaired(R, { id: 1, index: 3, windowId: 9 }, { split: false }), /create failed/);
 });
 
 test("join：更新右侧失败时照常抛出（由 go.js 兜底打开左侧），不拼分屏", async () => {

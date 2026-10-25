@@ -232,3 +232,70 @@ test("inspectTab：storage 读失败时当作没有记录", async () => {
   assert.equal(info.record, null);
   assert.equal(info.ownership, "none");
 });
+
+// ---- 相邻对拖开后永久失效（spec 3.3“拖开后就不再复用”）----
+const adjRec = (p, over = {}) => rec(p, { mode: "adjacent", splitViewId: -1, ...over });
+const marker = (p, over = {}) => rec(p, { mode: "split", splitViewId: -1, ...over });
+
+test("inspectTab：相邻对被拖开（对侧还在）→ stale，两条记录都改写成永久失效标记", async () => {
+  const tab = { id: 1, index: 4, windowId: 9, splitViewId: -1 };
+  const other = { id: 2, index: 7, windowId: 9, splitViewId: -1 };
+  installChrome({ tabs: { 1: tab, 2: other }, data: { "split:1": adjRec(2, { engine: "ea" }), "split:2": adjRec(1, { engine: "eb" }) } });
+  assert.equal((await inspectTab(tab, engines)).ownership, "stale");
+  assert.deepEqual(store.get("split:1"), marker(2, { engine: "ea" }));
+  assert.deepEqual(store.get("split:2"), marker(1, { engine: "eb" }));
+});
+
+test("inspectTab：拖开后再拖回相邻、或手动拼成分屏 → 仍 stale，不落到兜底", async () => {
+  const url = "https://www.google.com/search?q=q";
+  const tab = { id: 1, index: 4, windowId: 9, splitViewId: -1 };
+  const other = { id: 2, index: 7, windowId: 9, splitViewId: -1, url };
+  installChrome({ tabs: { 1: tab, 2: other }, data: { "split:1": adjRec(2), "split:2": adjRec(1) } });
+  assert.equal((await inspectTab(tab, engines)).ownership, "stale");
+  other.index = 5; // 拖回相邻
+  assert.equal((await inspectTab(tab, engines)).ownership, "stale");
+  assert.equal((await inspectTab(other, engines)).ownership, "stale");
+  tab.splitViewId = 8; other.splitViewId = 8; // 用户手动拼成分屏
+  assert.equal((await inspectTab(tab, engines)).ownership, "stale");
+  assert.equal((await inspectTab(other, engines)).ownership, "stale");
+});
+
+test("inspectTab：相邻记录失效、对侧记录已指向别的标签 → 只改写自己的，不碰对侧", async () => {
+  const tab = { id: 1, index: 4, windowId: 9, splitViewId: -1 };
+  const other = { id: 2, index: 5, windowId: 9, splitViewId: -1 };
+  installChrome({ tabs: { 1: tab, 2: other }, data: { "split:1": adjRec(2), "split:2": adjRec(3) } });
+  assert.equal((await inspectTab(tab, engines)).ownership, "stale");
+  assert.deepEqual(store.get("split:1"), marker(2));
+  assert.deepEqual(store.get("split:2"), adjRec(3));
+});
+
+test("inspectTab：本扩展的相邻对仍相邻 → own，记录不动", async () => {
+  const tab = { id: 1, index: 4, windowId: 9, splitViewId: -1 };
+  const other = { id: 2, index: 5, windowId: 9, splitViewId: -1 };
+  installChrome({ tabs: { 1: tab, 2: other }, data: { "split:1": adjRec(2), "split:2": adjRec(1) } });
+  assert.equal((await inspectTab(tab, engines)).ownership, "own");
+  assert.ok(!calls.some(c => c[0] === "session.set"));
+});
+
+// ---- 同一上下文里的记录写入串行执行 ----
+test("clearPair 与紧随其后的 writePair 并发：按调用顺序生效，新记录不会被前一个 clearPair 删掉", async () => {
+  installChrome({ data: { "split:1": rec(2), "split:2": rec(1) } });
+  const a = clearPair(1);
+  const b = writePair({ a: 1, b: 3, splitViewId: 9, mode: "split", engineA: "google", engineB: "bing", query: "n" });
+  await Promise.all([a, b]);
+  assert.deepEqual(store.get("split:1"), rec(3, { splitViewId: 9, query: "n" }));
+  assert.equal(store.get("split:3").peer, 1);
+  assert.equal(store.has("split:2"), false);
+});
+
+test("writeEngine 与 clearPair 并发：按调用顺序生效", async () => {
+  installChrome({ data: { "split:1": rec(2), "split:2": rec(1) } });
+  await Promise.all([clearPair(1), writeEngine(1, rec(2), "bing")]);
+  assert.deepEqual(store.get("split:1"), rec(2, { engine: "bing" }));
+});
+
+test("串行队列：前一个写入抛错不影响后面的写入", async () => {
+  installChrome({ fail: { remove: true }, data: { "split:1": rec(2) } });
+  await Promise.all([clearPair(1), writePair({ a: 5, b: 6, splitViewId: 9, mode: "split", engineA: "google", engineB: "bing", query: "q" })]);
+  assert.equal(store.get("split:5").peer, 6);
+});
