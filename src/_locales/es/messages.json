@@ -826,7 +826,7 @@
     "description": "Checkbox label in the default pair card. Narrow means the window is under 960 px wide."
   },
   "options_narrow_hint": {
-    "message": "Con menos de 960 px de ancho, la vista dividida queda demasiado apretada. Con esta opción, los resultados de la izquierda se quedan en la pestaña desde la que buscaste y los de la derecha se abren en la pestaña de al lado.",
+    "message": "Si la ventana mide menos de 960 px de ancho, la vista dividida queda demasiado apretada. Al activar esta opción, los resultados de la izquierda se quedan en la pestaña desde la que buscaste y los de la derecha se abren en la pestaña de al lado.",
     "description": "Hint under the narrow-window checkbox on the settings page, describing what happens when it is checked. Split view is Chrome's feature name; keep the Chrome term. Do not say \"this tab\": the reader is on the settings page."
   },
   "notice_narrow_saved": {
@@ -910,7 +910,7 @@
     }
   },
   "catalog_added_aria": {
-    "message": "$NAME$: Añadido",
+    "message": "Añadido: $NAME$",
     "description": "Accessible name of the disabled Added button on a catalog row. The placeholder is the engine name. Must contain the visible text of catalog_added word for word (WCAG 2.5.3 label in name).",
     "placeholders": {
       "NAME": {

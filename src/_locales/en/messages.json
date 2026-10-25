@@ -910,7 +910,7 @@
     }
   },
   "catalog_added_aria": {
-    "message": "$NAME$: Added",
+    "message": "Added: $NAME$",
     "description": "Accessible name of the disabled Added button on a catalog row. The placeholder is the engine name. Must contain the visible text of catalog_added word for word (WCAG 2.5.3 label in name).",
     "placeholders": {
       "NAME": {
