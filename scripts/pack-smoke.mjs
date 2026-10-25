@@ -19,6 +19,26 @@ export const EXPECTED_PERMISSION_WARNINGS = ["Block content on any page"];
 // 格式不对的标记（只有一个引擎 id）：期望出错页显示 err_marker_format
 const BAD_TRIGGER = "https://www.google.com/search?q=split&_ss=google";
 
+// 本扩展的两个右键菜单项（src/lib/menu-spec.js）
+const MENU_IDS = ["ss-lookup-text", "ss-lookup-image"];
+// 扩展页里没有读菜单项的 API：update 成功就说明这一项存在
+const menusExist = (page) => page.ev(`Promise.all(${J(MENU_IDS)}.map(id => new Promise(r =>
+  chrome.contextMenus.update(id, { enabled: true }, () => r(!chrome.runtime.lastError))))).then(xs => xs.every(Boolean))`,
+{ timeoutMs: 3000 });
+
+// 等启动时的重建完成 → removeAll 并确认两项都没了 → 改 uiLocale → 等两项重新出现（SW 的 rebuildMenus）
+async function menusRebuiltAfter(b, page, locale) {
+  await b.waitFor(() => menusExist(page), { timeoutMs: 10000 });
+  await page.ev(`chrome.contextMenus.removeAll().then(() => true)`, { timeoutMs: 3000 });
+  const gone = await page.ev(`Promise.all(${J(MENU_IDS)}.map(id => new Promise(r =>
+    chrome.contextMenus.update(id, { enabled: true }, () => r(!!chrome.runtime.lastError))))).then(xs => xs.every(Boolean))`,
+  { timeoutMs: 3000 });
+  if (!gone) throw new Error("removeAll 之后菜单项还在，探针不可信");
+  await page.ev(`chrome.storage.sync.set({ uiLocale: ${J(locale)} }).then(() => true)`, { timeoutMs: 5000 });
+  try { await b.waitFor(() => menusExist(page), { timeoutMs: 10000 }); }
+  catch { throw new Error(`uiLocale 改成 ${locale} 后 10 秒内菜单项没有重建出来`); }
+}
+
 async function openPage(b, url) {
   const { targetId } = await b.client.send("Target.createTarget", { url });
   const sid = await b.attach(targetId);
@@ -99,11 +119,13 @@ export async function smoke(zipPath, { expectId = null, log = console.log } = {}
     const mgr = await openPage(b, `chrome://extensions/?id=${id}`);
     try {
       const info = await b.waitFor(() => mgr.ev(`new Promise(r => chrome.developerPrivate
-        ? chrome.developerPrivate.getExtensionInfo(${J(id)}, i => r(i ? { state: i.state, manifestErrors: i.manifestErrors,
-          installWarnings: i.installWarnings, runtimeErrors: i.runtimeErrors,
-          permissionWarnings: i.permissions.simplePermissions.map(p => p.message) } : null)) : r(null))`, { timeoutMs: 5000 }), { timeoutMs: 15000 });
+        ? chrome.developerPrivate.getExtensionInfo(${J(id)}, i => r(i ? { state: i.state, manifestErrors: i.manifestErrors ?? [],
+          installWarnings: i.installWarnings ?? [], runtimeErrors: i.runtimeErrors ?? [],
+          permissionWarnings: i.permissions?.simplePermissions?.map(p => p.message) ?? null } : null)) : r(null))`, { timeoutMs: 5000 }), { timeoutMs: 15000 });
+      // 结构变了读不到的字段按空处理，不让回调抛错（那样 Promise 永不结算，会被误报成“读不到扩展信息”）；
+      // 读不到权限警告记成 null，下面的比较照样判失败并写明实际值
       const problems = [...info.manifestErrors.map(e => `manifest 错误：${e.message}`),
-        ...info.installWarnings.map(w => `安装警告：${w}`), ...(info.runtimeErrors || []).map(e => `运行时错误：${e.message}`)];
+        ...info.installWarnings.map(w => `安装警告：${w}`), ...info.runtimeErrors.map(e => `运行时错误：${e.message}`)];
       record("manifest 无错误与警告", info.state === "ENABLED" && !problems.length,
         problems.length ? problems.join("；") : `state ${info.state}`);
       const warns = info.permissionWarnings;
@@ -120,35 +142,37 @@ export async function smoke(zipPath, { expectId = null, log = console.log } = {}
 
     const opt = await openPage(b, `chrome-extension://${id}/options/options.html`);
     try {
-      await waitTrue(b, opt, `document.documentElement.lang === "en" && document.title === ${J(en("options_title"))}
-        && !document.documentElement.classList.contains("i18n-pending")`, "设置页按英文渲染");
-      const raw = await rawKeys(opt);
-      await sleep(1500); // 等设置页的异步渲染（读配置、查授权）把可能的错误打出来
-      const errs = collector.errors.map(e => e.text);
-      const ok = !raw.length && !errs.length;
-      record("设置页英文渲染、无控制台错误", ok, ok ? `lang en，标题“${en("options_title")}”`
-        : [raw.length ? `显示成 key：${raw.join("、")}` : "", errs.length ? `控制台错误：${errs.join(" | ")}` : ""].filter(Boolean).join("；"));
-    } catch (e) { record("设置页英文渲染、无控制台错误", false, e.message); }
+      try {
+        await waitTrue(b, opt, `document.documentElement.lang === "en" && document.title === ${J(en("options_title"))}
+          && !document.documentElement.classList.contains("i18n-pending")`, "设置页按英文渲染");
+        const raw = await rawKeys(opt);
+        await sleep(1500); // 等设置页的异步渲染（读配置、查授权）把可能的错误打出来
+        const errs = collector.errors.map(e => e.text);
+        const ok = !raw.length && !errs.length;
+        record("设置页英文渲染、无控制台错误", ok, ok ? `lang en，标题“${en("options_title")}”`
+          : [raw.length ? `显示成 key：${raw.join("、")}` : "", errs.length ? `控制台错误：${errs.join(" | ")}` : ""].filter(Boolean).join("；"));
+      } catch (e) { record("设置页英文渲染、无控制台错误", false, e.message); }
 
-    // DNR 规则的 regexSubstitution 写死了 runtime.id；发布包的 ID 与开发版不同，核对规则指向本次装出的 ID
-    const wantSub = `chrome-extension://${id}/go.html?u=\\0`;
-    try {
-      const rule = await b.waitFor(() => opt.ev(`chrome.declarativeNetRequest.getDynamicRules().then(rs => rs.find(r => r.id === 1) || null)`,
-        { timeoutMs: 3000 }), { timeoutMs: 10000 });
-      const sub = rule.action?.redirect?.regexSubstitution;
-      record("DNR 规则指向本扩展", sub === wantSub, `regexSubstitution ${sub}`);
-    } catch (e) { record("DNR 规则指向本扩展", false, `读不到 id 为 1 的动态规则：${e.message}`); }
+      // DNR 规则的 regexSubstitution 写死了 runtime.id；发布包的 ID 与开发版不同，核对规则指向本次装出的 ID
+      const wantSub = `chrome-extension://${id}/go.html?u=\\0`;
+      try {
+        const rule = await b.waitFor(() => opt.ev(`chrome.declarativeNetRequest.getDynamicRules().then(rs => rs.find(r => r.id === 1) || null)`,
+          { timeoutMs: 3000 }), { timeoutMs: 10000 });
+        const sub = rule.action?.redirect?.regexSubstitution;
+        record("DNR 规则指向本扩展", sub === wantSub, `regexSubstitution ${sub}`);
+      } catch (e) { record("DNR 规则指向本扩展", false, `读不到 id 为 1 的动态规则：${e.message}`); }
 
-    // 改一次 uiLocale 让 SW 重建右键菜单：t() 缺 key、目录没加载、重建失败都会在 SW 里记 [split-search] 错误
-    // （收集器自动 attach 了 SW，能收到它的 console.error）
-    try {
-      const before = collector.errors.length;
-      await opt.ev(`chrome.storage.sync.set({ uiLocale: "en" }).then(() => true)`, { timeoutMs: 5000 });
-      await sleep(1000);
-      const errs = collector.errors.slice(before).map(e => e.text);
-      record("切换 uiLocale 后 SW 重建菜单无错误", !errs.length, errs.length ? errs.join(" | ") : "uiLocale en");
-    } catch (e) { record("切换 uiLocale 后 SW 重建菜单无错误", false, e.message); }
-    finally { await opt.close(); }
+      // 改 uiLocale 让 SW 重建右键菜单：t() 缺 key、目录没加载、重建失败都会在 SW 里记 [split-search] 错误
+      // （收集器自动 attach 了 SW，能收到它的 console.error）。正面证据：先在设置页 removeAll 拿掉两项，
+      // 改 uiLocale 后两项又能 update 成功，说明是 SW 重建出来的。依次切 zh_CN、en，最后停在 en（后面的弹窗按英文核对）
+      try {
+        const before = collector.errors.length;
+        for (const locale of ["zh_CN", "en"]) await menusRebuiltAfter(b, opt, locale);
+        const errs = collector.errors.slice(before).map(e => e.text);
+        record("切换 uiLocale 后 SW 重建菜单无错误", !errs.length,
+          errs.length ? errs.join(" | ") : `uiLocale zh_CN、en 各重建一次，${MENU_IDS.join("、")} 都在`);
+      } catch (e) { record("切换 uiLocale 后 SW 重建菜单无错误", false, e.message); }
+    } finally { await opt.close(); }
 
     // 工具栏弹窗页直接当标签打开：活动标签就是它自己，不是本扩展的拆分视图，显示说明文字
     const pop = await openPage(b, `chrome-extension://${id}/popup/popup.html`);
