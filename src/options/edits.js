@@ -28,7 +28,7 @@ export function describeTemplate(url) {
   return { level: "warn", msg: ["engine_tpl_right_only"] };
 }
 
-function checkFields(input) {
+export function checkFields(input) {
   const errors = {};
   const name = String(input.name ?? "").trim();
   const url = String(input.url ?? "").trim();
@@ -116,12 +116,15 @@ function inDefaultPair(raw, id) {
   return mergeConfig(raw).defaultPair.includes(id);
 }
 
+// 删除或隐藏的正是查词引擎时，一并删掉 lookupEngine，回到“跟随默认组合的右侧”
+const dropLookup = (raw, id) => (raw.lookupEngine === id ? { remove: ["lookupEngine"] } : {});
+
 export function hideEngine(raw, id) {
   if (!isPresetId(id)) return fail("only_preset_hide");
   if (inDefaultPair(raw, id)) return fail("pair_uses_hide");
   const overrides = { ...(raw.presetOverrides || {}) };
   overrides[id] = { ...(overrides[id] || {}), hidden: true };
-  return { ok: true, patch: { presetOverrides: overrides } };
+  return { ok: true, patch: { presetOverrides: overrides }, ...dropLookup(raw, id) };
 }
 
 export function restoreEngine(raw, id) {
@@ -142,7 +145,14 @@ export function deleteEngine(raw, id) {
   if (Array.isArray(raw.cycleExclude) && raw.cycleExclude.includes(id)) {
     patch.cycleExclude = cleanIdList(raw.cycleExclude).filter(x => x !== id);
   }
-  return { ok: true, patch };
+  return { ok: true, patch, ...dropLookup(raw, id) };
+}
+
+// null：回到跟随默认组合的右侧（删键）；否则必须是未隐藏的文字引擎
+export function setLookupEngine(raw, id) {
+  if (id === null) return { ok: true, patch: null, remove: ["lookupEngine"] };
+  if (!mergeConfig(raw).engines.some(e => e.id === id)) return fail("engine_gone");
+  return { ok: true, patch: { lookupEngine: id } };
 }
 
 // included 为真：参与快捷键轮换（从 cycleExclude 移除）；否则加入 cycleExclude（不重复）

@@ -4,7 +4,7 @@ import { PRESETS, ID_PATTERN, isIdTaken, mergeConfig } from "../src/lib/engines.
 import { CATALOG } from "../src/lib/engine-catalog.js";
 import {
   addEngine, editEngine, hideEngine, deleteEngine, restoreEngine, setDefaultPair, setNarrowFallback, describeTemplate, addFromCatalog,
-  setCycle,
+  setCycle, setLookupEngine,
 } from "../src/options/edits.js";
 
 const preset = (id) => PRESETS.find(p => p.id === id);
@@ -184,4 +184,18 @@ test("deleteEngine：从 cycleExclude 一并去掉该 id；原来不含它就不
   assert.deepEqual(deleteEngine({ customEngines: [baidu], cycleExclude: ["kagi"] }, "baidu").patch, { customEngines: [] });
   assert.deepEqual(deleteEngine({ customEngines: [baidu] }, "baidu").patch, { customEngines: [] });
   assert.deepEqual(deleteEngine({ customEngines: [baidu], cycleExclude: "baidu" }, "baidu").patch, { customEngines: [] });
+});
+
+test("setLookupEngine：写入、跟随、无效", () => {
+  assert.deepEqual(setLookupEngine({}, "ddg"), { ok: true, patch: { lookupEngine: "ddg" } });
+  assert.deepEqual(setLookupEngine({ lookupEngine: "ddg" }, null), { ok: true, patch: null, remove: ["lookupEngine"] });
+  assert.equal(setLookupEngine({ presetOverrides: { ddg: { hidden: true } } }, "ddg").error.code, "engine_gone");
+  assert.equal(setLookupEngine({}, "nope").error.code, "engine_gone");
+});
+test("隐藏或删除查词引擎时一并删掉 lookupEngine", () => {
+  assert.deepEqual(hideEngine({ lookupEngine: "ddg" }, "ddg").remove, ["lookupEngine"]);
+  assert.equal(hideEngine({ lookupEngine: "kagi" }, "ddg").remove, undefined);
+  const raw = { customEngines: [{ id: "my", name: "M", url: "https://m.com/?q=%s" }], lookupEngine: "my" };
+  assert.deepEqual(deleteEngine(raw, "my").remove, ["lookupEngine"]);
+  assert.equal(deleteEngine({ ...raw, lookupEngine: "bing" }, "my").remove, undefined);
 });

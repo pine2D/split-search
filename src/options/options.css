@@ -270,3 +270,7 @@ dialog::backdrop { background: rgb(0 0 0 / 0.4); }
   border-radius: 4px;
   padding: 1px 6px;
 }
+
+/* ---- 右键查询卡片 ---- */
+#image-catalog-dialog { max-height: calc(100vh - 48px); overflow-y: auto; }
+.lookup-actions { justify-content: flex-start; margin: 10px 0; }

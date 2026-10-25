@@ -29,6 +29,11 @@
       <div id="pair-body"></div>
     </section>
 
+    <section class="card" aria-labelledby="lookup-title">
+      <h2 id="lookup-title" data-i18n="options_lookup_title"></h2>
+      <div id="lookup-body"></div>
+    </section>
+
     <section class="card" aria-labelledby="guide-title">
       <h2 id="guide-title" data-i18n="options_guide_title"></h2>
       <div id="triggers" class="triggers"></div>
@@ -86,6 +91,38 @@
     <div class="dialog-actions">
       <button type="button" id="catalog-close" class="btn" data-i18n="common_close"></button>
     </div>
+  </dialog>
+
+  <dialog id="image-catalog-dialog" aria-labelledby="image-catalog-title">
+    <h2 id="image-catalog-title" data-i18n="catalog_image_title"></h2>
+    <p class="hint" data-i18n="catalog_image_hint"></p>
+    <div id="image-catalog-body"></div>
+    <div class="dialog-actions">
+      <button type="button" id="image-catalog-close" class="btn" data-i18n="common_close"></button>
+    </div>
+  </dialog>
+
+  <dialog id="image-dialog" aria-labelledby="image-dlg-title">
+    <form id="image-form" novalidate>
+      <h2 id="image-dlg-title" data-i18n="options_image_dlg_title"></h2>
+      <div class="field">
+        <label for="image-name" data-i18n="options_dlg_name_label"></label>
+        <input id="image-name" name="name" autocomplete="off" maxlength="40">
+        <p class="field-error" data-for="name" hidden></p>
+      </div>
+      <div class="field">
+        <label for="image-url" data-i18n="options_dlg_url_label"></label>
+        <input id="image-url" name="url" class="mono" autocomplete="off" spellcheck="false"
+               data-i18n-attr="placeholder:options_image_url_placeholder">
+        <p class="hint" data-i18n="options_image_dlg_hint"></p>
+        <p class="field-error" data-for="url" hidden></p>
+      </div>
+      <p class="field-error" data-for="form" hidden></p>
+      <div class="dialog-actions">
+        <button type="button" id="image-cancel" class="btn" data-i18n="common_cancel"></button>
+        <button type="submit" id="image-save" class="btn btn-primary" data-i18n="common_save"></button>
+      </div>
+    </form>
   </dialog>
 
   <dialog id="engine-dialog" aria-labelledby="dlg-title">

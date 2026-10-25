@@ -1038,5 +1038,89 @@
   "popup_open_options": {
     "message": "打开设置页",
     "description": "Toolbar popup: button that opens the extension's settings page."
+  },
+  "options_lookup_title": {
+    "message": "右键查询",
+    "description": "Title of the settings card for the right-click lookup feature (select text or right-click an image)."
+  },
+  "options_lookup_intro": {
+    "message": "在网页上选中文字，或在图片上右键，选 Split Search 的菜单项：当前网页留在左边，结果在右边打开。",
+    "description": "Intro of the right-click lookup card. Menu items are added by Split Search to Chrome's right-click menu."
+  },
+  "options_lookup_engine_label": {
+    "message": "查词引擎",
+    "description": "Label of the dropdown that picks the engine used to look up selected text."
+  },
+  "options_lookup_follow": {
+    "message": "跟随默认组合的右侧（当前：$ENGINE$）",
+    "description": "First option of the text lookup dropdown: use whatever engine is on the right side of the default pair. $ENGINE$ is its current name.",
+    "placeholders": {
+      "ENGINE": {
+        "content": "$1",
+        "example": "Bing"
+      }
+    }
+  },
+  "options_image_engine_label": {
+    "message": "以图搜图引擎",
+    "description": "Label of the dropdown that picks the reverse image search engine."
+  },
+  "options_image_add_catalog": {
+    "message": "从引擎库添加",
+    "description": "Button that opens the catalog of reverse image search engines."
+  },
+  "options_image_add_custom": {
+    "message": "新增",
+    "description": "Button that opens the dialog for adding a custom reverse image search engine."
+  },
+  "options_image_note_embedded": {
+    "message": "页面内嵌的图片没有公开网址，不能以图搜图，菜单里不会出现这一项。",
+    "description": "Limitation note: images that exist only inside a page (no public URL)."
+  },
+  "options_image_note_login": {
+    "message": "要登录才能看的图片，引擎多半拿不到。",
+    "description": "Limitation note: images that need a login."
+  },
+  "options_lookup_privacy": {
+    "message": "选中的文字和图片网址只发给这里选的引擎。有些图片网址本身带访问凭证，发出去引擎也能打开这张图；图片网址也可能看得出它来自哪个网站。",
+    "description": "Privacy note: what is sent to the chosen engine."
+  },
+  "catalog_image_title": {
+    "message": "以图搜图引擎库",
+    "description": "Title of the dialog listing ready-made reverse image search engines."
+  },
+  "catalog_image_hint": {
+    "message": "添加后就是普通的自定义以图搜图引擎，可以选用，也可以删除。",
+    "description": "Short intro in the image search catalog dialog."
+  },
+  "engine_confirm_delete_image": {
+    "message": "删除“$NAME$”？",
+    "description": "Confirmation before deleting a custom image search engine. $NAME$ is its name.",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "Bing Visual Search"
+      }
+    }
+  },
+  "options_image_dlg_title": {
+    "message": "新增以图搜图引擎",
+    "description": "Title of the dialog for adding a custom image search engine."
+  },
+  "options_image_url_placeholder": {
+    "message": "https://example.com/search?img=%s",
+    "description": "Placeholder of the address template field of an image search engine (example address with %s)."
+  },
+  "options_image_dlg_hint": {
+    "message": "用 %s 代表图片网址。",
+    "description": "Hint under the address template field of an image search engine. Keep %s as is."
+  },
+  "notice_lookup_saved": {
+    "message": "查词引擎已保存。",
+    "description": "Notice after choosing the text lookup engine."
+  },
+  "notice_image_engine_saved": {
+    "message": "以图搜图引擎已保存。",
+    "description": "Notice after choosing the image search engine."
   }
 }

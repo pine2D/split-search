@@ -1,28 +1,24 @@
 // 设置页编排：读配置 → 实时查授权 → 渲染各区块；所有写入串行执行“loadRaw → 改整键 → saveKeys”。
-import { loadRaw, saveKeys } from "../chrome/config-store.js";
+import { loadRaw } from "../chrome/config-store.js";
 import { mergeConfig } from "../lib/engines.js";
-import { h, ht, notify, errorText, authButton, option, isGranted, joinSentences } from "./ui.js";
-import {
-  addEngine, editEngine, hideEngine, restoreEngine, deleteEngine, setDefaultPair, moveId, canBeLeft, setNarrowFallback,
-  addFromCatalog, needsGrantWarning, setCycle,
-} from "./edits.js";
-import { renderEngineList, renderHiddenList, setupEngineDialog, confirmRemoval } from "./engine-list.js";
+import { h, ht, notify, errorText, authButton, option, isGranted } from "./ui.js";
+import { setDefaultPair, canBeLeft, setNarrowFallback } from "./edits.js";
+import { write, act, actions, attention, bindActions, getPendingOrder } from "./actions.js";
+import { renderLookupCard, setupLookupDialogs, refreshImageCatalog } from "./lookup.js";
+import { renderEngineList, renderHiddenList, setupEngineDialog } from "./engine-list.js";
 import { setupCatalogDialog, refreshCatalog } from "./catalog.js";
 import { renderShortcut, SHORTCUT_BUTTON_ID } from "./shortcut.js";
 import { renderTriggers, setupGuide } from "./guide.js";
 import { applyRichText, renderLangPicker } from "./locale-ui.js";
 import { initI18n, applyI18n, setLocale, currentPref, currentLocale, t } from "../chrome/i18n.js";
 
-const ORDER_DEBOUNCE_MS = 500;
 const $ = (id) => document.getElementById(id);
 const log = (...args) => console.error("[split-search]", ...args);
 
 // 目录加载前不得调用 t / ht / tNodes：凡是要用它们的路径都先 await i18nReady
 const i18nReady = initI18n().catch(log);
+bindActions({ render: () => render(), current: () => current });
 
-const attention = new Set(); // 保存后尚未授权的引擎：突出显示“授权”按钮
-let pendingOrder = null;     // 防抖期间的本地排序
-let orderTimer = null;
 let renderSeq = 0;
 let current = null;          // 最近一次渲染用的 cfg
 // 静态文字最近一次按哪种语言写入；初值 undefined 保证第一次渲染一定写入（即使目录没加载成功）。
@@ -36,97 +32,6 @@ let requestedPref;
 let localeSwitch = Promise.resolve();
 // 下拉框最近一次按哪组 uiLocale|语言 建的；都没变就只同步选中值，不重建（重建会关掉用户正打开的下拉列表）
 let pickerKey;
-
-// ---- 写入：串行化，避免并发的读取→修改→写回 ----
-
-let writeChain = Promise.resolve();
-
-// compute(raw) 返回 { ok, patch?, ... }；ok 且有 patch 时才写入。返回 compute 的结果。
-function write(compute) {
-  const run = async () => {
-    const raw = await loadRaw();
-    const result = compute(raw);
-    if (result.ok && result.patch) await saveKeys(result.patch);
-    return result;
-  };
-  const p = writeChain.then(run);
-  writeChain = p.catch(() => {});
-  return p;
-}
-
-// ok 是成功提示的 LabelSpec（[key, ...subs]），null 表示不提示
-async function act(compute, ok) {
-  try {
-    const result = await write(compute);
-    if (!result.ok) notify(result.error ? errorText(result.error) : t("notice_action_failed"), "error");
-    else if (ok) notify(t(...ok));
-    return result;
-  } catch (err) {
-    notify(t("notice_save_failed", errorText(err)), "error");
-    return { ok: false };
-  } finally {
-    render();
-  }
-}
-
-// 新增 / 编辑：校验错误交给对话框显示在表单旁；存储错误也作为表单错误显示
-// okKey: "notice_added" | "notice_saved"
-async function saveEngine(compute, okKey) {
-  let result;
-  try {
-    result = await write(compute);
-  } catch (err) {
-    return { ok: false, errors: { form: t("notice_save_failed", errorText(err)) } };
-  }
-  if (!result.ok) return result;
-  const warn = needsGrantWarning(result.engine, await isGranted(result.engine));
-  if (warn) attention.add(result.engine.id);
-  const done = t(okKey, result.engine.name);
-  notify(warn ? joinSentences(done, t("notice_needs_grant")) : done, warn ? "warn" : "ok", { sticky: warn });
-  if (result.templateChanged) {
-    notify(t("notice_template_changed", result.engine.name), "warn", { sticky: true });
-  }
-  render();
-  return result;
-}
-
-const actions = {
-  add: (input) => saveEngine(raw => addEngine(raw, input), "notice_added"),
-  edit: (id, input) => saveEngine(raw => editEngine(raw, id, input), "notice_saved"),
-  // 引擎库条目按右侧用途处理：不进 attention，不显示“需授权”
-  addFromCatalog: (entry) => act(raw => addFromCatalog(raw, entry, currentLocale()), ["notice_catalog_added", entry.name]),
-  hide(e) {
-    if (confirmRemoval("engine_confirm_hide", e)) act(raw => hideEngine(raw, e.id), ["notice_hidden", e.name]);
-  },
-  remove(e) {
-    if (confirmRemoval("engine_confirm_delete", e)) act(raw => deleteEngine(raw, e.id), ["notice_deleted", e.name]);
-  },
-  restore: (e) => act(raw => restoreEngine(raw, e.id), ["notice_restored", e.name]),
-  // 勾选框本身就是反馈，成功不弹提示；失败照常提示，重渲染后开关退回已保存的状态
-  setCycle: (id, included) => act(raw => setCycle(raw, id, included), null),
-  move(id, delta) {
-    if (!current) return;
-    const base = pendingOrder || current.engines.map(e => e.id);
-    const next = moveId(base, id, delta);
-    if (next === base) return;
-    pendingOrder = next;
-    render();
-    clearTimeout(orderTimer);
-    orderTimer = setTimeout(flushOrder, ORDER_DEBOUNCE_MS);
-  },
-};
-
-async function flushOrder() {
-  const order = pendingOrder;
-  if (!order) return;
-  try {
-    await write(() => ({ ok: true, patch: { order } }));
-  } catch (err) {
-    notify(t("notice_order_save_failed", errorText(err)), "error");
-  }
-  if (pendingOrder === order) pendingOrder = null;
-  render();
-}
 
 // ---- 渲染 ----
 
@@ -174,6 +79,7 @@ async function render() {
     document.body.classList.remove("loading");
     return;
   }
+  const pendingOrder = getPendingOrder();
   const cfg = mergeConfig(pendingOrder ? { ...raw, order: pendingOrder } : raw);
   // 和最近一次请求的 pref 比，不同才调 setLocale（它保证最后一次调用生效）；所有渲染都等进行中的切换。
   // 已被取代的渲染不发起切换（它的 raw 可能比更新的渲染旧），反正会在下面的 seq 检查处退出。
@@ -188,6 +94,7 @@ async function render() {
   for (const id of attention) if (granted.get(id)) attention.delete(id);
   current = cfg;
   refreshCatalog(cfg);
+  refreshImageCatalog(cfg);
   applyStatic();
   syncLangPicker(cfg.uiLocale);
   const ctx = { cfg, granted, attention, actions, refresh: render };
@@ -196,6 +103,7 @@ async function render() {
   const focusedId = document.activeElement?.id;
   $("banner").replaceChildren(...banner(cfg, byId, granted));
   $("pair-body").replaceChildren(...pairSection(cfg, byId, granted));
+  $("lookup-body").replaceChildren(renderLookupCard({ ...cfg, lookupFollow: !cfg.engines.some(e => e.id === raw.lookupEngine) }, actions));
   $("triggers").replaceChildren(renderTriggers(ctx));
   $("engines").replaceChildren(renderEngineList(ctx));
   $("hidden-engines").replaceChildren(renderHiddenList(ctx));
@@ -271,6 +179,7 @@ function pairSection(cfg, byId, granted) {
 i18nReady.then(() => {
   setupEngineDialog(actions);
   setupCatalogDialog(actions);
+  setupLookupDialogs(actions);
   setupGuide();
 });
 chrome.storage.onChanged.addListener((_changes, area) => { if (area === "sync") render(); });

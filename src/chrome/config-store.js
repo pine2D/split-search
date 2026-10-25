@@ -22,3 +22,8 @@ export async function saveKeys(patch, area = defaultArea()) {
   }
   await area.set(patch);
 }
+
+// 删掉整键（如“回到跟随默认组合”时删 lookupEngine）
+export async function removeKeys(keys, area = defaultArea()) {
+  await area.remove(keys);
+}

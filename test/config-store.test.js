@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { loadRaw, loadConfig, saveKeys } from "../src/chrome/config-store.js";
+import { loadRaw, loadConfig, saveKeys, removeKeys } from "../src/chrome/config-store.js";
 
 function fakeArea(initial = {}) {
   const data = { ...initial };
@@ -52,4 +52,10 @@ test("loadConfig 按预置顺序返回引擎和默认组合", async () => {
   const cfg = await loadConfig(fakeArea());
   assert.deepEqual(cfg.engines.map(e => e.id), ["google", "bing", "ddg", "perplexity", "kagi"]);
   assert.deepEqual(cfg.defaultPair, ["google", "bing"]);
+});
+test("removeKeys 调用 area.remove，把键名原样交给存储", async () => {
+  const calls = [];
+  const area = { async remove(keys) { calls.push(keys); } };
+  await removeKeys(["lookupEngine"], area);
+  assert.deepEqual(calls, [["lookupEngine"]]);
 });

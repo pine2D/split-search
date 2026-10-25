@@ -1038,5 +1038,89 @@
   "popup_open_options": {
     "message": "Open settings",
     "description": "Toolbar popup: button that opens the extension's settings page."
+  },
+  "options_lookup_title": {
+    "message": "Right-click lookup",
+    "description": "Title of the settings card for the right-click lookup feature (select text or right-click an image)."
+  },
+  "options_lookup_intro": {
+    "message": "Select text or right-click an image on a web page, then choose the Split Search item. The page stays on the left and the result opens on the right.",
+    "description": "Intro of the right-click lookup card. Menu items are added by Split Search to Chrome's right-click menu."
+  },
+  "options_lookup_engine_label": {
+    "message": "Text lookup engine",
+    "description": "Label of the dropdown that picks the engine used to look up selected text."
+  },
+  "options_lookup_follow": {
+    "message": "Same as the right side of the default pair (now: $ENGINE$)",
+    "description": "First option of the text lookup dropdown: use whatever engine is on the right side of the default pair. $ENGINE$ is its current name.",
+    "placeholders": {
+      "ENGINE": {
+        "content": "$1",
+        "example": "Bing"
+      }
+    }
+  },
+  "options_image_engine_label": {
+    "message": "Image search engine",
+    "description": "Label of the dropdown that picks the reverse image search engine."
+  },
+  "options_image_add_catalog": {
+    "message": "Add from catalog",
+    "description": "Button that opens the catalog of reverse image search engines."
+  },
+  "options_image_add_custom": {
+    "message": "Add engine",
+    "description": "Button that opens the dialog for adding a custom reverse image search engine."
+  },
+  "options_image_note_embedded": {
+    "message": "Images embedded in the page have no public address, so they can't be searched. The menu item doesn't appear for them.",
+    "description": "Limitation note: images that exist only inside a page (no public URL)."
+  },
+  "options_image_note_login": {
+    "message": "Images you need to sign in to see are usually out of reach for the engine.",
+    "description": "Limitation note: images that need a login."
+  },
+  "options_lookup_privacy": {
+    "message": "Selected text and image addresses go only to the engine you choose here. Some image addresses carry access rights, so the engine can open that image too. An image address can also show which site it came from.",
+    "description": "Privacy note: what is sent to the chosen engine."
+  },
+  "catalog_image_title": {
+    "message": "Image search engine catalog",
+    "description": "Title of the dialog listing ready-made reverse image search engines."
+  },
+  "catalog_image_hint": {
+    "message": "Once added, they work like any custom image search engine: you can pick or delete them.",
+    "description": "Short intro in the image search catalog dialog."
+  },
+  "engine_confirm_delete_image": {
+    "message": "Delete “$NAME$”?",
+    "description": "Confirmation before deleting a custom image search engine. $NAME$ is its name.",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "Bing Visual Search"
+      }
+    }
+  },
+  "options_image_dlg_title": {
+    "message": "Add image search engine",
+    "description": "Title of the dialog for adding a custom image search engine."
+  },
+  "options_image_url_placeholder": {
+    "message": "https://example.com/search?img=%s",
+    "description": "Placeholder of the address template field of an image search engine (example address with %s)."
+  },
+  "options_image_dlg_hint": {
+    "message": "Use %s where the image address goes.",
+    "description": "Hint under the address template field of an image search engine. Keep %s as is."
+  },
+  "notice_lookup_saved": {
+    "message": "Text lookup engine saved.",
+    "description": "Notice after choosing the text lookup engine."
+  },
+  "notice_image_engine_saved": {
+    "message": "Image search engine saved.",
+    "description": "Notice after choosing the image search engine."
   }
 }
