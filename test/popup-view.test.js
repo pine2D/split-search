@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { popupView, targetTabId } from "../src/lib/popup-view.js";
 import { mergeConfig } from "../src/lib/engines.js";
+import { IMAGE_CATALOG } from "../src/lib/image-engines.js";
 
 const QUERY = "a&b #c+d 中文 😀";
 const pair = (left, right, query = QUERY) => ({
@@ -55,4 +56,36 @@ test("popupView：空关键词原样给出（页面显示“空关键词”文�
   assert.deepEqual(v.choices, []);
   // 没有 hidden 字段也不出错
   assert.equal(popupView(pair("x", "solo"), { engines: cfg.engines }).right.name, "Solo");
+});
+
+test("popupView：图片查询对", () => {
+  const cfg = mergeConfig({ imageEngines: [IMAGE_CATALOG[0]] });
+  const pair = { kind: "image", query: "https://img.example.com/a.png?sig=1",
+    left: { engineId: "" }, right: { engineId: "lens" } };
+  const v = popupView(pair, cfg);
+  assert.equal(v.imageHost, "img.example.com");
+  assert.equal(v.leftIsPage, true);
+  assert.equal(v.left, null);
+  assert.equal(v.right.id, "lens");
+  assert.deepEqual(v.choices.map(e => e.id), ["bing-img"]);
+});
+test("popupView：图片网址解析失败时 imageHost 为空串", () => {
+  assert.equal(popupView({ kind: "image", query: "::", left: { engineId: "" }, right: { engineId: "lens" } }, mergeConfig({})).imageHost, "");
+});
+test("popupView：搜索对 imageHost 为 null、leftIsPage 为 false", () => {
+  const v = popupView({ kind: "search", query: "q", left: { engineId: "google" }, right: { engineId: "bing" } }, mergeConfig({}));
+  assert.equal(v.imageHost, null); assert.equal(v.leftIsPage, false); assert.equal(v.left.id, "google");
+});
+test("popupView：文字查询对左侧是网页，候选是文字引擎（不含以图搜图引擎），右侧按文字引擎查", () => {
+  const cfg = mergeConfig({ imageEngines: [IMAGE_CATALOG[0]] });
+  const v = popupView({ kind: "text", query: QUERY, left: { engineId: "" }, right: { engineId: "bing" } }, cfg);
+  assert.equal(v.kind, "text");
+  assert.equal(v.leftIsPage, true);
+  assert.equal(v.imageHost, null);
+  assert.equal(v.left, null);
+  assert.equal(v.right.name, "Bing");
+  assert.deepEqual(v.choices.map(e => e.id), ["google", "ddg", "perplexity", "kagi"]);
+});
+test("popupView：没有 kind 的旧调用不算查询对（leftIsPage 为 false）", () => {
+  assert.equal(popupView(pair("google", "bing"), mergeConfig({})).leftIsPage, false);
 });

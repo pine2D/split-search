@@ -3,6 +3,7 @@
 import { loadConfig } from "../chrome/config-store.js";
 import { ownedPair, switchRight } from "../chrome/right-switch.js";
 import { popupView, targetTabId } from "../lib/popup-view.js";
+import { enginesFor } from "../lib/engines.js";
 import { normalizeLocalePref } from "../lib/i18n.js";
 import { initI18n, applyI18n, setLocale, setI18nText } from "../chrome/i18n.js";
 
@@ -60,9 +61,17 @@ function show(state) {
   if (!state) return;
   const view = popupView(state.pair, state.cfg);
 
+  // 查询对按角色写行标签（“网页”“查询”），不写左右：原生互换位置之后看得见的位置会变
+  setI18nText($("left-label"), view.leftIsPage ? "popup_role_page" : "popup_left_label");
+  setI18nText($("right-label"), view.leftIsPage ? "popup_role_lookup" : "popup_right_label");
+
   const q = $("query");
-  q.classList.toggle("placeholder", view.query === "");
-  if (view.query === "") {
+  q.classList.toggle("placeholder", view.imageHost === null && view.query === "");
+  if (view.imageHost !== null) {
+    // 图片查询只显示 host，不加载缩略图，也不把完整网址放进悬停提示
+    setI18nText(q, "popup_lookup_image", view.imageHost);
+    q.removeAttribute("title");
+  } else if (view.query === "") {
     setI18nText(q, "popup_empty_query");
     q.removeAttribute("title");
   } else {
@@ -71,7 +80,12 @@ function show(state) {
     q.removeAttribute("data-i18n");
     q.removeAttribute("data-i18n-args");
   }
-  showEngine($("left-engine"), view.left);
+  if (view.leftIsPage) {
+    $("left-engine").classList.remove("placeholder");
+    setI18nText($("left-engine"), "popup_page_origin");
+  } else {
+    showEngine($("left-engine"), view.left);
+  }
   showEngine($("right-engine"), view.right);
 
   const list = $("choices");
@@ -123,7 +137,7 @@ async function onSwitch(engineId) {
   showError(null);
   try {
     const state = await load();
-    const engine = state?.cfg.engines.find((e) => e.id === engineId);
+    const engine = state && enginesFor(state.cfg, state.pair.kind).find((e) => e.id === engineId);
     if (!state || !engine) {
       log("popup: the split or the engine is gone, nothing switched", engineId);
       showError("popup_switch_failed");

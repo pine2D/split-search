@@ -5,6 +5,8 @@ import assert from "node:assert/strict";
 const listeners = {};
 const event = (name) => ({ addListener: (fn) => { (listeners[name] ||= []).push(fn); } });
 let state;
+import { expandTemplate } from "../src/lib/trigger.js";
+import { IMAGE_CATALOG } from "../src/lib/image-engines.js";
 const QUERY = "a&b #c+d 中文 😀";
 const rec = (peer, engine) => ({ peer, splitViewId: 7, mode: "split", role: "search", engine, query: QUERY });
 const L = { id: 10, index: 0, windowId: 1, splitViewId: 7, active: false };
@@ -179,4 +181,17 @@ test("cycle-right：只有 PiP 时什么都不做", async () => {
   await press();
   assert.ok(!state.calls.some(c => c[0] === "tabs.query"));
   assert.deepEqual(updates(), []);
+});
+
+test("cycle-right：图片查询对按以图搜图引擎轮换，不看 cycleExclude（含 bing-img 也照样换成它）", async () => {
+  const IMG = "https://img.example.com/a%20b.png?x=1&y=2#f";
+  const lookup = (peer, role, engine) => ({ peer, splitViewId: 7, mode: "split", role, input: "image", engine, query: IMG });
+  const bingImg = IMAGE_CATALOG.find(e => e.id === "bing-img");
+  state.session = new Map(Object.entries({ "split:10": lookup(11, "page", ""), "split:11": lookup(10, "lookup", "lens") }));
+  state.sync = { imageEngines: [bingImg], cycleExclude: ["bing-img"] };
+  await press();
+  assert.deepEqual(updates(), [["tabs.update", 11, { url: expandTemplate(bingImg.url, IMG) }]]);
+  assert.equal(state.session.get("split:11").engine, "bing-img");
+  assert.equal(state.session.get("split:11").role, "lookup");
+  assert.deepEqual(state.session.get("split:10"), lookup(11, "page", ""));
 });

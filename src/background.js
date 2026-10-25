@@ -2,7 +2,7 @@ import { loadConfig } from "./chrome/config-store.js";
 import { RULE_ID, buildRedirectRule, leftHosts } from "./lib/rules.js";
 import { clearPair } from "./chrome/split-state.js";
 import { ownedPair, switchRight } from "./chrome/right-switch.js";
-import { nextRightEngine } from "./lib/cycle.js";
+import { nextRightEngine, cycleCandidates } from "./lib/cycle.js";
 import { lastSplitWindow } from "./chrome/split-actions.js";
 
 const log = (...args) => console.error("[split-search]", ...args);
@@ -20,17 +20,19 @@ async function doRebuild() {
   }
 }
 
-// 快捷键：最后聚焦的窗口能分屏、其中的活动标签属于本扩展的一对时，右侧换成下一个参与轮换的引擎。
+// 快捷键：最后聚焦的窗口能分屏、其中的活动标签属于本扩展的一对时，右侧换成下一个参与轮换的引擎
+// （查询对换的是查询一侧；图片查询对在以图搜图引擎里轮换，见 cycleCandidates）。
 // 最后聚焦的是 PiP（lastSplitWindow 不回退）、不是本扩展的、没有可换的引擎，都什么也不做，也不弹任何东西。
 async function cycleRight() {
   const win = await lastSplitWindow({ fallback: false });
   if (!win) return;
   const [tab] = await chrome.tabs.query({ active: true, windowId: win.id });
   if (!tab) return;
-  const { engines, cycleExclude } = await loadConfig();
-  const pair = await ownedPair(tab, engines);
+  const cfg = await loadConfig();
+  const pair = await ownedPair(tab, cfg.engines);
   if (!pair) return;
-  const next = nextRightEngine(engines, pair.right.engineId, cycleExclude);
+  const { engines, exclude } = cycleCandidates(cfg, pair.kind);
+  const next = nextRightEngine(engines, pair.right.engineId, exclude);
   if (!next) return;
   await switchRight(pair, next);
 }

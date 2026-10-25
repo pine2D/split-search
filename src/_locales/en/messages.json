@@ -1001,6 +1001,28 @@
     "message": "Deleted engine",
     "description": "Toolbar popup: shown instead of an engine name when that engine has since been deleted in settings."
   },
+  "popup_role_page": {
+    "message": "Page",
+    "description": "Toolbar popup, lookup pair (the user's web page next to a lookup result opened from the right-click menu): label in front of the user's own page. Used instead of \"Left\" because the user may have swapped the two sides."
+  },
+  "popup_role_lookup": {
+    "message": "Lookup",
+    "description": "Toolbar popup, lookup pair: label in front of the engine showing the lookup result (the side the engine list switches). Used instead of \"Right\" because the user may have swapped the two sides."
+  },
+  "popup_page_origin": {
+    "message": "Original page",
+    "description": "Toolbar popup, lookup pair: shown as the \"engine name\" of the user's own page side. Do not say \"current page\": the popup may be opened from the lookup side."
+  },
+  "popup_lookup_image": {
+    "message": "Image: $HOST$",
+    "description": "Toolbar popup, image lookup pair: shown instead of the search terms. The placeholder is the host of the image URL (for example img.example.com); the image itself is not loaded.",
+    "placeholders": {
+      "HOST": {
+        "content": "$1",
+        "example": "img.example.com"
+      }
+    }
+  },
   "popup_switch_title": {
     "message": "Switch the right side to",
     "description": "Toolbar popup: heading above the list of engines; clicking one loads it on the right side."

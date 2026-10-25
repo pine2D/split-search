@@ -63,6 +63,7 @@ test("ownedPair：从左侧标签出发，左右按 index 分", async () => {
   installChrome({ tabs: { 10: L, 11: R }, data: ownData() });
   const pair = await ownedPair(L, engines);
   assert.deepEqual(pair, {
+    kind: "search",
     left: { tabId: 10, engineId: "google", record: rec(11, "google") },
     right: { tabId: 11, engineId: "bing", record: rec(10, "bing") },
     query: QUERY,
@@ -124,6 +125,47 @@ test("ownedPair：相邻模式下对侧已关掉（No tab with id）返回 null�
     data: { "split:20": rec(21, "google", { mode: "adjacent", splitViewId: -1 }) },
   });
   assert.equal(await ownedPair(a, engines), null);
+});
+
+// 查询对：page 一侧 engine 为 ""，两侧写同一个 input；用户对调过，lookup 现在在左边（index 0）
+const lookupData = (input = "text") => ({
+  "split:10": rec(11, "", { role: "page", input }),
+  "split:11": rec(10, "bing", { role: "lookup", input }),
+});
+
+test("ownedPair：查询对（用户对调过）right 固定是 lookup 一侧、left 是 page 一侧，kind 取 input", async () => {
+  const page = { ...L, index: 1 };
+  const lookup = { ...R, index: 0 };
+  installChrome({ tabs: { 10: page, 11: lookup }, data: lookupData() });
+  for (const from of [page, lookup]) {
+    const pair = await ownedPair(from, engines);
+    assert.equal(pair.kind, "text");
+    assert.equal(pair.right.tabId, 11);
+    assert.equal(pair.right.engineId, "bing");
+    assert.equal(pair.left.tabId, 10);
+    assert.equal(pair.left.engineId, "");
+    assert.equal(pair.query, QUERY);
+  }
+});
+
+test("ownedPair：图片查询对的 kind 是 image", async () => {
+  installChrome({ tabs: { 10: L, 11: R }, data: lookupData("image") });
+  assert.equal((await ownedPair(L, engines)).kind, "image");
+});
+
+test("switchRight：查询对换的是 lookup 一侧，记录的 role、input 不变，page 一侧不动", async () => {
+  const page = { ...L, index: 1 };
+  const lookup = { ...R, index: 0 };
+  installChrome({ tabs: { 10: page, 11: lookup }, data: lookupData() });
+  const pair = await ownedPair(page, engines);
+  calls = [];
+  await switchRight(pair, engines[2]);
+  assert.deepEqual(calls[0], ["tabs.update", 11, { url: expandTemplate(engines[2].url, QUERY) }]);
+  const after = store.get("split:11");
+  assert.equal(after.role, "lookup");
+  assert.equal(after.input, "text");
+  assert.equal(after.engine, "wiki");
+  assert.deepEqual(store.get("split:10"), lookupData()["split:10"]);
 });
 
 test("switchRight：特殊字符关键词的网址与 expandTemplate 逐字相同，记录只改 engine", async () => {
