@@ -151,7 +151,8 @@ split-search/
 │   ├── lib/menu-spec.js          右键菜单两项的属性与标题（引擎名里 & 写成 &&、%s 拆成 % s）
 │   ├── lib/serial.js             串行队列（SW 全局串行链、菜单重建各用一条）
 │   ├── lib/cycle.js              快捷键轮换：下一个参与轮换的引擎
-│   ├── lib/popup-view.js         弹窗视图状态（纯逻辑）
+│   ├── lib/popup-view.js         弹窗视图状态与换右侧的目标（switchTarget：图片查询对只在以图搜图引擎里挑），纯逻辑
+│   ├── lib/safe-error.js         日志里的错误先经 safeError/safeArgs：只留错误名和消息，引号内容与网址样文字换成 …，不带堆栈
 │   ├── lib/i18n.js               语言选择、占位符替换等纯逻辑
 │   ├── lib/errors.js             错误码：lib 和设置页逻辑只返回码，页面经 t("err_<code>") 显示
 │   ├── chrome/i18n.js            页内文案加载器：t()，fetch 读包内 _locales，按 uiLocale 切换
@@ -162,7 +163,7 @@ split-search/
 │   ├── chrome/menus.js           右键菜单注册：removeAll 后重建两项，标题经 t()
 │   ├── chrome/lookup-actions.js  右键查询执行（② ⑧）：按 lookup-decision 建对、复用或开普通标签，记录经 split-state.js
 │   └── chrome/complete-actions.js  ⑦ 补成分屏执行：重新读标签、识别、判定后 openRight
-└── test/                         node --test（每个 lib 一个文件，另有 manifest、config-store、split-actions、options-edits、options-ui；i18n.test.js、chrome-i18n.test.js、i18n-catalog.test.js（4 种语言 key 对齐与 fetch 守门、带引擎名的 aria 文案含可见文字）、popup-css.test.js（弹窗颜色变量与设置页一致）、errors.test.js、i18n-pak.test.js（Chrome 术语表脚本）、store-i18n.test.js（宣传图文案键对齐）；go-wiring.test.js（静态检查 go.js 的判定经 decideFor、读窗口带 populate）；v0.4 的 menus、lookup-actions、complete-actions（chrome 替身）与 image-edits；e2e-*.test.js 测 e2e 脚本，其中 e2e-i18n.test.js 测 I18N 步骤，e2e-v04.test.js 测 v0.4 的模拟 host、弹窗状态读取、MENU_INDEX 与页面标记核对；pack.test.js 测发布打包）
+└── test/                         node --test（每个 lib 一个文件，另有 manifest、config-store、split-actions、options-edits、options-ui；i18n.test.js、chrome-i18n.test.js、i18n-catalog.test.js（4 种语言 key 对齐与 fetch 守门、带引擎名的 aria 文案含可见文字）、popup-css.test.js（弹窗颜色变量与设置页一致）、errors.test.js、i18n-pak.test.js（Chrome 术语表脚本）、store-i18n.test.js（宣传图文案键对齐）；go-wiring.test.js（静态检查 go.js 的判定经 decideFor、读窗口带 populate）；log-wiring.test.js（静态检查打印错误的日志都经 safe-error）；safe-error.test.js；options-actions.test.js（设置页写入：先写后删只成功一半时如实提示）；v0.4 的 menus、lookup-actions、complete-actions（chrome 替身）与 image-edits；e2e-*.test.js 测 e2e 脚本，其中 e2e-i18n.test.js 测 I18N 步骤，e2e-v04.test.js 测 v0.4 的模拟 host、弹窗状态读取、MENU_INDEX 与页面标记核对；pack.test.js 测发布打包）
 ```
 
 纯逻辑放 `src/lib/`（不碰 `chrome.*`），`src/chrome/` 是对 `chrome.*` 的薄封装，页面脚本只负责编排。
@@ -180,6 +181,7 @@ split-search/
 - 预置引擎（只写在代码里）：`google` Google `https://www.google.com/search?q=%s`；`bing` Bing `https://www.bing.com/search?q=%s`；`ddg` DuckDuckGo `https://duckduckgo.com/?q=%s`；`perplexity` Perplexity `https://www.perplexity.ai/search?q=%s`；`kagi` Kagi `https://kagi.com/search?q=%s`。默认组合为 `["google", "bing"]`。Perplexity 预置带 `leftDiscouraged: true`：它的 Service Worker（Workbox）接管所有 document 导航，DNR 的 main_frame 规则看不到，作左侧时退化为普通搜索（G5）；设置页的引擎列表、默认组合卡片和组合生成器都提示“建议只作右侧”。
 - 以图搜图预置（只写在代码里，不能删除）：`lens` Google Lens `https://lens.google.com/uploadbyurl?url=%s`，缺省选用。以图搜图引擎不经过 DNR、不申请任何 host 权限，设置页不显示授权按钮。
 - 用户界面文案一律写在 `src/_locales/<语言>/messages.json`（首期 `en`、`zh_CN`、`zh_TW`、`es`），代码和 HTML 里不得出现界面文字。页面经 `src/chrome/i18n.js` 的 `t()` 取文案（按设置页所选语言，默认跟随浏览器），SW 里的右键菜单标题同样经 `t()`；`chrome.i18n.getMessage` 只用于 manifest 的 `__MSG_…__`。`zh_CN` 是源文案，`default_locale` 是 `en`。新增或修改文案时 4 种语言的 key 必须同时补齐（`test/i18n-catalog.test.js` 检查）。唯一允许的 `fetch` 是读取扩展包内的 `_locales`。文案的术语、润色与翻译流程见“## 文案”。
+- 日志（`console.info`/`console.error`）不得带标签网址、关键词、选中文字或图片网址；打印错误对象一律经 `lib/safe-error.js`（`test/log-wiring.test.js` 守着），不直接传 Chrome 的错误对象。
 - 不使用 iframe，不修改响应头。只有经过用户确认的“本扩展分屏”才允许被覆盖，而且只改写记录确认属于本扩展的那一侧（查询对只改写 `lookup` 一侧；兜底判出的 `fallback-own` 不允许任何调用方改写标签）。调分屏 API 前窗口必须经 `splitWindowType` 判为 `normal`（读窗口带 `populate: true`）。
 - 开发镜像目录：`/mnt/d/APP/Chrome-Extensions/split-search`。之后只用“重新加载”，不要移除后重装。
 
