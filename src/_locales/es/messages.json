@@ -156,7 +156,7 @@
     }
   },
   "err_id_exhausted": {
-    "message": "El id «$ID$» y sus variantes numeradas ya están en uso; elimina algunos buscadores y vuelve a intentarlo",
+    "message": "El id «$ID$» y los numerados del $ID$-2 al $ID$-99 ya están en uso; elimina algunos buscadores y vuelve a intentarlo",
     "description": "Error when adding from the engine catalog: the catalog id and every numbered variant (id-2 … id-99) are already used by other engines.",
     "placeholders": {
       "ID": {

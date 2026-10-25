@@ -156,7 +156,7 @@
     }
   },
   "err_id_exhausted": {
-    "message": "id「$ID$」和加上編號的寫法都已被使用，請先刪除一些引擎再新增",
+    "message": "id「$ID$」和 $ID$-2 至 $ID$-99 都已被使用，請先刪除一些引擎再新增",
     "description": "Error when adding from the engine catalog: the catalog id and every numbered variant (id-2 … id-99) are already used by other engines.",
     "placeholders": {
       "ID": {

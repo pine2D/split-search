@@ -156,7 +156,7 @@
     }
   },
   "err_id_exhausted": {
-    "message": "The id “$ID$” and its numbered variants are all taken. Delete some engines, then try again.",
+    "message": "The id “$ID$” and $ID$-2 through $ID$-99 are all taken. Delete some engines, then try again.",
     "description": "Error when adding from the engine catalog: the catalog id and every numbered variant (id-2 … id-99) are already used by other engines.",
     "placeholders": {
       "ID": {
