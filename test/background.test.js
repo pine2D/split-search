@@ -283,3 +283,42 @@ test("右键处理抛错时只记 [split-search] 日志，不抛出监听器", a
   assert.equal(console.error.mock.callCount(), 1);
   assert.deepEqual(console.error.mock.calls[0].arguments.slice(0, 2), ["[split-search]", "lookup failed"]);
 });
+
+// runtime.onMessage：监听器返回 true，经 sendResponse 异步回复；回复在 sendResponse 被调用时才到
+function message(msg, sender = { id: "x", url: "chrome-extension://x/popup/popup.html" }) {
+  assert.equal(listeners["runtime.onMessage"].length, 1);
+  let returned;
+  const reply = new Promise((resolve) => { returned = listeners["runtime.onMessage"][0](msg, sender, resolve); });
+  return { returned, reply };
+}
+
+test("complete-split：监听器返回 true，sendResponse 收到 handleCompleteMessage 的回复（建成分屏）", async () => {
+  state.session.clear();
+  state.win = { id: 1, type: "normal", width: 1200 };
+  state.tabs[5] = { id: 5, index: 2, windowId: 1, splitViewId: -1, url: "https://www.google.com/search?q=hello" };
+  const { returned, reply } = message({ type: "complete-split", tabId: 5, engineId: "bing" });
+  assert.equal(returned, true);
+  assert.deepEqual(await reply, { ok: true, mode: "split" });
+  assert.deepEqual(state.calls.filter(c => c[0] === "tabs.create"), [["tabs.create",
+    { url: "https://www.bing.com/search?q=hello", index: 3, windowId: 1, active: false, splitWithTabId: 5 }]]);
+  assert.equal(state.session.get("split:5").engine, "google");
+  assert.equal(state.session.get("split:100").engine, "bing");
+  assert.deepEqual(updates(), []);
+});
+
+test("complete-split：被拒的消息照样经 sendResponse 回复错误码", async (t) => {
+  t.mock.method(console, "info", () => {});
+  const { returned, reply } = message({ type: "complete-split", tabId: 5, engineId: "bing" }, { id: "evil", url: "https://evil.example/" });
+  assert.equal(returned, true);
+  assert.deepEqual(await reply, { ok: false, code: "message_rejected" });
+  assert.equal(console.error.mock.callCount(), 0);
+});
+
+test("complete-split：处理抛错时回 split_failed，并记 [split-search] 日志", async () => {
+  state.sync = null;
+  const { returned, reply } = message({ type: "complete-split", tabId: 5, engineId: "bing" });
+  assert.equal(returned, true);
+  assert.deepEqual(await reply, { ok: false, code: "split_failed" });
+  assert.equal(console.error.mock.callCount(), 1);
+  assert.equal(console.error.mock.calls[0].arguments[0], "[split-search]");
+});

@@ -1055,6 +1055,42 @@
     "message": "Abrir configuración",
     "description": "Toolbar popup: button that opens the extension's settings page."
   },
+  "popup_complete_detected": {
+    "message": "Búsqueda de $ENGINE$: $QUERY$",
+    "description": "Toolbar popup, completing a split view: shown when the current tab is a search results page of a configured engine. $ENGINE$ is the engine name, $QUERY$ the recognized search terms.",
+    "placeholders": {
+      "ENGINE": {
+        "content": "$1",
+        "example": "Google"
+      },
+      "QUERY": {
+        "content": "$2",
+        "example": "weather"
+      }
+    }
+  },
+  "popup_complete_hint": {
+    "message": "Elige un buscador para el lado derecho",
+    "description": "Toolbar popup, completing a split view: heading above the engine buttons. Clicking one keeps the current page on the left and opens the same search with that engine on the right."
+  },
+  "popup_complete_aria": {
+    "message": "$ENGINE$, abrir a la derecha",
+    "description": "Toolbar popup, completing a split view: accessible name of an engine button. Must start with the engine name, which is the button's visible text.",
+    "placeholders": {
+      "ENGINE": {
+        "content": "$1",
+        "example": "Google"
+      }
+    }
+  },
+  "popup_complete_narrow": {
+    "message": "La ventana es estrecha: el lado derecho se abrió en la pestaña de al lado.",
+    "description": "Toolbar popup, completing a split view: shown after the click when the window is narrow, so the right-side search opened in the background tab next to the current one instead of a split view."
+  },
+  "popup_complete_plain": {
+    "message": "No se pudo crear la vista dividida. La búsqueda se abrió en la pestaña de al lado.",
+    "description": "Toolbar popup, completing a split view: shown after the click when Chrome couldn't put the two tabs into a split view; the right-side search opened in the tab next to the current one."
+  },
   "options_lookup_title": {
     "message": "Búsqueda con clic derecho",
     "description": "Title of the settings card for the right-click lookup feature (select text or right-click an image)."

@@ -6,6 +6,7 @@ import { nextRightEngine, cycleCandidates } from "./lib/cycle.js";
 import { lastSplitWindow } from "./chrome/split-actions.js";
 import { rebuildMenus } from "./chrome/menus.js";
 import { handleMenuClick } from "./chrome/lookup-actions.js";
+import { handleCompleteMessage } from "./chrome/complete-actions.js";
 import { serialQueue } from "./lib/serial.js";
 
 const log = (...args) => console.error("[split-search]", ...args);
@@ -80,3 +81,13 @@ chrome.commands.onCommand.addListener((command) => {
 // 右键查询（② ⑧）：经 swQueue 串行；同样返回处理完成的 promise 供测试等待
 chrome.contextMenus.onClicked.addListener((info, tab) =>
   swQueue(() => handleMenuClick(info, tab)).catch(err => log("lookup failed", err)));
+// ⑦ 补成分屏（弹窗发来 complete-split）：同样经 swQueue 串行。return true 后用 sendResponse 异步回复，
+// 不依赖“监听器返回 Promise”。只有本扩展自己的页面能发进来（没有 onMessageExternal、没有 externally_connectable），
+// 发送方和字段在 handleCompleteMessage 里校验。
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  swQueue(() => handleCompleteMessage(msg, sender)).then(sendResponse, (err) => {
+    log("complete-split failed", err);
+    sendResponse({ ok: false, code: "split_failed" });
+  });
+  return true;
+});

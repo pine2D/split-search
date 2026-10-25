@@ -65,6 +65,16 @@ p { margin: 0 0 10px; }
   max-height: 260px; overflow-y: auto;
 }
 .choices .btn { width: 100%; text-align: start; }
+/* 补成分屏：建议的右侧排第一并高亮 */
+.choices .btn.suggested { border-color: var(--accent); background: var(--accent-soft); font-weight: 600; }
+
+/* 很长的关键词最多显示 4 行，完整内容在 title 里 */
+.detected {
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; line-clamp: 4; overflow: hidden;
+  padding: 10px 12px; overflow-wrap: anywhere;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+}
+.note { margin: 10px 0 0; }
 
 .btn {
   font: inherit;

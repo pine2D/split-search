@@ -29,6 +29,16 @@
       <p id="no-choices" class="muted" data-i18n="popup_no_choices" hidden></p>
     </section>
 
+    <!-- 补成分屏：当前标签是已配置引擎的结果页、不在分屏中 -->
+    <section id="complete" hidden>
+      <p id="complete-detected" class="detected"></p>
+      <h2 id="complete-title" data-i18n="popup_complete_hint"></h2>
+      <ul id="complete-choices" class="choices" aria-labelledby="complete-title"></ul>
+    </section>
+
+    <!-- 补成之后的提示（窄窗口开在旁边、没能组成拆分视图）；补成后弹窗换成对视图，提示仍留着 -->
+    <p id="complete-note" class="muted note" role="status" hidden></p>
+
     <p id="error" class="error" role="alert" hidden></p>
 
     <footer>
