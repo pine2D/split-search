@@ -20,7 +20,7 @@
 | `chrome.storage.session` 存本扩展所建拆分视图（或窄窗口下的相邻标签页）的记录：键 `split:<tabId>`，值 `{ peer, splitViewId, mode, engine, query }`，即另一侧标签页 id、建立时的 `splitViewId`、`split`/`adjacent`、这个标签页显示的引擎 id、关键词。只在内存中，不同步；浏览器关闭即清空，扩展重新加载、更新、停用时也清空；标签页关闭时（`tabs.onRemoved`）删掉它的记录 | `src/chrome/split-state.js`、`src/lib/split-owner.js`、`src/background.js` |
 | 关键词的用途只有两个：拼出左右引擎的网址；在工具栏弹窗里显示，并在用户从弹窗或用快捷键换右侧时拼出新引擎的网址 | `src/go.js`、`src/popup/popup.js`、`src/chrome/right-switch.js`、`src/lib/trigger.js` |
 | 读取另一侧标签页的 `url`（拆分视图经 `tabs.query({splitViewId})`，相邻标签页经 `tabs.get`）：有有效记录时按记录和 `splitViewId` 判定；没有记录时（典型是浏览器重启后），比较它的 origin 和搜索页路径是否像某个已配置引擎的结果页。只有已授权 origin 上的标签页才读得到；不保存网址 | `src/lib/split-owner.js`、`src/chrome/split-state.js` `inspectTab` |
-| 弹窗只读当前窗口的活动标签页（`tabs.query({active:true, currentWindow:true})`）；快捷键 `cycle-right` 只读最后聚焦的 normal 窗口的活动标签页。`manifest` 不写 `suggested_key`，用户没绑定时快捷键不生效 | `src/popup/popup.js`、`src/background.js` |
+| 弹窗只读当前窗口的活动标签页（`tabs.query({active:true, currentWindow:true})`）；快捷键 `cycle-right` 只改最后聚焦的 normal 窗口的活动标签页。挑窗口时（`windows.getLastFocused`、`windows.getAll` 带 `populate`，用来排除画中画小窗）会拿到这些窗口的标签列表，网址只有已授权网站才给，代码只用标签数、`openerTabId`、`lastAccessed` 挑窗口，不读、不存网址。`manifest` 不写 `suggested_key`，用户没绑定时快捷键不生效 | `src/popup/popup.js`、`src/background.js` |
 | 唯一的 `fetch` 读取扩展包内的 `_locales/*/messages.json`（`chrome-extension://` 地址），没有任何外部请求；没有 `XMLHttpRequest`、`WebSocket`、`sendBeacon`，也没有 `eval` 或远程脚本；引擎库只写在代码里 | `src/chrome/i18n.js`、`src/lib/engine-catalog.js`；`test/i18n-catalog.test.js` 的 fetch 守门 |
 | 复制按钮用 `navigator.clipboard.writeText` 写入触发网址或 `chrome://settings/searchEngines`；不读剪贴板。设置页“快捷键”一行用 `chrome.commands.getAll` 读当前绑定，按钮用 `tabs.create` 打开 `chrome://extensions/shortcuts` | `src/options/ui.js`、`src/options/shortcut.js` |
 | `incognito: "not_allowed"`：扩展不在无痕窗口运行 | `src/manifest.json` |
@@ -61,7 +61,7 @@ No host access is granted at install. The manifest lists https://*/* and http://
 
 字数：1017
 
-说明：扩展还调用了 `chrome.tabs.create / get / update / query / remove / getCurrent`、`chrome.tabs.onRemoved`、`chrome.windows.get / getLastFocused / create / update` 和 `chrome.commands.getAll / onCommand`。这些 API 不需要声明权限，控制台不会让你写理由；上面的 host 一栏已说明为什么不需要 `tabs` 权限。
+说明：扩展还调用了 `chrome.tabs.create / get / update / query / remove / getCurrent`、`chrome.tabs.onRemoved`、`chrome.windows.get / getLastFocused / getAll / create / update` 和 `chrome.commands.getAll / onCommand`。这些 API 不需要声明权限，控制台不会让你写理由；上面的 host 一栏已说明为什么不需要 `tabs` 权限。
 
 ## (c) Remote code（远程代码）
 
