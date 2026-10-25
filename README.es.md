@@ -10,7 +10,11 @@ Busca en la barra de direcciones o arrastra texto a la barra de pestañas, y Spl
 
 - Funciona al buscar en la barra de direcciones, al arrastrar texto a la barra de pestañas y con la opción «Buscar … en X» («Buscar “…” en X») del menú contextual.
 - Incluye Google, Bing, DuckDuckGo, Perplexity y Kagi, y puedes añadir otros buscadores.
+- El catálogo de buscadores incluye sitios de traducción, enciclopedias, video, mapas y más, pensados para el lado derecho y listos para añadir.
 - Puedes crear varias combinaciones, cada una con su propio atajo. Por ejemplo, escribe «gb palabras clave» para comparar Google y Bing.
+- Haz clic en el botón de la barra de herramientas para cambiar el buscador de la derecha sin volver a buscar.
+- También puedes pulsar un acceso directo de teclado para pasar el lado derecho al siguiente buscador. No viene configurado: elígelo en `chrome://extensions/shortcuts`.
+- Si la ventana es estrecha, el lado derecho se abre en una pestaña en segundo plano junto a la de la izquierda. Puedes desactivarlo en la configuración de Split Search.
 - Los dos lados son pestañas normales, así que conservas tus sesiones iniciadas y la configuración de cada sitio.
 
 ## Instalación
@@ -36,4 +40,4 @@ Si solo quieres usar el atajo, no hace falta elegir la entrada como predetermina
 
 ## Privacidad
 
-Split Search no recopila ningún dato: no usa servidores propios ni incluye estadísticas de uso ni publicidad. Tus términos de búsqueda solo llegan a los dos buscadores que elijas. Más información en la [política de privacidad](https://pine2d.github.io/split-search/privacy) (en inglés).
+Tus datos se quedan en tu dispositivo: Split Search no usa servidores propios ni incluye estadísticas de uso ni publicidad, y tus términos de búsqueda solo llegan a los buscadores que elijas. Los términos de búsqueda y los dos buscadores solo se guardan en la memoria del navegador, para que la ventana emergente y el acceso directo puedan cambiar el lado derecho, y se borran al cerrar el navegador. Más información en la [política de privacidad](https://pine2d.github.io/split-search/privacy) (en inglés).
