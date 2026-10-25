@@ -39,10 +39,19 @@ export async function snapTabs(ctx, tabs) {
   return out;
 }
 
-// 给每个标签写标记，返回快照（之后交给 guardCheck）
+// 给每个标签写标记，返回快照（之后交给 guardCheck）。快照里的标记以 markPage 的返回值为准：
+// 读回出错（catch 成 null）或对不上就判 env——否则“之前”的标记是 null，之后同网址重载读回也是 null，防重载检查就悄悄失效了
 export async function guardTabs(ctx, tabs) {
-  for (const t of tabs) await markPage(ctx, t.targetId);
-  return snapTabs(ctx, tabs);
+  const marks = {};
+  for (const t of tabs) marks[t.id] = await markPage(ctx, t.targetId);
+  const snap = await snapTabs(ctx, tabs);
+  for (const t of tabs) {
+    if (!snap[t.id]) continue; // 目标已经不见了：不进快照（guardProblems 不会报它）
+    if (snap[t.id].mark !== marks[t.id]) {
+      throw Object.assign(new Error(`写完页面标记后读不回来（标签 ${t.id}，读到 ${J(snap[t.id].mark)}），防重载检查不可信`), { kind: "env" });
+    }
+  }
+  return snap;
 }
 
 // 等一会儿（晚到的导航也要看得见）再核对；返回问题列表

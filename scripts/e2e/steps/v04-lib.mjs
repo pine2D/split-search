@@ -45,15 +45,30 @@ export async function tabTargetOf(ctx, url) {
 // 工具栏弹窗目标：triggerAction 打开的弹窗网址就是 popup.html（不带 ?tabId=，那是测试接缝开的普通标签）
 const actionPopups = async ctx => (await pageTargets(ctx.browser)).filter(t => t.url === POPUP_URL);
 
-// 关掉旧弹窗 → triggerAction 作用于 tab 目标（与真点图标一样授予 activeTab）→ 等弹窗目标出现 → 接管它
+// 关掉旧弹窗（最多试 3 轮，每轮等 5 秒；仍在就判 env，不然之后可能接管到旧弹窗、读到上一次的状态）
+// → triggerAction 作用于 tab 目标（与真点图标一样授予 activeTab）→ 等弹窗目标出现 → 接管它
 export async function openActionPopup(ctx, tabTargetId) {
   const { client } = ctx.browser;
-  for (const t of await actionPopups(ctx)) await client.send("Target.closeTarget", { targetId: t.targetId }).catch(() => {});
-  await ctx.browser.waitFor(async () => (await actionPopups(ctx)).length === 0, { timeoutMs: 5000 }).catch(() => {});
+  let gone = false;
+  for (let round = 0; round < 3 && !gone; round++) {
+    for (const t of await actionPopups(ctx)) await client.send("Target.closeTarget", { targetId: t.targetId }).catch(() => {});
+    gone = await ctx.browser.waitFor(async () => (await actionPopups(ctx)).length === 0, { timeoutMs: 5000 }).then(() => true, () => false);
+  }
+  if (!gone) throw Object.assign(new Error("旧的工具栏弹窗关了 3 轮仍在，不打开新弹窗（会读到旧弹窗的状态）"), { kind: "env" });
   await client.send("Extensions.triggerAction", { id: EXT_ID, targetId: tabTargetId });
   const t = await ctx.browser.waitFor(async () => (await actionPopups(ctx))[0], { timeoutMs: 10000, intervalMs: 150 })
     .catch(() => { throw infra("触发扩展图标动作后 10 秒内没有出现弹窗页"); });
   return popupPage(ctx, { targetId: t.targetId });
+}
+
+// 主框架的导航历史网址（没有控制台收集器、拿不到跳转链时的兜底）；读不到返回 null。
+// 注意 go.js 的 location.replace 会换掉 go.html 那一项，所以它只是弱证据，调用方还要核对网址本身
+export async function navHistoryUrls(ctx, targetId) {
+  const { client } = ctx.browser;
+  const sid = await ctx.browser.attach(targetId);
+  try { return (await client.send("Page.getNavigationHistory", {}, sid, { timeoutMs: 3000 })).entries.map(e => e.url); }
+  catch { return null; }
+  finally { await client.send("Target.detachFromTarget", { sessionId: sid }).catch(() => {}); }
 }
 
 // 扩展里读到的标签网址（读不到为 null）：未授权 host 上的标签只有 activeTab 授予后才读得到
@@ -80,9 +95,13 @@ export const ownershipOf = (ctx, tabId) => ctx.ext.eval(`(async () => {
   return (await inspectTab(await chrome.tabs.get(${tabId}), (await loadConfig()).engines)).ownership;
 })()`);
 
-// 子项包装：测试设施问题（kind "infra"）记跳过并写明原因，其余同 sub
+// 子项包装：测试设施问题（kind "infra"，或 auto 步骤里没有重试可用的 "env"，例如 guardTabs 读不回页面标记）
+// 记跳过并写明原因，其余同 sub
 export const subInfra = (name, fn) => sub(name, async () => {
-  try { return await fn(); } catch (e) { if (e.kind === "infra") return { status: "skip", detail: `测试设施问题：${e.message}` }; throw e; }
+  try { return await fn(); } catch (e) {
+    if (e.kind === "infra" || e.kind === "env") return { status: "skip", detail: `测试设施问题：${e.message}` };
+    throw e;
+  }
 });
 
 // 模拟引擎 U（没有授权）的结果页网址；q 是已编码的查询串

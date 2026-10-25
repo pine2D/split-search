@@ -10,7 +10,7 @@ import { resetTabs, navigate, waitState, waitTarget, siteX, nonce, summarize, sl
 import { guarded, addCustom } from "./optpage.mjs";
 import { verdict, readRecords, checkPairRecords, sizeTo, restoreWindows } from "./v03-lib.mjs";
 import { POPUP_URL, popupPage } from "./v03-popup.mjs";
-import { markPage, markIntact, cdpUrl, openActionPopup, requireActiveTab, extTabUrl, openTabIn, ownershipOf, subInfra, tabTargetOf, uUrl, tabCount, notOursProblems } from "./v04-lib.mjs";
+import { markPage, markIntact, cdpUrl, openActionPopup, requireActiveTab, extTabUrl, openTabIn, ownershipOf, subInfra, tabTargetOf, uUrl, tabCount, notOursProblems, navHistoryUrls } from "./v04-lib.mjs";
 import { MORE_ITEMS } from "./v04-complete-more.mjs";
 import { infra } from "../ext-webui.mjs";
 import { msg } from "../i18n.mjs";
@@ -103,8 +103,11 @@ const g5 = ctx => subInfra("(c) G5 降级网址（带 _ss=eu,eb）：没有重�
   await waitTarget(ctx, t => t.targetId === T.targetId && t.url === url, url);
   await waitState(ctx, st => st.tabs.some(t => t.id === T.id && t.status === "complete"), `标签 ${T.id} 加载完成`);
   const p = [];
-  const chain = ctx.consoleCollector?.navChain(T.targetId)?.map(e => e.url);
-  if (chain?.some(u => u.startsWith(GO_PREFIX))) p.push(`跳转链里出现了 go.html：${chain.join(" → ")}`);
+  // 跳转链来自控制台收集器；没有收集器时改看导航历史（弱一些：go.js 的 location.replace 会换掉 go.html 那一项）
+  const collected = ctx.consoleCollector?.navChain(T.targetId)?.map(e => e.url);
+  const chain = collected ?? await navHistoryUrls(ctx, T.targetId);
+  const chainName = collected ? "跳转链" : "导航历史";
+  if (chain?.some(u => u.startsWith(GO_PREFIX))) p.push(`${chainName}里出现了 go.html：${chain.join(" → ")}`);
   if ((await cdpUrl(ctx, T.targetId)) !== url) p.push(`网址应仍是 ${url}（没有被重定向），实际 ${await cdpUrl(ctx, T.targetId)}`);
   const page = await openActionPopup(ctx, await tabTargetOf(ctx, url));
   try {
@@ -114,7 +117,9 @@ const g5 = ctx => subInfra("(c) G5 降级网址（带 _ss=eu,eb）：没有重�
     if (s.complete && (s.suggested !== "eb" || s.completeChoices[0] !== "eb")) {
       p.push(`建议的右侧应是 _ss 里的 eb 并排第一（默认组合右侧是 ${T20_PAIR[1]}），实际建议 ${s.suggested}、顺序 ${s.completeChoices.join(",")}`);
     }
-    const how = chain ? `跳转链 ${chain.length} 条，没有 go.html` : "没有控制台收集器，只核对了网址仍带 _ss";
+    const how = collected ? `跳转链 ${chain.length} 条，没有 go.html`
+      : chain ? `没有控制台收集器，改看导航历史：${chain.length} 条，没有 go.html（go.html 被 location.replace 换掉时看不出，另核对了网址仍带 _ss）`
+        : "没有控制台收集器，导航历史也读不到，只核对了网址仍带 _ss";
     return verdict(p, `${url}：${how}；弹窗建议 eb 并排第一`);
   } finally { await page.close(); }
 });

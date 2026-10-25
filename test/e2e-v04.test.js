@@ -6,7 +6,7 @@ import { GRANT_ORIGINS, HOSTS, UNGRANTED_HOSTS, mockEngineU, mockImageEngine } f
 import { popupStateOf } from "../scripts/e2e/steps/v03-popup.mjs";
 import { MENU_INDEX, MENU_MIN_ITEMS } from "../scripts/e2e/steps/v04-lib.mjs";
 import { settleMenu, MENU_SETTLE_MS } from "../scripts/e2e/steps/v04-lookup-lib.mjs";
-import { guardProblems } from "../scripts/e2e/steps/v04-guard.mjs";
+import { guardProblems, guardTabs } from "../scripts/e2e/steps/v04-guard.mjs";
 
 test("UNGRANTED_HOSTS 不进 HOSTS，也不进 GRANT_ORIGINS（一次性授权不覆盖它们）", () => {
   assert.deepEqual(UNGRANTED_HOSTS, { u: "engine-u.localhost", page: "page-u.localhost", img: "engine-i.localhost" });
@@ -187,3 +187,41 @@ test("guardProblems：标签不见了也报出来；每个被改的标签各一�
   assert.match(p.find(x => x.includes("标签 6")), /被导航/);
   assert.match(p.find(x => x.includes("标签 7")), /不见了/);
 });
+
+// guardTabs 的替身：页面里的 __ssMark 存在 marks；readFails 里的目标读回时抛错
+function guardCtx({ readFails = [] } = {}) {
+  const marks = {};
+  const sids = {};
+  let n = 0;
+  return {
+    marks,
+    browser: {
+      attach: async (targetId) => { const sid = `s${n++}`; sids[sid] = targetId; return sid; },
+      evaluate: async (sid, expr) => {
+        const target = sids[sid];
+        const set = /^\(globalThis\.__ssMark = "([^"]+)"\)$/.exec(expr);
+        if (set) { marks[target] = set[1]; return set[1]; }
+        if (readFails.includes(target)) throw new Error("Runtime.evaluate 超时");
+        return marks[target] ?? null;
+      },
+      client: { send: async (m) => (m === "Target.getTargets"
+        ? { targetInfos: [{ targetId: "TA", url: "http://a/" }, { targetId: "TB", url: "http://b/" }] } : {}) },
+    },
+  };
+}
+
+test("guardTabs：快照里的标记就是 markPage 写进去的值", async () => {
+  const ctx = guardCtx();
+  const snap = await guardTabs(ctx, [{ id: 5, targetId: "TA" }, { id: 6, targetId: "TB" }]);
+  assert.deepEqual(Object.keys(snap), ["5", "6"]);
+  assert.equal(snap[5].url, "http://a/");
+  assert.equal(snap[5].mark, ctx.marks.TA);
+  assert.match(snap[6].mark, /^ss-/);
+});
+
+test("guardTabs：标记读回失败（或对不上）判 env，不留下 mark 为 null 的快照", async () => {
+  const ctx = guardCtx({ readFails: ["TB"] });
+  await assert.rejects(guardTabs(ctx, [{ id: 5, targetId: "TA" }, { id: 6, targetId: "TB" }]),
+    e => e.kind === "env" && /标签 6/.test(e.message));
+});
+

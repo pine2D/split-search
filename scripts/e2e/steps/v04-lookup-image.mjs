@@ -20,7 +20,8 @@ const IMAGE_KEYS = ["imageEngines", "imageEngine"];
 // 右侧应打开的网址：模拟以图搜图引擎展开 http 图片的网址
 const imageRight = port => expandTemplate(mockImageEngine(port).url, imgSrc(port));
 
-// 查询一侧（扩展读不到网址）：CDP 里网址是 right 的页面目标唯一，url 参数与 #got 回显都等于图片网址；返回问题列表
+// 查询一侧（扩展读不到网址）：CDP 里有网址等于 right 的页面目标（right 由 imageRight 按图片网址展开），
+// 引擎页面 #got 回显的 url 参数等于图片网址（引擎实际收到的值）；返回问题列表
 async function imageSideProblems(ctx, right) {
   const src = imgSrc(ctx.port);
   const p = [];
@@ -28,7 +29,6 @@ async function imageSideProblems(ctx, right) {
   if (!t) return p;
   const got = await ctx.browser.waitFor(async () => (await evalIn(ctx, t.targetId, `document.getElementById("got")?.textContent ?? null`)) ?? undefined,
     { timeoutMs: 5000, intervalMs: 200 }).catch(() => null);
-  if (new URL(right).searchParams.get("url") !== src) p.push(`右侧网址的 url 参数应为 ${src}，实际 ${new URL(right).searchParams.get("url")}`);
   if (got !== src) p.push(`engine-i 页面回显应为 ${src}，实际 ${J(got)}`);
   return p;
 }
