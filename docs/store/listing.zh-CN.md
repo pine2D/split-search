@@ -6,9 +6,9 @@
 
 ## 提交前必做（上架阻塞项）
 
-提交时机：**随 v0.2.0 提交**（原定 v0.3，模式 B 取消后改为 v0.2，2026-10-24 用户决定）。提交时带 4 种语言的详情：`en`（默认）、`zh_CN`、`zh_TW`、`es`，见 `docs/superpowers/specs/2026-10-24-i18n-design.md`。
+提交时机：v0.2.0 已于 2026-10-25 首次提交；下一次是**随 v0.3.0 上传**，本清单按 v0.3.0 维护。和 v0.2.0 一样带 4 种语言的详情：`en`（默认）、`zh_CN`、`zh_TW`、`es`，见 `docs/superpowers/specs/2026-10-24-i18n-design.md`。
 
-- [ ] `npm run pack -- --smoke` 生成上传包（`dist/split-search-<版本>.zip`）。首次上传不带 key；之后的版本加 `--store-key <商店公钥文件>`。
+- [ ] `npm run pack -- --store-key ~/.config/split-search/cws-public-key.pem --smoke` 生成 v0.3.0 上传包（`dist/split-search-0.3.0.zip`）。v0.2.0 首次上传不带 key；v0.3.0 起都带商店公钥，商店 ID 保持不变。
 - [x] manifest 图标：方案 3 形状 + c6 pine-fog 配色，已接入 `src/icons/` 并在 manifest 声明；宣传图已用它重渲（见 `assets-spec.md` 第 1 节）。商店图标上传 `src/icons/icon-128.png`。
 - [x] ~~按 4 种语言重拍截图~~ 宣传截图暂时只做英文（2026-10-24 用户决定）：`assets/raw/en/` 已用带新图标的 v0.2 扩展、英文 Chrome 界面重拍，`--locale en` 已重渲（见 `assets-spec.md` 第 4 节）。
 - [ ] 上传截图、小宣传图、顶部宣传图时只用 `assets/store/en/`。CWS 对所有语言显示同一组截图，除非为某种语言另行上传本地化截图；其他语言（zh_CN、zh_TW、es）的截图暂不维护，`assets/store/zh_CN|zh_TW|es/` 里仍是中文浏览器界面，不要上传。
@@ -90,6 +90,5 @@ Split Search
 
 ## 语言
 
-- 提交时控制台有 4 种语言的详情：英文 `en`（默认语言）、简体中文 `zh-CN`、繁体中文 `zh-TW`、西班牙语 `es`，对应 v0.2 加入扩展包的 `_locales/en|zh_CN|zh_TW|es`。
+- 控制台有 4 种语言的详情：英文 `en`（默认语言）、简体中文 `zh-CN`、繁体中文 `zh-TW`、西班牙语 `es`，对应 v0.2 加入扩展包的 `_locales/en|zh_CN|zh_TW|es`。
 - 设置页可切换这 4 种语言；扩展简介、工具栏按钮的提示跟随浏览器语言，不随设置页选择。
-- 繁体中文和西班牙语详情尚未写（见“提交前必做”的待办）。
