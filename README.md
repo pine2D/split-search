@@ -1,31 +1,39 @@
 # Split Search
 
-![Chrome 拆分视图中，左侧 DuckDuckGo、右侧 Bing 同时显示“rust programming”的搜索结果](assets/readme/hero.png)
+**English** | [简体中文](README.zh-CN.md) | [繁體中文](README.zh-TW.md) | [Español](README.es.md)
 
-在地址栏输入关键词，或把文字拖到标签栏，直接用两个搜索引擎（如 Google 和 Bing）打开 Chrome 拆分视图，左右对比结果。两侧都是真实的标签页，保留各站登录状态。
+Search from the address bar or drag text to the tab strip, and Split Search opens results from two search engines side by side in Chrome’s split view, so you can compare them.
 
-## 环境要求
+![Chrome split view with DuckDuckGo on the left and Bing on the right, both showing results for “rust programming”](assets/readme/en/hero.png)
 
-Chrome 155 或更高版本（需要拆分视图 API）。
+## Features
 
-## 安装
+- Works from the address bar, from text dragged to the tab strip, and from the Search [engine] for “…” item in Chrome’s right-click menu
+- Google, Bing, DuckDuckGo, Perplexity and Kagi are built in, and you can add other search engines
+- Set up several engine pairs, each with its own shortcut. For example, type “gb your search” to compare Google and Bing
+- Both sides are regular tabs, so you stay signed in and your site settings still apply
 
-1. 打开 `chrome://extensions`，开启右上角“开发者模式”。
-2. 点“加载未打包的扩展程序”，选择本项目的 `src` 目录。
-3. 安装后会自动打开设置页。
+## Install
 
-## 三步上手
+Requires Chrome 155 or later.
 
-1. **授权**：在设置页给要用的搜索引擎点“授权”。
-2. **复制触发网址**：选好左右两个引擎，复制生成的触发网址。
-3. **添加并设为默认**：打开 `chrome://settings/searchEngines`，在“网站搜索”里添加，网址粘贴刚复制的内容，添加时填写快捷字词，再在该条目的菜单里选“设为默认选项”。设为默认后，地址栏、拖拽文字到标签栏、右键“使用X搜索‘…’”都会打开拆分视图；不设为默认时，只有在地址栏输入“快捷字词 关键词”才会打开拆分视图，拖拽和右键仍按原来的默认引擎搜索。
+1. Download this repository, open `chrome://extensions` and turn on “Developer mode” in the top-right corner.
+2. Click “Load unpacked” and select the `src` folder in the repository.
+3. The settings page opens automatically after installation.
 
-![工作方式：在地址栏输入或把文字拖到标签栏，Chrome 拼出触发网址（左侧引擎的真实搜索网址加 _ss 标记），扩展接管后打开拆分视图；扩展未生效时，它就是一次普通的左侧引擎搜索](assets/readme/how-it-works.png)
+## Setup
 
-在其他设备或无痕式窗口中，触发网址会退化为普通的左侧引擎搜索，不会出错。
+1. **Grant access**: on the settings page, click “Grant access” for each engine you want to use.
+2. **Copy the URL**: under “Default pair”, pick a left and a right engine, then copy the generated URL from “Add to Chrome”.
+3. **Add it and make it default**: enter `chrome://settings/searchEngines` in the address bar. Under “Site search”, click “Add”. Enter any name and a shortcut of your choice (for example, `gb`), paste the URL you copied into “URL with %s in place of query” and click “Add”. Then open the ⋮ menu next to the new entry and choose “Make default”.
 
-## 语言
+If you only want the shortcut, skip “Make default” and type “shortcut + space + search terms” in the address bar. Dragged text and right-click searches then still use your current default search engine.
 
-界面支持 English、简体中文、繁體中文、Español 四种语言，默认跟随浏览器，可在设置页顶部的“语言”下拉框里切换。
+## Good to know
 
-限制：扩展简介、工具栏按钮的提示和 `chrome://extensions` 里的描述由浏览器决定，跟随浏览器或商店的语言，不随设置页里的选择变化。
+- In Incognito windows, on other devices, or when the extension isn’t active, you get a normal search.
+- After you choose “Make default”, the address bar no longer shows search suggestions.
+
+## Privacy
+
+Split Search collects no data. It has no servers, analytics or ads, and your search terms go only to the two search engines you chose. Read the [privacy policy](https://pine2d.github.io/split-search/privacy).

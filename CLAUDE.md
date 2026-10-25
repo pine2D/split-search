@@ -67,7 +67,7 @@ Chrome MV3 扩展：用户在地址栏搜索，或把文字拖到标签栏时，
 ```
 split-search/
 ├── CLAUDE.md                     项目约定
-├── README.md                     面向用户的简介与安装
+├── README.md                     面向用户的简介与安装（英文，默认）；README.zh-CN.md / README.zh-TW.md / README.es.md 是同结构的其他语言版，改一份四份同改，标题下的语言切换行保持一致
 ├── .gitignore
 ├── package.json                  "test": "node --test"、"e2e": "node scripts/e2e/run.mjs"、"pack": "node scripts/pack.mjs"
 ├── dist/                         发布 ZIP（npm run pack 生成，不进 git）
