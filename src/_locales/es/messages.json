@@ -874,5 +874,35 @@
         "example": "YouTube"
       }
     }
+  },
+  "options_add_from_catalog": {
+    "message": "Añadir del catálogo",
+    "description": "Button next to 'Add engine' that opens the engine catalog dialog."
+  },
+  "catalog_title": {
+    "message": "Catálogo de motores",
+    "description": "Title of the engine catalog dialog."
+  },
+  "catalog_hint": {
+    "message": "Sitios que funcionan bien en el lado derecho de la vista dividida. Al añadirlos son motores personalizados normales: puedes editarlos o eliminarlos.",
+    "description": "Short intro in the engine catalog dialog. Custom engine = user-defined search engine entry."
+  },
+  "catalog_add": {
+    "message": "Añadir",
+    "description": "Button on a catalog row that adds the engine."
+  },
+  "catalog_added": {
+    "message": "Añadido",
+    "description": "Disabled button on a catalog row whose engine is already in the list."
+  },
+  "notice_catalog_added": {
+    "message": "«$NAME$» añadido desde el catálogo.",
+    "description": "Notice after adding an engine from the catalog. $NAME$ is the engine name.",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "YouTube"
+      }
+    }
   }
 }

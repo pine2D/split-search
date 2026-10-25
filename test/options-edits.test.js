@@ -150,3 +150,10 @@ test("editEngine：模板 origin 变了就去掉 leftDiscouraged，没变则保�
   assert.equal(same.patch.customEngines[0].leftDiscouraged, true);
   assert.equal(mergeConfig({ ...raw, ...moved.patch }).engines.find(e => e.id === "youtube").leftDiscouraged, undefined);
 });
+
+test("needsGrantWarning：只有能作左侧且未授权才提示", async () => {
+  const { needsGrantWarning } = await import("../src/options/edits.js");
+  assert.equal(needsGrantWarning({ url: "https://www.google.com/maps/search/%s" }, false), false);
+  assert.equal(needsGrantWarning({ url: "https://a.com/?q=%s" }, false), true);
+  assert.equal(needsGrantWarning({ url: "https://a.com/?q=%s" }, true), false);
+});

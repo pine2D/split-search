@@ -874,5 +874,35 @@
         "example": "YouTube"
       }
     }
+  },
+  "options_add_from_catalog": {
+    "message": "从引擎库添加",
+    "description": "Button next to 'Add engine' that opens the engine catalog dialog."
+  },
+  "catalog_title": {
+    "message": "引擎库",
+    "description": "Title of the engine catalog dialog."
+  },
+  "catalog_hint": {
+    "message": "这些网站适合放在分屏右侧。添加后就是普通的自定义引擎，可以修改或删除。",
+    "description": "Short intro in the engine catalog dialog. Custom engine = user-defined search engine entry."
+  },
+  "catalog_add": {
+    "message": "添加",
+    "description": "Button on a catalog row that adds the engine."
+  },
+  "catalog_added": {
+    "message": "已添加",
+    "description": "Disabled button on a catalog row whose engine is already in the list."
+  },
+  "notice_catalog_added": {
+    "message": "已从引擎库添加“$NAME$”。",
+    "description": "Notice after adding an engine from the catalog. $NAME$ is the engine name.",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "YouTube"
+      }
+    }
   }
 }

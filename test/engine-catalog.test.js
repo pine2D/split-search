@@ -62,3 +62,24 @@ test("isAdded 按展开后的模板比较", () => {
   const wiki = CATALOG.find(e => e.id === "wikipedia");
   assert.equal(isAdded(wiki, "es", [{ url: catalogUrl(wiki, "en") }]), false);
 });
+
+test("uniqueId 的基础 id 不合法时抛错", () => {
+  assert.throws(() => uniqueId("Bad_Id", () => false));
+  assert.throws(() => uniqueId("x".repeat(21), () => false));
+});
+
+test("uniqueId 尝试次数有上限", () => {
+  assert.throws(() => uniqueId("abc", () => true), /uniqueId/);
+});
+
+test("catalogUrl 遇到未知界面语言时 <target> 和 <lang> 都退回 en", () => {
+  const by = Object.fromEntries(CATALOG.map(e => [e.id, e]));
+  assert.equal(catalogUrl(by.gtranslate, "fr"), "https://translate.google.com/?sl=auto&tl=en&text=%s&op=translate");
+  assert.equal(catalogUrl(by.wikipedia, "fr"), "https://en.wikipedia.org/w/index.php?search=%s&title=Special:Search");
+});
+
+test("每个条目在每种界面语言下恰好一个 %s", () => {
+  for (const locale of ["en", "zh_CN", "zh_TW", "es"]) {
+    for (const e of CATALOG) assert.equal(catalogUrl(e, locale).split("%s").length - 1, 1, `${e.id}@${locale}`);
+  }
+});

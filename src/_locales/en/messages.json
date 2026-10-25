@@ -874,5 +874,35 @@
         "example": "YouTube"
       }
     }
+  },
+  "options_add_from_catalog": {
+    "message": "Add from catalog",
+    "description": "Button next to 'Add engine' that opens the engine catalog dialog."
+  },
+  "catalog_title": {
+    "message": "Engine catalog",
+    "description": "Title of the engine catalog dialog."
+  },
+  "catalog_hint": {
+    "message": "Search sites that work well on the right side of a split. Added engines are ordinary custom engines: you can edit or delete them.",
+    "description": "Short intro in the engine catalog dialog. Custom engine = user-defined search engine entry."
+  },
+  "catalog_add": {
+    "message": "Add",
+    "description": "Button on a catalog row that adds the engine."
+  },
+  "catalog_added": {
+    "message": "Added",
+    "description": "Disabled button on a catalog row whose engine is already in the list."
+  },
+  "notice_catalog_added": {
+    "message": "“$NAME$” added from the catalog.",
+    "description": "Notice after adding an engine from the catalog. $NAME$ is the engine name.",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "YouTube"
+      }
+    }
   }
 }

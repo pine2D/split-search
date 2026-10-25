@@ -4,8 +4,10 @@ import { mergeConfig } from "../lib/engines.js";
 import { h, ht, notify, errorText, authButton, option, isGranted, joinSentences } from "./ui.js";
 import {
   addEngine, editEngine, hideEngine, restoreEngine, deleteEngine, setDefaultPair, moveId, canBeLeft, setNarrowFallback,
+  addFromCatalog, needsGrantWarning,
 } from "./edits.js";
 import { renderEngineList, renderHiddenList, setupEngineDialog, confirmRemoval } from "./engine-list.js";
+import { setupCatalogDialog, refreshCatalog } from "./catalog.js";
 import { renderTriggers, setupGuide } from "./guide.js";
 import { applyRichText, renderLangPicker } from "./locale-ui.js";
 import { initI18n, applyI18n, setLocale, currentPref, currentLocale, t } from "../chrome/i18n.js";
@@ -76,10 +78,10 @@ async function saveEngine(compute, okKey) {
     return { ok: false, errors: { form: t("notice_save_failed", errorText(err)) } };
   }
   if (!result.ok) return result;
-  const granted = await isGranted(result.engine);
-  if (!granted) attention.add(result.engine.id);
+  const warn = needsGrantWarning(result.engine, await isGranted(result.engine));
+  if (warn) attention.add(result.engine.id);
   const done = t(okKey, result.engine.name);
-  notify(granted ? done : joinSentences(done, t("notice_needs_grant")), granted ? "ok" : "warn", { sticky: !granted });
+  notify(warn ? joinSentences(done, t("notice_needs_grant")) : done, warn ? "warn" : "ok", { sticky: warn });
   if (result.templateChanged) {
     notify(t("notice_template_changed", result.engine.name), "warn", { sticky: true });
   }
@@ -90,6 +92,8 @@ async function saveEngine(compute, okKey) {
 const actions = {
   add: (input) => saveEngine(raw => addEngine(raw, input), "notice_added"),
   edit: (id, input) => saveEngine(raw => editEngine(raw, id, input), "notice_saved"),
+  // 引擎库条目按右侧用途处理：不进 attention，不显示“需授权”
+  addFromCatalog: (entry) => act(raw => addFromCatalog(raw, entry, currentLocale()), ["notice_catalog_added", entry.name]),
   hide(e) {
     if (confirmRemoval("engine_confirm_hide", e)) act(raw => hideEngine(raw, e.id), ["notice_hidden", e.name]);
   },
@@ -180,6 +184,7 @@ async function render() {
   if (seq !== renderSeq) return; // 已有更新的渲染
   for (const id of attention) if (granted.get(id)) attention.delete(id);
   current = cfg;
+  refreshCatalog(cfg);
   applyStatic();
   syncLangPicker(cfg.uiLocale);
   const ctx = { cfg, granted, attention, actions, refresh: render };
@@ -240,6 +245,7 @@ function pairSection(cfg, byId, granted) {
 // 对话框和“复制地址”按钮要用 t()，等目录加载完再建；下面的监听只调 render()，render 自己 await i18nReady
 i18nReady.then(() => {
   setupEngineDialog(actions);
+  setupCatalogDialog(actions);
   setupGuide();
 });
 chrome.storage.onChanged.addListener((_changes, area) => { if (area === "sync") render(); });

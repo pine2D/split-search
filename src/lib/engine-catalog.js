@@ -46,19 +46,22 @@ const LANG = { en: "en", zh_CN: "zh", zh_TW: "zh", es: "es" };
 
 export function catalogUrl(entry, locale) {
   const url = entry.url
-    .replaceAll("<target>", entry.targets?.[locale] ?? "")
+    .replaceAll("<target>", entry.targets?.[locale] ?? entry.targets?.en ?? "")
     .replaceAll("<lang>", LANG[locale] ?? "en");
   return url + (entry.suffix?.[locale] ?? "");
 }
 
-// base、base-2、base-3……；截断 base 让总长不超过 20
+// base、base-2、base-3……；截断 base 让总长不超过 20。base 不合法或 99 次都冲突就抛错。
+const MAX_TRIES = 99;
 export function uniqueId(base, taken) {
+  if (!ID_PATTERN.test(base)) throw new Error("uniqueId: invalid base id");
   if (!taken(base)) return base;
-  for (let n = 2; ; n++) {
+  for (let n = 2; n <= MAX_TRIES; n++) {
     const suffix = "-" + n;
     const id = base.slice(0, 20 - suffix.length) + suffix;
     if (ID_PATTERN.test(id) && !taken(id)) return id;
   }
+  throw new Error("uniqueId: no free id");
 }
 
 export function isAdded(entry, locale, engines) {

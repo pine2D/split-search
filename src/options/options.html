@@ -59,7 +59,10 @@
     <section class="card" aria-labelledby="engines-title">
       <div class="section-head">
         <h2 id="engines-title" data-i18n="options_engines_title"></h2>
-        <button type="button" id="add-engine" class="btn btn-primary btn-small" data-i18n="options_add_engine"></button>
+        <div class="section-actions">
+          <button type="button" id="catalog-open" class="btn btn-small" data-i18n="options_add_from_catalog"></button>
+          <button type="button" id="add-engine" class="btn btn-primary btn-small" data-i18n="options_add_engine"></button>
+        </div>
       </div>
       <p id="engines-hint" class="hint"></p>
       <div id="engines"></div>
@@ -69,6 +72,15 @@
   </main>
 
   <div id="notices" class="notices" aria-live="polite"></div>
+
+  <dialog id="catalog-dialog" aria-labelledby="catalog-title">
+    <h2 id="catalog-title" data-i18n="catalog_title"></h2>
+    <p class="hint" data-i18n="catalog_hint"></p>
+    <div id="catalog-body"></div>
+    <div class="dialog-actions">
+      <button type="button" id="catalog-close" class="btn" data-i18n="common_close"></button>
+    </div>
+  </dialog>
 
   <dialog id="engine-dialog" aria-labelledby="dlg-title">
     <form id="engine-form" novalidate>

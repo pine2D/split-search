@@ -15,6 +15,11 @@ export function canBeLeft(engine) {
   return v.ok && v.canBeLeft;
 }
 
+// 只有能作左侧、又还没授权的引擎才需要持久的“需授权”警告；右侧专用引擎的授权只是兜底
+export function needsGrantWarning(engine, granted) {
+  return !granted && canBeLeft(engine);
+}
+
 // 网址输入框的即时说明；msg 是 t() 的参数：[key, ...subs]
 export function describeTemplate(url) {
   const v = validateTemplate((url ?? "").trim());
