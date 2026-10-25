@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
-import { parsePak, findIds } from "../scripts/i18n/chrome-terms.mjs";
+import { parsePak, findIds, TERMS } from "../scripts/i18n/chrome-terms.mjs";
 
 function buildPak(version) {
   const a = Buffer.from("Split view");
@@ -40,4 +40,16 @@ test("本机 Chrome 155 的 zh-CN 把 Split view 译作拆分视图", (t) => {
   const ids = findIds(en, /^Split view$/);
   assert.ok(ids.length > 0);
   assert.ok(ids.some((id) => zh.get(id)?.toString("utf8") === "拆分视图"));
+});
+
+test("术语表含键盘快捷键；本机 Chrome 的快捷键页标题与项目文案一致", (t) => {
+  const term = TERMS.find(x => x.id === "keyboard-shortcuts");
+  assert.ok(term && term.en.test("Keyboard shortcuts") && term.en.test("Keyboard shortcut"));
+  const dir = "/opt/google/chrome/locales";
+  if (!["en-US", "zh-CN", "zh-TW", "es"].every(l => existsSync(`${dir}/${l}.pak`))) return t.skip("无本机 Chrome");
+  const [en, zhCN, zhTW, es] = ["en-US", "zh-CN", "zh-TW", "es"].map(l => parsePak(readFileSync(`${dir}/${l}.pak`)));
+  const ids = findIds(en, /^Keyboard shortcuts$/);
+  assert.ok(ids.length > 0);
+  const want = [[zhCN, "键盘快捷键"], [zhTW, "鍵盤快速鍵"], [es, "Accesos directos"]];
+  for (const [pak, text] of want) assert.ok(ids.some(id => pak.get(id)?.toString("utf8") === text), text);
 });

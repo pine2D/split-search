@@ -2,7 +2,7 @@
 
 - Chrome 版本：155.0.8059.84（`/opt/google/chrome/google-chrome --version`）
 - 生成命令：`node scripts/i18n/chrome-terms.mjs [--chrome-dir /opt/google/chrome]`（读 `locales/*.pak`，以 en-US 原文为锚对齐资源 id，去掉 `&` 加速键标记）
-- 生成日期：2026-10-24
+- 生成日期：2026-10-24；2026-10-25 用 Chrome 156.0.8078.47 重新生成，原有各行结果不变，新增“键盘快捷键”一行（`chrome://extensions/shortcuts` 页标题，资源 8097；单数 Keyboard shortcut 另有 2116/6866/6906，zh-CN、zh-TW、es 相同，es-419 为 Combinación de teclas）。
 - 用途：各语言的功能术语与 Chrome 对应语言界面一字不差，以本表为准。
 - 加粗：项目现有写法与 Chrome 不符、必须改的词。
 - 计划里预先核实的值与生成结果全部一致，无需改动。
@@ -28,10 +28,12 @@
 | 重新加载 | Reload | 重新加载 | 重新載入 | Volver a cargar | Volver a cargar |
 | 网站访问权限 | Site access | **有权访问的网站** | 網站存取權 | Acceso a sitios | Acceso al sitio |
 | 右键“在 X 中搜索” | Search $1 for “$2” | **使用$1搜索“$2”** | 透過 $1 搜尋「$2」 | Buscar $2 en $1 | Buscar "$2" en $1 |
+| 键盘快捷键（快捷键页） | Keyboard shortcuts | 键盘快捷键 | 鍵盤快速鍵 | Accesos directos | Accesos directos |
 
 ## 说明
 
 - “地址栏”“标签栏”在 Chrome 里没有独立标签，只在句中出现，已用句子确认（例如 zh-CN“在地址栏中输入相应的快捷字词”、“试试收起标签栏”；zh-TW「網址列」「分頁列」；es「barra de direcciones」「barra de pestañas」）。zh-TW 个别句子写作「分頁標籤列」，以「分頁列」为主流。
 - es 与 es-419 的差异：Make default（Elegir / Configurar como predeterminado）、Site search（Búsquedas en el sitio / Búsqueda en sitios）、Add site search（Añadir / Agrega）、Developer mode、Load unpacked、Site access、Search $1 for “$2”（es 为 `Buscar $2 en $1`，参数顺序与 en 相反，翻译占位符时要留意）。本项目只出 es（中性国际西语），es-419 仅供对照。
 - 同一英文原文命中多个资源 id（如 Site search 6890/6896、Make default 6478/6907/7658、Reload 共 16 处）时各 id 译文一致，表中只列一行；完整 id 列表用生成命令查看。
+- 键盘快捷键：页面标题（复数 Keyboard shortcuts）zh-CN“键盘快捷键”、zh-TW「鍵盤快速鍵」、es「Accesos directos」；单个快捷键 es 是「Acceso directo」。项目里“快捷键”指键盘快捷键，网站搜索的关键字叫“快捷字词”（zh-TW「搜尋捷徑」、es「Atajo」），两者不混用。资源 7611 各语言都是英文原文（未翻译的内部字符串），不作依据。
 - `Search $1 for “$2”` 在 zh-CN 中占位符紧贴汉字（`使用$1搜索“$2”`），没有空格。

@@ -47,6 +47,7 @@ export const TERMS = [
   { id: "reload", en: /^Reload$/, note: "重新加载" },
   { id: "site-access", en: /^Site access$/, note: "网站访问权限" },
   { id: "search-for", en: /^&Search \$1 for “\$2”$/, note: "右键“在 X 中搜索”" },
+  { id: "keyboard-shortcuts", en: /^Keyboard shortcuts?$/, note: "键盘快捷键（chrome://extensions/shortcuts 页）" },
 ];
 
 const LOCALES = ["en-US", "zh-CN", "zh-TW", "es", "es-419"];
