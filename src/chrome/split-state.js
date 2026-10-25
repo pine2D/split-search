@@ -26,11 +26,11 @@ export async function readRecord(tabId) {
   }
 }
 
-// 一次 set 写两个方向，不做读-改-写
-export function writePair({ a, b, splitViewId, mode, engineA, engineB, query }) {
+// 一次 set 写两个方向，不做读-改-写。roleA/roleB/input 原样交给 makeRecords（不传时是搜索对）
+export function writePair({ a, b, splitViewId, mode, engineA, engineB, query, roleA, roleB, input }) {
   return serial(async () => {
     try {
-      await chrome.storage.session.set(makeRecords({ a, b, splitViewId, mode, engineA, engineB, query }));
+      await chrome.storage.session.set(makeRecords({ a, b, splitViewId, mode, engineA, engineB, query, roleA, roleB, input }));
     } catch (err) {
       log("failed to record the split tab pair", err);
     }

@@ -25,7 +25,7 @@ async function readSplitViewId(aId, bId) {
 
 // 分屏 API 已经成功返回后的复核：第一次读到不一致时，稍等再读一次（标签状态可能还没更新）。
 const CONFIRM_RETRY_MS = 150;
-async function confirmedSplitViewId(aId, bId) {
+export async function confirmedSplitViewId(aId, bId) {
   const v = await readSplitViewId(aId, bId);
   if (v !== -1) return v;
   await new Promise(r => setTimeout(r, CONFIRM_RETRY_MS));
@@ -34,11 +34,11 @@ async function confirmedSplitViewId(aId, bId) {
   return again;
 }
 
-// 在 withTab 右侧相邻位置新建标签，split 为 true 时尽量与 withTab 组成分屏。
+// 在 withTab 右侧相邻位置新建标签，split 为 true 时尽量与 withTab 组成分屏；active 决定新标签是否切到前台。
 // 分屏 API 抛错时 Chrome 会自己关掉失败的新标签，这里退化为普通相邻标签。
 // 返回 { tab, splitViewId }：splitViewId 为 -1 表示没有建成分屏，调用方不写 split 记录。
-export async function createPaired(url, withTab, { split = true } = {}) {
-  const base = { url, index: withTab.index + 1, windowId: withTab.windowId, active: false };
+export async function createPaired(url, withTab, { split = true, active = false } = {}) {
+  const base = { url, index: withTab.index + 1, windowId: withTab.windowId, active };
   if (!split) return { tab: await chrome.tabs.create(base), splitViewId: -1 };
   let tab;
   try {
@@ -51,19 +51,25 @@ export async function createPaired(url, withTab, { split = true } = {}) {
 }
 
 // 新建的一对写记录：真分屏写 split；窄窗口降级（adjacent）写 adjacent 记录；
-// 想分屏却退化成普通标签时不写。left 显示 leftId，right 显示 rightId。
-async function recordNewPair(left, paired, { leftId, rightId, query }, adjacent) {
-  if (paired.splitViewId === -1 && !adjacent) return;
+// 想分屏却退化成普通标签时不写。left 显示 leftId、角色 roleA，right 显示 rightId、角色 roleB；
+// input 只有查询对（page/lookup）才传。返回写下的 mode，没写返回 "plain"。
+async function recordNewPair(left, paired, { leftId, rightId, query, roleA, roleB, input }, adjacent) {
+  if (paired.splitViewId === -1 && !adjacent) return "plain";
+  const mode = adjacent ? "adjacent" : "split";
   await writePair({
-    a: left.id, b: paired.tab.id, splitViewId: paired.splitViewId, mode: adjacent ? "adjacent" : "split",
-    engineA: leftId, engineB: rightId, query,
+    a: left.id, b: paired.tab.id, splitViewId: paired.splitViewId, mode,
+    engineA: leftId, engineB: rightId, query, roleA, roleB, input,
   });
+  return mode;
 }
 
-// 在 left 右侧新建右侧标签并记录；窄窗口时不分屏，改记相邻对。
-async function openRight(left, rightUrl, narrow, ids) {
-  const paired = await createPaired(rightUrl, left, { split: !narrow });
-  await recordNewPair(left, paired, ids, narrow);
+// 在 left 右侧新建右侧标签并记录；窄窗口时不分屏，改记相邻对。go.html 和 ⑦ 用搜索对的角色（缺省），
+// ② ⑧ 传 page/lookup 与 input；active 为 true 时新标签切到前台。
+// 返回 "split"（建成分屏）、"adjacent"（窄窗口，相邻对）或 "plain"（想分屏却退化成普通标签，不写记录）。
+export async function openRight(left, rightUrl, narrow,
+  { leftId, rightId, query, roleA = "search", roleB = "search", input, active = false }) {
+  const paired = await createPaired(rightUrl, left, { split: !narrow, active });
+  return recordNewPair(left, paired, { leftId, rightId, query, roleA, roleB, input }, narrow);
 }
 
 // 当前标签不在分屏中：右侧新建并与当前标签组成分屏（窄窗口则只在旁边开后台标签），当前标签打开左侧。
@@ -83,9 +89,11 @@ async function refreshPair({ tab, peer, leftUrl, rightUrl, leftId, rightId, quer
     await clearPair(tab.id);
     return { replaceWith: tabIsLeft ? leftUrl : rightUrl };
   }
+  // 两侧都写成搜索对：在查询对的 page 一侧运行时，用户已经在这一侧发起了搜索，整对改写成 search（spec 3.1）
   await writePair({
     a: tab.id, b: peer.id, splitViewId, mode: splitViewId !== -1 ? "split" : "adjacent",
     engineA: tabIsLeft ? leftId : rightId, engineB: tabIsLeft ? rightId : leftId, query,
+    roleA: "search", roleB: "search",
   });
   return { replaceWith: tabIsLeft ? leftUrl : rightUrl };
 }

@@ -5,7 +5,8 @@ import {
   splitPairs, trigger, siteX, expectPair, findPair, nonce, resetTabs, navigate, openTab, waitState,
   waitTarget, pageTargets, evalIn, GO_PREFIX, summarize,
 } from "./util.mjs";
-import { T5_RESTART, retrigger, ids, fmt } from "./flow-restart.mjs";
+import { T5_RESTART, retrigger } from "./flow-restart.mjs";
+import { ids, fmt } from "./v03-lib.mjs";
 import { FLOW_STEPS_2 } from "./flow-more.mjs";
 import { msg } from "../i18n.mjs";
 
@@ -51,7 +52,7 @@ const CORE_EXISTING = {
 };
 
 const T5 = {
-  id: "T5", title: "本扩展分屏内再次触发：就地更新；重启后仍就地更新", kind: "auto", needs: [], timeoutMs: 180000, restarts: true,
+  id: "T5", title: "本扩展分屏内再次触发：就地更新；重启后在旁边新开一对", kind: "auto", needs: [], timeoutMs: 180000, restarts: true,
   async run(ctx) {
     const { port } = ctx;
     await resetTabs(ctx);

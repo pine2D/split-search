@@ -1,13 +1,13 @@
 // 分屏流程自动步骤（二）：再次触发的公共断言、T5 的重启子项、T10（后退/前进与会话恢复）。
+// ids、fmt、expectForeign 在 v03-lib.mjs（放在那里避免 v03-lib ↔ flow-restart 循环引用）。
 // 重启经 ctx.restartBrowser（run.mjs 提供）：同一配置 + --restore-last-session，storage 随配置保留。
 import { EXT_ID } from "../config.mjs";
 import {
   splitPairs, trigger, expectPair, findPair, resetTabs, navigate, waitState, waitTarget, pageTargets,
   evalIn, GO_PREFIX, sleep, summarize,
 } from "./util.mjs";
+import { ids, fmt, expectForeign } from "./v03-lib.mjs";
 
-export const ids = pair => pair.map(t => t.id).join("｜");
-export const fmt = pair => `${pair[0].url} ｜ ${pair[1].url}`;
 const OPT_PREFIX = `chrome-extension://${EXT_ID}/options/`;
 // 标签数不算设置页（它是扩展 API 的执行环境，重启后可能被重建）；go.html 仍计入
 const countTabs = st => st.tabs.filter(t => !(t.url || "").startsWith(OPT_PREFIX)).length;
@@ -40,16 +40,17 @@ async function restartAndFind(ctx, q) {
   } catch (e) { return { pair: null, why: e.message }; }
 }
 
-// T5 的重启子项：恢复后在左侧再触发一次，应就地更新（此时 storage.session 已清空，靠兜底判定）
+// T5 的重启子项：恢复后在左侧再触发一次。此时 storage.session 已清空，两侧都没有记录，兜底最多判出
+// fallback-own，按 foreign 处理（spec 3.1“兜底”）：恢复的分屏两侧都不动，在右边新开一对
 export async function T5_RESTART(ctx, qPrev, qNext, prevSplitViewId) {
-  const name = `重启浏览器后在左侧触发 ${qNext}`;
+  const name = "重启后在左侧触发：不覆盖，在旁边新开一对";
   const { pair, why } = await restartAndFind(ctx, qPrev);
-  if (!pair) return { name, status: "skip", detail: `重启后分屏没有恢复，无法验证就地更新（${why}）` };
+  if (!pair) return { name, status: "skip", detail: `重启后分屏没有恢复，无法验证（${why}）` };
   // 恢复的标签可能还没加载完，等两侧加载完成再触发
   await waitState(ctx, st => findPair(st, ctx.port, qPrev), "恢复的分屏加载完成", { timeoutMs: 30000 });
-  const r = await retrigger(ctx, pair, "left", qNext);
+  const r = await expectForeign(ctx, pair[0], pair[1], qNext);
   return { name, status: r.problems.length ? "fail" : "pass",
-    detail: r.problems.length ? r.problems.join("；") : `分屏已恢复（splitViewId ${pair[0].splitViewId}，${pair[0].splitViewId === prevSplitViewId ? "与重启前相同" : `重启前为 ${prevSplitViewId}`}），就地更新为 ${fmt(r.pair)}` };
+    detail: r.problems.length ? r.problems.join("；") : `分屏已恢复（splitViewId ${pair[0].splitViewId}，${pair[0].splitViewId === prevSplitViewId ? "与重启前相同" : `重启前为 ${prevSplitViewId}`}），两侧 ${fmt(pair)} 未被改写；在旁边新开一对 ${ids(r.now)}：${fmt(r.now)}` };
 }
 
 // 一段观察期内分屏数与标签数都不变、也没有 go.html 页面

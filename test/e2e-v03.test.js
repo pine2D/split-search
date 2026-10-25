@@ -6,8 +6,8 @@ import { expectPair } from "../scripts/e2e/steps/util.mjs";
 const L = { id: 11 }, R = { id: 12 };
 const want = { mode: "split", splitViewId: 7, engines: ["ea", "eb"], query: "a b" };
 const good = () => ({
-  11: { peer: 12, splitViewId: 7, mode: "split", engine: "ea", query: "a b" },
-  12: { peer: 11, splitViewId: 7, mode: "split", engine: "eb", query: "a b" },
+  11: { peer: 12, splitViewId: 7, mode: "split", role: "search", engine: "ea", query: "a b" },
+  12: { peer: 11, splitViewId: 7, mode: "split", role: "search", engine: "eb", query: "a b" },
 });
 
 test("queryOf: + 还原为空格并解码", () => {
@@ -29,8 +29,31 @@ test("checkPairRecords: 缺记录、旧版裸数字、字段不符、多余字�
   assert.match(p, /右侧记录 splitViewId 应为 7，实际 8/);
   assert.match(p, /左侧记录 engine 应为 "ea"，实际 "eb"/);
   const extra = good(); extra[11].side = "left";
-  assert.match(checkPairRecords(extra, L, R, want).join(), /左侧记录字段应为 engine,mode,peer,query,splitViewId/);
+  assert.match(checkPairRecords(extra, L, R, want).join(), /左侧记录字段应为 engine,mode,peer,query,role,splitViewId/);
   assert.equal(checkPairRecords(undefined, L, R, want).length, 2);
+});
+
+test("checkPairRecords: 缺 role（v0.3 形状）报字段不符；role 不对报出来", () => {
+  const bare = good(); delete bare[11].role;
+  assert.match(checkPairRecords(bare, L, R, want).join("；"), /左侧记录字段应为 engine,mode,peer,query,role,splitViewId，实际 engine,mode,peer,query,splitViewId/);
+  const wrong = good(); wrong[12].role = "lookup";
+  assert.match(checkPairRecords(wrong, L, R, want).join("；"), /右侧记录 role 应为 "search"，实际 "lookup"/);
+});
+
+test("checkPairRecords: 查询对按 want.roles 核对 role，并核对 input", () => {
+  const lw = { ...want, engines: ["", "eb"], roles: ["page", "lookup"], input: "text" };
+  const pair = () => ({
+    11: { peer: 12, splitViewId: 7, mode: "split", role: "page", input: "text", engine: "", query: "a b" },
+    12: { peer: 11, splitViewId: 7, mode: "split", role: "lookup", input: "text", engine: "eb", query: "a b" },
+  });
+  assert.deepEqual(checkPairRecords(pair(), L, R, lw), []);
+  const img = pair(); img[12].input = "image";
+  assert.match(checkPairRecords(img, L, R, lw).join("；"), /右侧记录 input 应为 "text"，实际 "image"/);
+  const noInput = pair(); delete noInput[11].input;
+  assert.match(checkPairRecords(noInput, L, R, lw).join("；"), /左侧记录字段应为 engine,input,mode,peer,query,role,splitViewId/);
+  // 搜索对的期望不带 input：记录多出 input 也算字段不符
+  const extra = good(); extra[11].input = "text";
+  assert.match(checkPairRecords(extra, L, R, want).join("；"), /左侧记录字段应为 engine,mode,peer,query,role,splitViewId/);
 });
 
 test("findAdjacent: 同窗口、都不在分屏、右侧紧挨左侧且加载完成才算", () => {

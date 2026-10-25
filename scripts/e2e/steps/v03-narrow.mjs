@@ -9,10 +9,9 @@ import { NARROW_WIDTH } from "../../../src/lib/narrow.js";
 import {
   splitPairs, trigger, siteX, expectPair, findPair, nonce, resetTabs, navigate, waitState, waitTarget, summarize, sleep,
 } from "./util.mjs";
-import { ids, fmt } from "./flow-restart.mjs";
 import { guarded } from "./optpage.mjs";
 import { rememberWindow } from "../window-snap.mjs";
-import { sub, verdict, queryOf, readRecords, checkPairRecords, findAdjacent, tabUrl } from "./v03-lib.mjs";
+import { sub, verdict, queryOf, readRecords, checkPairRecords, findAdjacent, tabUrl, ids, fmt } from "./v03-lib.mjs";
 
 const NARROW = 900; // 低于阈值 960；Xvfb 下实测能设到（原型里最小 500）
 const WIDE = 1600;

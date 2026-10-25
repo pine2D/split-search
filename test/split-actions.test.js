@@ -2,14 +2,16 @@ import { test, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import {
   ACTIONS, createPaired, openNew, reuse, join, openForeign, openInOtherWindow, leaveTab, lastSplitWindow,
+  openRight, confirmedSplitViewId,
 } from "../src/chrome/split-actions.js";
 
 // 最小 chrome 桩：按顺序记录调用。fail.<name> 为 true 时对应调用抛错；
 // fail.create 也可以是 (props, n) => boolean，n 为第几次 tabs.create（从 1 开始）。
 // extra.newSplitViewId / extra.getSplitViewId：新分屏标签与复核时读到的 splitViewId（默认都是 55）。
-let calls;
+let calls, session;
 function installChrome(fail = {}, extra = {}) {
   calls = [];
+  session = new Map(Object.entries(extra.session ?? {}));
   let nextId = 100;
   let creates = 0;
   let gets = 0;
@@ -60,10 +62,14 @@ function installChrome(fail = {}, extra = {}) {
       },
       async update(id, props) { calls.push(["windows.update", id, props]); check("focus"); },
     },
+    // storage.session 用内存 Map（extra.session 为初始内容），写入会留下来供断言
     storage: { session: {
-      async set(obj) { calls.push(["session.set", obj]); check("session"); },
-      async get(key) { calls.push(["session.get", key]); return {}; },
-      async remove(keys) { calls.push(["session.remove", keys]); },
+      async set(obj) { calls.push(["session.set", obj]); check("session"); for (const [k, v] of Object.entries(obj)) session.set(k, v); },
+      async get(key) {
+        calls.push(["session.get", key]);
+        return Object.fromEntries([].concat(key).filter(k => session.has(k)).map(k => [k, session.get(k)]));
+      },
+      async remove(keys) { calls.push(["session.remove", keys]); for (const k of [].concat(keys)) session.delete(k); },
     } },
   };
 }
@@ -494,4 +500,64 @@ test("other-window：只有 PiP → 新建普通窗口，不在 PiP 里建标签
   assert.ok(names().includes("windows.create"));
   assert.ok(!calls.some(c => c[0] === "tabs.create" && c[1].windowId === PIP.id));
   assert.ok(!calls.some(c => c[0] === "windows.update"));
+});
+
+// ---- v0.4 记录角色（W1）：openRight 的返回值与角色参数、refreshPair 整对改写成搜索对 ----
+test("reuse：在查询对的 page 一侧运行 → 只更新对侧一次，两条记录都改写成 search、不带 input", async () => {
+  const page = { peer: 2, splitViewId: 55, mode: "split", role: "page", input: "text", engine: "", query: "sel" };
+  const lookup = { peer: 1, splitViewId: 55, mode: "split", role: "lookup", input: "text", engine: "bing", query: "sel" };
+  installChrome({}, { session: { "split:1": page, "split:2": lookup } });
+  const out = await reuse({
+    tab: { id: 1, index: 3 }, peer: { id: 2, index: 4 }, splitViewId: 55, record: page, peerRecord: lookup,
+    leftUrl: L, rightUrl: R, ...ids,
+  });
+  assert.deepEqual(out, { replaceWith: L });
+  assert.deepEqual(calls.filter(c => c[0] === "tabs.update"), [["tabs.update", 2, { url: R }]]);
+  assert.deepEqual(session.get("split:1"), rec(2, "kagi"));
+  assert.deepEqual(session.get("split:2"), rec(1, "google"));
+  for (const k of ["split:1", "split:2"]) assert.ok(!("input" in session.get(k)), k);
+});
+
+const T = { id: 1, index: 3, windowId: 9 };
+const lookupIds = { leftId: "", rightId: "bing", query: "x", roleA: "page", roleB: "lookup", input: "text" };
+
+test("openRight：splitWithTabId 成功且复核一致 → \"split\"，按 roleA/roleB/input 写查询对记录", async () => {
+  assert.equal(await openRight(T, R, false, lookupIds), "split");
+  assert.deepEqual(calls[0], ["tabs.create", { url: R, index: 4, windowId: 9, active: false, splitWithTabId: 1 }]);
+  assert.deepEqual(session.get("split:1"), rec(100, "", { role: "page", input: "text" }));
+  assert.deepEqual(session.get("split:100"), rec(1, "bing", { role: "lookup", input: "text" }));
+});
+
+test("openRight：窄窗口 + active:true → tabs.create 带 active:true、不带 splitWithTabId，返回 \"adjacent\" 并写 adjacent 记录", async () => {
+  assert.equal(await openRight(T, R, true, { ...lookupIds, active: true }), "adjacent");
+  assert.deepEqual(calls[0], ["tabs.create", { url: R, index: 4, windowId: 9, active: true }]);
+  const adj = { mode: "adjacent", splitViewId: -1 };
+  assert.deepEqual(session.get("split:1"), rec(100, "", { ...adj, role: "page", input: "text" }));
+  assert.deepEqual(session.get("split:100"), rec(1, "bing", { ...adj, role: "lookup", input: "text" }));
+});
+
+test("openRight：splitWithTabId 抛错（退化成普通标签）→ \"plain\"，不写记录", async () => {
+  installChrome({ createSplit: true });
+  assert.equal(await openRight(T, R, false, lookupIds), "plain");
+  assert.equal(names().filter(n => n === "tabs.create").length, 2);
+  assert.ok(!names().includes("session.set"));
+  assert.equal(session.size, 0);
+});
+
+test("openRight：复核两次都不一致 → \"plain\"，不写记录", async () => {
+  installChrome({}, { getSplitViewId: -1 });
+  assert.equal(await openRight(T, R, false, { leftId: "kagi", rightId: "google", query: "x" }), "plain");
+  assert.ok(!names().includes("session.set"));
+});
+
+test("openRight：不传角色时写搜索对（role search，没有 input）", async () => {
+  assert.equal(await openRight(T, R, false, { leftId: "kagi", rightId: "google", query: "x" }), "split");
+  assert.deepEqual(session.get("split:1"), rec(100, "kagi"));
+  assert.deepEqual(session.get("split:100"), rec(1, "google"));
+});
+
+test("confirmedSplitViewId：两个标签读到同一个 splitViewId → 返回它；读到 -1 → -1", async () => {
+  assert.equal(await confirmedSplitViewId(1, 2), 55);
+  installChrome({}, { getSplitViewId: -1 });
+  assert.equal(await confirmedSplitViewId(1, 2), -1);
 });

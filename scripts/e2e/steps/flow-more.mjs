@@ -3,7 +3,8 @@
 import {
   splitPairs, trigger, siteX, expectPair, findPair, nonce, resetTabs, navigate, waitState, waitTarget, summarize,
 } from "./util.mjs";
-import { RESTART_STEPS, fmt } from "./flow-restart.mjs";
+import { RESTART_STEPS } from "./flow-restart.mjs";
+import { fmt } from "./v03-lib.mjs";
 
 const PERM = /permission|权限/i;
 

@@ -1,6 +1,7 @@
 import { test, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import { readRecord, writePair, writeEngine, clearPair, inspectTab } from "../src/chrome/split-state.js";
+import { parseRecord } from "../src/lib/split-owner.js";
 
 // 最小 chrome 桩：storage.session 用内存 Map；fail.<name> 为 true 时对应调用抛错。
 // tabs 是 id → 标签 的表，tabs.get 找不到时按 Chrome 的报错抛出。
@@ -298,4 +299,27 @@ test("串行队列：前一个写入抛错不影响后面的写入", async () =>
   installChrome({ fail: { remove: true }, data: { "split:1": rec(2) } });
   await Promise.all([clearPair(1), writePair({ a: 5, b: 6, splitViewId: 9, mode: "split", engineA: "google", engineB: "bing", query: "q" })]);
   assert.equal(store.get("split:5").peer, 6);
+});
+
+// ---- v0.4 记录角色：读写不丢 role、input ----
+test("writePair：roleA/roleB/input 原样写进两条记录（查询对）", async () => {
+  await writePair({
+    a: 1, b: 2, splitViewId: 7, mode: "split", engineA: "", engineB: "bing", query: "q",
+    roleA: "page", roleB: "lookup", input: "text",
+  });
+  assert.deepEqual(calls, [["session.set", {
+    "split:1": { peer: 2, splitViewId: 7, mode: "split", role: "page", input: "text", engine: "", query: "q" },
+    "split:2": { peer: 1, splitViewId: 7, mode: "split", role: "lookup", input: "text", engine: "bing", query: "q" },
+  }]]);
+});
+
+test("writeEngine：在解析后的 lookup 记录上改 engine，role、input 不变", async () => {
+  const lookupRec = rec(1, { role: "lookup", input: "image", engine: "lens", query: "https://img.example.com/a.png" });
+  installChrome({ data: { "split:1": rec(2, { role: "page", input: "image", engine: "" }), "split:2": lookupRec } });
+  await writeEngine(2, parseRecord(lookupRec), "ddg");
+  const got = store.get("split:2");
+  assert.equal(got.role, "lookup");
+  assert.equal(got.input, "image");
+  assert.equal(got.engine, "ddg");
+  assert.deepEqual(parseRecord(got), { ...lookupRec, engine: "ddg" });
 });

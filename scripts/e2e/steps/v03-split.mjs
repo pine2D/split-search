@@ -3,11 +3,9 @@
 // (e) 重启后另一侧停在引擎的非搜索路径，兜底判“不是”。重启沿用 T5 的做法（ctx.restartBrowser）。
 import { isDeepStrictEqual } from "node:util";
 import { HOSTS } from "../config.mjs";
-import {
-  splitPairs, trigger, engineA, expectPair, findPair, siteX, nonce, navigate, waitState, waitTarget, summarize,
-} from "./util.mjs";
-import { retrigger, ids, fmt } from "./flow-restart.mjs";
-import { sub, verdict, queryOf, readRecords, checkPairRecords, pairOn, tabUrl } from "./v03-lib.mjs";
+import { splitPairs, engineA, siteX, nonce, navigate, waitState, waitTarget, summarize } from "./util.mjs";
+import { retrigger } from "./flow-restart.mjs";
+import { sub, verdict, queryOf, readRecords, checkPairRecords, pairOn, ids, fmt, expectForeign } from "./v03-lib.mjs";
 
 const splitWant = (pair, q) => ({ mode: "split", splitViewId: pair[0].splitViewId, engines: ["ea", "eb"], query: queryOf(q) });
 
@@ -19,26 +17,6 @@ const shape = ctx => sub("(a) 触发后两条记录形状正确、splitViewId �
   if (pair[0].splitViewId === -1 || pair[0].splitViewId !== pair[1].splitViewId) p.push(`两侧 splitViewId 不一致：${pair[0].splitViewId} / ${pair[1].splitViewId}`);
   return verdict(p, `标签 ${ids(pair)} 互指，splitViewId ${pair[0].splitViewId}，mode split，engine ea / eb，query “${queryOf(q)}”`);
 });
-
-// 在已有的一对（不论是不是本扩展的）的 tab 上触发 q2，期望走 foreign：原来两个标签不被改写，新开一对。
-// 返回问题列表与新的一对
-async function expectForeign(ctx, tab, other, q2) {
-  const st0 = await ctx.ext.state();
-  const [urlT, urlO] = [tabUrl(st0, tab.id), tabUrl(st0, other.id)];
-  const target = await waitTarget(ctx, t => t.url === urlT, urlT);
-  await navigate(ctx, target.targetId, trigger(ctx.port, q2));
-  const now = await waitState(ctx, st => findPair(st, ctx.port, q2), `新分屏 ${expectPair(ctx.port, q2).join(" ｜ ")}`);
-  // 被触发的标签经 history.back() 回到原页面
-  const st = await waitState(ctx, s => s.tabs.some(t => t.id === tab.id && t.url === urlT && t.status === "complete") && s,
-    `被触发的标签 ${tab.id} 回到 ${urlT}`).catch(async e => ({ err: e.message, ...(await ctx.ext.state()) }));
-  const p = [];
-  if (st.err) p.push(st.err);
-  if (tabUrl(st, other.id) !== urlO) p.push(`另一侧 ${other.id} 应保持 ${urlO}，实际 ${tabUrl(st, other.id) ?? "（标签不见了）"}`);
-  const v = st.tabs.find(t => t.id === tab.id)?.splitViewId;
-  if (v === -1 || v !== st.tabs.find(t => t.id === other.id)?.splitViewId) p.push("原来的一对不在同一个分屏里了");
-  if ([tab.id, other.id].includes(now[0].id) || [tab.id, other.id].includes(now[1].id)) p.push(`新分屏不应使用原来的标签：${ids(now)}`);
-  return { problems: p, now, st };
-}
 
 // 拼回去之后连续触发两次都判“不是”：第一次之后失效记录仍保留（仍互指、仍是旧 splitViewId），第二次不会落到兜底
 const rejoin = ctx => sub("(b) 拆开再拼回去后连续触发两次：都判“不是”，走 foreign", async () => {
