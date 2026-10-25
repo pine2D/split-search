@@ -35,7 +35,7 @@ import { overlayTemplates, filterOnly } from "./template-sets.mjs";
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const TEMPLATES = join(ROOT, "assets/templates");
 const TEMPLATES_V2 = join(ROOT, "assets/templates-v2"); // 商店图第二版，见 template-sets.mjs
-const DEFAULT_ICON = join(ROOT, "assets/icon-proposals/v3-colors/c6-pine-fog/icon.svg"); // 选定图标（c6）；src/icons/icon-48|128.png 由它导出，16/32 来自同目录按像素对齐的 icon-16.svg / icon-32.svg
+const DEFAULT_ICON = join(ROOT, "assets/icon-proposals/v3-colors/c6-pine-fog/icon.svg"); // 选定图标（c6）；src/icons/icon-128.png 由它导出，16/32/48 来自同目录按像素对齐的 icon-16.svg / icon-32.svg / icon-48.svg
 const CHROME = "/opt/google/chrome/google-chrome";
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 

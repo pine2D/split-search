@@ -19,7 +19,7 @@ Chrome MV3 扩展：用户在地址栏搜索，或把文字拖到标签栏时，
 - 无痕窗口内分屏（按 G5 降级）。
 - 模式 B：默认引擎保持单一，只有拖拽才分屏。（已取消，任何版本都不做，2026-10-24 用户决定）
 - `chrome.omnibox` 关键词和地址栏实时联想。
-- 右键菜单、快捷键、多语言、上架 Chrome 网上应用店。
+- 右键菜单、多语言、上架 Chrome 网上应用店（快捷键见 v0.3，已实现）。
 
 **反目标（即使能用也算失败）**
 - 破坏 Chrome 原生的拖拽搜索或地址栏行为，包括同步到的其他设备和无痕窗口。
@@ -32,7 +32,7 @@ Chrome MV3 扩展：用户在地址栏搜索，或把文字拖到标签栏时，
 - v0.2 多语言（en/zh_CN/zh_TW/es，页内切换，见 `docs/superpowers/specs/2026-10-24-i18n-design.md`），已随 v0.2.0 首次提交 Chrome 网上应用店（2026-10-25）。
 - 模式 B 已取消（2026-10-24 用户决定），不再列入任何版本，也不要再提议。
 - 新功能落地顺序（2026-10-25 用户同意）：
-  - v0.3（不加权限，设计见 `docs/superpowers/specs/2026-10-25-v0.3-split-tools-design.md`）：分屏状态加固（记录绑定 `splitViewId`，不监听 `onUpdated`）→ 右侧专用引擎库（设置页一键添加的模板清单）→ 窄窗口降级 → 工具栏弹窗（换右侧引擎）与快捷键（右侧换下一个引擎，默认不绑定）。互换左右、拆开分屏用 Chrome 原生菜单，不重复做（2026-10-25 用户决定）。
+  - v0.3（已实现，2026-10-25 代码完成，尚未上传商店；不加权限，设计见 `docs/superpowers/specs/2026-10-25-v0.3-split-tools-design.md`）：分屏状态加固（记录绑定 `splitViewId`，不监听 `onUpdated`）→ 右侧专用引擎库（设置页一键添加的模板清单）→ 窄窗口降级 → 工具栏弹窗（换右侧引擎）与快捷键（右侧换下一个引擎，默认不绑定）。互换左右、拆开分屏用 Chrome 原生菜单，不重复做（2026-10-25 用户决定）。
   - v0.4（加 `activeTab`、`contextMenus`，届时改硬约束、`pack-lib` 检查与商店隐私说明）：把现有搜索补成分屏（并入弹窗）→ 边读边查（选中文字右键，当前页留左、右侧搜索并复用）→ 以图搜图分屏。
   - 之后：按关键词自动选右侧（go.html 本地判断，不外发查询词）。
 - 无痕窗口内分屏，需要 `incognito: "split"` 并重新设计生命周期。
@@ -55,11 +55,14 @@ Chrome MV3 扩展：用户在地址栏搜索，或把文字拖到标签栏时，
       2. 解析：取 location.search 中 "u=" 之后的全部文本作为原始网址（\0 未经编码，不能用 URLSearchParams.get('u')）
               → 用 URL + URLSearchParams 读出 _ss（可兼容 %2C）和左侧模板里 %s 所在参数的值作为关键词（+ 会自动还原为空格）
       3. 窗口检查：当前窗口不是 normal 类型（popup/app）时 → 在一个 normal 窗口里新建一对标签组成分屏；当前标签 location.replace(左侧网址)
-      4. 分屏：
+      4. 分屏（“本扩展的分屏”按 storage.session 里的记录判定，不按网址猜；记录形状 {peer, splitViewId, mode: split|adjacent, engine, query}，见 lib/split-owner.js、chrome/split-state.js）：
+          ├─ 窄窗口（windows.get 的 width < 960，且 narrowFallback 不为 false）：不建分屏，右侧在紧邻的后台标签打开，记 adjacent 记录；同标签再触发复用右边那个
           ├─ 当前标签不在分屏中：tabs.create({url: 右侧, splitWithTabId: 当前, index: 当前+1, windowId, active:false})
           │                   → 然后 location.replace(左侧网址)
           ├─ 当前标签在“本扩展的分屏”中（判定见 spec 5.3）：tabs.update(另一侧, 右侧) → location.replace(左侧)
           └─ 当前标签在其他分屏中：见 spec 5.3
+  工具栏弹窗（popup/）与快捷键 cycle-right（默认不绑定，background.js 的 onCommand）：读记录，经 chrome/right-switch.js 把右侧换成指定/下一个引擎，关键词取自记录（只在 storage.session，不进 sync，不外发）。
+  记录在 tabs.onRemoved 时清理。
 ```
 
 触发网址 = 左侧引擎真实搜索网址 + 标记参数 `_ss=<左id>,<右id>`，例如 `https://www.google.com/search?q=%s&_ss=google,bing`。
@@ -73,6 +76,7 @@ split-search/
 ├── .gitignore
 ├── package.json                  "test": "node --test"、"e2e": "node scripts/e2e/run.mjs"、"pack": "node scripts/pack.mjs"
 ├── dist/                         发布 ZIP（npm run pack 生成，不进 git）
+├── docs/acceptance-v0.3.md       v0.3 验收清单（对应 e2e 步骤 T16–T19、B16、B17、B2）
 ├── docs/acceptance-v0.1.md       v0.1 验收：跑 e2e（Windows 冒烟 v0.1 不做，2026-10-24 用户决定）；B/T 表注明覆盖方式
 ├── docs/i18n/chrome-terms.md     Chrome 术语表：各语言功能术语以此为准（由 scripts/i18n/chrome-terms.mjs 生成）
 ├── docs/store/                   商店详情（各语言）、隐私做法与隐私政策、图片素材规格
@@ -90,12 +94,14 @@ split-search/
 │                                 server.mjs 模拟引擎与向导页、runner/report、steps/*.mjs 各步骤（setup.mjs 安装/授权/Kagi 登录/收尾）、
 │                                 display.mjs 嵌套显示（Xephyr/Xvfb）起停与遗留清理、fonts.mjs 测试浏览器屏蔽 9P 挂载上的字体、
 │                                 settings-se/settings-kagi.mjs 网站搜索、ext-webui.mjs chrome://extensions 详情页、
-│                                 ext-source.mjs 让测试配置里的扩展装自本检出的 src/
+│                                 ext-source.mjs 让测试配置里的扩展装自本检出的 src/、
+│                                 ext-shortcuts.mjs 快捷键（chrome://extensions/shortcuts）快照与恢复，steps/v03-*.mjs、xauto-t19.mjs 是 v0.3 步骤
 ├── src/                          扩展根目录（加载这个目录）
 │   ├── manifest.json
 │   ├── _locales/                 界面文案：en、zh_CN（源文案）、zh_TW、es 各一份 messages.json
-│   ├── icons/                    工具栏与扩展管理页图标，16/32/48/128，配色 c6 pine-fog
-│   ├── background.js             SW：重建 DNR 规则、打开设置页
+│   ├── icons/                    工具栏与扩展管理页图标，16/32/48/128，配色 c6 pine-fog；16/32/48 由按像素对齐的 icon-16|32|48.svg 导出
+│   ├── background.js             SW：重建 DNR 规则、tabs.onRemoved 清理记录、onCommand（cycle-right）；无 action.onClicked
+│   ├── popup/popup.html|css|js   工具栏弹窗（action.default_popup）：显示关键词与左右引擎、换右侧、进入设置页
 │   ├── go.html / go.js           触发处理页（解析、判定、出错页与“只打开左侧搜索”兜底）
 │   ├── options/options.html|css  设置页静态结构、引导文字与样式
 │   ├── options/options.js        设置页编排：读配置、查授权、渲染、串行写入
@@ -103,16 +109,25 @@ split-search/
 │   ├── options/engine-list.js    引擎列表、已隐藏列表、新增/编辑对话框
 │   ├── options/guide.js          触发网址卡片与组合生成器
 │   ├── options/ui.js             DOM 小工具、提示、复制按钮、host 权限查询与申请
+│   ├── options/catalog.js        右侧引擎库对话框（添加时不申请权限）
+│   ├── options/shortcut.js       快捷键区：显示当前绑定、各引擎“参与轮换”开关
 │   ├── options/locale-ui.js      设置页与语言相关的界面：带内联元素的句子、语言下拉框
 │   ├── lib/engines.js            预置引擎、模板校验、配置合并
 │   ├── lib/trigger.js            触发网址生成与解析、模板展开
 │   ├── lib/rules.js              DNR 规则构造
 │   ├── lib/split-decision.js     分屏动作判定
+│   ├── lib/split-owner.js        “是否本扩展的分屏”按记录与 splitViewId 判定
+│   ├── lib/narrow.js             窄窗口判定（阈值 960，宽度非数字不判窄）
+│   ├── lib/engine-catalog.js     右侧引擎库数据（内置，不来自网络）
+│   ├── lib/cycle.js              快捷键轮换：下一个参与轮换的引擎
+│   ├── lib/popup-view.js         弹窗视图状态（纯逻辑）
 │   ├── lib/i18n.js               语言选择、占位符替换等纯逻辑
 │   ├── lib/errors.js             错误码：lib 和设置页逻辑只返回码，页面经 t("err_<code>") 显示
 │   ├── chrome/i18n.js            页内文案加载器：t()，fetch 读包内 _locales，按 uiLocale 切换
-│   ├── chrome/config-store.js    storage.sync 读写封装；新增顶层键 uiLocale（"auto"|"en"|"zh_CN"|"zh_TW"|"es"）
-│   └── chrome/split-actions.js   分屏动作执行（tabs / windows / storage.session 薄封装）
+│   ├── chrome/config-store.js    storage.sync 读写封装；顶层键 uiLocale（"auto"|"en"|"zh_CN"|"zh_TW"|"es"）、narrowFallback（缺省 true）、cycleExclude（不参与轮换的引擎 id 数组）；自定义引擎可带 leftDiscouraged
+│   ├── chrome/split-actions.js   分屏动作执行（tabs / windows / storage.session 薄封装）
+│   ├── chrome/split-state.js     记录读写与 inspectTab（对侧已关闭、storage 抛错都按“无记录”处理）
+│   └── chrome/right-switch.js    换右侧：弹窗与快捷键共用
 └── test/                         node --test（每个 lib 一个文件，另有 manifest、config-store、split-actions、options-edits、options-ui；i18n.test.js、chrome-i18n.test.js、i18n-catalog.test.js（4 种语言 key 对齐与 fetch 守门）、errors.test.js、i18n-pak.test.js（Chrome 术语表脚本）、store-i18n.test.js（宣传图文案键对齐）；e2e-*.test.js 测 e2e 脚本，其中 e2e-i18n.test.js 测 I18N 步骤；pack.test.js 测发布打包）
 ```
 
@@ -176,6 +191,9 @@ split-search/
   - 网站搜索：xauto 用 `sse2e`（模拟引擎 A ｜ B）与 `sse2e-<引擎 id>`（T14）专用条目，经 CDP 操作 `chrome://settings/searchEngines` 自动添加、设默认；改动前快照到 `.e2e/settings-snapshot.json`（只记默认引擎的 keyword/name、专用快捷字词和 `scriptDefaults`，不记网址），结束（含中断）删除专用条目，只在本次改过默认引擎时才改回；遗留快照下次启动先恢复。不动用户的其他条目，唯一例外是 T12（`settings-kagi.mjs`）：Chrome 自动发现的 Kagi 条目（快捷字词 `kagi.com`、网址 host 为 kagi.com）——在页面里给它的网址追加或改写 `_ss=kagi,bing`（网址带 Kagi 私有 token，读取和改写都在 chrome://settings 页面内完成，不传回 Node），并设为默认；设默认前把它记进快照的 `scriptDefaults`，收尾当前默认是它（且不是运行前的默认）时同样改回，之后 T14 把默认切到专用条目时也不会把它当成“要恢复的默认”。找不到这个条目（或它在“未使用的快捷字词”里）时 `--auto-only` 跳过，引导式运行回退到人工 T12。T12 用真实键盘在地址栏 (a) 直接输入、(b) 输入 `kagi.com 关键词` 进入快捷字词模式，都要 Kagi ｜ Bing 分屏；回车前截地址栏下拉框存 `.e2e/t12-suggest-default.png`、`t12-suggest-keyword.png`（嵌套显示截整屏；host 模式只截测试窗口、不截 :0 整屏，下拉框是单独的弹出窗口，截图里多半没有它；只供参考，联想有无不判通过/失败）。
   - 窗口：只有选中了 xauto 步骤时才把测试窗口固定为 normal 1600×1000（每个 xauto 尝试前再核对），没有 xauto 步骤时不动窗口尺寸。坐标一律由 CDP 页面坐标换算（`(screenX + outerWidth − innerWidth + clientX)·dpr`），不用 `getwindowgeometry` 的 Position（它把窗口装饰算进去）；例外有两个：一是右键菜单这种 override-redirect 窗口（没有装饰，Position 可信），点击前还要核对指针确实在菜单上、离右键点不超过 80px；二是嵌套模式的指针归位，用测试窗口的 Position 算中心（没有窗口管理器，没有装饰），之后靠读回断言把关。
   - 预期降级：T14 某引擎作左侧时，触发前就读到该 origin 的 SW、没分屏、左侧停在该引擎上并带着查询词（网址或标题带查询词，或该标签自己的主框架跳转链经过触发网址——Perplexity 的 SPA 会改写网址），并且没有扩展接管过这次触发的反证（任何跳转链里出现带本次查询词的 `go.html?u=`、触发后新增扩展控制台错误、新出现不在分屏里的 Google 标签——go.js 分屏失败时 `location.replace(左侧)` 的结果和普通搜索长得一样，靠这些区分；没有控制台收集器时不判降级），记 `degrade`（预期降级）：单独计数、不算失败、退出码 0；没检测到 SW 仍是失败。多子项步骤里跳过/预期降级的子项，步骤整体通过或预期降级时写在说明第一行；无论步骤结果如何，都列进报告“未覆盖”小节。
+- v0.3 步骤（`steps/v03-*.mjs`、`xauto-t19.mjs`）：T16 分屏记录绑定 splitViewId（拆开再拼回、对调、清理）；T17 窄窗口降级；T18 工具栏弹窗；T19 快捷键换右侧（xauto 真实按键，judge 回退）；B16 引擎库；B17 快捷键区与 `cycleExclude`；B2 改为点工具栏图标出现弹窗。模拟服务器多了 `/about`。
+  - e2e 的 storage 基线含 `narrowFallback: false`（测试窗口宽度不总受控，关掉窄窗口降级现有分屏步骤才不受影响）；T17 自己删掉它并用 `guarded` 写回。
+  - 快捷键绑定的快照与恢复：`ext-shortcuts.mjs` 改动前记到 `.e2e/shortcut-snapshot.json`，结束（含中断）按它改回并删文件，遗留快照下次启动先恢复。
 - I18N（`steps/i18n.mjs`，auto，`--auto-only` 会跑）：en、zh_CN、zh_TW、es 逐一打开设置页和 go.html 出错页，核对 `lang`、没有显示成 key 的文字、没有横向和按钮内容溢出；再测页内切换（不刷新、2 秒内）、连切 en → zh_TW 停在最后一次、第二个设置页跟随，以及 `uiLocale = "auto"` 时 `t()` 与 `chrome.i18n.getMessage` 逐 key 相同。它会改写 `storage.sync` 的 `uiLocale`，用 `guarded` 写回步骤前的值（中断时由 storage 快照兜底）。截图存 `.e2e/i18n/<locale>-options.png`、`<locale>-go-error.png`。
 - 运行前快照 `chrome.storage.sync` 到 `.e2e/storage-snapshot.json`，结束（含中断）后恢复；遗留快照下次启动先恢复。报告在 `.e2e/report-*.md|json`，网址里的 token/session/sid/auth/key/code、access_token 等 `*_token`、session_id/sessionid、`google_abuse` 等 `*_abuse` 与含 exemption 的参数值（含一次、两次百分号编码嵌套在 next=、r=、continue= 里的），以及单独出现的 `…ABUSE_EXEMPTION=…`（含用户 IP）、Google 人机验证页 `/sorry/…` 的 `q`（编码了访问者 IP 的令牌）脱敏为 `***`，终端与向导页同样。失败诊断除扩展读到的标签外，还列出 CDP 页面目标网址（扩展读不到的标签按窗口与网址对应）和步骤页面的主框架跳转链（控制台收集器在页面会话上 Network.enable 记录，没有时用 Page.getNavigationHistory）。左侧 Google 停在人机验证页（/sorry，`continue` 解码后是期望的搜索）算分屏已建成（`steps/captcha.mjs`）；脚本自己准备现场的等待，“重试”都会重新准备并重新记下判定用的 id。B4、T8 之后脚本自动核对扩展已启用、授权齐全（扩展不可用先经 chrome://extensions 详情页自动启用，缺授权自动重新申请），恢复不了就跳过剩余步骤（`--auto-only` 不请用户启用扩展）。Kagi 登录检查打开 `https://kagi.com/settings`，只有最终停在 kagi.com/settings 才算已登录；用户登录期间只读现有标签的网址、不再发起导航（未登录时那条跳转链会重写会话 cookie，可能打断登录），用户点“我已完成”后再探测一次。
 - 授权框与扩展管理页（2026-10-24 在 Xvfb 上实测）：
@@ -219,3 +237,4 @@ split-search/
 - `tabs.create({splitWithTabId})`：源标签是固定标签或在标签组中时，新标签自动继承固定状态和标签组。在 popup/app 类型窗口里调用，按源码推断可能触发 CHECK 崩溃，必须提前拦住，不调用。
 - go.html 里 `history.back()` 能回到被 DNR 重定向之前的页面。不要用 `navigation.canGoBack` 判断能否后退，它在扩展页上恒为 false。关闭分屏中的一侧后，另一侧自动解除分屏。
 - API 版本：`tabs.create({splitWithTabId})`、`tabs.createSplit`、`tabs.unsplit` 需 Chrome 155+；`Tab.splitViewId`、`tabs.query({splitViewId})` 需 140+。一个分屏只能放两个标签。
+- v0.3 实测（Chrome 156.0.8078.47）：`tabs.move` 对调分屏两侧后两个标签 `splitViewId` 不变；`tabs.unsplit` 或关掉一侧后，留下的标签 `splitViewId` 为 -1；`tabs.createSplit` 总是分配新的 `splitViewId`（拆开再拼回后与旧 id 不同，所以记录要绑 id）；`tabs.onUpdated` 没有过滤，不监听；没有 `tabs` 权限也能用 `windows.get` 读 `width`；CDP `Extensions.triggerAction` 作用于 TAB 目标时，弹窗以 `type:"page"` 的 CDP 目标出现（约 250ms），传页面 targetId 会报错。

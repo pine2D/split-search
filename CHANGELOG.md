@@ -15,13 +15,13 @@
 
 - 工具栏弹窗：显示当前拆分视图的关键词和左右引擎，点一个引擎就把右侧换成它，不用重新搜索。点工具栏按钮改为打开弹窗，设置页从弹窗底部进入。
 - 快捷键“把右侧换成下一个引擎”：默认未设置，在 `chrome://extensions/shortcuts` 设置，设置页显示当前绑定。引擎列表里可以逐个选择是否“参与快捷键轮换”，存在 `cycleExclude`。
-- 引擎库：设置页“从引擎库添加”列出 12 个真机验证过的网站（Google Translate、Bing Translator、Wikipedia、Cambridge Dictionary、YouTube、Bilibili、GitHub、MDN、Google Maps、Google Scholar、Amazon、Baidu）。添加后是普通的自定义引擎，添加时不申请权限，也不显示“需授权”提示。
+- 引擎库：设置页“从引擎库添加”列出 12 个已实测可用的网站（Google Translate、Bing Translator、Wikipedia、Cambridge Dictionary、YouTube、Bilibili、GitHub、MDN、Google Maps、Google Scholar、Amazon、Baidu）。添加后是普通的自定义引擎，添加时不申请权限，也不显示“需授权”提示。
 - 窄窗口：窗口宽度不到 960 像素时，右侧改在旁边的后台标签页打开，不建拆分视图。默认开启，可在“默认组合”里关闭，存在 `narrowFallback`。
 
 ### 变更
 
 - 数据处理方式有变化：关键词和两侧引擎暂存在本机浏览器内存（`chrome.storage.session`）里，用于在弹窗里或用快捷键换右侧引擎。这些记录不同步、不上传，标签页关闭时删除，关闭浏览器即清除。v0.2 不保存关键词。隐私政策已同步改写，商店的数据使用披露改为勾选“网页浏览记录”。
-- “本扩展的拆分视图”改为按记录和 `splitViewId` 判断。拆开后又拼回去的，或 `splitWithTabId` 失败退化成普通标签页的，都不再算，另一侧的页面不会被覆盖。没有记录时（例如浏览器重启后），另一侧网址的 origin 和路径都要像某个引擎的搜索结果页才算，不再只比较 origin。
+- “本扩展的拆分视图”改为按扩展自己的记录判断。拆开后又拼回去的拆分视图，或没能建成拆分视图、只是两个普通标签页的，都不再算，另一侧的页面不会被覆盖。没有记录时（例如浏览器重启后），另一侧网址的 origin 和路径都要像某个引擎的搜索结果页才算，不再只比较 origin。
 - 工具栏按钮的提示改为 “Split Search”。
 
 ### 修复
