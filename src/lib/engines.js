@@ -97,25 +97,33 @@ export function mergeConfig(stored = {}) {
       else pair = [...DEFAULT_PAIR];
     }
   }
-  const imageEngines = [IMAGE_PRESET, ...cleanImageEngines(stored.imageEngines)];
-  // 查词引擎：存的 id 是未隐藏的文字引擎才用，否则跟随默认组合的右侧（spec 3.5）
-  const lookupEngine = engines.some(e => e.id === stored.lookupEngine) ? stored.lookupEngine : pair[1];
+  const imageEngines = [IMAGE_PRESET, ...cleanImageEngines(stored.imageEngines, customEngines)];
+  // 查词引擎：存的 id 是未隐藏的文字引擎才用，否则跟随默认组合的右侧（spec 3.5）；
+  // lookupFollow 为 true 表示正在跟随（设置页据此选中“跟随默认组合”一项）
+  const lookupFollow = !engines.some(e => e.id === stored.lookupEngine);
+  const lookupEngine = lookupFollow ? pair[1] : stored.lookupEngine;
   const imageEngine = imageEngines.some(e => e.id === stored.imageEngine) ? stored.imageEngine : IMAGE_PRESET.id;
   return { engines, hidden, defaultPair: pair, uiLocale: normalizeLocalePref(stored.uiLocale),
     narrowFallback: stored.narrowFallback !== false, cycleExclude: cleanIdList(stored.cycleExclude),
-    imageEngines, imageEngine, lookupEngine };
+    imageEngines, imageEngine, lookupEngine, lookupFollow };
 }
 
-// 自定义以图搜图引擎：不是数组当作空；只认 { id, name, url } 三个字段，id 合法且不是内置 lens，按 id 去重保留首次
-export function cleanImageEngines(value) {
+// 自定义以图搜图引擎：不是数组当作空；只认 { id, name, url } 三个字段，按 id 去重保留首次。
+// 丢掉：id 不合法；id 与内置 lens、预置文字引擎或 customEngines 里的文字引擎撞车（两类共用一个 id 命名空间，spec 3.5）；
+// 模板过不了 validateTemplate（没有 %s、不是 http(s)、通配域名、带 _ss 等）
+export function cleanImageEngines(value, customEngines = []) {
   if (!Array.isArray(value)) return [];
+  const textIds = new Set(PRESETS.map(p => p.id));
+  if (Array.isArray(customEngines)) {
+    for (const c of customEngines) if (c && typeof c === "object" && typeof c.id === "string") textIds.add(c.id);
+  }
   const out = [];
   const seen = new Set();
   for (const e of value) {
     if (!e || typeof e !== "object") continue;
     const { id, name, url } = e;
-    if (typeof id !== "string" || !ID_PATTERN.test(id) || id === IMAGE_PRESET.id || seen.has(id)) continue;
-    if (typeof name !== "string" || !name || typeof url !== "string" || !url) continue;
+    if (typeof id !== "string" || !ID_PATTERN.test(id) || id === IMAGE_PRESET.id || textIds.has(id) || seen.has(id)) continue;
+    if (typeof name !== "string" || !name || typeof url !== "string" || !validateTemplate(url).ok) continue;
     seen.add(id);
     out.push({ id, name, url });
   }
@@ -142,7 +150,7 @@ export function isIdTaken(id, stored = {}) {
   const { customEngines = [] } = stored;
   // 文字引擎与以图搜图引擎共用一个 id 命名空间（spec 3.5）
   return PRESETS.some(p => p.id === id) || customEngines.some(c => c.id === id)
-    || id === IMAGE_PRESET.id || cleanImageEngines(stored.imageEngines).some(c => c.id === id);
+    || id === IMAGE_PRESET.id || cleanImageEngines(stored.imageEngines, customEngines).some(c => c.id === id);
 }
 
 export function engineOrigin(engine) {

@@ -6,7 +6,7 @@ import { uniqueId } from "../lib/engine-catalog.js";
 import { spec, fail } from "../lib/errors.js";
 import { checkFields } from "./edits.js";
 
-const customs = (raw) => cleanImageEngines(raw.imageEngines);
+const customs = (raw) => cleanImageEngines(raw.imageEngines, raw.customEngines);
 
 function append(raw, base, name, url) {
   let id;

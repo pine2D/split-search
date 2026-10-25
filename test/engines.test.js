@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { PRESETS, DEFAULT_PAIR, ID_PATTERN, validateTemplate, mergeConfig, isIdTaken, engineOrigin,
-  enginesFor, engineById } from "../src/lib/engines.js";
+  enginesFor, engineById, cleanImageEngines } from "../src/lib/engines.js";
 import { IMAGE_CATALOG } from "../src/lib/image-engines.js";
 
 test("validateTemplate: 合格的左侧模板", () => {
@@ -174,6 +174,48 @@ test("mergeConfig：lens 在前，自定义以图搜图引擎被清洗", () => {
   assert.deepEqual(Object.keys(cfg.imageEngines[1]), ["id", "name", "url"]);
   assert.equal(cfg.imageEngine, "lens");
   assert.equal(mergeConfig({ imageEngine: "gone" }).imageEngine, "lens");
+});
+
+test("cleanImageEngines：模板不合法的、id 与文字引擎或 lens 撞车的都丢掉", () => {
+  const good = { id: "bing-img", name: "Bing", url: "https://www.bing.com/images/searchbyimage?cbir=sbi&imgurl=%s" };
+  const list = [
+    good,
+    { id: "no-ph", name: "x", url: "https://x.example/?u=" },              // 没有 %s
+    { id: "ftp-img", name: "x", url: "ftp://x.example/?u=%s" },            // 不是 http(s)
+    { id: "ss-img", name: "x", url: "https://x.example/?u=%s&_ss=a,b" },   // 带保留参数
+    { id: "bad-url", name: "x", url: "nope %s" },                          // 不是网址
+    { id: "wild-img", name: "x", url: "https://*.example/?u=%s" },         // 通配域名
+    { id: "google", name: "x", url: "https://g.example/?u=%s" },           // 撞预置文字引擎
+    { id: "my-wiki", name: "x", url: "https://w.example/?u=%s" },          // 撞自定义文字引擎
+    { id: "lens", name: "fake", url: "https://evil.example/?u=%s" },       // 撞内置 lens
+  ];
+  const customEngines = [{ id: "my-wiki", name: "Wiki", url: "https://wiki.example/?search=%s" }];
+  assert.deepEqual(cleanImageEngines(list, customEngines), [good]);
+  // 不传文字引擎时仍挡住预置 id
+  assert.deepEqual(cleanImageEngines(list).map(e => e.id), ["bing-img", "my-wiki"]);
+  // customEngines 不是数组、元素不是对象时忽略
+  assert.deepEqual(cleanImageEngines([good], "x"), [good]);
+  assert.deepEqual(cleanImageEngines([good], [null, 3, { id: 5 }]), [good]);
+});
+
+test("mergeConfig：与自定义文字引擎同 id 的以图搜图引擎不进 imageEngines，选了它退回 lens", () => {
+  const cfg = mergeConfig({
+    customEngines: [{ id: "my-wiki", name: "Wiki", url: "https://wiki.example/?search=%s" }],
+    imageEngines: [{ id: "my-wiki", name: "x", url: "https://w.example/?u=%s" }],
+    imageEngine: "my-wiki",
+  });
+  assert.deepEqual(cfg.imageEngines.map(e => e.id), ["lens"]);
+  assert.equal(cfg.imageEngine, "lens");
+});
+
+test("mergeConfig：lookupFollow 表示正在跟随默认组合右侧（存的 lookupEngine 缺失、隐藏或无效）", () => {
+  assert.equal(mergeConfig({}).lookupFollow, true);
+  assert.equal(mergeConfig({ lookupEngine: "ddg" }).lookupFollow, false);
+  // 存的恰好就是默认组合右侧：用户选过，不算跟随
+  assert.equal(mergeConfig({ lookupEngine: "bing" }).lookupFollow, false);
+  assert.equal(mergeConfig({ lookupEngine: "ddg", presetOverrides: { ddg: { hidden: true } } }).lookupFollow, true);
+  assert.equal(mergeConfig({ lookupEngine: "lens" }).lookupFollow, true);
+  assert.equal(mergeConfig({ lookupEngine: 3 }).lookupFollow, true);
 });
 
 test("mergeConfig：imageEngine 是现存的自定义以图搜图引擎时原样返回", () => {

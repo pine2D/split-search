@@ -12,7 +12,7 @@ function originOf(engine) {
   try { return engineOrigin(engine); } catch { return engine.url; }
 }
 
-// cfg.lookupFollow：存储里没有可用的 lookupEngine，正在跟随默认组合的右侧（options.js 传入）
+// cfg.lookupFollow：存储里没有可用的 lookupEngine，正在跟随默认组合的右侧（mergeConfig 给出）
 function lookupSelect(cfg, actions) {
   const rightName = engineById(cfg, "text", cfg.defaultPair[1])?.name ?? "";
   const select = h("select", { id: "lookup-engine" },

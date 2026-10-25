@@ -104,7 +104,7 @@ async function render() {
   const focusedId = document.activeElement?.id;
   $("banner").replaceChildren(...banner(cfg, byId, granted));
   $("pair-body").replaceChildren(...pairSection(cfg, byId, granted));
-  $("lookup-body").replaceChildren(renderLookupCard({ ...cfg, lookupFollow: !cfg.engines.some(e => e.id === raw.lookupEngine) }, actions));
+  $("lookup-body").replaceChildren(renderLookupCard(cfg, actions));
   $("triggers").replaceChildren(renderTriggers(ctx));
   $("engines").replaceChildren(renderEngineList(ctx));
   $("hidden-engines").replaceChildren(renderHiddenList(ctx));
