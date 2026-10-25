@@ -30,7 +30,9 @@ export function staleMarker(record) {
   return { ...record, mode: "split", splitViewId: -1 };
 }
 
-// 对侧网址像不像模板的搜索结果页：%s 在查询里比 origin+pathname，在路径里比前缀。
+// 对侧网址像不像模板的搜索结果页：%s 在查询里比 origin+pathname，并要求网址带着 %s 所在的参数且值不为空
+// （chatgpt.com/、claude.ai/new 这类输入框首页上可能有用户的草稿，不能当成搜索页）；
+// %s 不在查询参数里（如在 # 后面）时无从核对，不认。在路径里比前缀。
 // 路径前缀只有根路径 "/"（如 https://x.com/%s）时不认：那样同 origin 的任何页面都会算作搜索页
 export function looksLikeSearchPage(url, template) {
   try {
@@ -39,7 +41,11 @@ export function looksLikeSearchPage(url, template) {
     const u = new URL(url);
     if (u.origin !== t.origin) return false;
     const at = t.pathname.indexOf(PLACEHOLDER);
-    if (at === -1) return u.pathname === t.pathname;
+    if (at === -1) {
+      if (u.pathname !== t.pathname) return false;
+      const param = [...t.searchParams].find(([, v]) => v.includes(PLACEHOLDER))?.[0];
+      return param !== undefined && Boolean(u.searchParams.get(param));
+    }
     const prefix = t.pathname.slice(0, at);
     return prefix !== "/" && u.pathname.startsWith(prefix);
   } catch {

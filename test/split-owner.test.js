@@ -133,3 +133,27 @@ test("staleMarker：形状合法、引擎与关键词保留，任何位置关系
   assert.equal(judgeOwnership({ tab: t, peer: p, record: m, peerRecord: back, engines }), "stale"); // 拖回相邻
   assert.equal(judgeOwnership({ tab: { ...t, splitViewId: 8 }, peer: { ...p, splitViewId: 8 }, record: m, peerRecord: back, engines }), "stale"); // 手动拼成分屏
 });
+
+test("looksLikeSearchPage：query 型还要求网址带着 %s 所在的参数且值不为空（AI 输入框首页不算搜索页）", () => {
+  const gpt = "https://chatgpt.com/?q=%s", claude = "https://claude.ai/new?q=%s";
+  assert.equal(looksLikeSearchPage("https://chatgpt.com/", gpt), false);
+  assert.equal(looksLikeSearchPage("https://chatgpt.com/?temporary-chat=true", gpt), false);
+  assert.equal(looksLikeSearchPage("https://chatgpt.com/?q=", gpt), false);
+  assert.equal(looksLikeSearchPage("https://chatgpt.com/?q=x", gpt), true);
+  assert.equal(looksLikeSearchPage("https://claude.ai/new", claude), false);
+  assert.equal(looksLikeSearchPage("https://claude.ai/new?q=x", claude), true);
+  assert.equal(looksLikeSearchPage("https://duckduckgo.com/", "https://duckduckgo.com/?q=%s"), false);
+  assert.equal(looksLikeSearchPage("https://www.youtube.com/results", "https://www.youtube.com/results?search_query=%s"), false);
+  // 参数值里 %s 前后带固定文字时按参数名认
+  assert.equal(looksLikeSearchPage("https://x.example/find?q=site%3Aa+b", "https://x.example/find?q=site:a %s"), true);
+  // %s 不在查询参数里（如在 # 后面）时无法核对，一律不认
+  assert.equal(looksLikeSearchPage("https://x.example/find", "https://x.example/find#q=%s"), false);
+});
+
+test("judgeOwnership：兜底不把用户分屏里的 ChatGPT 首页、Claude 新对话页当成本扩展的", () => {
+  const ai = [{ id: "chatgpt", url: "https://chatgpt.com/?q=%s" }, { id: "claude", url: "https://claude.ai/new?q=%s" }];
+  const t = { id: 1, index: 4, windowId: 9, splitViewId: 7 };
+  for (const url of ["https://chatgpt.com/", "https://claude.ai/new"]) {
+    assert.equal(judgeOwnership({ tab: t, peer: { id: 2, index: 5, windowId: 9, splitViewId: 7, url }, record: null, peerRecord: null, engines: ai }), "none");
+  }
+});
