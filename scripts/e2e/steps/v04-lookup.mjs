@@ -4,13 +4,14 @@
 // T22（⑧ 以图搜图）在 v04-lookup-image.mjs。
 import { expandTemplate } from "../../../src/lib/trigger.js";
 import { SELECTION_MAX } from "../../../src/lib/lookup-input.js";
-import { summarize, evalIn } from "./util.mjs";
+import { summarize, evalIn, sleep } from "./util.mjs";
 import { guarded } from "./optpage.mjs";
 import { verdict, readRecords, checkPairRecords } from "./v03-lib.mjs";
 import { assist, focusGuide } from "./guided.mjs";
 import { withAttempts, xauto } from "./xauto-lib.mjs";
+import { contextMenuCount } from "../gesture-ui.mjs";
 import { msg } from "../i18n.mjs";
-import { articleScene, selectIn, screenPoint, pickOurs, pickNote, waitLookup, lookupPair, pageUntouched, item, mock } from "./v04-lookup-lib.mjs";
+import { articleScene, selectIn, screenPoint, pickOurs, pickNote, waitLookup, lookupPair, pageUntouched, item, mock, settleMenu, MENU_SETTLE_MS } from "./v04-lookup-lib.mjs";
 import { T22 } from "./v04-lookup-image.mjs";
 
 const J = JSON.stringify;
@@ -21,6 +22,19 @@ async function lookupText(ctx, scene, spec, { split }) {
   const s = await selectIn(ctx, scene.P.targetId, spec);
   const at = await screenPoint(ctx, scene.P.targetId, scene.wid, s, { split });
   return { items: await pickOurs(ctx, "text", at, scene.wid), sel: s.sel };
+}
+
+// 分屏里在 spec 指定的文字上数菜单行数，不点任何项
+async function countText(ctx, scene, spec) {
+  const s = await selectIn(ctx, scene.P.targetId, spec);
+  return contextMenuCount(ctx, { at: await screenPoint(ctx, scene.P.targetId, scene.wid, s, { split: true }), wid: scene.wid });
+}
+
+// 每次尝试都从没有 lookupEngine 开始（上一次尝试可能停在 (c) 写的 "ec"）；删了键就等一会儿，让菜单重建完再右键
+async function resetLookupEngine(ctx) {
+  if (!(await ctx.ext.eval(`chrome.storage.sync.get("lookupEngine").then(r => "lookupEngine" in r)`))) return;
+  await ctx.ext.eval(`chrome.storage.sync.remove("lookupEngine").then(() => true)`);
+  await sleep(MENU_SETTLE_MS);
 }
 
 // 查询对的记录：网页一侧 page（engine ""），查询一侧 lookup
@@ -39,10 +53,11 @@ const reuseProblems = (st, l, L0, url) => {
 async function runT21(ctx) {
   const { port } = ctx;
   const eb = mock(port, "eb"), ec = mock(port, "ec");
+  await resetLookupEngine(ctx);
   const scene = await articleScene(ctx);
   const { P, mark } = scene;
   const items = [];
-  let L0 = null;
+  let L0 = null, rows = null;
   const done = () => summarize(items);
 
   // (a) 新建查询对
@@ -51,6 +66,7 @@ async function runT21(ctx) {
     const right = expandTemplate(eb.url, "quick");
     const [p, l] = await waitLookup(ctx, P.id, t => t.url === right, `${P.id} 与 ${right} 组成分屏`);
     L0 = l.id;
+    rows = m.items;
     const pr = [...await pageUntouched(ctx, P, mark), ...await pairRecords(ctx, p, l, "eb", "quick")];
     if (l.index !== p.index + 1) pr.push(`查询一侧应紧挨在网页右边（网页 ${p.index}、查询 ${l.index}）`);
     return verdict(pr, `${pickNote("text", m.items)}；分屏 ${p.id}｜${l.id}，右侧 ${right}，网页网址与标记不变`);
@@ -71,12 +87,21 @@ async function runT21(ctx) {
     return verdict(pr, `${pickNote("text", m.items)}；查询标签 ${L0} 换成 ${url}`);
   }));
 
-  // lookupEngine 的写回由 T21 外层的 guarded 负责
+  // 改 lookupEngine，等本扩展的菜单重建回 (a) 的行数再右键；返回问题列表
+  const setLookup = async (expr, word) => {
+    await ctx.ext.eval(expr);
+    const n = await settleMenu(() => countText(ctx, scene, { in: "#p1", word }), rows);
+    return n === rows ? [] : [`改 lookupEngine 后本扩展的菜单没重建回 ${rows} 项（最后数到 ${n} 项）`];
+  };
+
+  // 每次尝试开头 resetLookupEngine 删键，T21 外层的 guarded 写回运行前的值
   items.push(await item("(c) lookupEngine 设为 ec 再查 → C 的 /wiki/<词>；删掉键再查 → 回到默认组合右侧 eb", async () => {
-    await ctx.ext.eval(`chrome.storage.sync.set({ lookupEngine: "ec" }).then(() => true)`);
+    const w1 = await setLookup(`chrome.storage.sync.set({ lookupEngine: "ec" }).then(() => true)`, "brown");
+    if (w1.length) return verdict(w1, "");
     const urlC = expandTemplate(ec.url, "brown");
     const c = await again({ in: "#p1", word: "brown" }, "ec", "brown", urlC);
-    await ctx.ext.eval(`chrome.storage.sync.remove("lookupEngine").then(() => true)`);
+    const w2 = await setLookup(`chrome.storage.sync.remove("lookupEngine").then(() => true)`, "fox");
+    if (w2.length) return verdict([...c.pr, ...w2], "");
     const urlB = expandTemplate(eb.url, "fox");
     const b = await again({ in: "#p1", word: "fox" }, "eb", "fox", urlB);
     return verdict([...c.pr, ...b.pr], `${pickNote("text", c.m.items)}，查询一侧 ${urlC}；删掉键后${pickNote("text", b.m.items)}，查询一侧 ${urlB}`);
@@ -128,10 +153,7 @@ const T21_MANUAL = {
 
 const T21 = xauto({
   id: "T21", title: "② 边读边查：选中文字右键查词，网页留在左侧不动；复用查询标签、查词引擎设置、长选区规范化（真实鼠标）",
-  run: ctx => guarded(ctx, LOOKUP_KEYS, async () => {
-    await ctx.ext.eval(`chrome.storage.sync.remove("lookupEngine").then(() => true)`);
-    return withAttempts(ctx, () => runT21(ctx));
-  }),
+  run: ctx => guarded(ctx, LOOKUP_KEYS, () => withAttempts(ctx, () => runT21(ctx))),
 }, T21_MANUAL);
 
 export const V04_LOOKUP_STEPS = [T21, T22];

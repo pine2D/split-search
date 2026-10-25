@@ -99,6 +99,22 @@ export async function pickOurs(ctx, kind, at, wid) {
 }
 export const pickNote = (kind, items) => `菜单共 ${items} 项，点第 ${(MENU_INDEX[kind] < 0 ? items : 0) + MENU_INDEX[kind] + 1} 项`;
 
+// 写 storage 之后、右键之前，等本扩展的菜单重建完：storage.onChanged 每次都让 menus.js 先 removeAll 再重建，
+// 紧接着右键可能撞上重建的空档（本扩展的项还没建回来，菜单少一行）。每次先等 MENU_SETTLE_MS 再用 count() 数：
+// 给了 expected 就等到行数等于它，没给（还不知道带本扩展项时有几行）就等到连续两次相同。
+// 数满 tries 次仍不满足时返回最后一次的行数，由调用方判定
+export const MENU_SETTLE_MS = 400;
+export async function settleMenu(count, expected = null, { tries = 5, wait = sleep } = {}) {
+  let last = null;
+  for (let i = 0; i < tries; i++) {
+    await wait(MENU_SETTLE_MS);
+    const n = await count();
+    if (expected === null ? n === last : n === expected) return n;
+    last = n;
+  }
+  return last;
+}
+
 // 网页标签 pageId 在分屏里、对侧加载完并满足 pred 时返回 [网页, 查询]，否则 null
 export function lookupPair(st, pageId, pred) {
   const p = st.tabs.find(t => t.id === pageId);

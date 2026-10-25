@@ -5,6 +5,7 @@ import { startServer } from "../scripts/e2e/server.mjs";
 import { GRANT_ORIGINS, HOSTS, UNGRANTED_HOSTS, mockEngineU, mockImageEngine } from "../scripts/e2e/config.mjs";
 import { popupStateOf } from "../scripts/e2e/steps/v03-popup.mjs";
 import { MENU_INDEX, MENU_MIN_ITEMS } from "../scripts/e2e/steps/v04-lib.mjs";
+import { settleMenu, MENU_SETTLE_MS } from "../scripts/e2e/steps/v04-lookup-lib.mjs";
 
 test("UNGRANTED_HOSTS 不进 HOSTS，也不进 GRANT_ORIGINS（一次性授权不覆盖它们）", () => {
   assert.deepEqual(UNGRANTED_HOSTS, { u: "engine-u.localhost", page: "page-u.localhost", img: "engine-i.localhost" });
@@ -122,4 +123,34 @@ test("MENU_INDEX / MENU_MIN_ITEMS：整数；行号从末尾数（负数），�
   }
   assert.deepEqual(Object.keys(MENU_INDEX).sort(), ["image", "text"]);
   assert.deepEqual(Object.keys(MENU_MIN_ITEMS).sort(), ["image", "text"]);
+});
+
+// 假的数行函数：依次返回 seq，log 记下等待与数行的先后
+function fakeCounts(seq) {
+  const log = [];
+  let i = 0;
+  return {
+    log,
+    count: async () => { const n = seq[Math.min(i++, seq.length - 1)]; log.push(`count ${n}`); return n; },
+    wait: async ms => { log.push(`wait ${ms}`); },
+  };
+}
+
+test("settleMenu：先等 MENU_SETTLE_MS 再数；撞上重建空档（少一行）时再等再数，直到行数等于 expected", async () => {
+  const f = fakeCounts([6, 7]);
+  assert.ok(MENU_SETTLE_MS > 0);
+  assert.equal(await settleMenu(f.count, 7, { wait: f.wait }), 7);
+  assert.deepEqual(f.log, [`wait ${MENU_SETTLE_MS}`, "count 6", `wait ${MENU_SETTLE_MS}`, "count 7"]);
+});
+
+test("settleMenu：一直数不到 expected 时数满 tries 次，返回最后一次的行数（由调用方判定）", async () => {
+  const f = fakeCounts([6]);
+  assert.equal(await settleMenu(f.count, 7, { tries: 3, wait: f.wait }), 6);
+  assert.equal(f.log.filter(x => x.startsWith("count")).length, 3);
+});
+
+test("settleMenu：expected 为 null 时等到连续两次行数相同", async () => {
+  const f = fakeCounts([6, 7, 7]);
+  assert.equal(await settleMenu(f.count, null, { wait: f.wait }), 7);
+  assert.deepEqual(f.log.filter(x => x.startsWith("count")), ["count 6", "count 7", "count 7"]);
 });

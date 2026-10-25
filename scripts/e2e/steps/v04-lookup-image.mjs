@@ -12,7 +12,7 @@ import { withAttempts, xauto } from "./xauto-lib.mjs";
 import { contextMenuCount } from "../gesture-ui.mjs";
 import { elementCenter } from "../screen.mjs";
 import { msg } from "../i18n.mjs";
-import { articleScene, selectIn, clearSelection, cssCenter, screenPoint, pickOurs, pickNote, waitLookup, lookupPair, pageUntouched, item, mock, imgSrc } from "./v04-lookup-lib.mjs";
+import { articleScene, selectIn, clearSelection, cssCenter, screenPoint, pickOurs, pickNote, waitLookup, lookupPair, pageUntouched, item, mock, imgSrc, settleMenu, MENU_SETTLE_MS } from "./v04-lookup-lib.mjs";
 
 const J = JSON.stringify;
 const IMAGE_KEYS = ["imageEngines", "imageEngine"];
@@ -80,20 +80,25 @@ async function textThenImage(ctx, aItems) {
     + `查询标签 ${l.id} 换成 ${right}，记录 input 变 image，网页网址与标记不变`);
 }
 
+// 数 sel 这张图上的菜单项数（先清掉选区）
+async function countAt(ctx, scene, sel) {
+  await clearSelection(ctx, scene.P.targetId);
+  return contextMenuCount(ctx, { at: await elementCenter(ctx.browser, scene.P.targetId, sel), wid: scene.wid });
+}
+
 // 数 #http-img、#data-img 上的菜单项数
 async function counts(ctx, scene) {
   const out = {};
-  for (const sel of ["#http-img", "#data-img"]) {
-    await clearSelection(ctx, scene.P.targetId);
-    out[sel] = await contextMenuCount(ctx, { at: await elementCenter(ctx.browser, scene.P.targetId, sel), wid: scene.wid });
-  }
+  for (const sel of ["#http-img", "#data-img"]) out[sel] = await countAt(ctx, scene, sel);
   return out;
 }
 
 // (c) data: 图片没有本扩展的菜单项：用基线做差（不假设 Chrome 自带项在两种图片上相同）。
-// 先数两张图的项数，扩展页 removeAll 后各数一次，再改一次 imageEngine 又改回触发 rebuildMenus，等 #http-img 的项数回到原值
-async function dataImage(ctx) {
+// 先数两张图的项数，扩展页 removeAll 后各数一次，再改一次 imageEngine 又改回触发 rebuildMenus，等 #http-img 的项数回到原值。
+// 每次尝试开头先等 #http-img 的项数稳定（等于 (a) 的行数，(a) 没数到时连续两次相同）：上一次尝试可能刚在 finally 里触发重建
+async function dataImage(ctx, aItems) {
   const scene = await articleScene(ctx);
+  await settleMenu(() => countAt(ctx, scene, "#http-img"), aItems);
   const withMenus = await counts(ctx, scene);
   await ctx.ext.eval("chrome.contextMenus.removeAll().then(() => true)");
   let base;
@@ -101,11 +106,7 @@ async function dataImage(ctx) {
   finally {
     await ctx.ext.eval(`chrome.storage.sync.set({ imageEngine: "lens" }).then(() => chrome.storage.sync.set({ imageEngine: "ei" })).then(() => true)`);
   }
-  let back = null;
-  for (let i = 0; i < 5 && back !== withMenus["#http-img"]; i++) {
-    await sleep(400);
-    back = (await counts(ctx, scene))["#http-img"];
-  }
+  const back = await settleMenu(() => countAt(ctx, scene, "#http-img"), withMenus["#http-img"]);
   const pr = [];
   if (back !== withMenus["#http-img"]) pr.push(`改回 imageEngine 后 #http-img 的菜单没回到 ${withMenus["#http-img"]} 项（${back} 项），本扩展菜单项没重建出来`);
   if (withMenus["#http-img"] !== base["#http-img"] + 1) pr.push(`#http-img 有本扩展菜单时应比基线多 1 项：${withMenus["#http-img"]} 对 ${base["#http-img"]}`);
@@ -142,6 +143,7 @@ export const T22 = xauto({
   id: "T22", title: "⑧ 以图搜图：http 图片上右键，网页留在左侧不动；先查词再查图复用查询标签；data: 图片没有菜单项（真实鼠标）",
   run: ctx => guarded(ctx, IMAGE_KEYS, async () => {
     await useMockImage(ctx);
+    await sleep(MENU_SETTLE_MS); // 写 storage 后让菜单重建完再右键；(a) 的 expectItems 拦住撞上空档的情况
     let aItems = null;
     const a = await item("(a) http 图片右键：右侧网址的 url 参数与 engine-i 回显都是图片网址，网页标记不变", () => withAttempts(ctx, async () => {
       const r = await httpImage(ctx);
@@ -149,7 +151,7 @@ export const T22 = xauto({
       return r.result;
     }));
     const b = await item("(b) 同一页先查词再查图：复用同一个查询标签，记录 input 变 image", () => withAttempts(ctx, () => textThenImage(ctx, aItems)));
-    const c = await item("(c) data: 图片：本扩展菜单项不出现（与 removeAll 后的基线同项数），http 图片多 1 项", () => withAttempts(ctx, () => dataImage(ctx)));
+    const c = await item("(c) data: 图片：本扩展菜单项不出现（与 removeAll 后的基线同项数），http 图片多 1 项", () => withAttempts(ctx, () => dataImage(ctx, aItems)));
     return summarize([a, b, c]);
   }),
 }, T22_MANUAL);
