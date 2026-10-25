@@ -1,6 +1,7 @@
 // 触发处理页：解析 go.html?u=<原始网址>，判定分屏动作并执行。只做编排。
 import { extractOriginalUrl, parseTrigger, expandTemplate, stripMarker } from "./lib/trigger.js";
 import { decideSplit } from "./lib/split-decision.js";
+import { isNarrow } from "./lib/narrow.js";
 import { loadConfig } from "./chrome/config-store.js";
 import { ACTIONS, leaveTab } from "./chrome/split-actions.js";
 import { inspectTab } from "./chrome/split-state.js";
@@ -61,6 +62,7 @@ async function split(engines, narrowEnabled, { left, right, query }, leftUrl, ri
     splitViewId: ctx.splitViewId,
     peer: ctx.peer,
     ownership: ctx.ownership,
+    narrow: isNarrow(ctx.win.width, narrowEnabled),
   });
   const outcome = await ACTIONS[action]({
     ...ctx, leftUrl, rightUrl, leftId: left.id, rightId: right.id, query, narrowEnabled,

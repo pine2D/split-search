@@ -1,7 +1,7 @@
 import { test, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import {
-  ACTIONS, createPaired, openNew, reuse, openForeign, openInOtherWindow, leaveTab,
+  ACTIONS, createPaired, openNew, reuse, join, openForeign, openInOtherWindow, leaveTab,
 } from "../src/chrome/split-actions.js";
 
 // 最小 chrome 桩：按顺序记录调用。fail.<name> 为 true 时对应调用抛错；
@@ -34,6 +34,8 @@ function installChrome(fail = {}, extra = {}) {
         return { id, splitViewId: extra.getSplitViewId ?? 55 };
       },
       async update(id, props) { calls.push(["tabs.update", id, props]); check("update"); },
+      // 把相邻对拼成分屏：返回 extra.joinSplitViewId（默认 66）；复核读到的值由 getSplitViewId 决定
+      async createSplit(tabIds) { calls.push(["tabs.createSplit", tabIds]); check("join"); return extra.joinSplitViewId ?? 66; },
       async remove(id) { calls.push(["tabs.remove", id]); check("remove"); },
     },
     windows: {
@@ -62,8 +64,8 @@ beforeEach((t) => {
   t.mock.method(console, "error", () => {});
 });
 
-test("ACTIONS 覆盖 decideSplit 的四种结果", () => {
-  assert.deepEqual(Object.keys(ACTIONS).sort(), ["foreign", "new", "other-window", "reuse"]);
+test("ACTIONS 覆盖 decideSplit 的五种结果", () => {
+  assert.deepEqual(Object.keys(ACTIONS).sort(), ["foreign", "join", "new", "other-window", "reuse"]);
 });
 
 test("new：右侧新建并与当前标签分屏，复核后写两条 split 记录，当前标签打开左侧", async () => {
@@ -321,4 +323,71 @@ test("other-window：目标窗口宽度读不到时照常分屏", async () => {
   installChrome({}, { lastFocused: { id: 7 } });
   await openInOtherWindow({ leftUrl: L, rightUrl: R, ...ids, narrowEnabled: true });
   assert.equal(calls[2][1].splitWithTabId, 100);
+});
+
+test("join：当前在左侧，先更新右侧，再把两个标签拼成分屏（左在前），复核后写 split 记录", async () => {
+  installChrome({}, { getSplitViewId: 66 });
+  const out = await join({
+    tab: { id: 1, index: 3, windowId: 9 }, peer: { id: 2, index: 4, windowId: 9 }, splitViewId: -1, leftUrl: L, rightUrl: R, ...ids,
+  });
+  assert.deepEqual(out, { replaceWith: L });
+  assert.deepEqual(calls, [
+    ["tabs.update", 2, { url: R }],
+    ["tabs.createSplit", [1, 2]],
+    ["tabs.get", 1],
+    ["tabs.get", 2],
+    ["session.set", { "split:1": rec(2, "kagi", { splitViewId: 66 }), "split:2": rec(1, "google", { splitViewId: 66 }) }],
+  ]);
+  assert.ok(!names().includes("tabs.create"));
+});
+
+test("join：当前在右侧时对侧拿左侧，createSplit 仍按标签顺序传 [左, 右]", async () => {
+  installChrome({}, { getSplitViewId: 66 });
+  const out = await join({
+    tab: { id: 1, index: 5, windowId: 9 }, peer: { id: 2, index: 4, windowId: 9 }, splitViewId: -1, leftUrl: L, rightUrl: R, ...ids,
+  });
+  assert.deepEqual(out, { replaceWith: R });
+  assert.deepEqual(calls[0], ["tabs.update", 2, { url: L }]);
+  assert.deepEqual(calls[1], ["tabs.createSplit", [2, 1]]);
+  assert.deepEqual(calls.at(-1), ["session.set", {
+    "split:1": rec(2, "google", { splitViewId: 66 }), "split:2": rec(1, "kagi", { splitViewId: 66 }),
+  }]);
+});
+
+test("join：createSplit 抛错 → 不抛，退回相邻对的复用（adjacent 记录），左侧照常打开", async () => {
+  installChrome({ join: true });
+  const out = await join({
+    tab: { id: 1, index: 3, windowId: 9 }, peer: { id: 2, index: 4, windowId: 9 }, splitViewId: -1, leftUrl: L, rightUrl: R, ...ids,
+  });
+  assert.deepEqual(out, { replaceWith: L });
+  const adj = { mode: "adjacent", splitViewId: -1 };
+  assert.deepEqual(calls.at(-1), ["session.set", { "split:1": rec(2, "kagi", adj), "split:2": rec(1, "google", adj) }]);
+  assert.ok(names().includes("tabs.update"));
+  assert.ok(console.error.mock.callCount() >= 1);
+});
+
+test("join：复核读到两个标签不在同一个分屏 → 记 adjacent，不写 split", async () => {
+  installChrome({}, { getSplitViewId: -1 });
+  await join({
+    tab: { id: 1, index: 3, windowId: 9 }, peer: { id: 2, index: 4, windowId: 9 }, splitViewId: -1, leftUrl: L, rightUrl: R, ...ids,
+  });
+  const adj = { mode: "adjacent", splitViewId: -1 };
+  assert.deepEqual(calls.at(-1), ["session.set", { "split:1": rec(2, "kagi", adj), "split:2": rec(1, "google", adj) }]);
+});
+
+test("join：复核时 tabs.get 抛错 → 记 adjacent，不抛", async () => {
+  installChrome({ get: true });
+  const out = await join({
+    tab: { id: 1, index: 3, windowId: 9 }, peer: { id: 2, index: 4, windowId: 9 }, splitViewId: -1, leftUrl: L, rightUrl: R, ...ids,
+  });
+  assert.deepEqual(out, { replaceWith: L });
+  assert.equal(calls.at(-1)[1]["split:1"].mode, "adjacent");
+});
+
+test("join：更新右侧失败时照常抛出（由 go.js 兜底打开左侧），不拼分屏", async () => {
+  installChrome({ update: true });
+  await assert.rejects(join({
+    tab: { id: 1, index: 3, windowId: 9 }, peer: { id: 2, index: 4, windowId: 9 }, splitViewId: -1, leftUrl: L, rightUrl: R, ...ids,
+  }));
+  assert.ok(!names().includes("tabs.createSplit"));
 });

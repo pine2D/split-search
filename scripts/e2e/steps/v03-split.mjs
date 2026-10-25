@@ -1,5 +1,5 @@
 // v0.3 自动步骤 T16（spec 3.8 V1）：分屏记录绑定 splitViewId。
-// (a) 记录形状；(b) 拆开再拼回去后触发判“不是”；(c) tabs.move 对调后仍复用；(d) 关标签清记录、不误删对侧的新配对；
+// (a) 记录形状；(b) 拆开再拼回去后连续触发两次都判“不是”（失效记录保留）；(c) tabs.move 对调后仍复用；(d) 关标签清记录、不误删对侧的新配对；
 // (e) 重启后另一侧停在引擎的非搜索路径，兜底判“不是”。重启沿用 T5 的做法（ctx.restartBrowser）。
 import { isDeepStrictEqual } from "node:util";
 import { HOSTS } from "../config.mjs";
@@ -40,7 +40,8 @@ async function expectForeign(ctx, tab, other, q2) {
   return { problems: p, now, st };
 }
 
-const rejoin = ctx => sub("(b) 拆开再拼回去后触发：判“不是”，走 foreign", async () => {
+// 拼回去之后连续触发两次都判“不是”：第一次之后失效记录仍保留（仍互指、仍是旧 splitViewId），第二次不会落到兜底
+const rejoin = ctx => sub("(b) 拆开再拼回去后连续触发两次：都判“不是”，走 foreign", async () => {
   const q = "t16+rejoin";
   const { pair } = await pairOn(ctx, q);
   const [L, R] = pair;
@@ -52,8 +53,12 @@ const rejoin = ctx => sub("(b) 拆开再拼回去后触发：判“不是”，�
   if (v1 === L.splitViewId) return { status: "skip", detail: `createSplit 沿用了原来的 splitViewId ${v1}，构造不出“拼回去”的情况` };
   const r = await expectForeign(ctx, L, R, "t16+rejoin2");
   const recs = await readRecords(ctx, [L.id, R.id]);
-  if (recs[L.id] !== undefined || recs[R.id] !== undefined) r.problems.push(`失效记录应被顺手清理，实际 ${JSON.stringify(recs)}`);
-  return verdict(r.problems, `splitViewId ${L.splitViewId} → ${v1}；在左侧 ${L.id} 触发后新开一对 ${ids(r.now)}，原来两个标签未被改写（右侧仍是另一侧引擎的搜索页），失效记录已清理`);
+  const kept = recs[L.id]?.peer === R.id && recs[R.id]?.peer === L.id
+    && recs[L.id]?.splitViewId === L.splitViewId && recs[R.id]?.splitViewId === L.splitViewId;
+  if (!kept) r.problems.push(`第一次触发后失效记录应保留（互指、splitViewId ${L.splitViewId}），实际 ${JSON.stringify(recs)}`);
+  const r2 = await expectForeign(ctx, L, R, "t16+rejoin3");
+  r.problems.push(...r2.problems.map(x => `第二次触发：${x}`));
+  return verdict(r.problems, `splitViewId ${L.splitViewId} → ${v1}；在左侧 ${L.id} 连续触发两次，分别新开 ${ids(r.now)}、${ids(r2.now)}，原来两个标签未被改写（右侧仍是另一侧引擎的搜索页），失效记录保留`);
 });
 
 const swap = ctx => sub("(c) tabs.move 对调两侧后触发：仍就地更新", async () => {

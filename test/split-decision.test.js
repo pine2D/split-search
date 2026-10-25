@@ -10,8 +10,20 @@ test("不在分屏中、没有相邻对", () => {
   assert.equal(decideSplit({ ...base, splitViewId: -1, peer: null, ownership: "none" }), "new");
   assert.equal(decideSplit({ ...base, splitViewId: -1, ownership: "stale" }), "new");
 });
-test("不在分屏中但是本扩展的相邻对 → reuse", () =>
-  assert.equal(decideSplit({ ...base, splitViewId: -1, ownership: "own" }), "reuse"));
+test("不在分屏中但是本扩展的相邻对、窗口仍窄 → reuse", () =>
+  assert.equal(decideSplit({ ...base, splitViewId: -1, ownership: "own", narrow: true }), "reuse"));
+test("本扩展的相邻对、窗口不窄或开关关闭（narrow 不为 true）→ join", () => {
+  assert.equal(decideSplit({ ...base, splitViewId: -1, ownership: "own", narrow: false }), "join");
+  assert.equal(decideSplit({ ...base, splitViewId: -1, ownership: "own" }), "join");
+});
+test("narrow 不影响其他结果", () => {
+  for (const narrow of [true, false]) {
+    assert.equal(decideSplit({ ...base, narrow }), "reuse");
+    assert.equal(decideSplit({ ...base, splitViewId: -1, peer: null, ownership: "none", narrow }), "new");
+    assert.equal(decideSplit({ ...base, ownership: "stale", narrow }), "foreign");
+    assert.equal(decideSplit({ ...base, windowType: "popup", narrow }), "other-window");
+  }
+});
 test("本扩展分屏 → reuse", () => assert.equal(decideSplit(base), "reuse"));
 test("无记录兜底判为本扩展 → reuse", () => assert.equal(decideSplit({ ...base, ownership: "fallback-own" }), "reuse"));
 test("记录失效 → foreign", () => assert.equal(decideSplit({ ...base, ownership: "stale" }), "foreign"));

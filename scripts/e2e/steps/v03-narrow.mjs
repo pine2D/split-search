@@ -1,7 +1,8 @@
 // v0.3 自动步骤 T17（spec 3.8 V3）：窄窗口降级。
 // 用 CDP Browser.setWindowBounds 调窗口宽度（写法同 xauto-lib.mjs 的 fixWindow），扩展侧用 windows.get 读回（DIP，含边框）。
 // (a) 默认开启（删掉 narrowFallback）+ 窄窗口：右侧是相邻的后台标签、写 adjacent 记录；同一标签再触发复用它
-// (b) 窄窗口下的 foreign：用户分屏两侧不变 (c) 开关为 false：窄窗口照常分屏 (d) 宽窗口照常分屏。
+// (b) 窄窗口下的 foreign：用户分屏两侧不变 (c) 开关为 false：窄窗口照常分屏 (d) 宽窗口照常分屏
+// (e)(f) 相邻对在窗口变宽 / 关掉开关后，同一标签再触发：这两个标签拼成分屏，记录改为 split，不新开标签。
 // finally 恢复窗口尺寸；narrowFallback 由 guarded 写回步骤前的值。
 import { NARROW_WIDTH } from "../../../src/lib/narrow.js";
 import {
@@ -127,8 +128,36 @@ const splits = (ctx, saved, name, pref, width, q) => sub(name, skipOr(async () =
   return verdict(p, `窗口宽 ${w}、narrowFallback ${pref === undefined ? "缺省" : pref}：建了分屏 ${fmt(pair)}`);
 }));
 
+// 先在窄窗口建相邻对，再经 change() 改条件（窗口变宽或关掉开关），同一标签再触发，期望拼成分屏
+const joins = (ctx, saved, name, change, q) => sub(name, skipOr(async () => {
+  const { port } = ctx;
+  await setNarrowPref(ctx, undefined);
+  const { base } = await narrowBase(ctx, saved);
+  await navigate(ctx, base.targetId, trigger(port, q));
+  const adj = await waitState(ctx, st => findAdjacent(st, port, q), `相邻对 ${expectPair(port, q).join(" ｜ ")}`);
+  const n0 = countTabs(await ctx.ext.state());
+  const how = await change(base);
+  const q2 = `${q}2`;
+  await navigate(ctx, base.targetId, trigger(port, q2));
+  const pair = await waitState(ctx, st => findPair(st, port, q2), `分屏 ${expectPair(port, q2).join(" ｜ ")}`);
+  const st = await ctx.ext.state();
+  const p = [];
+  if (pair[0].id !== adj[0].id || pair[1].id !== adj[1].id) p.push(`分屏应由原来的相邻对 ${ids(adj)} 组成，实际 ${ids(pair)}`);
+  if (countTabs(st) !== n0) p.push(`标签数从 ${n0} 变成 ${countTabs(st)}`);
+  p.push(...checkPairRecords(await readRecords(ctx, pair.map(t => t.id)), pair[0], pair[1],
+    { mode: "split", splitViewId: pair[0].splitViewId, engines: ["ea", "eb"], query: queryOf(q2) }));
+  return verdict(p, `相邻对 ${ids(adj)}；${how}后再触发，拼成分屏 ${pair[0].splitViewId}：${fmt(pair)}，记录 mode split，没有新开标签`);
+}));
+
+const widen = (ctx, saved) => async base => {
+  const w = await sizeTo(ctx, base, WIDE, saved);
+  if (w < NARROW_WIDTH) throw Object.assign(new Error(`窗口宽度设不到 ${NARROW_WIDTH} 以上（设 ${WIDE}，读回 ${w}）`), { skip: true });
+  return `窗口变宽到 ${w} `;
+};
+const switchOff = ctx => async () => { await setNarrowPref(ctx, false); return "把 narrowFallback 改为 false "; };
+
 const T17 = {
-  id: "T17", title: "窄窗口降级：右侧改在相邻后台标签、复用、不动用户分屏；关掉开关或宽窗口照常分屏（自动判定）", kind: "auto", needs: [],
+  id: "T17", title: "窄窗口降级：右侧改在相邻后台标签、复用、不动用户分屏；关掉开关或宽窗口照常分屏，相邻对随之拼成分屏（自动判定）", kind: "auto", needs: [],
   timeoutMs: 180000,
   run: ctx => guarded(ctx, ["narrowFallback"], async () => {
     const saved = new Map();
@@ -138,6 +167,8 @@ const T17 = {
         await foreign(ctx, saved),
         await splits(ctx, saved, "(c) 开关为 false + 窄窗口：照常分屏", false, NARROW, "t17+off"),
         await splits(ctx, saved, "(d) 默认开启 + 宽窗口：照常分屏", undefined, WIDE, "t17+wide"),
+        await joins(ctx, saved, "(e) 相邻对在窗口变宽后再触发：拼成分屏", widen(ctx, saved), "t17+join"),
+        await joins(ctx, saved, "(f) 相邻对在关掉开关后再触发：拼成分屏", switchOff(ctx), "t17+joinoff"),
       ]);
     } finally { await restoreWindows(ctx, saved); }
   }),

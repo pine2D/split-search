@@ -53,8 +53,20 @@ function peerOf(t) {
   return { id: t.id, index: t.index, windowId: t.windowId, splitViewId: t.splitViewId ?? -1, url: t.url };
 }
 
+// 记录里的对侧标签是否已经不在了（tabs.get 不需要 tabs 权限）
+async function recordedPeerGone(record, peer) {
+  if (peer?.id === record.peer) return false;
+  try {
+    await chrome.tabs.get(record.peer);
+    return false;
+  } catch {
+    return true;
+  }
+}
+
 // 当前标签的对侧、两侧记录和归属。tabs.query({ splitViewId }) 不需要 tabs 权限，失败照常抛出。
-// 读到失效记录（stale）时顺手清理。
+// 读到失效记录（stale）时，只有记录里的对侧已经关掉才顺手清理。对侧还在时两条都保留：
+// 用户拆开后再把这两个标签拼回去，它们仍判 stale（不是本扩展的），不会落到兜底被当成本扩展分屏覆盖。
 export async function inspectTab(tab, engines) {
   const splitViewId = tab.splitViewId ?? -1;
   const record = await readRecord(tab.id);
@@ -76,6 +88,6 @@ export async function inspectTab(tab, engines) {
   const ownership = judgeOwnership({
     tab: { ...tab, splitViewId }, peer, record, peerRecord, engines,
   });
-  if (ownership === "stale") await clearPair(tab.id);
+  if (ownership === "stale" && await recordedPeerGone(record, peer)) await clearPair(tab.id);
   return { splitViewId, splitTabs, peer, record, peerRecord, ownership };
 }

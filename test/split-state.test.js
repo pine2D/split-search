@@ -166,12 +166,43 @@ test("inspectTab：相邻对的对侧已关掉（No tab with id）→ peer 为 n
   assert.equal(store.has("split:1"), false);
 });
 
-test("inspectTab：拆开又拼回（splitViewId 变了）→ stale，两条互指记录都删", async () => {
+test("inspectTab：拆开又拼回（splitViewId 变了）→ stale，对侧还在，两条记录都保留", async () => {
   const tab = { id: 1, index: 4, windowId: 9, splitViewId: 8 };
   const other = { id: 2, index: 5, windowId: 9, splitViewId: 8, url: "https://www.google.com/search?q=q" };
   installChrome({ tabs: { 1: tab, 2: other }, data: { "split:1": rec(2), "split:2": rec(1) } });
   const info = await inspectTab(tab, engines);
   assert.equal(info.ownership, "stale");
+  assert.deepEqual([...store.keys()].sort(), ["split:1", "split:2"]);
+  assert.ok(!calls.some(c => c[0] === "session.remove"));
+});
+
+test("inspectTab：拼回后连续检查两次 → 两次都 stale，不会落到兜底", async () => {
+  const tab = { id: 1, index: 4, windowId: 9, splitViewId: 8 };
+  const other = { id: 2, index: 5, windowId: 9, splitViewId: 8, url: "https://www.google.com/search?q=q" };
+  installChrome({ tabs: { 1: tab, 2: other }, data: { "split:1": rec(2), "split:2": rec(1) } });
+  assert.equal((await inspectTab(tab, engines)).ownership, "stale");
+  assert.equal((await inspectTab(tab, engines)).ownership, "stale");
+  assert.equal((await inspectTab(other, engines)).ownership, "stale");
+});
+
+test("inspectTab：拆开后（不在分屏中）检查 → stale，对侧还在，记录保留，之后拼回仍判 stale", async () => {
+  const tab = { id: 1, index: 4, windowId: 9, splitViewId: -1 };
+  const other = { id: 2, index: 5, windowId: 9, splitViewId: -1, url: "https://www.google.com/search?q=q" };
+  installChrome({ tabs: { 1: tab, 2: other }, data: { "split:1": rec(2), "split:2": rec(1) } });
+  assert.equal((await inspectTab(tab, engines)).ownership, "stale");
+  assert.equal(store.size, 2);
+  tab.splitViewId = 8;
+  other.splitViewId = 8;
+  assert.equal((await inspectTab(tab, engines)).ownership, "stale");
+});
+
+test("inspectTab：在别的分屏里、记录里的对侧已关掉 → stale，清掉自己的记录", async () => {
+  const tab = { id: 1, index: 4, windowId: 9, splitViewId: 8 };
+  const other = { id: 3, index: 5, windowId: 9, splitViewId: 8, url: "https://www.google.com/search?q=q" };
+  installChrome({ tabs: { 1: tab, 3: other }, data: { "split:1": rec(2) } });
+  const info = await inspectTab(tab, engines);
+  assert.equal(info.ownership, "stale");
+  assert.deepEqual(calls.filter(c => c[0] === "tabs.get"), [["tabs.get", 2]]);
   assert.equal(store.size, 0);
 });
 

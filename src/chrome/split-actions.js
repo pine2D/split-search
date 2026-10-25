@@ -9,18 +9,18 @@ import { writePair } from "./split-state.js";
 
 const log = (...args) => console.error("[split-search]", ...args);
 
-// 新标签和 withTab 真的在同一个分屏里才返回该 splitViewId，否则返回 -1。
+// 两个标签真的在同一个分屏里才返回该 splitViewId，否则返回 -1。
 // 两个标签都重新读一次，读到的值一致且不是 -1 才算数；任一读取抛错也返回 -1。
-async function confirmedSplitViewId(created, withTabId) {
+async function confirmedSplitViewId(aId, bId) {
   try {
-    const [current, fresh] = await Promise.all([chrome.tabs.get(withTabId), chrome.tabs.get(created.id)]);
-    const v = current.splitViewId ?? -1;
-    if (v !== -1 && fresh.splitViewId === v) return v;
+    const [a, b] = await Promise.all([chrome.tabs.get(aId), chrome.tabs.get(bId)]);
+    const v = a.splitViewId ?? -1;
+    if (v !== -1 && b.splitViewId === v) return v;
   } catch (err) {
     log("failed to re-read the tabs after creating the split", err);
     return -1;
   }
-  log("the new tab did not end up in a split view with the current tab");
+  log("the two tabs did not end up in the same split view");
   return -1;
 }
 
@@ -37,7 +37,7 @@ export async function createPaired(url, withTab, { split = true } = {}) {
     log("splitWithTabId failed, falling back to a plain tab", err);
     return { tab: await chrome.tabs.create(base), splitViewId: -1 };
   }
-  return { tab, splitViewId: await confirmedSplitViewId(tab, withTab.id) };
+  return { tab, splitViewId: await confirmedSplitViewId(withTab.id, tab.id) };
 }
 
 // 新建的一对写记录：真分屏写 split；窄窗口降级（adjacent）写 adjacent 记录；
@@ -62,16 +62,40 @@ export async function openNew({ tab, win, leftUrl, rightUrl, leftId, rightId, qu
   return { replaceWith: leftUrl };
 }
 
-// 当前标签在本扩展的分屏或相邻对中：就地更新两侧，左右位置不变（index 小的在左）。
-// 记录沿用现状：分屏中是当前 splitViewId + "split"，相邻对是 -1 + "adjacent"。
-export async function reuse({ tab, peer, splitViewId, leftUrl, rightUrl, leftId, rightId, query }) {
+// 就地更新两侧，左右位置不变（index 小的在左）。对侧先换网址，再由 settle() 给出要记下的 splitViewId：
+// 不是 -1 记 "split"，是 -1 记 "adjacent"。返回当前标签要打开的网址。
+async function refreshPair({ tab, peer, leftUrl, rightUrl, leftId, rightId, query }, settle) {
   const tabIsLeft = sideOf(tab.index, peer.index) === "left";
   await chrome.tabs.update(peer.id, { url: tabIsLeft ? rightUrl : leftUrl });
+  const splitViewId = await settle(tabIsLeft);
   await writePair({
     a: tab.id, b: peer.id, splitViewId, mode: splitViewId !== -1 ? "split" : "adjacent",
     engineA: tabIsLeft ? leftId : rightId, engineB: tabIsLeft ? rightId : leftId, query,
   });
   return { replaceWith: tabIsLeft ? leftUrl : rightUrl };
+}
+
+// 当前标签在本扩展的分屏或相邻对中（相邻对只在窗口仍窄时走这里）：记录沿用现状，
+// 分屏中是当前 splitViewId + "split"，相邻对是 -1 + "adjacent"。
+export async function reuse(ctx) {
+  return refreshPair(ctx, async () => ctx.splitViewId);
+}
+
+// 本扩展的相邻对，但窗口已经不窄（或关掉了降级开关）：更新对侧后用 createSplit 把这两个标签拼成分屏
+// （createSplit(tabIds) 要求两个标签相邻，按 [左, 右] 传），复核两侧的 splitViewId 后改记 "split"。
+// 拼不成（抛错或复核不一致）时只记日志，退回相邻对的复用；左侧照常打开。
+export async function join(ctx) {
+  const { tab, peer } = ctx;
+  return refreshPair(ctx, async (tabIsLeft) => {
+    const [left, right] = tabIsLeft ? [tab.id, peer.id] : [peer.id, tab.id];
+    try {
+      await chrome.tabs.createSplit([left, right]);
+    } catch (err) {
+      log("failed to join the adjacent pair into a split view, keeping it as an adjacent pair", err);
+      return -1;
+    }
+    return confirmedSplitViewId(left, right);
+  });
 }
 
 // 当前标签在其他分屏中：另一侧不动，在该分屏右侧相邻位置新建一对标签。
@@ -141,6 +165,7 @@ export async function leaveTab(tab, hist = globalThis.history) {
 export const ACTIONS = {
   new: openNew,
   reuse,
+  join,
   foreign: openForeign,
   "other-window": openInOtherWindow,
 };
