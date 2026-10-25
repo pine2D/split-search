@@ -61,7 +61,7 @@ test("manifest 图标存在且是尺寸相符的 PNG", () => {
 });
 
 test("src/icons 与选定图标 c6 源文件逐字节相同", () => {
-  // 16/32 是按像素对齐的 icon-16.svg / icon-32.svg 导出的；从 icon.svg 重导会失去对齐，这里拦住源和成品漂移
+  // 16/32/48 是按像素对齐的 icon-16.svg / icon-32.svg / icon-48.svg 导出的；从 icon.svg 重导会失去对齐，这里拦住源和成品漂移
   for (const size of [16, 32, 48, 128]) {
     const name = `icon-${size}.png`;
     const built = readFileSync(new URL("../src/icons/" + name, import.meta.url));
