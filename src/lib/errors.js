@@ -6,6 +6,7 @@ export const ERROR_CODES = Object.freeze([
   "config_too_large", "name_required", "name_too_long", "id_format", "id_taken", "engine_gone",
   "default_left_url", "only_preset_hide", "pair_uses_hide", "only_custom_delete", "pair_uses_delete",
   "pair_missing", "quota_rate", "quota_bytes", "catalog_already_added", "id_exhausted",
+  "not_results_page", "window_unsupported", "split_failed", "message_rejected",
 ]);
 
 export function spec(code, ...args) {

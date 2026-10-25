@@ -889,6 +889,22 @@
       }
     }
   },
+  "err_not_results_page": {
+    "message": "This page has changed. Click the toolbar button again.",
+    "description": "Toolbar popup, completing a split view: the page is no longer a recognized search results page (navigated away, closed, joined a split view or the query is gone) when the user clicked an engine."
+  },
+  "err_window_unsupported": {
+    "message": "Split view isn’t available in this window.",
+    "description": "Toolbar popup, completing a split view: the current window can't hold a split view (for example a popup or picture-in-picture window)."
+  },
+  "err_split_failed": {
+    "message": "Couldn’t open the search on the right. Try again.",
+    "description": "Toolbar popup, completing a split view: opening the right-side search failed."
+  },
+  "err_message_rejected": {
+    "message": "That didn’t work. Click the toolbar button and try again.",
+    "description": "Toolbar popup, completing a split view: the extension rejected the request (unknown sender, bad fields, or the chosen engine is no longer available)."
+  },
   "options_add_from_catalog": {
     "message": "Add from catalog",
     "description": "Button next to 'Add engine' that opens the engine catalog dialog."

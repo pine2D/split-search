@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { popupView, targetTabId } from "../src/lib/popup-view.js";
+import { popupView, targetTabId, popupMode, completeView } from "../src/lib/popup-view.js";
 import { mergeConfig } from "../src/lib/engines.js";
 import { IMAGE_CATALOG } from "../src/lib/image-engines.js";
 
@@ -88,4 +88,35 @@ test("popupView：文字查询对左侧是网页，候选是文字引擎（不�
 });
 test("popupView：没有 kind 的旧调用不算查询对（leftIsPage 为 false）", () => {
   assert.equal(popupView(pair("google", "bing"), mergeConfig({})).leftIsPage, false);
+});
+
+test("popupMode：本扩展的一对 → pair（哪怕在分屏里、窗口不是 normal）", () => {
+  const pairRec = { kind: "search", left: { engineId: "google" }, right: { engineId: "bing" } };
+  assert.equal(popupMode({ pair: pairRec, tab: { splitViewId: 3 }, windowType: "popup", match: null }), "pair");
+});
+test("popupMode：在别的分屏里 → not-ours", () => {
+  assert.equal(popupMode({ pair: null, tab: { splitViewId: 3 }, windowType: "normal", match: {} }), "not-ours");
+});
+test("popupMode：窗口不是 normal、识别不出 → not-ours", () => {
+  assert.equal(popupMode({ pair: null, tab: { splitViewId: -1 }, windowType: "pip", match: {} }), "not-ours");
+  assert.equal(popupMode({ pair: null, tab: {}, windowType: "normal", match: null }), "not-ours");
+  assert.equal(popupMode({ pair: null, tab: {}, windowType: "normal", match: undefined }), "not-ours");
+});
+test("popupMode：不在分屏、normal 窗口、识别出结果页 → complete（没有 splitViewId 字段按 -1）", () => {
+  assert.equal(popupMode({ pair: null, tab: {}, windowType: "normal", match: {} }), "complete");
+  assert.equal(popupMode({ pair: null, tab: { splitViewId: -1 }, windowType: "normal", match: {} }), "complete");
+});
+test("completeView：choices 不含识别出的引擎，建议的排第一，其余保持显示顺序", () => {
+  const { engines } = mergeConfig({});
+  const google = engines.find(e => e.id === "google");
+  const v = completeView({ engine: google, query: "x y", suggestedId: "kagi" }, engines);
+  assert.equal(v.engine, google);
+  assert.equal(v.query, "x y");
+  assert.equal(v.suggestedId, "kagi");
+  assert.deepEqual(v.choices.map(e => e.id), ["kagi", "bing", "ddg", "perplexity"]);
+});
+test("completeView：建议的引擎不在列表里时其余照显示顺序", () => {
+  const { engines } = mergeConfig({});
+  const v = completeView({ engine: engines[1], query: "x", suggestedId: "gone" }, engines);
+  assert.deepEqual(v.choices.map(e => e.id), ["google", "ddg", "perplexity", "kagi"]);
 });

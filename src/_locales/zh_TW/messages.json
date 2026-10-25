@@ -889,6 +889,22 @@
       }
     }
   },
+  "err_not_results_page": {
+    "message": "頁面已經變了，請重新點一下工具列按鈕。",
+    "description": "Toolbar popup, completing a split view: the page is no longer a recognized search results page (navigated away, closed, joined a split view or the query is gone) when the user clicked an engine."
+  },
+  "err_window_unsupported": {
+    "message": "這個視窗無法使用分割畫面。",
+    "description": "Toolbar popup, completing a split view: the current window can't hold a split view (for example a popup or picture-in-picture window)."
+  },
+  "err_split_failed": {
+    "message": "右側的搜尋沒能開啟，請再試一次。",
+    "description": "Toolbar popup, completing a split view: opening the right-side search failed."
+  },
+  "err_message_rejected": {
+    "message": "沒能執行，請重新點一下工具列按鈕再試。",
+    "description": "Toolbar popup, completing a split view: the extension rejected the request (unknown sender, bad fields, or the chosen engine is no longer available)."
+  },
   "options_add_from_catalog": {
     "message": "從引擎庫新增",
     "description": "Button next to 'Add engine' that opens the engine catalog dialog."

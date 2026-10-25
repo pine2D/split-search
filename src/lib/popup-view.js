@@ -36,3 +36,20 @@ function hostOf(url) {
     return "";
   }
 }
+
+// 弹窗显示哪一区（spec 3.2 的表）：本扩展的一对 → "pair"；在任何分屏中、窗口不能分屏（windowType 来自
+// splitWindowType，只有 "normal" 可以）、识别不出结果页 → "not-ours"（v0.3 的说明）；其余 → "complete"（补成分屏）。
+export function popupMode({ pair, tab, windowType, match }) {
+  if (pair) return "pair";
+  if ((tab?.splitViewId ?? -1) !== -1 || windowType !== "normal" || match == null) return "not-ours";
+  return "complete";
+}
+
+// “补成分屏”区：按钮是 engines（未隐藏的文字引擎，显示顺序）去掉识别出的引擎，建议的右侧排第一。
+// 不看 cycleExclude（每次都是用户亲手点选）。
+export function completeView(match, engines) {
+  const rest = engines.filter(e => e.id !== match.engine.id);
+  const isSuggested = e => e.id === match.suggestedId;
+  return { engine: match.engine, query: match.query, suggestedId: match.suggestedId,
+    choices: [...rest.filter(isSuggested), ...rest.filter(e => !isSuggested(e))] };
+}
