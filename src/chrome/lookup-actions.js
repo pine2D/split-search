@@ -3,7 +3,8 @@
 // 只读 OnClickData 的 menuItemId、selectionText、editable、mediaType、srcUrl（经 lookupInput），不读 pageUrl、frameUrl。
 // 只改写记录确认是本扩展查询结果的那一侧（当前标签是查询对的 page 一侧时的 lookup 标签），用户的页面一律不导航。
 // join、other-window、beside-* 与 split-actions.js 的 join、openInOtherWindow、openForeign 相似，有意另写：
-// 这里不导航当前标签、记录角色是 page/lookup、新标签的 active 语义不同（ledger P-C16）。
+// 这里不导航当前标签、记录角色是 page/lookup、新标签的 active 语义不同。合成一个函数就要为每处差异加开关，
+// 开关传错时可能导航用户的页面（反目标），所以分开写，各自的测试分别守住。
 import { lookupInput } from "../lib/lookup-input.js";
 import { decideLookup, besideIndex } from "../lib/lookup-decision.js";
 import { splitWindowType } from "../lib/window-kind.js";
