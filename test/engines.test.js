@@ -1,6 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { PRESETS, DEFAULT_PAIR, ID_PATTERN, validateTemplate, mergeConfig, isIdTaken, engineOrigin } from "../src/lib/engines.js";
+import { PRESETS, DEFAULT_PAIR, ID_PATTERN, validateTemplate, mergeConfig, isIdTaken, engineOrigin,
+  enginesFor, engineById } from "../src/lib/engines.js";
+import { IMAGE_CATALOG } from "../src/lib/image-engines.js";
 
 test("validateTemplate: 合格的左侧模板", () => {
   assert.deepEqual(validateTemplate("https://kagi.com/search?q=%s"), { ok: true, canBeLeft: true, leftParam: "q" });
@@ -161,4 +163,40 @@ test("mergeConfig：cycleExclude 缺省为 []，只留字符串并去重（保�
   assert.deepEqual(mergeConfig({ cycleExclude: null }).cycleExclude, []);
   assert.deepEqual(mergeConfig({ cycleExclude: ["bing", 3, null, { id: "x" }, "kagi", "bing"] }).cycleExclude,
     ["bing", "kagi"]);
+});
+
+test("mergeConfig：lens 在前，自定义以图搜图引擎被清洗", () => {
+  const cfg = mergeConfig({ imageEngines: [
+    { id: "bing-img", name: "Bing", url: "https://www.bing.com/images/searchbyimage?cbir=sbi&imgurl=%s", extra: 1 },
+    { id: "BAD", name: "x", url: "https://x.com/?u=%s" }, "nope",
+    { id: "lens", name: "fake", url: "https://evil.example/?u=%s" } ] });
+  assert.deepEqual(cfg.imageEngines.map(e => e.id), ["lens", "bing-img"]);
+  assert.deepEqual(Object.keys(cfg.imageEngines[1]), ["id", "name", "url"]);
+  assert.equal(cfg.imageEngine, "lens");
+  assert.equal(mergeConfig({ imageEngine: "gone" }).imageEngine, "lens");
+});
+
+test("mergeConfig：lookupEngine 缺省跟随默认组合右侧，隐藏或无效时回退", () => {
+  assert.equal(mergeConfig({}).lookupEngine, "bing");
+  assert.equal(mergeConfig({ lookupEngine: "ddg" }).lookupEngine, "ddg");
+  assert.equal(mergeConfig({ lookupEngine: "ddg", presetOverrides: { ddg: { hidden: true } } }).lookupEngine, "bing");
+  assert.equal(mergeConfig({ lookupEngine: "lens" }).lookupEngine, "bing");
+  assert.equal(mergeConfig({ defaultPair: ["google", "ddg"] }).lookupEngine, "ddg");
+});
+
+test("enginesFor / engineById 按 kind 取", () => {
+  const cfg = mergeConfig({ presetOverrides: { ddg: { hidden: true } } });
+  assert.equal(enginesFor(cfg, "image"), cfg.imageEngines);
+  assert.equal(enginesFor(cfg, "text"), cfg.engines);
+  assert.equal(enginesFor(cfg, "search"), cfg.engines);
+  assert.equal(engineById(cfg, "image", "lens").name, "Google Lens");
+  assert.equal(engineById(cfg, "text", "ddg").id, "ddg");
+  assert.equal(engineById(cfg, "image", "google"), null);
+  assert.equal(engineById(cfg, "text", "lens"), null);
+});
+
+test("isIdTaken 同时查两套引擎", () => {
+  assert.equal(isIdTaken("lens", {}), true);
+  assert.equal(isIdTaken("bing-img", { imageEngines: [IMAGE_CATALOG[0]] }), true);
+  assert.equal(isIdTaken("bing-img", {}), false);
 });

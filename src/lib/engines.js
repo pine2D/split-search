@@ -1,6 +1,7 @@
 // 预置引擎、模板校验、配置合并。纯逻辑，不得引用 chrome。
 import { fail } from "./errors.js";
 import { normalizeLocalePref } from "./i18n.js";
+import { IMAGE_PRESET } from "./image-engines.js";
 
 export const PRESETS = [
   { id: "google", name: "Google", url: "https://www.google.com/search?q=%s" },
@@ -96,8 +97,40 @@ export function mergeConfig(stored = {}) {
       else pair = [...DEFAULT_PAIR];
     }
   }
+  const imageEngines = [IMAGE_PRESET, ...cleanImageEngines(stored.imageEngines)];
+  // 查词引擎：存的 id 是未隐藏的文字引擎才用，否则跟随默认组合的右侧（spec 3.5）
+  const lookupEngine = engines.some(e => e.id === stored.lookupEngine) ? stored.lookupEngine : pair[1];
+  const imageEngine = imageEngines.some(e => e.id === stored.imageEngine) ? stored.imageEngine : IMAGE_PRESET.id;
   return { engines, hidden, defaultPair: pair, uiLocale: normalizeLocalePref(stored.uiLocale),
-    narrowFallback: stored.narrowFallback !== false, cycleExclude: cleanIdList(stored.cycleExclude) };
+    narrowFallback: stored.narrowFallback !== false, cycleExclude: cleanIdList(stored.cycleExclude),
+    imageEngines, imageEngine, lookupEngine };
+}
+
+// 自定义以图搜图引擎：不是数组当作空；只认 { id, name, url } 三个字段，id 合法且不是内置 lens，按 id 去重保留首次
+export function cleanImageEngines(value) {
+  if (!Array.isArray(value)) return [];
+  const out = [];
+  const seen = new Set();
+  for (const e of value) {
+    if (!e || typeof e !== "object") continue;
+    const { id, name, url } = e;
+    if (typeof id !== "string" || !ID_PATTERN.test(id) || id === IMAGE_PRESET.id || seen.has(id)) continue;
+    if (typeof name !== "string" || !name || typeof url !== "string" || !url) continue;
+    seen.add(id);
+    out.push({ id, name, url });
+  }
+  return out;
+}
+
+// kind 为 "image" 取以图搜图引擎，其余（text、search 等）取文字引擎
+export function enginesFor(cfg, kind) {
+  return kind === "image" ? cfg.imageEngines : cfg.engines;
+}
+
+// 文字引擎同时在已隐藏的里查（记录里的引擎可能后来被隐藏）
+export function engineById(cfg, kind, id) {
+  const list = kind === "image" ? cfg.imageEngines : [...cfg.engines, ...cfg.hidden];
+  return list.find(e => e.id === id) || null;
 }
 
 // 不参与快捷键轮换的引擎 id：不是数组当作空，只留字符串，去重并保留首次出现的顺序
@@ -107,7 +140,9 @@ export function cleanIdList(value) {
 
 export function isIdTaken(id, stored = {}) {
   const { customEngines = [] } = stored;
-  return PRESETS.some(p => p.id === id) || customEngines.some(c => c.id === id);
+  // 文字引擎与以图搜图引擎共用一个 id 命名空间（spec 3.5）
+  return PRESETS.some(p => p.id === id) || customEngines.some(c => c.id === id)
+    || id === IMAGE_PRESET.id || cleanImageEngines(stored.imageEngines).some(c => c.id === id);
 }
 
 export function engineOrigin(engine) {
