@@ -1,6 +1,7 @@
 // 发布包安装冒烟：把 ZIP 解压到临时目录，在一次性 Chrome 配置（无头、--disable-sync、no-first-run、管道 CDP）里
 // 用 Extensions.loadUnpacked 装上，核对：没有 manifest 错误和安装警告、SW 起得来、设置页按英文渲染且没有 [split-search]
-// 控制台错误、DNR 规则指向本次装出的 ID、工具栏弹窗按英文渲染、go.html 收到格式不对的 _ss 时显示出错页。临时配置和解压目录用完即删
+// 控制台错误、DNR 规则指向本次装出的 ID、切换 uiLocale 后 SW 重建右键菜单没有错误、工具栏弹窗按英文渲染、
+// go.html 收到格式不对的 _ss 时显示出错页。临时配置和解压目录用完即删
 // （SIGINT/SIGTERM/SIGHUP 也删；被 SIGKILL 留下的，下次开头清掉）；只关自己起的浏览器，
 // 绝不碰 ~/.cache/split-search-e2e/profile 或真实配置。
 import { spawnSync } from "node:child_process";
@@ -137,6 +138,16 @@ export async function smoke(zipPath, { expectId = null, log = console.log } = {}
       const sub = rule.action?.redirect?.regexSubstitution;
       record("DNR 规则指向本扩展", sub === wantSub, `regexSubstitution ${sub}`);
     } catch (e) { record("DNR 规则指向本扩展", false, `读不到 id 为 1 的动态规则：${e.message}`); }
+
+    // 改一次 uiLocale 让 SW 重建右键菜单：t() 缺 key、目录没加载、重建失败都会在 SW 里记 [split-search] 错误
+    // （收集器自动 attach 了 SW，能收到它的 console.error）
+    try {
+      const before = collector.errors.length;
+      await opt.ev(`chrome.storage.sync.set({ uiLocale: "en" }).then(() => true)`, { timeoutMs: 5000 });
+      await sleep(1000);
+      const errs = collector.errors.slice(before).map(e => e.text);
+      record("切换 uiLocale 后 SW 重建菜单无错误", !errs.length, errs.length ? errs.join(" | ") : "uiLocale en");
+    } catch (e) { record("切换 uiLocale 后 SW 重建菜单无错误", false, e.message); }
     finally { await opt.close(); }
 
     // 工具栏弹窗页直接当标签打开：活动标签就是它自己，不是本扩展的拆分视图，显示说明文字

@@ -1,5 +1,6 @@
 import { test, beforeEach } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 
 // 整个 SW 只导入一次：监听器在导入时注册，之后各测试改 state 再触发监听器。
 const listeners = {};
@@ -15,6 +16,7 @@ const R = { id: 11, index: 1, windowId: 1, splitViewId: 7, active: true };
 function reset(over = {}) {
   state = {
     calls: [],
+    menus: [],
     sync: {},
     session: new Map(Object.entries({ "split:10": rec(11, "google"), "split:11": rec(10, "bing") })),
     tabs: { 10: L, 11: R },
@@ -23,8 +25,25 @@ function reset(over = {}) {
   };
 }
 
+// rebuildMenus 经 initI18n 读包内 _locales：返回仓库里真实的目录
+globalThis.fetch = async (url) => {
+  const m = /^chrome-extension:\/\/x\/_locales\/([^/]+)\/messages\.json$/.exec(url);
+  if (!m) throw new TypeError("Failed to fetch " + url);
+  const data = JSON.parse(readFileSync(new URL(`../src/_locales/${m[1]}/messages.json`, import.meta.url), "utf8"));
+  return { ok: true, json: async () => data };
+};
 globalThis.chrome = {
-  runtime: { id: "x", onInstalled: event("onInstalled"), onStartup: event("onStartup"), openOptionsPage() {} },
+  runtime: {
+    id: "x", onInstalled: event("onInstalled"), onStartup: event("onStartup"), openOptionsPage() {},
+    onMessage: event("runtime.onMessage"), getURL: (p) => `chrome-extension://x/${p}`,
+  },
+  i18n: { getUILanguage: () => "en-US", getMessage: () => "" },
+  contextMenus: {
+    onClicked: event("contextMenus.onClicked"),
+    async removeAll() { state.menus.push("removeAll"); },
+    create(props, cb) { state.menus.push(["create", props.id]); setTimeout(() => cb?.(), 0); return props.id; },
+    async update() {},
+  },
   storage: {
     onChanged: event("storage.onChanged"),
     sync: { async get() { return state.sync; } },
@@ -194,4 +213,29 @@ test("cycle-right：图片查询对按以图搜图引擎轮换，不看 cycleExc
   assert.equal(state.session.get("split:11").engine, "bing-img");
   assert.equal(state.session.get("split:11").role, "lookup");
   assert.deepEqual(state.session.get("split:10"), lookup(11, "page", ""));
+});
+
+test("storage.onChanged（sync）任何变化都完整重建右键菜单", async () => {
+  const done = () => state.menus.filter(c => c[0] === "create").length === 2;
+  for (const fn of listeners["storage.onChanged"]) fn({ cycleExclude: { newValue: [] } }, "sync");
+  for (let i = 0; i < 200 && !done(); i++) await new Promise(r => setTimeout(r, 5));
+  assert.deepEqual(state.menus, ["removeAll", ["create", "ss-lookup-text"], ["create", "ss-lookup-image"]]);
+  assert.equal(console.error.mock.callCount(), 0);
+});
+
+test("storage.onChanged（session/local）不重建右键菜单", async () => {
+  for (const fn of listeners["storage.onChanged"]) fn({ "split:10": { newValue: {} } }, "session");
+  await new Promise(r => setTimeout(r, 30));
+  assert.deepEqual(state.menus, []);
+});
+
+test("onInstalled、onStartup 都重建右键菜单", async () => {
+  const done = (n) => state.menus.filter(c => c === "removeAll").length === n
+    && state.menus.filter(c => c[0] === "create").length === 2 * n;
+  for (const fn of listeners["onInstalled"]) fn({ reason: "update" });
+  for (let i = 0; i < 200 && !done(1); i++) await new Promise(r => setTimeout(r, 5));
+  assert.ok(done(1), JSON.stringify(state.menus));
+  for (const fn of listeners["onStartup"]) fn();
+  for (let i = 0; i < 200 && !done(2); i++) await new Promise(r => setTimeout(r, 5));
+  assert.ok(done(2), JSON.stringify(state.menus));
 });

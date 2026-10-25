@@ -217,6 +217,18 @@ test("setLocale 最后一次调用生效", async () => {
   assert.equal(document.documentElement.lang, "zh-TW");
 });
 
+test("setLocale 在没有 document 的环境（SW）里不抛，t() 照常可用", async () => {
+  delete globalThis.document;
+  const m = await fresh();
+  assert.equal(await m.setLocale("zh_TW"), "zh_TW");
+  assert.equal(m.currentLocale(), "zh_TW");
+  assert.equal(m.t("a"), "A-tw");
+  assert.equal(m.t("greet", "Ann"), "Hi Ann");
+  assert.equal(await m.initI18n(), "en");
+  assert.equal(m.t("a"), "A-en");
+  assert.deepEqual(splitSearchErrors(), []);
+});
+
 test("模块顶层无副作用", async () => {
   delete globalThis.chrome;
   delete globalThis.document;

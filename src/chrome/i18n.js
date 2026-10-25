@@ -39,7 +39,8 @@ export async function setLocale(nextPref) {
   pref = nextPref;
   locale = next;
   loaded = true;
-  document.documentElement.lang = next.replace("_", "-");
+  // SW 里没有 document（菜单标题也经 t()，spec 3.6）
+  if (typeof document !== "undefined") document.documentElement.lang = next.replace("_", "-");
   return next;
 }
 

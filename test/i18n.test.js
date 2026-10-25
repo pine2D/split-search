@@ -27,6 +27,11 @@ test("normalizeLocalePref", () => {
   for (const v of ["fr", "zh-CN", 42, null, undefined, {}]) assert.equal(normalizeLocalePref(v), "auto");
 });
 
+test("formatMessage 不动 %s，参数里的 $1 原样插入", () => {
+  const entry = { message: "在拆分视图中用 $ENGINE$ 搜索“%s”", placeholders: { engine: { content: "$1" } } };
+  assert.equal(formatMessage(entry, ["A&&B % s $1"]), "在拆分视图中用 A&&B % s $1 搜索“%s”");
+});
+
 test("formatMessage 具名占位符", () => {
   const ph = (...c) => Object.fromEntries(c.map((x, i) => [["a", "b"][i], { content: x }]));
   assert.equal(formatMessage({ message: "$Engine$", placeholders: { engine: { content: "$1" } } }, ["Bing"]), "Bing");

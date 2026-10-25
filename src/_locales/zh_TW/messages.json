@@ -1122,5 +1122,25 @@
   "notice_image_engine_saved": {
     "message": "以圖搜圖引擎已儲存。",
     "description": "Notice after choosing the image search engine."
+  },
+  "menu_lookup_text": {
+    "message": "在分割畫面中以 $ENGINE$ 搜尋「%s」",
+    "description": "Right-click menu item shown when text is selected on a web page: the page stays on the left and the text lookup engine opens on the right. $ENGINE$ is the engine name. Keep %s as is: Chrome replaces it with the selected text.",
+    "placeholders": {
+      "ENGINE": {
+        "content": "$1",
+        "example": "Bing"
+      }
+    }
+  },
+  "menu_lookup_image": {
+    "message": "在分割畫面中以 $ENGINE$ 搜尋圖片",
+    "description": "Right-click menu item shown on an image on a web page: the page stays on the left and the image search engine opens on the right. $ENGINE$ is the engine name.",
+    "placeholders": {
+      "ENGINE": {
+        "content": "$1",
+        "example": "Google Lens"
+      }
+    }
   }
 }

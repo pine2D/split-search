@@ -1122,5 +1122,25 @@
   "notice_image_engine_saved": {
     "message": "Buscador para imágenes guardado.",
     "description": "Notice after choosing the image search engine."
+  },
+  "menu_lookup_text": {
+    "message": "Buscar “%s” con $ENGINE$ en vista dividida",
+    "description": "Right-click menu item shown when text is selected on a web page: the page stays on the left and the text lookup engine opens on the right. $ENGINE$ is the engine name. Keep %s as is: Chrome replaces it with the selected text.",
+    "placeholders": {
+      "ENGINE": {
+        "content": "$1",
+        "example": "Bing"
+      }
+    }
+  },
+  "menu_lookup_image": {
+    "message": "Buscar imagen con $ENGINE$ en vista dividida",
+    "description": "Right-click menu item shown on an image on a web page: the page stays on the left and the image search engine opens on the right. $ENGINE$ is the engine name.",
+    "placeholders": {
+      "ENGINE": {
+        "content": "$1",
+        "example": "Google Lens"
+      }
+    }
   }
 }

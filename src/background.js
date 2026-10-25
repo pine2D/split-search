@@ -4,6 +4,7 @@ import { clearPair } from "./chrome/split-state.js";
 import { ownedPair, switchRight } from "./chrome/right-switch.js";
 import { nextRightEngine, cycleCandidates } from "./lib/cycle.js";
 import { lastSplitWindow } from "./chrome/split-actions.js";
+import { rebuildMenus } from "./chrome/menus.js";
 
 const log = (...args) => console.error("[split-search]", ...args);
 
@@ -45,13 +46,20 @@ function rebuildRules() {
 }
 
 // 监听器必须在顶层同步注册（MV3 service worker 要求）。
+// 右键菜单：安装/重新加载/更新、浏览器启动（界面语言可能变了）和 sync 的任何变化都完整重建（spec 3.6）
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === "install") chrome.runtime.openOptionsPage();
   rebuildRules();
+  rebuildMenus();
 });
-chrome.runtime.onStartup.addListener(rebuildRules);
+chrome.runtime.onStartup.addListener(() => {
+  rebuildRules();
+  rebuildMenus();
+});
 chrome.storage.onChanged.addListener((_changes, areaName) => {
-  if (areaName === "sync") rebuildRules();
+  if (areaName !== "sync") return;
+  rebuildRules();
+  rebuildMenus();
 });
 chrome.permissions.onAdded.addListener(rebuildRules);
 chrome.permissions.onRemoved.addListener(rebuildRules);
