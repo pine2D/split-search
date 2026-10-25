@@ -84,17 +84,17 @@ const readLocales = () => Object.fromEntries(["en", "es", "zh_CN", "zh_TW"]
   .map(l => [l, readFileSync(src(`_locales/${l}/messages.json`), "utf8")]));
 
 test("checkLocales：当前 4 种语言通过（manifest 引用的 key 都在、简介不超 132 字符）", () => {
-  assert.deepEqual(msgRefs(manifest).sort(), ["ext_action_title", "ext_description"]);
+  assert.deepEqual(msgRefs(manifest).sort(), ["cmd_cycle_right", "ext_action_title", "ext_description"]);
   assert.deepEqual(checkLocales(manifest, readLocales()), []);
 });
 
 test("checkLocales：解析失败、缺 key、简介超长、缺默认语言、名称超长", () => {
   const msg = o => JSON.stringify(Object.fromEntries(Object.entries(o).map(([k, v]) => [k, { message: v }])));
-  const ok = { ext_description: "短简介", ext_action_title: "t" };
+  const ok = { ext_description: "短简介", ext_action_title: "t", cmd_cycle_right: "c" };
   const errs = checkLocales(manifest, {
     en: msg(ok),
     es: "{ nope",
-    zh_CN: msg({ ext_description: "x" }),
+    zh_CN: msg({ ext_description: "x", cmd_cycle_right: "c" }),
     zh_TW: msg({ ...ok, ext_description: "字".repeat(133) }),
   });
   assert.equal(errs.length, 3);

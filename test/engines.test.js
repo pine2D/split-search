@@ -153,3 +153,12 @@ test("mergeConfig 清洗自定义引擎：leftDiscouraged 只认 true，丢掉�
   assert.deepEqual(get("b"), { ...base, id: "b", leftDiscouraged: true });
   assert.deepEqual(get("c"), { ...base, id: "c" });
 });
+
+test("mergeConfig：cycleExclude 缺省为 []，只留字符串并去重（保留首次出现的顺序）", () => {
+  assert.deepEqual(mergeConfig({}).cycleExclude, []);
+  assert.deepEqual(mergeConfig({ cycleExclude: "bing" }).cycleExclude, []);
+  assert.deepEqual(mergeConfig({ cycleExclude: { 0: "bing" } }).cycleExclude, []);
+  assert.deepEqual(mergeConfig({ cycleExclude: null }).cycleExclude, []);
+  assert.deepEqual(mergeConfig({ cycleExclude: ["bing", 3, null, { id: "x" }, "kagi", "bing"] }).cycleExclude,
+    ["bing", "kagi"]);
+});

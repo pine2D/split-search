@@ -44,6 +44,11 @@ function engineRow(e, index, total, ctx) {
     : ht("button", { type: "button", class: "btn btn-small btn-danger", disabled: inPair, title: blockTitle,
         onclick: () => actions.remove(e) }, "engine_delete");
 
+  // id 让重渲染后焦点能回到这个开关（options.js 的 render）
+  const cycle = h("input", { type: "checkbox", id: `cycle-${e.id}`, "aria-label": t("engine_cycle_aria", e.name) });
+  cycle.checked = !cfg.cycleExclude.includes(e.id);
+  cycle.addEventListener("change", () => actions.setCycle(e.id, cycle.checked));
+
   return h("li", { class: "engine-row" + (inPair ? " in-pair" : "") },
     h("div", { class: "engine-main" },
       h("div", { class: "engine-title" },
@@ -51,7 +56,8 @@ function engineRow(e, index, total, ctx) {
         h("code", { class: "engine-id" }, e.id),
         tags),
       h("div", { class: "engine-url mono" }, e.url),
-      e.leftDiscouraged && ht("div", { class: "hint hint-warn" }, "engine_left_discouraged_hint")),
+      e.leftDiscouraged && ht("div", { class: "hint hint-warn" }, "engine_left_discouraged_hint"),
+      h("label", { class: "check-row cycle-row" }, cycle, ht("span", null, "engine_cycle_label"))),
     h("div", { class: "engine-side" },
       h("div", { class: "perm-line" }, status, auth),
       h("div", { class: "row-actions" },

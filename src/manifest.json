@@ -46,5 +46,10 @@
       "16": "icons/icon-16.png",
       "32": "icons/icon-32.png"
     }
+  },
+  "commands": {
+    "cycle-right": {
+      "description": "__MSG_cmd_cycle_right__"
+    }
   }
 }

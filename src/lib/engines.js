@@ -96,7 +96,12 @@ export function mergeConfig(stored = {}) {
     }
   }
   return { engines, hidden, defaultPair: pair, uiLocale: normalizeLocalePref(stored.uiLocale),
-    narrowFallback: stored.narrowFallback !== false };
+    narrowFallback: stored.narrowFallback !== false, cycleExclude: cleanIdList(stored.cycleExclude) };
+}
+
+// 不参与快捷键轮换的引擎 id：不是数组当作空，只留字符串，去重并保留首次出现的顺序
+export function cleanIdList(value) {
+  return Array.isArray(value) ? [...new Set(value.filter(x => typeof x === "string"))] : [];
 }
 
 export function isIdTaken(id, stored = {}) {

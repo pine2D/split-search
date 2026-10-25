@@ -4,6 +4,7 @@ import { PRESETS, ID_PATTERN, isIdTaken, mergeConfig } from "../src/lib/engines.
 import { CATALOG } from "../src/lib/engine-catalog.js";
 import {
   addEngine, editEngine, hideEngine, deleteEngine, restoreEngine, setDefaultPair, setNarrowFallback, describeTemplate, addFromCatalog,
+  setCycle,
 } from "../src/options/edits.js";
 
 const preset = (id) => PRESETS.find(p => p.id === id);
@@ -156,4 +157,23 @@ test("needsGrantWarning：只有能作左侧且未授权才提示", async () => 
   assert.equal(needsGrantWarning({ url: "https://www.google.com/maps/search/%s" }, false), false);
   assert.equal(needsGrantWarning({ url: "https://a.com/?q=%s" }, false), true);
   assert.equal(needsGrantWarning({ url: "https://a.com/?q=%s" }, true), false);
+});
+
+test("setCycle：排除时加入 cycleExclude（不重复），参与时移除；补丁只含 cycleExclude", () => {
+  assert.deepEqual(setCycle({}, "bing", false), { ok: true, patch: { cycleExclude: ["bing"] } });
+  assert.deepEqual(setCycle({ cycleExclude: ["kagi"] }, "bing", false).patch, { cycleExclude: ["kagi", "bing"] });
+  assert.deepEqual(setCycle({ cycleExclude: ["bing"] }, "bing", false).patch, { cycleExclude: ["bing"] });
+  assert.deepEqual(setCycle({ cycleExclude: ["bing", "kagi", "bing"] }, "bing", true).patch, { cycleExclude: ["kagi"] });
+  assert.deepEqual(setCycle({}, "bing", true).patch, { cycleExclude: [] });
+});
+test("setCycle：存储里的 cycleExclude 形状不对时当作空，顺手丢掉非字符串", () => {
+  assert.deepEqual(setCycle({ cycleExclude: "bing" }, "kagi", false).patch, { cycleExclude: ["kagi"] });
+  assert.deepEqual(setCycle({ cycleExclude: [1, "ddg", null] }, "kagi", false).patch, { cycleExclude: ["ddg", "kagi"] });
+});
+test("deleteEngine：从 cycleExclude 一并去掉该 id；原来不含它就不写这个键", () => {
+  const raw = { customEngines: [baidu], cycleExclude: ["kagi", "baidu"] };
+  assert.deepEqual(deleteEngine(raw, "baidu").patch, { customEngines: [], cycleExclude: ["kagi"] });
+  assert.deepEqual(deleteEngine({ customEngines: [baidu], cycleExclude: ["kagi"] }, "baidu").patch, { customEngines: [] });
+  assert.deepEqual(deleteEngine({ customEngines: [baidu] }, "baidu").patch, { customEngines: [] });
+  assert.deepEqual(deleteEngine({ customEngines: [baidu], cycleExclude: "baidu" }, "baidu").patch, { customEngines: [] });
 });

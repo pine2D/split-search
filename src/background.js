@@ -1,6 +1,10 @@
 import { loadConfig } from "./chrome/config-store.js";
 import { RULE_ID, buildRedirectRule, leftHosts } from "./lib/rules.js";
 import { clearPair } from "./chrome/split-state.js";
+import { ownedPair, switchRight } from "./chrome/right-switch.js";
+import { nextRightEngine } from "./lib/cycle.js";
+
+const log = (...args) => console.error("[split-search]", ...args);
 
 async function doRebuild() {
   try {
@@ -11,8 +15,23 @@ async function doRebuild() {
       addRules: rule ? [rule] : [],
     });
   } catch (err) {
-    console.error("[split-search] rebuildRules failed", err);
+    log("rebuildRules failed", err);
   }
+}
+
+// 快捷键：最后聚焦的 normal 窗口里的活动标签属于本扩展的一对时，右侧换成下一个参与轮换的引擎。
+// 不是本扩展的、没有可换的引擎，都什么也不做，也不弹任何东西。
+async function cycleRight() {
+  const win = await chrome.windows.getLastFocused({ windowTypes: ["normal"] });
+  if (!win) return;
+  const [tab] = await chrome.tabs.query({ active: true, windowId: win.id });
+  if (!tab) return;
+  const { engines, cycleExclude } = await loadConfig();
+  const pair = await ownedPair(tab, engines);
+  if (!pair) return;
+  const next = nextRightEngine(engines, pair.right.engineId, cycleExclude);
+  if (!next) return;
+  await switchRight(pair, next);
 }
 
 // 串行化：后一次重建一定读到最新配置，旧配置不会后写覆盖新配置。
@@ -36,3 +55,6 @@ chrome.permissions.onRemoved.addListener(rebuildRules);
 chrome.action.onClicked.addListener(() => chrome.runtime.openOptionsPage());
 // 标签关闭时删掉它的分屏记录；对侧记录只有指回它时才删。clearPair 自己吞掉错误。
 chrome.tabs.onRemoved.addListener((tabId) => { clearPair(tabId); });
+chrome.commands.onCommand.addListener((command) => {
+  if (command === "cycle-right") cycleRight().catch(err => log("cycle-right failed", err));
+});

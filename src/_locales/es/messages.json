@@ -904,5 +904,43 @@
         "example": "YouTube"
       }
     }
+  },
+  "cmd_cycle_right": {
+    "message": "Cambiar el lado derecho al siguiente buscador",
+    "description": "Description of the keyboard command, shown on chrome://extensions/shortcuts. The command switches the right side of a Split Search split view to the next engine in the rotation."
+  },
+  "options_shortcut_title": {
+    "message": "Combinación de teclas",
+    "description": "Heading of the keyboard shortcut card on the settings page."
+  },
+  "options_shortcut_hint": {
+    "message": "En una vista dividida abierta por Split Search, pulsa esta combinación de teclas para cambiar el lado derecho al siguiente buscador que tenga marcada «Incluir en la rotación por teclado». No hay ninguna combinación configurada de forma predeterminada; puedes configurarla en la página Accesos directos de Chrome.",
+    "description": "Hint in the keyboard shortcut card. The quoted checkbox label must match engine_cycle_label; the page name must match Chrome's own title of chrome://extensions/shortcuts (Keyboard shortcuts)."
+  },
+  "options_shortcut_label": {
+    "message": "Combinación actual",
+    "description": "Label before the current key combination (or the not-set text) in the keyboard shortcut card."
+  },
+  "options_shortcut_unset": {
+    "message": "Sin configurar",
+    "description": "Shown instead of a key combination when the user has not bound the command. Use Chrome's own wording for an unbound shortcut (Not set)."
+  },
+  "options_shortcut_open": {
+    "message": "Configurar combinación",
+    "description": "Button that opens chrome://extensions/shortcuts, where the user binds the key combination."
+  },
+  "engine_cycle_label": {
+    "message": "Incluir en la rotación por teclado",
+    "description": "Checkbox label on an engine row. Checked means the keyboard shortcut may switch the right side to this engine."
+  },
+  "engine_cycle_aria": {
+    "message": "Incluir $NAME$ en la rotación por teclado",
+    "description": "Accessible label of the rotation checkbox on an engine row. The placeholder is the engine name.",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "Google"
+      }
+    }
   }
 }

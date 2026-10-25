@@ -1,7 +1,7 @@
 // 设置页的纯逻辑：校验表单输入，根据原始存储（loadRaw 的结果）算出要写回的整键补丁。
 // 不碰 chrome.* 和 DOM，方便在 node 里单独验证。
 // 失败时只返回错误码（见 lib/errors.js），由页面翻译成当前语言。
-import { PRESETS, ID_PATTERN, validateTemplate, mergeConfig, isIdTaken, engineOrigin } from "../lib/engines.js";
+import { PRESETS, ID_PATTERN, validateTemplate, mergeConfig, isIdTaken, engineOrigin, cleanIdList } from "../lib/engines.js";
 import { catalogUrl, uniqueId, isAdded } from "../lib/engine-catalog.js";
 import { spec, fail, errorKey } from "../lib/errors.js";
 
@@ -105,7 +105,7 @@ export function addFromCatalog(raw, entry, locale) {
     ...(entry.leftDiscouraged ? { leftDiscouraged: true } : {}),
   };
   const patch = { customEngines: [...(raw.customEngines || []), engine] };
-  if (entry.ai) patch.cycleExclude = [...(raw.cycleExclude || []), engine.id];
+  if (entry.ai) patch.cycleExclude = [...cleanIdList(raw.cycleExclude), engine.id];
   return { ok: true, engine, patch };
 }
 
@@ -136,7 +136,16 @@ export function deleteEngine(raw, id) {
   if (inDefaultPair(raw, id)) return fail("pair_uses_delete");
   const patch = { customEngines: customs.filter(c => c.id !== id) };
   if (Array.isArray(raw.order) && raw.order.includes(id)) patch.order = raw.order.filter(x => x !== id);
+  if (Array.isArray(raw.cycleExclude) && raw.cycleExclude.includes(id)) {
+    patch.cycleExclude = cleanIdList(raw.cycleExclude).filter(x => x !== id);
+  }
   return { ok: true, patch };
+}
+
+// included 为真：参与快捷键轮换（从 cycleExclude 移除）；否则加入 cycleExclude（不重复）
+export function setCycle(raw, id, included) {
+  const list = cleanIdList(raw.cycleExclude).filter(x => x !== id);
+  return { ok: true, patch: { cycleExclude: included ? list : [...list, id] } };
 }
 
 export function setDefaultPair(raw, leftId, rightId) {

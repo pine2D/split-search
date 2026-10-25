@@ -904,5 +904,43 @@
         "example": "YouTube"
       }
     }
+  },
+  "cmd_cycle_right": {
+    "message": "把右侧换成下一个引擎",
+    "description": "Description of the keyboard command, shown on chrome://extensions/shortcuts. The command switches the right side of a Split Search split view to the next engine in the rotation."
+  },
+  "options_shortcut_title": {
+    "message": "快捷键",
+    "description": "Heading of the keyboard shortcut card on the settings page."
+  },
+  "options_shortcut_hint": {
+    "message": "在 Split Search 打开的拆分视图里按这个快捷键，右侧会换成下一个勾选了“参与快捷键轮换”的引擎。快捷键默认未设置，可以在 Chrome 的“键盘快捷键”页面里设置。",
+    "description": "Hint in the keyboard shortcut card. The quoted checkbox label must match engine_cycle_label; the page name must match Chrome's own title of chrome://extensions/shortcuts (Keyboard shortcuts)."
+  },
+  "options_shortcut_label": {
+    "message": "当前快捷键",
+    "description": "Label before the current key combination (or the not-set text) in the keyboard shortcut card."
+  },
+  "options_shortcut_unset": {
+    "message": "未设置",
+    "description": "Shown instead of a key combination when the user has not bound the command. Use Chrome's own wording for an unbound shortcut (Not set)."
+  },
+  "options_shortcut_open": {
+    "message": "设置快捷键",
+    "description": "Button that opens chrome://extensions/shortcuts, where the user binds the key combination."
+  },
+  "engine_cycle_label": {
+    "message": "参与快捷键轮换",
+    "description": "Checkbox label on an engine row. Checked means the keyboard shortcut may switch the right side to this engine."
+  },
+  "engine_cycle_aria": {
+    "message": "$NAME$ 参与快捷键轮换",
+    "description": "Accessible label of the rotation checkbox on an engine row. The placeholder is the engine name.",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "Google"
+      }
+    }
   }
 }

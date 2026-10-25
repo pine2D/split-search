@@ -4,10 +4,11 @@ import { mergeConfig } from "../lib/engines.js";
 import { h, ht, notify, errorText, authButton, option, isGranted, joinSentences } from "./ui.js";
 import {
   addEngine, editEngine, hideEngine, restoreEngine, deleteEngine, setDefaultPair, moveId, canBeLeft, setNarrowFallback,
-  addFromCatalog, needsGrantWarning,
+  addFromCatalog, needsGrantWarning, setCycle,
 } from "./edits.js";
 import { renderEngineList, renderHiddenList, setupEngineDialog, confirmRemoval } from "./engine-list.js";
 import { setupCatalogDialog, refreshCatalog } from "./catalog.js";
+import { renderShortcut } from "./shortcut.js";
 import { renderTriggers, setupGuide } from "./guide.js";
 import { applyRichText, renderLangPicker } from "./locale-ui.js";
 import { initI18n, applyI18n, setLocale, currentPref, currentLocale, t } from "../chrome/i18n.js";
@@ -101,6 +102,8 @@ const actions = {
     if (confirmRemoval("engine_confirm_delete", e)) act(raw => deleteEngine(raw, e.id), ["notice_deleted", e.name]);
   },
   restore: (e) => act(raw => restoreEngine(raw, e.id), ["notice_restored", e.name]),
+  // 勾选框本身就是反馈，成功不弹提示；失败照常提示，重渲染后开关退回已保存的状态
+  setCycle: (id, included) => act(raw => setCycle(raw, id, included), null),
   move(id, delta) {
     if (!current) return;
     const base = pendingOrder || current.engines.map(e => e.id);
@@ -189,12 +192,29 @@ async function render() {
   syncLangPicker(cfg.uiLocale);
   const ctx = { cfg, granted, attention, actions, refresh: render };
   const byId = new Map(all.map(e => [e.id, e]));
+  const focusedId = document.activeElement?.id; // 重建区块会丢掉焦点：键盘用户刚改的开关、下拉框要拿回焦点
   $("banner").replaceChildren(...banner(cfg, byId, granted));
   $("pair-body").replaceChildren(...pairSection(cfg, byId, granted));
   $("triggers").replaceChildren(renderTriggers(ctx));
   $("engines").replaceChildren(renderEngineList(ctx));
   $("hidden-engines").replaceChildren(renderHiddenList(ctx));
+  if (focusedId && document.activeElement === document.body) $(focusedId)?.focus();
+  refreshShortcut();
   document.body.classList.remove("loading");
+}
+
+// 快捷键一行只依赖 chrome.commands，不随存储变化；用户去 chrome://extensions/shortcuts 绑完回来时（focus）也重画
+let shortcutSeq = 0;
+async function refreshShortcut() {
+  const seq = ++shortcutSeq;
+  try {
+    await i18nReady;
+    await localeSwitch;
+    const node = await renderShortcut();
+    if (seq === shortcutSeq) $("shortcut").replaceChildren(node);
+  } catch (err) {
+    log("failed to render the keyboard shortcut", err);
+  }
 }
 
 // 首次安装授权横幅：默认组合左侧未授权就一直显示
@@ -251,4 +271,5 @@ i18nReady.then(() => {
 chrome.storage.onChanged.addListener((_changes, area) => { if (area === "sync") render(); });
 chrome.permissions.onAdded.addListener(() => render());
 chrome.permissions.onRemoved.addListener(() => render());
+window.addEventListener("focus", () => refreshShortcut());
 render();

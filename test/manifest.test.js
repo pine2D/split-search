@@ -30,6 +30,12 @@ test("manifest 基本信息", () => {
   assert.equal(m.description, "__MSG_ext_description__");
   assert.equal(m.action.default_title, "__MSG_ext_action_title__");
 });
+test("manifest commands：只有 cycle-right，不绑定默认快捷键，不声明 _execute_action", () => {
+  assert.deepEqual(Object.keys(m.commands), ["cycle-right"]);
+  assert.deepEqual(m.commands["cycle-right"], { description: "__MSG_cmd_cycle_right__" });
+  assert.equal(m.commands["cycle-right"].suggested_key, undefined);
+  assert.equal(m.commands._execute_action, undefined);
+});
 test("manifest 引用的文件都存在", () => {
   for (const path of [m.background.service_worker, m.options_ui.page, "go.html", "go.js"]) {
     assert.ok(existsSync(new URL("../src/" + path, import.meta.url)), path);

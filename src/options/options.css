@@ -255,3 +255,16 @@ dialog::backdrop { background: rgb(0 0 0 / 0.4); }
 
 .check-row { display: flex; align-items: flex-start; gap: 8px; margin-top: 12px; font-size: 13px; }
 .check-row input { margin-top: 2px; flex: none; }
+
+/* ---- 快捷键 ---- */
+.cycle-row { margin-top: 6px; }
+.shortcut-row { display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap; margin-top: 8px; }
+.shortcut-current { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.shortcut-key {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 6px;
+}
