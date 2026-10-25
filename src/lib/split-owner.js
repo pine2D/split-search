@@ -52,7 +52,10 @@ function recordMatches(tab, peer, record, peerRecord) {
 
 export function judgeOwnership({ tab, peer, record, peerRecord, engines }) {
   if (record) return recordMatches(tab, peer, record, peerRecord) ? "own" : "stale";
-  if (peer && typeof peer.url === "string" &&
+  // 兜底只认同一个分屏里的两个标签，不依赖调用方先筛过
+  const v = peer?.splitViewId;
+  if (!Number.isInteger(v) || v === -1 || v !== tab.splitViewId) return "none";
+  if (typeof peer.url === "string" &&
       (engines || []).some(e => looksLikeSearchPage(peer.url, e.url))) return "fallback-own";
   return "none";
 }

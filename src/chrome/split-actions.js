@@ -4,55 +4,78 @@
 //   { leave: true }       当前标签回到之前的页面（history.back 或关闭），由 go.js 执行
 // 分支内的关键 chrome 调用失败时直接抛出，由 go.js 兜底打开左侧搜索。
 import { sideOf } from "../lib/split-decision.js";
+import { writePair } from "./split-state.js";
 
 const log = (...args) => console.error("[split-search]", ...args);
 
-// 在 withTab 右侧相邻位置新建标签，并尽量与 withTab 组成分屏。
-// 分屏 API 抛错时 Chrome 会自己关掉失败的新标签，这里退化为普通相邻标签。
-export async function createPaired(url, withTab) {
-  const base = { url, index: withTab.index + 1, windowId: withTab.windowId, active: false };
+// 新标签和 withTab 真的在同一个分屏里才返回该 splitViewId，否则返回 -1。
+async function confirmedSplitViewId(created, withTabId) {
+  const v = created.splitViewId ?? -1;
   try {
-    return await chrome.tabs.create({ ...base, splitWithTabId: withTab.id });
+    const current = await chrome.tabs.get(withTabId);
+    if (v !== -1 && current.splitViewId === v) return v;
   } catch (err) {
-    log("splitWithTabId failed, falling back to a plain tab", err);
-    return await chrome.tabs.create(base);
+    log("failed to re-read the tab after creating the split", err);
+    return -1;
   }
+  log("the new tab did not end up in a split view with the current tab");
+  return -1;
 }
 
-// 记录本扩展创建的标签对：一次写两个方向，不做读-改-写。
-export async function recordPair(a, b) {
+// 在 withTab 右侧相邻位置新建标签，split 为 true 时尽量与 withTab 组成分屏。
+// 分屏 API 抛错时 Chrome 会自己关掉失败的新标签，这里退化为普通相邻标签。
+// 返回 { tab, splitViewId }：splitViewId 为 -1 表示没有建成分屏，调用方不写 split 记录。
+export async function createPaired(url, withTab, { split = true } = {}) {
+  const base = { url, index: withTab.index + 1, windowId: withTab.windowId, active: false };
+  if (!split) return { tab: await chrome.tabs.create(base), splitViewId: -1 };
+  let tab;
   try {
-    await chrome.storage.session.set({ ["split:" + a]: b, ["split:" + b]: a });
+    tab = await chrome.tabs.create({ ...base, splitWithTabId: withTab.id });
   } catch (err) {
-    log("failed to record the split tab pair", err);
+    log("splitWithTabId failed, falling back to a plain tab", err);
+    return { tab: await chrome.tabs.create(base), splitViewId: -1 };
   }
+  return { tab, splitViewId: await confirmedSplitViewId(tab, withTab.id) };
+}
+
+// 新建的一对真的成了分屏时才记录：left 显示 leftId，right 显示 rightId
+async function recordNewSplit(left, paired, { leftId, rightId, query }) {
+  if (paired.splitViewId === -1) return;
+  await writePair({
+    a: left.id, b: paired.tab.id, splitViewId: paired.splitViewId, mode: "split",
+    engineA: leftId, engineB: rightId, query,
+  });
 }
 
 // 当前标签不在分屏中：右侧新建并与当前标签组成分屏，当前标签打开左侧。
-export async function openNew({ tab, leftUrl, rightUrl }) {
-  const right = await createPaired(rightUrl, tab);
-  await recordPair(tab.id, right.id);
+export async function openNew({ tab, leftUrl, rightUrl, leftId, rightId, query }) {
+  const paired = await createPaired(rightUrl, tab);
+  await recordNewSplit(tab, paired, { leftId, rightId, query });
   return { replaceWith: leftUrl };
 }
 
-// 当前标签在本扩展的分屏中：就地更新两侧，左右位置不变。
-export async function reuse({ tab, peer, leftUrl, rightUrl }) {
-  const side = sideOf(tab.index, peer.index);
-  await chrome.tabs.update(peer.id, { url: side === "left" ? rightUrl : leftUrl });
-  await recordPair(tab.id, peer.id);
-  return { replaceWith: side === "left" ? leftUrl : rightUrl };
+// 当前标签在本扩展的分屏或相邻对中：就地更新两侧，左右位置不变（index 小的在左）。
+// 记录沿用现状：分屏中是当前 splitViewId + "split"，相邻对是 -1 + "adjacent"。
+export async function reuse({ tab, peer, splitViewId, leftUrl, rightUrl, leftId, rightId, query }) {
+  const tabIsLeft = sideOf(tab.index, peer.index) === "left";
+  await chrome.tabs.update(peer.id, { url: tabIsLeft ? rightUrl : leftUrl });
+  await writePair({
+    a: tab.id, b: peer.id, splitViewId, mode: splitViewId !== -1 ? "split" : "adjacent",
+    engineA: tabIsLeft ? leftId : rightId, engineB: tabIsLeft ? rightId : leftId, query,
+  });
+  return { replaceWith: tabIsLeft ? leftUrl : rightUrl };
 }
 
 // 当前标签在其他分屏中：另一侧不动，在该分屏右侧相邻位置新建一对标签。
-export async function openForeign({ tab, splitTabs, leftUrl, rightUrl }) {
+export async function openForeign({ tab, splitTabs, leftUrl, rightUrl, leftId, rightId, query }) {
   const maxIndex = Math.max(tab.index, ...splitTabs.map(t => t.index));
   const newLeft = await chrome.tabs.create({
     url: leftUrl, index: maxIndex + 1, windowId: tab.windowId, active: true,
   });
   // 左侧已打开；右侧失败只记录，不再让当前标签兜底打开左侧（否则会出现两个左侧）。
   try {
-    const right = await createPaired(rightUrl, newLeft);
-    await recordPair(newLeft.id, right.id);
+    const paired = await createPaired(rightUrl, newLeft);
+    await recordNewSplit(newLeft, paired, { leftId, rightId, query });
   } catch (err) {
     log("foreign split: failed to create the right side", err);
   }
@@ -60,7 +83,7 @@ export async function openForeign({ tab, splitTabs, leftUrl, rightUrl }) {
 }
 
 // 当前窗口不是 normal（popup/app）：不能在这里调用分屏 API，改到一个 normal 窗口里新建一对。
-export async function openInOtherWindow({ leftUrl, rightUrl }) {
+export async function openInOtherWindow({ leftUrl, rightUrl, leftId, rightId, query }) {
   let target = null;
   try {
     target = await chrome.windows.getLastFocused({ windowTypes: ["normal"] });
@@ -75,8 +98,8 @@ export async function openInOtherWindow({ leftUrl, rightUrl }) {
     newLeft = created.tabs[0];
   }
   try {
-    const right = await createPaired(rightUrl, newLeft);
-    await recordPair(newLeft.id, right.id);
+    const paired = await createPaired(rightUrl, newLeft);
+    await recordNewSplit(newLeft, paired, { leftId, rightId, query });
   } catch (err) {
     log("other window: failed to create the right side", err);
   }

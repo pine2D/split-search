@@ -1,9 +1,9 @@
 // 触发处理页：解析 go.html?u=<原始网址>，判定分屏动作并执行。只做编排。
 import { extractOriginalUrl, parseTrigger, expandTemplate, stripMarker } from "./lib/trigger.js";
 import { decideSplit } from "./lib/split-decision.js";
-import { engineOrigin } from "./lib/engines.js";
 import { loadConfig } from "./chrome/config-store.js";
 import { ACTIONS, leaveTab } from "./chrome/split-actions.js";
+import { inspectTab } from "./chrome/split-state.js";
 import { initI18n, applyI18n, setI18nText } from "./chrome/i18n.js";
 import { errorKey } from "./lib/errors.js";
 
@@ -46,52 +46,26 @@ function safeOriginal(original) {
   }
 }
 
-// 收集判定所需的上下文。tabs.query({ splitViewId }) 不需要 tabs 权限；
-// 只有已授权 origin 上的标签才读得到 url。
-async function gatherContext() {
+// 收集判定所需的上下文：当前标签、所在窗口、对侧与两侧记录（见 split-state.js 的 inspectTab）。
+async function gatherContext(engines) {
   const tab = await chrome.tabs.getCurrent();
   if (!tab) throw new Error("tabs.getCurrent() returned no tab");
   const win = await chrome.windows.get(tab.windowId);
-  const splitViewId = tab.splitViewId ?? -1;
-  let splitTabs = [];
-  let peer = null;
-  if (splitViewId !== -1) {
-    splitTabs = await chrome.tabs.query({ splitViewId });
-    const other = splitTabs.find(t => t.id !== tab.id);
-    peer = other ? { id: other.id, index: other.index, url: other.url } : null;
-  }
-  let recordedPeerId;
-  try {
-    recordedPeerId = (await chrome.storage.session.get("split:" + tab.id))["split:" + tab.id];
-  } catch (err) {
-    log("failed to read the split record", err);
-  }
-  return { tab, win, splitViewId, splitTabs, peer, recordedPeerId };
+  return { tab, win, ...(await inspectTab(tab, engines)) };
 }
 
-// 逐个计算引擎 origin：某个模板坏了只跳过它，不影响分屏
-function originsOf(engines) {
-  const origins = [];
-  for (const e of engines) {
-    try {
-      origins.push(engineOrigin(e));
-    } catch (err) {
-      log("invalid engine URL, skipped in the decision", e?.id, err);
-    }
-  }
-  return origins;
-}
-
-async function split(engines, leftUrl, rightUrl) {
-  const ctx = await gatherContext();
+// narrowEnabled 留给窄窗口降级，目前固定为 false
+async function split(engines, { left, right, query }, leftUrl, rightUrl) {
+  const ctx = await gatherContext(engines);
   const action = decideSplit({
     windowType: ctx.win.type,
     splitViewId: ctx.splitViewId,
     peer: ctx.peer,
-    recordedPeerId: ctx.recordedPeerId,
-    engineOrigins: originsOf(engines),
+    ownership: ctx.ownership,
   });
-  const outcome = await ACTIONS[action]({ ...ctx, leftUrl, rightUrl });
+  const outcome = await ACTIONS[action]({
+    ...ctx, leftUrl, rightUrl, leftId: left.id, rightId: right.id, query, narrowEnabled: false,
+  });
   if (!outcome.leave) {
     location.replace(outcome.replaceWith);
   } else if (await leaveTab(ctx.tab) === "kept") {
@@ -140,7 +114,7 @@ async function main() {
 
   try {
     const rightUrl = expandTemplate(right.url, query);
-    await split(engines, leftUrl, rightUrl);
+    await split(engines, parsed, leftUrl, rightUrl);
   } catch (err) {
     log("split failed, opening the left side only", err);
     location.replace(leftUrl);

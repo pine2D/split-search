@@ -83,3 +83,11 @@ test("judgeOwnership：无记录兜底", () => {
   assert.equal(judgeOwnership({ tab, peer, record: null, peerRecord: null, engines }), "none");
   assert.equal(judgeOwnership({ tab, peer: null, record: null, peerRecord: null, engines }), "none");
 });
+test("judgeOwnership：无记录、对侧像 Google 搜索页，但两者不在同一个分屏 → none", () => {
+  const url = "https://www.google.com/search?q=x";
+  const j = (t, p) => judgeOwnership({ tab: t, peer: { ...p, url }, record: null, peerRecord: null, engines });
+  assert.equal(j({ ...tab, splitViewId: -1 }, { ...peer, splitViewId: -1 }), "none");
+  assert.equal(j(tab, { ...peer, splitViewId: 8 }), "none");
+  assert.equal(j({ ...tab, splitViewId: -1 }, peer), "none");
+  assert.equal(j(tab, { ...peer, splitViewId: undefined }), "none");
+});
