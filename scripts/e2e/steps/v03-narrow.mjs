@@ -1,5 +1,5 @@
 // v0.3 自动步骤 T17（spec 3.8 V3）：窄窗口降级。
-// 用 CDP Browser.setWindowBounds 调窗口宽度（写法同 xauto-lib.mjs 的 fixWindow），扩展侧用 windows.get 读回（DIP，含边框）。
+// 用 v03-lib.mjs 的 sizeTo 调窗口宽度（CDP Browser.setWindowBounds，扩展侧用 windows.get 读回，DIP，含边框）。
 // (a) 默认开启（删掉 narrowFallback）+ 窄窗口：右侧是相邻的后台标签、写 adjacent 记录；同一标签再触发复用它
 // (b) 窄窗口下的 foreign：用户分屏两侧不变 (c) 开关为 false：窄窗口照常分屏 (d) 宽窗口照常分屏
 // (e)(f) 相邻对在窗口变宽 / 关掉开关后，同一标签再触发：这两个标签拼成分屏，记录改为 split，不新开标签。
@@ -7,11 +7,10 @@
 // finally 恢复窗口尺寸；narrowFallback 由 guarded 写回步骤前的值。
 import { NARROW_WIDTH } from "../../../src/lib/narrow.js";
 import {
-  splitPairs, trigger, siteX, expectPair, findPair, nonce, resetTabs, navigate, waitState, waitTarget, summarize, sleep,
+  splitPairs, trigger, siteX, expectPair, findPair, nonce, resetTabs, navigate, waitState, waitTarget, summarize,
 } from "./util.mjs";
 import { guarded } from "./optpage.mjs";
-import { rememberWindow } from "../window-snap.mjs";
-import { sub, verdict, queryOf, readRecords, checkPairRecords, findAdjacent, tabUrl, ids, fmt } from "./v03-lib.mjs";
+import { sub, verdict, queryOf, readRecords, checkPairRecords, findAdjacent, tabUrl, ids, fmt, sizeTo, restoreWindows } from "./v03-lib.mjs";
 
 const NARROW = 900; // 低于阈值 960；Xvfb 下实测能设到（原型里最小 500）
 const WIDE = 1600;
@@ -19,33 +18,6 @@ const WIDE = 1600;
 const setNarrowPref = (ctx, v) => ctx.ext.eval(v === undefined
   ? `chrome.storage.sync.remove("narrowFallback").then(() => true)`
   : `chrome.storage.sync.set({ narrowFallback: ${v} }).then(() => true)`);
-
-// 把 base 所在窗口设成 width 宽，返回扩展侧读回的宽度。saved 记下每个窗口改动前的 bounds，finally 里还原
-async function sizeTo(ctx, base, width, saved) {
-  const { client } = ctx.browser;
-  const { windowId, bounds } = await client.send("Browser.getWindowForTarget", { targetId: base.targetId });
-  if (!saved.has(windowId)) saved.set(windowId, bounds);
-  rememberWindow(bounds); // 强制退出时 finally 来不及还原：收尾与下次启动按快照改回（window-snap.mjs）
-  if (bounds.windowState !== "normal") await client.send("Browser.setWindowBounds", { windowId, bounds: { windowState: "normal" } });
-  await client.send("Browser.setWindowBounds", { windowId, bounds: { width } });
-  // 读回直到连续两次一致（窗口尺寸变化是异步的）
-  let prev = null;
-  for (let i = 0; i < 20; i++) {
-    await sleep(150);
-    const w = await ctx.ext.eval(`chrome.windows.get(${base.windowId}).then(w => w.width)`);
-    if (w === prev && (w < NARROW_WIDTH) === (width < NARROW_WIDTH)) return w;
-    prev = w;
-  }
-  return prev;
-}
-
-async function restoreWindows(ctx, saved) {
-  const { client } = ctx.browser;
-  for (const [windowId, b] of saved) {
-    const bounds = b.windowState === "normal" ? { left: b.left, top: b.top, width: b.width, height: b.height } : { windowState: b.windowState };
-    await client.send("Browser.setWindowBounds", { windowId, bounds }).catch(() => {});
-  }
-}
 
 const adjRecordsWant = (q) => ({ mode: "adjacent", splitViewId: -1, engines: ["ea", "eb"], query: queryOf(q) });
 const countTabs = st => st.tabs.filter(t => !(t.url || "").startsWith("chrome-extension://")).length;

@@ -2,7 +2,7 @@
 import http from "node:http";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
-import { HOSTS, mockEngines } from "./config.mjs";
+import { HOSTS, UNGRANTED_HOSTS, mockEngines } from "./config.mjs";
 import { redact } from "./report.mjs";
 
 const GUIDE_DIR = fileURLToPath(new URL("./guide/", import.meta.url));
@@ -63,8 +63,21 @@ function engineRoutes(port) {
     const key = Object.keys(HOSTS).find(k => HOSTS[k] === host);
     byHost[host] = key.toUpperCase();
   }
+  byHost[UNGRANTED_HOSTS.u] = "U"; // 模拟引擎 U（没有授权），路由与 A/B/C 相同
   return byHost;
 }
+
+// 4×4 的纯色 PNG（页面里按 240×160 显示，够右键）：/img.png 与 data: 图片共用
+const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAEElEQVR4nGOwqs2GIwbiOADUcxIhZwX78wAAAABJRU5ErkJggg==", "base64");
+
+// page-u 的普通文章页（边读边查、以图搜图用）：两段 ASCII 文字、一张 http 图片、一张 data: 图片；没有链接（链接会改变右键菜单的行数）
+const article = port => page("page-u article", [
+  `<h1>page-u</h1>`,
+  `<p id="p1">The quick brown fox jumps over the lazy dog near the river bank.</p>`,
+  `<p id="p2">Split views keep the page you are reading next to the search results.</p>`,
+  `<p><img id="http-img" alt="http image" width="240" height="160" src="http://${UNGRANTED_HOSTS.page}:${port}/img.png"></p>`,
+  `<p><img id="data-img" alt="data image" width="240" height="160" src="data:image/png;base64,${PNG.toString("base64")}"></p>`,
+].join(""));
 
 export function startServer({ port }) {
   const guide = createGuide();
@@ -85,6 +98,17 @@ export function startServer({ port }) {
         if (q === null) return send(res, 404, "text/plain; charset=utf-8", "not found");
         const t = `${engines[host]} · ${q}`;
         return send(res, 200, "text/html; charset=utf-8", page(t, `<h1>${esc(engines[host])}</h1><p>${esc(q)}</p>`));
+      }
+      if (host === UNGRANTED_HOSTS.page) {
+        if (path === "/article") return send(res, 200, "text/html; charset=utf-8", article(server.address().port));
+        if (path === "/img.png") return send(res, 200, "image/png", PNG);
+        return send(res, 404, "text/plain; charset=utf-8", "not found");
+      }
+      // 模拟以图搜图引擎：回显收到的 url 参数（已解码）
+      if (host === UNGRANTED_HOSTS.img) {
+        if (path !== "/imgsearch") return send(res, 404, "text/plain; charset=utf-8", "not found");
+        const got = url.searchParams.get("url") ?? "";
+        return send(res, 200, "text/html; charset=utf-8", page(`I · ${got}`, `<h1>I</h1><p id="got">${esc(got)}</p>`));
       }
       // 向导与 API 路径不属于 site-x（保证向导只能从 127.0.0.1 访问）
       const reserved = path === "/guide" || path.startsWith("/guide/") || path.startsWith("/api/");
@@ -122,6 +146,8 @@ export function startServer({ port }) {
     server.listen(port, "127.0.0.1", () => {
       resolve({
         guide,
+        port: server.address().port, // 传 port: 0 时是系统分配的端口
+
         close: () => new Promise(r => { guide.cancel(); server.close(() => r()); server.closeAllConnections(); }),
       });
     });

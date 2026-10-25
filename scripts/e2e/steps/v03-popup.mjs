@@ -8,16 +8,32 @@ import { msg } from "../i18n.mjs";
 
 export const POPUP_URL = `chrome-extension://${EXT_ID}/popup/popup.html`;
 
-// 弹窗渲染完成（去掉 loading，显示了本扩展的一对或说明文字）后读出的内容
-const POPUP_STATE = `(() => {
+// 页面里读出各块的 hidden 与文字（判定交给 popupStateOf，那里有 node 测试）
+const POPUP_SNAPSHOT = `(() => {
   const $ = id => document.getElementById(id), main = document.querySelector("main");
-  if (!main || main.classList.contains("loading") || ($("pair").hidden && $("not-ours").hidden)) return null;
-  return { ours: !$("pair").hidden, notOurs: !$("not-ours").hidden, notOursText: $("not-ours").textContent,
+  const box = id => ({ hidden: !$(id) || $(id).hidden, text: $(id)?.textContent ?? "" });
+  const buttons = list => [...document.querySelectorAll("#" + list + " button")]
+    .map(b => ({ engine: b.dataset.engine, disabled: b.disabled, suggested: b.classList.contains("suggested") }));
+  if (!main) return null;
+  return { loading: main.classList.contains("loading"), pair: box("pair"), notOurs: box("not-ours"), complete: box("complete"),
     query: $("query").textContent, left: $("left-engine").textContent, right: $("right-engine").textContent,
-    choices: [...document.querySelectorAll("#choices button")].map(b => b.dataset.engine),
-    busy: [...document.querySelectorAll("#choices button")].some(b => b.disabled),
-    error: $("error").hidden ? "" : $("error").textContent };
+    choices: buttons("choices"), detected: $("complete-detected")?.textContent ?? "", completeChoices: buttons("complete-choices"),
+    note: box("complete-note"), error: box("error") };
 })()`;
+
+// 纯函数：弹窗渲染完成（去掉 loading，显示了本扩展的一对、补成分屏区或说明文字）后的内容；还没渲染完返回 null
+export function popupStateOf(snap) {
+  if (!snap || snap.loading || (snap.pair.hidden && snap.notOurs.hidden && snap.complete.hidden)) return null;
+  // 只看显示中的那一块：补成之后 #complete 隐藏了，里面的按钮仍是禁用的
+  const shown = [...(snap.pair.hidden ? [] : snap.choices), ...(snap.complete.hidden ? [] : snap.completeChoices)];
+  return { ours: !snap.pair.hidden, notOurs: !snap.notOurs.hidden, notOursText: snap.notOurs.text, complete: !snap.complete.hidden,
+    query: snap.query, left: snap.left, right: snap.right,
+    choices: snap.choices.map(b => b.engine),
+    detected: snap.detected, completeChoices: snap.completeChoices.map(b => b.engine),
+    suggested: snap.completeChoices.find(b => b.suggested)?.engine ?? null,
+    busy: shown.some(b => b.disabled),
+    note: snap.note.hidden ? "" : snap.note.text, error: snap.error.hidden ? "" : snap.error.text };
+}
 
 // 打开（或接管已有的）弹窗页，返回 { targetId, sid, ev(expr), read(), until(pred), click(id), close() }
 export async function popupPage(ctx, { url, targetId } = {}) {
@@ -25,13 +41,15 @@ export async function popupPage(ctx, { url, targetId } = {}) {
   if (!targetId) ({ targetId } = await client.send("Target.createTarget", { url, background: true }));
   const sid = await ctx.browser.attach(targetId);
   const ev = expr => ctx.browser.evaluate(sid, expr, { timeoutMs: 5000 });
+  const state = async () => popupStateOf(await ev(POPUP_SNAPSHOT));
   const page = {
     targetId, sid, ev,
-    read: () => ctx.browser.waitFor(() => ev(POPUP_STATE), { timeoutMs: 10000, intervalMs: 150 }),
+    read: () => ctx.browser.waitFor(state, { timeoutMs: 10000, intervalMs: 150 }),
     // 等到 pred(state) 为真（换右侧后弹窗会重绘）
-    until: (pred, what) => ctx.browser.waitFor(async () => { const s = await ev(POPUP_STATE); return s && !s.busy && pred(s) && s; }, { timeoutMs: 10000, intervalMs: 150 })
+    until: (pred, what) => ctx.browser.waitFor(async () => { const s = await state(); return s && !s.busy && pred(s) && s; }, { timeoutMs: 10000, intervalMs: 150 })
       .catch(e => { throw new Error(`弹窗没有等到：${what}（${e.message}）`); }),
-    click: id => ev(`(() => { const b = document.querySelector('#choices button[data-engine="${id}"]'); if (!b) return false; b.click(); return true; })()`),
+    // list：换右侧的 #choices，或补成分屏的 #complete-choices
+    click: (id, list = "choices") => ev(`(() => { const b = document.querySelector('#${list} button[data-engine="${id}"]'); if (!b) return false; b.click(); return true; })()`),
     close: async () => {
       await client.send("Target.detachFromTarget", { sessionId: sid }).catch(() => {});
       await client.send("Target.closeTarget", { targetId }).catch(() => {});

@@ -1,8 +1,10 @@
-// v0.3 步骤（T16–T18）与 T5 重启子项的公共工具：分屏记录（storage.session）读取与核对、相邻对查找、
+// v0.3 步骤（T16–T18）、T5 重启子项与 v0.4 T20 的公共工具：分屏记录（storage.session）读取与核对、相邻对查找、窗口宽度（sizeTo）、
 // “不是本扩展的一对上触发 → 新开一对”的判定（expectForeign）、子项包装。
 // 记录形状见 src/lib/split-owner.js：split:<tabId> → { peer, splitViewId, mode, role, input?, engine, query }。
 import { recordKey } from "../../../src/lib/split-owner.js";
-import { trigger, expectPair, findPair, resetTabs, navigate, waitState, waitTarget } from "./util.mjs";
+import { NARROW_WIDTH } from "../../../src/lib/narrow.js";
+import { rememberWindow } from "../window-snap.mjs";
+import { trigger, expectPair, findPair, resetTabs, navigate, waitState, waitTarget, sleep } from "./util.mjs";
 
 export const ids = pair => pair.map(t => t.id).join("｜");
 export const fmt = pair => `${pair[0].url} ｜ ${pair[1].url}`;
@@ -87,4 +89,31 @@ export async function expectForeign(ctx, tab, other, q2) {
   if (v === -1 || v !== st.tabs.find(t => t.id === other.id)?.splitViewId) p.push("原来的一对不在同一个分屏里了");
   if ([tab.id, other.id].includes(now[0].id) || [tab.id, other.id].includes(now[1].id)) p.push(`新分屏不应使用原来的标签：${ids(now)}`);
   return { problems: p, now, st };
+}
+
+// 把 base 所在窗口设成 width 宽，返回扩展侧读回的宽度。saved 记下每个窗口改动前的 bounds，finally 里还原
+export async function sizeTo(ctx, base, width, saved) {
+  const { client } = ctx.browser;
+  const { windowId, bounds } = await client.send("Browser.getWindowForTarget", { targetId: base.targetId });
+  if (!saved.has(windowId)) saved.set(windowId, bounds);
+  rememberWindow(bounds); // 强制退出时 finally 来不及还原：收尾与下次启动按快照改回（window-snap.mjs）
+  if (bounds.windowState !== "normal") await client.send("Browser.setWindowBounds", { windowId, bounds: { windowState: "normal" } });
+  await client.send("Browser.setWindowBounds", { windowId, bounds: { width } });
+  // 读回直到连续两次一致（窗口尺寸变化是异步的）
+  let prev = null;
+  for (let i = 0; i < 20; i++) {
+    await sleep(150);
+    const w = await ctx.ext.eval(`chrome.windows.get(${base.windowId}).then(w => w.width)`);
+    if (w === prev && (w < NARROW_WIDTH) === (width < NARROW_WIDTH)) return w;
+    prev = w;
+  }
+  return prev;
+}
+
+export async function restoreWindows(ctx, saved) {
+  const { client } = ctx.browser;
+  for (const [windowId, b] of saved) {
+    const bounds = b.windowState === "normal" ? { left: b.left, top: b.top, width: b.width, height: b.height } : { windowState: b.windowState };
+    await client.send("Browser.setWindowBounds", { windowId, bounds }).catch(() => {});
+  }
 }
