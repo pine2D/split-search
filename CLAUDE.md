@@ -64,7 +64,7 @@ Chrome MV3 扩展：用户在地址栏搜索，或把文字拖到标签栏时，
           ├─ 当前标签在“本扩展的分屏”中（判定见 spec 5.3；当前标签是 page 一侧时整对改写成 search 对）：tabs.update(另一侧, 右侧) → location.replace(左侧)
           └─ 当前标签在其他分屏中（含查询对的 lookup 一侧、兜底判出的 fallback-own）：在该分屏右边新建一对，原分屏两侧不动，见 spec 5.3
   工具栏弹窗（popup/）与快捷键 cycle-right（默认不绑定，background.js 的 onCommand）：读记录，经 chrome/right-switch.js 把右侧换成指定/下一个引擎，关键词取自记录（只在 storage.session，不进 sync，不外发）。查询对换的永远是 role 为 lookup 的一侧（与标签顺序无关），图片查询对在以图搜图引擎里换、轮换不看 cycleExclude。
-  补成分屏（⑦，popup/complete.js）：弹窗经 activeTab 读当前标签网址，lib/result-match.js 认出某个文字引擎的结果页和关键词，且标签不在分屏中、不是本扩展的一对、窗口能分屏时显示“补成分屏”区
+  补成分屏（⑦，popup/complete.js）：弹窗经 activeTab 读当前标签网址，lib/result-match.js 认出某个文字引擎的结果页和关键词，且标签不在分屏中、不是本扩展的一对、窗口能分屏、还有别的未隐藏文字引擎可放右侧时显示“补成分屏”区（回复 plain 后本次弹窗不再提供补成）
     → 点引擎：runtime.sendMessage({ type: "complete-split", tabId, engineId })（不带网址和关键词）
     → SW 的 runtime.onMessage（return true 后 sendResponse 异步回复）：lib/messages.js 校验发送方是本扩展的 popup/popup.html、字段合法
     → 在 SW 全局串行链上执行 chrome/complete-actions.js：重新 tabs.get、重新识别、windows.get（populate）必须能分屏、inspectTab 重新判定，条件仍满足才 openRight：
@@ -114,7 +114,7 @@ split-search/
 │                                 ext-source.mjs 让测试配置里的扩展装自本检出的 src/、
 │                                 ext-shortcuts.mjs 快捷键（chrome://extensions/shortcuts）快照与恢复，steps/v03-*.mjs、xauto-t19.mjs 是 v0.3 步骤，
 │                                 steps/v04-*.mjs 是 v0.4 步骤（v04-lib 页面标记/CDP 读网址/triggerAction 与 MENU_INDEX，v04-complete(-more) T20，
-│                                 v04-lookup/-lookup-image/-lookup-lib T21、T22，v04-guard T23，v04-guard-x/-guard-more T24，v04-options B18，v04-i18n 供 I18N 与 B14）
+│                                 v04-lookup/-lookup-image/-lookup-lib T21、T22，v04-guard T23，v04-guard-x/-guard-more T24，v04-options B18，v04-i18n 供 I18N 与 B14；i18n-audit.mjs 是 i18n 与 v04-i18n 共用的页面核对工具）
 ├── src/                          扩展根目录（加载这个目录）
 │   ├── manifest.json
 │   ├── _locales/                 界面文案：en、zh_CN（源文案）、zh_TW、es 各一份 messages.json
