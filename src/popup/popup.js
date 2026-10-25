@@ -3,8 +3,7 @@
 // 只做 Chrome 原生拆分视图菜单没有的事：换右侧引擎、补成分屏。互换左右、取消拆分视图用原生菜单。
 import { loadConfig } from "../chrome/config-store.js";
 import { ownedPair, switchRight } from "../chrome/right-switch.js";
-import { popupView, targetTabId, popupMode, completeView } from "../lib/popup-view.js";
-import { enginesFor } from "../lib/engines.js";
+import { popupView, targetTabId, popupMode, completeView, switchTarget } from "../lib/popup-view.js";
 import { matchResultPage } from "../lib/result-match.js";
 import { splitWindowType } from "../lib/window-kind.js";
 import { showComplete } from "./complete.js";
@@ -164,7 +163,7 @@ async function onSwitch(engineId) {
   showError(null);
   try {
     const state = await load();
-    const engine = state?.pair && enginesFor(state.cfg, state.pair.kind).find((e) => e.id === engineId);
+    const engine = switchTarget(state?.pair, state?.cfg, engineId);
     if (!engine) {
       log("popup: the split or the engine is gone, nothing switched", engineId);
       showError("popup_switch_failed");

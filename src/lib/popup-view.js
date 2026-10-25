@@ -29,6 +29,13 @@ export function popupView(pair, cfg) {
   };
 }
 
+// 弹窗点了某个引擎按钮：按这一对的 kind 在同一类引擎里找它（图片查询对只认以图搜图引擎，其余只认未隐藏的文字引擎）。
+// 这一对已经不是本扩展的、或这个引擎已经不在同一类里时返回 null，弹窗什么都不换
+export function switchTarget(pair, cfg, engineId) {
+  if (!pair || !cfg) return null;
+  return enginesFor(cfg, pair.kind).find(e => e.id === engineId) ?? null;
+}
+
 function hostOf(url) {
   try {
     return new URL(url).host;

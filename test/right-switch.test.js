@@ -202,3 +202,45 @@ test("switchRight：tabs.update 失败时抛出，不改记录", async () => {
   await assert.rejects(switchRight(pair, engines[0]), /No tab with id/);
   assert.deepEqual(store.get("split:11"), rec(10, "bing"));
 });
+
+// F11：图片查询对里，弹窗的“换右侧”只在以图搜图引擎里挑。走弹窗同一条路径：
+// ownedPair → popupView 的按钮 → switchTarget（popup.js 的 onSwitch 用它找引擎）→ switchRight。
+test("弹窗换右侧：图片查询对点 bing-img → lookup 一侧换成 bing-img，记录 engine 跟着改；文字引擎 id 不会被接受", async () => {
+  const { mergeConfig } = await import("../src/lib/engines.js");
+  const { IMAGE_CATALOG } = await import("../src/lib/image-engines.js");
+  const { popupView, switchTarget } = await import("../src/lib/popup-view.js");
+  const SRC = "https://img.example.com/a b.png?sig=1&x=2";
+  const P = { id: 20, index: 1, windowId: 1, splitViewId: 9 };
+  const K = { id: 21, index: 2, windowId: 1, splitViewId: 9 };
+  const base = { splitViewId: 9, mode: "split", input: "image", query: SRC };
+  installChrome({ tabs: { 20: P, 21: K }, data: {
+    "split:20": { peer: 21, role: "page", engine: "", ...base },
+    "split:21": { peer: 20, role: "lookup", engine: "lens", ...base },
+  } });
+  const cfg = mergeConfig({ imageEngines: [IMAGE_CATALOG[0]] });
+  const pair = await ownedPair(P, cfg.engines);
+  assert.equal(pair.kind, "image");
+  assert.deepEqual(popupView(pair, cfg).choices.map(e => e.id), ["bing-img"]);
+  assert.equal(switchTarget(pair, cfg, "bing"), null);
+  assert.equal(switchTarget(pair, cfg, "google"), null);
+  assert.equal(switchTarget(null, cfg, "bing-img"), null);
+  const engine = switchTarget(pair, cfg, "bing-img");
+  assert.equal(engine.id, "bing-img");
+  await switchRight(pair, engine);
+  assert.deepEqual(calls, [
+    ["tabs.update", 21, { url: expandTemplate(IMAGE_CATALOG[0].url, SRC) }],
+    ["session.set", { "split:21": { peer: 20, role: "lookup", engine: "bing-img", ...base } }],
+  ]);
+  assert.equal(store.get("split:20").engine, "");
+  // 文字查询对反过来：只接受文字引擎
+  const textPair = { ...pair, kind: "text" };
+  assert.equal(switchTarget(textPair, cfg, "bing-img"), null);
+  assert.equal(switchTarget(textPair, cfg, "bing").id, "bing");
+});
+
+test("popup.js 换右侧时经 switchTarget 找引擎（接线守门）", async () => {
+  const { readFileSync } = await import("node:fs");
+  const src = readFileSync(new URL("../src/popup/popup.js", import.meta.url), "utf8");
+  assert.match(src, /switchTarget\(state\?\.pair, state\?\.cfg, engineId\)/);
+  assert.match(src, /await switchRight\(state\.pair, engine\)/);
+});
