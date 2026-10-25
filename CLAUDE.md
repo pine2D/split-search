@@ -54,7 +54,7 @@ Chrome MV3 扩展：用户在地址栏搜索，或把文字拖到标签栏时，
       1. 防重入：导航类型是 back_forward 或 reload 时，不自动分屏，只显示“重新执行”按钮
       2. 解析：取 location.search 中 "u=" 之后的全部文本作为原始网址（\0 未经编码，不能用 URLSearchParams.get('u')）
               → 用 URL + URLSearchParams 读出 _ss（可兼容 %2C）和左侧模板里 %s 所在参数的值作为关键词（+ 会自动还原为空格）
-      3. 窗口检查：当前窗口不能分屏（popup/app，或 Document PiP：type 为 normal 但 alwaysOnTop）时 → 在一个能分屏的 normal 窗口（lastSplitWindow()）里新建一对标签组成分屏；当前标签 location.replace(左侧网址)
+      3. 窗口检查：当前窗口不能分屏（popup/app，或 Document PiP：type 为 normal、alwaysOnTop 且只有一个标签，判定经 lib/split-decision.js 的 decideFor）时 → 在一个能分屏的 normal 窗口（lastSplitWindow()）里新建一对标签组成分屏；当前标签 location.replace(左侧网址)
       4. 分屏（“本扩展的分屏”按 storage.session 里的记录判定，不按网址猜；记录形状 {peer, splitViewId, mode: split|adjacent, engine, query}，见 lib/split-owner.js、chrome/split-state.js）：
           ├─ 窄窗口（windows.get 的 width < 960，且 narrowFallback 不为 false）：不建分屏，右侧在紧邻的后台标签打开，记 adjacent 记录；同标签再触发复用右边那个
           │   窗口变宽或关掉开关后再触发：更新右边那个，再 tabs.createSplit([左, 右]) 拼成分屏、复核后改记 split（decideSplit 返回 join；拼不成退回复用）
@@ -119,7 +119,7 @@ split-search/
 │   ├── lib/split-decision.js     分屏动作判定
 │   ├── lib/split-owner.js        “是否本扩展的分屏”按记录与 splitViewId 判定
 │   ├── lib/narrow.js             窄窗口判定（阈值 960，宽度非数字不判窄）
-│   ├── lib/window-kind.js        窗口能否分屏（splitWindowType / canSplitIn：Document PiP 不算）
+│   ├── lib/window-kind.js        窗口能否分屏（splitWindowType / canSplitIn：Document PiP 不算）、PiP 获得焦点时挑哪个窗口（pickSplitWindow）
 │   ├── lib/engine-catalog.js     右侧引擎库数据（内置，不来自网络）
 │   ├── lib/cycle.js              快捷键轮换：下一个参与轮换的引擎
 │   ├── lib/popup-view.js         弹窗视图状态（纯逻辑）
@@ -130,7 +130,7 @@ split-search/
 │   ├── chrome/split-actions.js   分屏动作执行（tabs / windows 薄封装，记录经 split-state.js）
 │   ├── chrome/split-state.js     记录读写与 inspectTab（对侧已关闭、storage 抛错都按“无记录”处理）
 │   └── chrome/right-switch.js    换右侧：弹窗与快捷键共用
-└── test/                         node --test（每个 lib 一个文件，另有 manifest、config-store、split-actions、options-edits、options-ui；i18n.test.js、chrome-i18n.test.js、i18n-catalog.test.js（4 种语言 key 对齐与 fetch 守门、带引擎名的 aria 文案含可见文字）、popup-css.test.js（弹窗颜色变量与设置页一致）、errors.test.js、i18n-pak.test.js（Chrome 术语表脚本）、store-i18n.test.js（宣传图文案键对齐）；e2e-*.test.js 测 e2e 脚本，其中 e2e-i18n.test.js 测 I18N 步骤；pack.test.js 测发布打包）
+└── test/                         node --test（每个 lib 一个文件，另有 manifest、config-store、split-actions、options-edits、options-ui；i18n.test.js、chrome-i18n.test.js、i18n-catalog.test.js（4 种语言 key 对齐与 fetch 守门、带引擎名的 aria 文案含可见文字）、popup-css.test.js（弹窗颜色变量与设置页一致）、errors.test.js、i18n-pak.test.js（Chrome 术语表脚本）、store-i18n.test.js（宣传图文案键对齐）；go-wiring.test.js（静态检查 go.js 的判定经 decideFor、读窗口带 populate）；e2e-*.test.js 测 e2e 脚本，其中 e2e-i18n.test.js 测 I18N 步骤；pack.test.js 测发布打包）
 ```
 
 纯逻辑放 `src/lib/`（不碰 `chrome.*`），`src/chrome/` 是对 `chrome.*` 的薄封装，页面脚本只负责编排。
@@ -240,5 +240,6 @@ split-search/
 - `tabs.create({splitWithTabId})`：源标签是固定标签或在标签组中时，新标签自动继承固定状态和标签组。在 popup/app 类型窗口里调用，按源码推断可能触发 CHECK 崩溃，必须提前拦住，不调用。
 - go.html 里 `history.back()` 能回到被 DNR 重定向之前的页面。不要用 `navigation.canGoBack` 判断能否后退，它在扩展页上恒为 false。关闭分屏中的一侧后，另一侧自动解除分屏。
 - API 版本：`tabs.create({splitWithTabId})`、`tabs.createSplit`、`tabs.unsplit` 需 Chrome 155+；`Tab.splitViewId`、`tabs.query({splitViewId})` 需 140+。一个分屏只能放两个标签。
-- Document Picture-in-Picture 窗口（Chrome 156.0.8078.47 实测，spike S5）：报 `type: "normal"`、`alwaysOnTop: true`，有自己的标签；PiP 获得焦点时 `windows.getLastFocused({ windowTypes: ["normal"] })` 返回的就是它；按 `createPaired` 的参数调 `tabs.create({ windowId: <PiP>, splitWithTabId: <PiP 的标签> })` 会让 Chrome 崩溃（SIGTRAP），先用 `tabs.query` 确认找得到这个标签也没用。所以能否分屏按 `type === "normal" && alwaysOnTop !== true` 判定（`lib/window-kind.js`）；挑窗口经 `lastSplitWindow()`（`chrome/split-actions.js`），不直接用 `getLastFocused` 的结果。
+- Document Picture-in-Picture 窗口（Chrome 156.0.8078.47 实测，spike S5）：报 `type: "normal"`、`alwaysOnTop: true`，有自己的标签；PiP 获得焦点时 `windows.getLastFocused({ windowTypes: ["normal"] })` 返回的就是它；按 `createPaired` 的参数调 `tabs.create({ windowId: <PiP>, splitWithTabId: <PiP 的标签> })` 会让 Chrome 崩溃（SIGTRAP），先用 `tabs.query` 确认找得到这个标签也没用。所以能否分屏按 `lib/window-kind.js` 的 `splitWindowType`/`canSplitIn` 判定；挑窗口经 `lastSplitWindow()`（`chrome/split-actions.js`），不直接用 `getLastFocused` 的结果。go.js 的判定经 `decideFor`（`test/go-wiring.test.js` 静态守着这条接线，改判定时不得删）。
+- 窗口管理器“置顶”的普通窗口（Linux X11 的 `_NET_WM_STATE_ABOVE`，Chrome 156.0.8078.47 在 Xvfb 上实测）同样报 `alwaysOnTop: true`，去掉置顶后变回 false。和 PiP 靠标签数区分：PiP 只有一个标签，`tabs.create({ windowId: <PiP> })` 会落到打开者的窗口，加不进去；PiP 标签带 `openerTabId`（打开它的标签）。所以 `type === "normal" && alwaysOnTop === true` 且标签不多于一个（或没有标签列表）才算 PiP；读窗口一律带 `populate: true`（不需要 `tabs` 权限，标签带 `lastAccessed`，没有 `url`）。代价：置顶且只有一个标签的普通窗口按 PiP 处理，在里面搜索会到别的窗口分屏。PiP 获得焦点时 `lastSplitWindow()` 依次取 focused 的、打开 PiP 的、没最小化且最近用过的窗口；快捷键（`lastSplitWindow({ fallback: false })`）则什么都不做。
 - v0.3 实测（Chrome 156.0.8078.47）：`tabs.move` 对调分屏两侧后两个标签 `splitViewId` 不变；`tabs.unsplit` 或关掉一侧后，留下的标签 `splitViewId` 为 -1；`tabs.createSplit` 总是分配新的 `splitViewId`（拆开再拼回后与旧 id 不同，所以记录要绑 id）；`tabs.onUpdated` 没有过滤，不监听；没有 `tabs` 权限也能用 `windows.get` 读 `width`；CDP `Extensions.triggerAction` 作用于 TAB 目标时，弹窗以 `type:"page"` 的 CDP 目标出现（约 250ms），传页面 targetId 会报错。

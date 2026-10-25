@@ -87,7 +87,7 @@ beforeEach((t) => {
 
 test("cycle-right：在本扩展分屏里把右侧换成下一个引擎（Bing 之后是 DuckDuckGo），记录跟着改", async () => {
   await press();
-  assert.deepEqual(state.calls[0], ["windows.getLastFocused", { windowTypes: ["normal"] }]);
+  assert.deepEqual(state.calls[0], ["windows.getLastFocused", { windowTypes: ["normal"], populate: true }]);
   assert.deepEqual(updates(), [["tabs.update", 11, { url: "https://duckduckgo.com/?q=" + encodeURIComponent(QUERY) }]]);
   assert.equal(state.session.get("split:11").engine, "ddg");
   assert.equal(state.session.get("split:10").engine, "google");
@@ -154,14 +154,20 @@ test("cycle-right：换右侧时 tabs.update 抛错 → 只记 [split-search] �
   assert.equal(state.session.get("split:11").engine, "bing");
 });
 
-test("cycle-right：最后聚焦的是 PiP 时，换的是普通窗口里本扩展那一对的右侧，不读 PiP 的标签", async () => {
+test("cycle-right：最后聚焦的是 PiP 时什么都不做：不读 PiP 的标签，也不去改看不见的其他窗口", async () => {
   const pip = { id: 9, type: "normal", alwaysOnTop: true, focused: true };
   state.win = pip;
   state.all = [pip, { id: 1, type: "normal", alwaysOnTop: false }];
   state.tabs[90] = { id: 90, index: 0, windowId: 9, splitViewId: -1, active: true };
   await press();
-  const queries = state.calls.filter(c => c[0] === "tabs.query" && c[1].windowId !== undefined);
-  assert.deepEqual(queries, [["tabs.query", { active: true, windowId: 1 }]]);
+  assert.ok(!state.calls.some(c => c[0] === "tabs.query"));
+  assert.ok(!state.calls.some(c => c[0] === "windows.getAll"));
+  assert.deepEqual(updates(), []);
+});
+
+test("cycle-right：窗口管理器置顶的普通窗口（alwaysOnTop 但有两个标签）照常换右侧", async () => {
+  state.win = { id: 1, type: "normal", alwaysOnTop: true, tabs: [L, R] };
+  await press();
   assert.deepEqual(updates(), [["tabs.update", 11, { url: "https://duckduckgo.com/?q=" + encodeURIComponent(QUERY) }]]);
 });
 

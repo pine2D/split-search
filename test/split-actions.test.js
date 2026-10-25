@@ -234,7 +234,7 @@ test("other-window：在已有的普通窗口建一对、记录后把该窗口�
   const out = await openInOtherWindow({ leftUrl: L, rightUrl: R, ...ids });
   assert.deepEqual(out, { replaceWith: L });
   assert.deepEqual(calls, [
-    ["windows.getLastFocused", { windowTypes: ["normal"] }],
+    ["windows.getLastFocused", { windowTypes: ["normal"], populate: true }],
     ["tabs.create", { url: L, windowId: 7, active: true }],
     ["tabs.create", { url: R, index: 1, windowId: 7, active: false, splitWithTabId: 100 }],
     ["tabs.get", 100],
@@ -255,7 +255,7 @@ test("other-window：没有普通窗口时新建窗口，不再额外切前台",
   const out = await openInOtherWindow({ leftUrl: L, rightUrl: R, ...ids });
   assert.deepEqual(out, { replaceWith: L });
   assert.deepEqual(calls, [
-    ["windows.getLastFocused", { windowTypes: ["normal"] }],
+    ["windows.getLastFocused", { windowTypes: ["normal"], populate: true }],
     ["windows.create", { type: "normal", url: L }],
     ["tabs.create", { url: R, index: 1, windowId: 8, active: false, splitWithTabId: 50 }],
     ["tabs.get", 50],
@@ -439,16 +439,32 @@ test("lastSplitWindow：最后聚焦的是普通窗口 → 直接用它，不读
   assert.deepEqual(names(), ["windows.getLastFocused"]);
 });
 
-test("lastSplitWindow：最后聚焦的是 PiP → 在 getAll 里取第一个可分屏的窗口", async () => {
+test("lastSplitWindow：最后聚焦的是 PiP → 在 getAll（带 populate）里挑可分屏的窗口", async () => {
   installChrome({}, { lastFocused: PIP, all: [PIP, W1] });
   assert.equal(await lastSplitWindow(), W1);
-  assert.deepEqual(calls[1], ["windows.getAll", { windowTypes: ["normal"] }]);
+  assert.deepEqual(calls[1], ["windows.getAll", { windowTypes: ["normal"], populate: true }]);
 });
 
 test("lastSplitWindow：可分屏的窗口里优先取 focused 的，否则取第一个", async () => {
   const W2 = { id: 2, type: "normal", alwaysOnTop: false, focused: true };
   installChrome({}, { lastFocused: PIP, all: [PIP, W1, W2] });
   assert.equal(await lastSplitWindow(), W2);
+});
+
+test("lastSplitWindow：最后聚焦的是 PiP → 取打开 PiP 的那个窗口，不取 getAll 里的第一个", async () => {
+  const pip = { ...PIP, tabs: [{ id: 90, openerTabId: 21 }] };
+  const A = { id: 1, type: "normal", alwaysOnTop: false, tabs: [{ id: 11 }] };
+  const B = { id: 2, type: "normal", alwaysOnTop: false, tabs: [{ id: 21 }, { id: 22 }] };
+  installChrome({}, { lastFocused: pip, all: [A, B, pip] });
+  assert.equal(await lastSplitWindow(), B);
+});
+
+test("lastSplitWindow({ fallback: false })：最后聚焦的不能分屏 → null，不读 getAll", async () => {
+  installChrome({}, { lastFocused: PIP, all: [PIP, W1] });
+  assert.equal(await lastSplitWindow({ fallback: false }), null);
+  assert.deepEqual(names(), ["windows.getLastFocused"]);
+  installChrome({}, { lastFocused: W1 });
+  assert.equal(await lastSplitWindow({ fallback: false }), W1);
 });
 
 test("lastSplitWindow：只有 PiP、getLastFocused 抛错、getAll 抛错 → null", async () => {

@@ -1,8 +1,6 @@
 // 触发处理页：解析 go.html?u=<原始网址>，判定分屏动作并执行。只做编排。
 import { extractOriginalUrl, parseTrigger, expandTemplate, stripMarker } from "./lib/trigger.js";
-import { decideSplit } from "./lib/split-decision.js";
-import { isNarrow } from "./lib/narrow.js";
-import { splitWindowType } from "./lib/window-kind.js";
+import { decideFor } from "./lib/split-decision.js";
 import { loadConfig } from "./chrome/config-store.js";
 import { ACTIONS, leaveTab } from "./chrome/split-actions.js";
 import { inspectTab } from "./chrome/split-state.js";
@@ -49,23 +47,18 @@ function safeOriginal(original) {
 }
 
 // 收集判定所需的上下文：当前标签、所在窗口、对侧与两侧记录（见 split-state.js 的 inspectTab）。
+// 窗口带 populate：标签数用来区分 PiP 与窗口管理器置顶的普通窗口（lib/window-kind.js）。
 async function gatherContext(engines) {
   const tab = await chrome.tabs.getCurrent();
   if (!tab) throw new Error("tabs.getCurrent() returned no tab");
-  const win = await chrome.windows.get(tab.windowId);
+  const win = await chrome.windows.get(tab.windowId, { populate: true });
   return { tab, win, ...(await inspectTab(tab, engines)) };
 }
 
 async function split(engines, narrowEnabled, { left, right, query }, leftUrl, rightUrl) {
   const ctx = await gatherContext(engines);
-  const action = decideSplit({
-    // PiP 窗口报 type "normal"，经 splitWindowType 归为 "pip"，走 other-window，不在它上面调分屏 API
-    windowType: splitWindowType(ctx.win),
-    splitViewId: ctx.splitViewId,
-    peer: ctx.peer,
-    ownership: ctx.ownership,
-    narrow: isNarrow(ctx.win.width, narrowEnabled),
-  });
+  // 判定经 decideFor：PiP 归为 "pip"，走 other-window，不在它上面调分屏 API（test/go-wiring.test.js 守着这条接线）
+  const action = decideFor(ctx, narrowEnabled);
   const outcome = await ACTIONS[action]({
     ...ctx, leftUrl, rightUrl, leftId: left.id, rightId: right.id, query, narrowEnabled,
   });

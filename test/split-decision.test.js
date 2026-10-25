@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { decideSplit, sideOf } from "../src/lib/split-decision.js";
+import { decideSplit, decideFor, sideOf } from "../src/lib/split-decision.js";
 
 const peer = { id: 2, index: 5 };
 const base = { windowType: "normal", splitViewId: 7, peer, ownership: "own" };
@@ -32,4 +32,25 @@ test("无记录且不像搜索页 → foreign", () => assert.equal(decideSplit({
 test("在分屏中却找不到另一侧", () => {
   assert.equal(decideSplit({ ...base, peer: null }), "foreign");
   assert.equal(decideSplit({ ...base, peer: undefined }), "foreign");
+});
+
+// go.js 经 decideFor 判定（窗口类型必须经 splitWindowType）。这几条守着 PiP 不被当成普通窗口：
+// 回退成直接传 ctx.win.type 时，PiP 会判成 new，createPaired 在 PiP 上调分屏 API，Chrome 156 崩溃。
+// v0.4 给判定加 role 时也要改在 decideFor 里，这几条用例必须保留。
+const ctx = (win, over = {}) => ({ win, splitViewId: -1, peer: null, ownership: "none", ...over });
+test("decideFor：PiP（normal 且 alwaysOnTop）→ other-window，不论有没有记录", () => {
+  assert.equal(decideFor(ctx({ type: "normal", alwaysOnTop: true }), true), "other-window");
+  assert.equal(decideFor(ctx({ type: "normal", alwaysOnTop: true, tabs: [{ id: 1 }] }), true), "other-window");
+  assert.equal(decideFor(ctx({ type: "normal", alwaysOnTop: true }, { splitViewId: 7, peer, ownership: "own" }), true), "other-window");
+});
+test("decideFor：普通窗口、窗口管理器置顶且有多个标签的窗口照常判定", () => {
+  assert.equal(decideFor(ctx({ type: "normal", alwaysOnTop: false, width: 1400 }), true), "new");
+  assert.equal(decideFor(ctx({ type: "normal", alwaysOnTop: true, width: 1400, tabs: [{ id: 1 }, { id: 2 }] }), true), "new");
+  assert.equal(decideFor(ctx({ type: "popup" }), true), "other-window");
+});
+test("decideFor：窄窗口判定用 ctx.win.width 和降级开关", () => {
+  const own = { peer, ownership: "own" };
+  assert.equal(decideFor(ctx({ type: "normal", width: 800 }, own), true), "reuse");
+  assert.equal(decideFor(ctx({ type: "normal", width: 800 }, own), false), "join");
+  assert.equal(decideFor(ctx({ type: "normal", width: 1400 }, own), true), "join");
 });

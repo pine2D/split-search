@@ -5,7 +5,7 @@
 // 分支内的关键 chrome 调用失败时直接抛出，由 go.js 兜底打开左侧搜索。
 import { sideOf } from "../lib/split-decision.js";
 import { isNarrow } from "../lib/narrow.js";
-import { canSplitIn } from "../lib/window-kind.js";
+import { canSplitIn, pickSplitWindow } from "../lib/window-kind.js";
 import { writePair, clearPair } from "./split-state.js";
 
 const log = (...args) => console.error("[split-search]", ...args);
@@ -131,15 +131,17 @@ export async function openForeign({ tab, win, splitTabs, leftUrl, rightUrl, left
   return { leave: true };
 }
 
-// 最后聚焦的、能分屏的窗口（canSplitIn：非置顶的 normal）。PiP 获得焦点时 getLastFocused 返回的就是 PiP，
-// 这时在 getAll 里挑：优先 focused 的，否则第一个。都没有或任一调用抛错 → null。
-// 挑窗口一律经这里，不直接用 getLastFocused 的结果。
-export async function lastSplitWindow() {
+// 最后聚焦的、能分屏的窗口（canSplitIn，见 lib/window-kind.js）。PiP 获得焦点时 getLastFocused 返回的就是 PiP，
+// 这时 fallback 为 true 就在 getAll 里挑（pickSplitWindow：focused 的、打开 PiP 的窗口、最近用过的），
+// fallback 为 false 直接返回 null（快捷键用：用户眼前是 PiP，不去改看不见的窗口）。
+// 两个调用都带 populate：标签数用来区分 PiP 与窗口管理器置顶的普通窗口，不需要 tabs 权限。
+// 都没有或任一调用抛错 → null。挑窗口一律经这里，不直接用 getLastFocused 的结果。
+export async function lastSplitWindow({ fallback = true } = {}) {
   try {
-    const last = await chrome.windows.getLastFocused({ windowTypes: ["normal"] });
+    const last = await chrome.windows.getLastFocused({ windowTypes: ["normal"], populate: true });
     if (canSplitIn(last)) return last;
-    const ok = (await chrome.windows.getAll({ windowTypes: ["normal"] })).filter(canSplitIn);
-    return ok.find(w => w.focused) ?? ok[0] ?? null;
+    if (!fallback) return null;
+    return pickSplitWindow(last, await chrome.windows.getAll({ windowTypes: ["normal"], populate: true }));
   } catch (err) {
     log("failed to find a window that can hold a split view", err);
     return null;
