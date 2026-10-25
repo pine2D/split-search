@@ -5,8 +5,14 @@ import { ownedPair, switchRight } from "./chrome/right-switch.js";
 import { nextRightEngine, cycleCandidates } from "./lib/cycle.js";
 import { lastSplitWindow } from "./chrome/split-actions.js";
 import { rebuildMenus } from "./chrome/menus.js";
+import { handleMenuClick } from "./chrome/lookup-actions.js";
+import { serialQueue } from "./lib/serial.js";
 
 const log = (...args) => console.error("[split-search]", ...args);
+
+// SW 全局串行链（spec 3.1“SW 里的串行”）：右键查询与 ⑦ 的 complete-split 共用，每次在链上重新判定再执行，
+// 两次几乎同时的右键不会都去建分屏。
+const swQueue = serialQueue();
 
 async function doRebuild() {
   try {
@@ -71,3 +77,6 @@ chrome.commands.onCommand.addListener((command) => {
   if (command !== "cycle-right") return undefined;
   return cycleRight().catch(err => log("cycle-right failed", err));
 });
+// 右键查询（② ⑧）：经 swQueue 串行；同样返回处理完成的 promise 供测试等待
+chrome.contextMenus.onClicked.addListener((info, tab) =>
+  swQueue(() => handleMenuClick(info, tab)).catch(err => log("lookup failed", err)));

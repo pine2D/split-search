@@ -21,6 +21,7 @@ function reset(over = {}) {
     session: new Map(Object.entries({ "split:10": rec(11, "google"), "split:11": rec(10, "bing") })),
     tabs: { 10: L, 11: R },
     win: { id: 1, type: "normal" },
+    nextId: 100,
     ...over,
   };
 }
@@ -61,6 +62,12 @@ globalThis.chrome = {
   declarativeNetRequest: { async updateDynamicRules() {} },
   commands: { onCommand: event("commands.onCommand") },
   windows: {
+    // windows.get 返回 state.win（带 populate 时附上它的标签）
+    async get(id, opts) {
+      state.calls.push(["windows.get", id, opts]);
+      const tabs = opts?.populate ? Object.values(state.tabs).filter(t => t.windowId === id) : undefined;
+      return { ...state.win, id, tabs };
+    },
     async getLastFocused(opts) {
       state.calls.push(["windows.getLastFocused", opts]);
       if (state.win instanceof Error) throw state.win;
@@ -88,6 +95,17 @@ globalThis.chrome = {
       state.calls.push(["tabs.update", id, props]);
       if (state.updateFails) throw new Error("No tab with id: 11.");
       return { id, ...props };
+    },
+    // 有状态：带 splitWithTabId 时两个标签拿到同一个新 splitViewId，之后 tabs.get / tabs.query 都读得到
+    async create(props) {
+      state.calls.push(["tabs.create", props]);
+      const tab = { id: state.nextId++, index: props.index, windowId: props.windowId, splitViewId: -1, active: props.active };
+      if (props.splitWithTabId !== undefined) {
+        tab.splitViewId = 42;
+        state.tabs[props.splitWithTabId] = { ...state.tabs[props.splitWithTabId], splitViewId: 42 };
+      }
+      state.tabs[tab.id] = tab;
+      return tab;
     },
   },
 };
@@ -238,4 +256,30 @@ test("onInstalled、onStartup 都重建右键菜单", async () => {
   for (const fn of listeners["onStartup"]) fn();
   for (let i = 0; i < 200 && !done(2); i++) await new Promise(r => setTimeout(r, 5));
   assert.ok(done(2), JSON.stringify(state.menus));
+});
+
+test("并发右键只建一对：同一个无记录标签连点两次，第二次在串行链上重新判定、就地更新查询标签", async () => {
+  state.session.clear();
+  state.win = { id: 1, type: "normal", width: 1200 };
+  state.tabs[5] = { id: 5, index: 2, windowId: 1, splitViewId: -1 };
+  const click = (text) => listeners["contextMenus.onClicked"][0]({ menuItemId: "ss-lookup-text", selectionText: text }, { ...state.tabs[5] });
+  assert.equal(listeners["contextMenus.onClicked"].length, 1);
+  const first = click("one");
+  const second = click("two");
+  await Promise.all([first, second]);
+  const splits = state.calls.filter(c => c[0] === "tabs.create" && c[1].splitWithTabId !== undefined);
+  assert.equal(splits.length, 1);
+  assert.equal(state.calls.filter(c => c[0] === "tabs.create").length, 1);
+  assert.deepEqual(updates(), [["tabs.update", 100, { url: "https://www.bing.com/search?q=two" }]]);
+  assert.equal(state.session.get("split:5").query, "two");
+  assert.equal(state.session.get("split:100").query, "two");
+  assert.equal(console.error.mock.callCount(), 0);
+});
+
+test("右键处理抛错时只记 [split-search] 日志，不抛出监听器", async () => {
+  state.tabs[5] = { id: 5, index: 2, windowId: 1, splitViewId: -1 };
+  state.sync = null;
+  await listeners["contextMenus.onClicked"][0]({ menuItemId: "ss-lookup-text", selectionText: "x" }, { ...state.tabs[5] });
+  assert.equal(console.error.mock.callCount(), 1);
+  assert.deepEqual(console.error.mock.calls[0].arguments.slice(0, 2), ["[split-search]", "lookup failed"]);
 });
