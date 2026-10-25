@@ -35,6 +35,12 @@ test("引擎 A: /search?q=a+b%26c -> 'A · a b&amp;c'", () => withServer(async (
 test("引擎 C: /wiki/中文", () => withServer(async ({ get }) => {
   assert.equal(await title(await get("/wiki/%E4%B8%AD%E6%96%87", HOSTS.c)), "C · 中文");
 }));
+test("引擎的普通页面 /about：200，其余非搜索路径仍是 404", () => withServer(async ({ get }) => {
+  const r = await get("/about?n=1", HOSTS.b);
+  assert.equal(r.status, 200);
+  assert.equal(await title(r), "B about");
+  assert.equal((await get("/watch?v=1", HOSTS.b)).status, 404);
+}));
 test("反射文本被转义", () => withServer(async ({ get }) => {
   const html = await (await get("/search?q=%3Cscript%3E", HOSTS.b)).text();
   assert.ok(!html.includes("<script>"));

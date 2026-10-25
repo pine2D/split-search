@@ -77,6 +77,8 @@ export function startServer({ port }) {
     const path = url.pathname;
     try {
       if (engines[host]) {
+        // 引擎的普通页面（不是搜索结果页）：T16 用它验证重启后兜底判“不是”
+        if (path === "/about") return send(res, 200, "text/html; charset=utf-8", page(`${engines[host]} about`, `<h1>${esc(engines[host])}</h1><p>about</p>`));
         let q = null;
         if (path === "/search") q = url.searchParams.get("q") ?? "";
         else if (path.startsWith("/wiki/")) q = safeDecode(path.slice(6));

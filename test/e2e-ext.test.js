@@ -83,11 +83,11 @@ test("restorePendingSnapshot: 无快照返回 false；有遗留快照则恢复�
 test("configureMocks: 从干净基线写入模拟引擎、默认组合与界面语言", async () => {
   const b = fakeBrowser(sample);
   await configureMocks(b, 9000);
-  assert.deepEqual(b.store, { customEngines: mockEngines(9000), defaultPair: ["ea", "eb"], uiLocale: "zh_CN" });
+  assert.deepEqual(b.store, { customEngines: mockEngines(9000), defaultPair: ["ea", "eb"], uiLocale: "zh_CN", narrowFallback: false });
 });
 
-test("mockBaseline: 基线对象含 uiLocale: zh_CN", () => {
-  assert.deepEqual(mockBaseline(9000), { customEngines: mockEngines(9000), defaultPair: ["ea", "eb"], uiLocale: "zh_CN" });
+test("mockBaseline: 基线对象含 uiLocale: zh_CN，并关掉窄窗口降级", () => {
+  assert.deepEqual(mockBaseline(9000), { customEngines: mockEngines(9000), defaultPair: ["ea", "eb"], uiLocale: "zh_CN", narrowFallback: false });
 });
 
 test("ctx.ext.configureMocks: 步骤内重置基线后，存储里仍是 uiLocale: zh_CN", async () => {

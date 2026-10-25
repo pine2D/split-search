@@ -19,6 +19,9 @@ import { B1, withNeeds } from "./setup.mjs";
 import { XAUTO_STEPS } from "./xauto.mjs";
 import { XAUTO_T14 } from "./xauto-t14.mjs";
 import { XAUTO_T12 } from "./xauto-t12.mjs";
+import { V03_SPLIT_STEPS } from "./v03-split.mjs";
+import { V03_NARROW_STEPS } from "./v03-narrow.mjs";
+import { V03_POPUP_STEPS } from "./v03-popup.mjs";
 
 // B 系列在前，CORE-* 其次，T 系列最后；同类按数字排序
 const GROUP = { B: 0, CORE: 1, T: 2 };
@@ -36,7 +39,8 @@ export const sortSteps = steps => [...steps].sort((a, b) => (a.last ? 1 : 0) - (
 const XAUTO = [...XAUTO_STEPS, ...XAUTO_T12, ...XAUTO_T14].map(x => ({ ...x, fallback: withNeeds(x.fallback) }));
 const replaced = new Set(XAUTO.map(x => x.id));
 const MANUAL = [...ASSISTED_STEPS, ...DRAG_STEPS, ...ASSISTED_2].filter(s => !replaced.has(s.id));
-export const STEPS = sortSteps([...OPTIONS_STEPS, ...FLOW_STEPS, B1, B4, B14, ...MANUAL, T8, I18N].map(withNeeds).concat(XAUTO));
+export const STEPS = sortSteps([...OPTIONS_STEPS, ...FLOW_STEPS, B1, B4, B14, ...MANUAL, T8, I18N,
+  ...V03_SPLIT_STEPS, ...V03_NARROW_STEPS, ...V03_POPUP_STEPS].map(withNeeds).concat(XAUTO));
 
 // xinput：真实输入可用（xinput.available().ok）。可用 → xauto 版本，否则换成 fallback（不算失败）。
 // autoOnly 只留不需要人的步骤：auto，以及（可用时的）xauto

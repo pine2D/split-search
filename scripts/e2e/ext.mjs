@@ -67,9 +67,11 @@ export async function restorePendingSnapshot(browser, file = SNAPSHOT_FILE) {
 }
 
 // e2e 的基线配置：模拟引擎、默认组合，界面语言固定为 E2E_LOCALE（期望文字按它的目录算，见 i18n.mjs）。
-// 凡是整份写基线的地方都用它，不要另外单独 set uiLocale：基线重置会先 clear，单独写的键会被清掉
+// 凡是整份写基线的地方都用它，不要另外单独 set uiLocale：基线重置会先 clear，单独写的键会被清掉。
+// narrowFallback: false：e2e 的窗口宽度不总受控（host 无头约 800 宽），关掉窄窗口降级，现有分屏步骤才不受影响；
+// 只有 T17 测默认值（删掉这个键）和开关
 export function mockBaseline(port) {
-  return { customEngines: mockEngines(port), defaultPair: MOCK_PAIR, uiLocale: E2E_LOCALE };
+  return { customEngines: mockEngines(port), defaultPair: MOCK_PAIR, uiLocale: E2E_LOCALE, narrowFallback: false };
 }
 
 // 从干净基线开始（原始配置在快照里，结束后恢复）

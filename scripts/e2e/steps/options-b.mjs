@@ -1,33 +1,41 @@
-// 设置页自动步骤（一）：B2 B3 B6 B7 B8 B10 B11
+// 设置页自动步骤（一）：B2（工具栏图标出现弹窗）B3 B6 B7 B8 B10 B11
 import { EXT_ID } from "../config.mjs";
+import { pageTargets } from "./util.mjs";
+import { POPUP_URL, popupPage } from "./v03-popup.mjs";
 import {
-  OPTIONS_URL, withOptions, fillDialog, dialogState, closeDialog,
+  withOptions, fillDialog, dialogState, closeDialog,
   readKeys, BAIDU, hasEngine, addCustom, guarded, keySel,
 } from "./optpage.mjs";
 import { msg } from "../i18n.mjs";
 
-const optionsTargets = async browser =>
-  (await browser.targets()).filter(t => t.type === "page" && t.url.startsWith(OPTIONS_URL.replace("options.html", "")));
+// 有 action.default_popup 时，Extensions.triggerAction（只接受 tab 目标）会出现 type "page"、网址为 popup.html 的目标（Task 8 实测）
+const popupTargets = async browser => (await pageTargets(browser)).filter(t => t.url.startsWith(POPUP_URL));
 
 const B2 = {
-  id: "B2", title: "点工具栏图标打开设置页", kind: "auto", needs: [],
-  async run({ browser }) {
-    // openOptionsPage 遇到已打开的设置页只会聚焦，所以先关掉所有设置页，再等“新的”出现
-    // triggerAction 只接受 tab 目标：取一个非设置页的 tab（没有就新建 about:blank）
+  id: "B2", title: "点工具栏图标出现弹窗", kind: "auto", needs: [],
+  async run(ctx) {
+    const { browser } = ctx;
+    // triggerAction 只接受 tab 目标：取一个非扩展页的 tab（没有就新建 about:blank）
     const tabs = async () => (await browser.client.send("Target.getTargets", { filter: [{ type: "tab" }] })).targetInfos;
-    const notOptions = list => list.find(t => !t.url.startsWith(`chrome-extension://${EXT_ID}/`));
-    let host = notOptions(await tabs());
+    const notExt = list => list.find(t => !t.url.startsWith(`chrome-extension://${EXT_ID}/`));
+    let host = notExt(await tabs());
     if (!host) {
       await browser.client.send("Target.createTarget", { url: "about:blank" });
-      host = await browser.waitFor(async () => notOptions(await tabs()), { timeoutMs: 5000 });
+      host = await browser.waitFor(async () => notExt(await tabs()), { timeoutMs: 5000 });
     }
-    for (const t of await optionsTargets(browser)) await browser.client.send("Target.closeTarget", { targetId: t.targetId }).catch(() => {});
-    await browser.waitFor(async () => (await optionsTargets(browser)).length === 0, { timeoutMs: 5000 });
+    for (const t of await popupTargets(browser)) await browser.client.send("Target.closeTarget", { targetId: t.targetId }).catch(() => {});
+    await browser.waitFor(async () => (await popupTargets(browser)).length === 0, { timeoutMs: 5000 });
+    const manifest = await ctx.ext.eval("chrome.runtime.getManifest().action?.default_popup ?? null");
+    if (manifest !== "popup/popup.html") return { status: "fail", detail: `manifest 的 action.default_popup 应为 popup/popup.html，实际 ${manifest}` };
     await browser.client.send("Extensions.triggerAction", { id: EXT_ID, targetId: host.targetId });
-    const t = await browser.waitFor(async () => (await optionsTargets(browser))[0], { timeoutMs: 10000 })
-      .catch(() => null);
-    if (!t) return { status: "fail", detail: "触发扩展图标动作后 10 秒内没有出现设置页" };
-    return { status: "pass", detail: `触发图标动作后出现新的设置页：${t.url}` };
+    const t = await browser.waitFor(async () => (await popupTargets(browser))[0], { timeoutMs: 10000 }).catch(() => null);
+    if (!t) return { status: "fail", detail: "触发扩展图标动作后 10 秒内没有出现弹窗页" };
+    const page = await popupPage(ctx, { targetId: t.targetId });
+    try {
+      const s = await page.read().catch(e => ({ err: e.message }));
+      if (s.err) return { status: "fail", detail: `出现了弹窗页 ${t.url}，但 10 秒内没有渲染完（${s.err}）` };
+      return { status: "pass", detail: `触发图标动作后出现弹窗页 ${t.url}，已渲染（${s.ours ? `本扩展的一对：${s.left} ｜ ${s.right}` : `说明文字“${s.notOursText}”`}）` };
+    } finally { await page.close(); }
   },
 };
 
