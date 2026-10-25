@@ -23,11 +23,21 @@ export async function articleScene(ctx, { xinput = true } = {}) {
   if (xinput) {
     await fixWindow(ctx, P.targetId);
     wid = await testWindow(ctx, P.targetId);
+    await focusTestWindow(ctx, base.windowId);
     const m = await metrics(ctx.browser, P.targetId);
     await primeClick(ctx, cssToScreen(m, m.innerWidth * 0.75, m.innerHeight * 0.9), wid);
   }
   const mark = await markPage(ctx, P.targetId);
   return { base, P, wid, mark };
+}
+
+// 嵌套显示没有窗口管理器：别的窗口（例如 T20 (g) 的 popup 窗口）关掉后 X 焦点落回根窗口，之后在页面里点击也拿不回来，
+// Chrome 在没有焦点的窗口里右键不出菜单（整次 --auto-only 里 T21、T22、T24 因此全部“右键后没有出现菜单”）。
+// 右键前经 chrome.windows.update 让 Chrome 自己把焦点给测试窗口；host 模式有窗口管理器，焦点跟着点击走，不动
+export async function focusTestWindow(ctx, windowId) {
+  if (!ctx.gx?.nested) return;
+  await ctx.ext.eval(`chrome.windows.update(${windowId}, { focused: true }).then(() => true)`);
+  await sleep(300);
 }
 
 // 在页面里建选区：{ in, word }（元素里的一个词）或 { from, to }（从 from 段开头到 to 段结尾）。
@@ -64,11 +74,12 @@ export async function cssCenter(ctx, targetId, selector) {
 }
 
 // 分屏里网页一侧的 CSS 点 → 屏幕坐标。cssToScreen 假定视口贴着窗口右边（水平偏移 outerWidth − innerWidth），
-// 网页在分屏左侧时这个偏移把右侧一栏的宽度也算进去了，点会落到右侧。所以先按“视口贴着窗口左边”猜一点（网页一侧总在左边；
-// 窗口左右没有边框，不在分屏时两种算法一样），把指针移过去，读页面 mousemove 事件的 screenX − clientX 得到视口原点
-export async function splitPoint(ctx, targetId, wid, css) {
+// 网页在分屏左侧时这个偏移把右侧一栏的宽度也算进去了，点会落到右侧。所以左侧一栏先按“视口贴着窗口左边”猜一点
+// （窗口左右没有边框，不在分屏时两种算法一样），右侧一栏（side "right"，T24 在查询一侧右键）按 cssToScreen 原样猜，
+// 把指针移过去，读页面 mousemove 事件的 screenX − clientX 得到视口原点
+export async function splitPoint(ctx, targetId, wid, css, { side = "left" } = {}) {
   const m = await metrics(ctx.browser, targetId);
-  const guess = cssToScreen({ ...m, outerWidth: m.innerWidth }, css.x, css.y);
+  const guess = cssToScreen(side === "right" ? m : { ...m, outerWidth: m.innerWidth }, css.x, css.y);
   await evalIn(ctx, targetId, `(() => {
     globalThis.__ssOrigin = null;
     if (!globalThis.__ssProbe) {
@@ -86,9 +97,9 @@ export async function splitPoint(ctx, targetId, wid, css) {
   return { x: Math.round((o.x + css.x) * m.dpr), y: Math.round((o.y + css.y) * m.dpr) };
 }
 
-// 屏幕坐标：网页不在分屏里时直接换算（同 selectionCenter），在分屏里时校准
-export async function screenPoint(ctx, targetId, wid, css, { split }) {
-  if (split) return splitPoint(ctx, targetId, wid, css);
+// 屏幕坐标：网页不在分屏里时直接换算（同 selectionCenter），在分屏里时校准；side 是它在分屏里的哪一栏（缺省左栏）
+export async function screenPoint(ctx, targetId, wid, css, { split, side }) {
+  if (split) return splitPoint(ctx, targetId, wid, css, { side });
   return cssToScreen(await metrics(ctx.browser, targetId), css.x, css.y);
 }
 

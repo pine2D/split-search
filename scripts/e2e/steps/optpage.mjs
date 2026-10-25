@@ -81,8 +81,9 @@ export const fillDialog = (page, { id, name, url }) => page.run(`
   document.getElementById("dlg-save").click();
   return true;`);
 
+// 只看引擎对话框里的错误提示（v0.4 的以图搜图对话框 #image-dialog 也有同名的 .field-error，排在它前面）
 export const dialogState = page => page.run(`
-  const f = n => { const el = document.querySelector('.field-error[data-for="' + n + '"]'); return el && !el.hidden ? el.textContent : ""; };
+  const f = n => { const el = document.querySelector('#engine-dialog .field-error[data-for="' + n + '"]'); return el && !el.hidden ? el.textContent : ""; };
   return { open: document.getElementById("engine-dialog").open, id: f("id"), name: f("name"), url: f("url"), form: f("form") };`);
 
 export const closeDialog = page => page.run(`document.getElementById("dlg-cancel").click(); return true;`);

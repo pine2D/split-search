@@ -104,7 +104,7 @@ const B6 = {
     return withOptions(browser, async page => {
       await page.run(`document.getElementById("add-engine").click(); return true;`);
       await fillDialog(page, { id: "Baidu", name: "百度", url: BAIDU.url });
-      await page.until(`return !!document.querySelector('.field-error[data-for="id"]:not([hidden])')`);
+      await page.until(`return !!document.querySelector('#engine-dialog .field-error[data-for="id"]:not([hidden])')`);
       const st = await dialogState(page);
       const stored = (await hasEngine(ext, "Baidu")) || (await hasEngine(ext, "baidu"));
       await closeDialog(page);
@@ -211,7 +211,7 @@ const B11 = {
     return withOptions(browser, async page => {
       await page.run(`row("ea").querySelector(${keySel("engine_edit")}).click(); return true;`);
       await fillDialog(page, { url: bad });
-      await page.until(`return !!document.querySelector('.field-error[data-for="url"]:not([hidden])')`);
+      await page.until(`return !!document.querySelector('#engine-dialog .field-error[data-for="url"]:not([hidden])')`);
       const st = await dialogState(page);
       await closeDialog(page);
       const after = (await readKeys(ext, ["customEngines"])).customEngines;

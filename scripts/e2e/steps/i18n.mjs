@@ -1,6 +1,6 @@
 // I18N 多语言冒烟（auto）：4 种语言逐一打开设置页（含引擎库对话框）、工具栏弹窗（本扩展的一对）和 go.html 出错页，核对 lang、原样 key、溢出并截图；
 // 页内切换、连切、两个设置页跟随；uiLocale = "auto" 时 t() 与 chrome.i18n.getMessage 的替换结果逐 key 相同。
-// uiLocale 由 guarded 写回步骤前的值（基线 zh_CN），中断时由快照恢复兜底。截图存 .e2e/i18n/。
+// uiLocale 由 guarded 写回步骤前的值（基线 zh_CN），中断时由快照恢复兜底。截图存 .e2e/i18n/。v0.4 的弹窗“补成分屏”区与设置页“右键查询”卡片见 v04-i18n.mjs。
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { EXT_ID } from "../config.mjs";
@@ -11,19 +11,20 @@ import { activate } from "./guided.mjs";
 import { summarize } from "./util.mjs";
 import { pairOn } from "./v03-lib.mjs";
 import { POPUP_URL, popupPage } from "./v03-popup.mjs";
+import { v04I18nChecks } from "./v04-i18n.mjs";
 
 const LOCALES = ["en", "zh_CN", "zh_TW", "es"];
-const SHOT_DIR = join(OUT_DIR, "i18n");
+export const SHOT_DIR = join(OUT_DIR, "i18n");
 const GO_URL = `chrome-extension://${EXT_ID}/go.html?u=https://a.test/?q=x&_ss=ea,nope`;
 const FAKE_ARGS = ["A", "B", "C", "D", "E", "F", "G", "H", "I"];
-const htmlLang = locale => locale.replace("_", "-");
+export const htmlLang = locale => locale.replace("_", "-");
 const J = JSON.stringify;
 
 // 页面自查：lang、文字仍是 key 的 [data-i18n]、页面横向溢出、按钮/label 内容溢出
 // 页面自查：原样显示的 key、横向溢出、元素内容溢出。scope 把查找限制在某个容器里（选择器前缀，带空格）；
 // items 是逐个查内容溢出的元素；box 给出时横向溢出改看这个元素自己（scrollWidth > clientWidth），
 // 用于对话框和弹窗：弹窗当作标签页打开时窗口比它宽，比 innerWidth 看不出溢出。
-const audit = ({ scope = "", items = "button, label", box = null } = {}) => `(() => {
+export const audit = ({ scope = "", items = "button, label", box = null } = {}) => `(() => {
   const keyLike = /^[a-z]+_[a-z0-9_]+$/;
   const all = sel => [...document.querySelectorAll(sel.split(",").map(x => ${J(scope)} + x.trim()).join(", "))];
   const raw = all("[data-i18n]")
@@ -60,7 +61,7 @@ const showsLocale = (locale, extra = "true") => `(() => document.documentElement
   && [...document.querySelectorAll(${J(sel("options_title"))})].every(el => el.textContent === ${J(msgIn(locale, "options_title"))})
   && (${extra}))()`;
 
-async function waitPage(page, expr, what, timeoutMs = 10000) {
+export async function waitPage(page, expr, what, timeoutMs = 10000) {
   const end = Date.now() + timeoutMs;
   for (;;) {
     if (await page.ev(expr, { timeoutMs: 3000 }).catch(() => false)) return;
@@ -69,7 +70,7 @@ async function waitPage(page, expr, what, timeoutMs = 10000) {
   }
 }
 
-async function shoot(ctx, page, file, { full = false, clip = null } = {}) {
+export async function shoot(ctx, page, file, { full = false, clip = null } = {}) {
   const { client } = ctx.browser;
   await activate(ctx, page.targetId);
   const params = { format: "png", ...(clip ? { clip } : {}) };
@@ -111,7 +112,7 @@ async function openPopup(ctx, locale, tabId) {
   } catch (e) { await p.close(); throw e; }
   return p;
 }
-const bodyClip = page => page.ev(`(() => { const r = document.body.getBoundingClientRect(); return { x: 0, y: 0, width: Math.ceil(r.width), height: Math.ceil(r.height), scale: 1 }; })()`);
+export const bodyClip = page => page.ev(`(() => { const r = document.body.getBoundingClientRect(); return { x: 0, y: 0, width: Math.ceil(r.width), height: Math.ceil(r.height), scale: 1 }; })()`);
 
 // 引擎库对话框：在已打开的设置页里打开，自查对话框里的文字与溢出、截图，再关掉
 const CATALOG_AUDIT = audit({ scope: "#catalog-dialog ", items: "button, label, .catalog-name, .catalog-row", box: "#catalog-dialog" });
@@ -152,6 +153,7 @@ async function perLocale(ctx, locale, pairTab) {
     shots.push(await shoot(ctx, go, join(SHOT_DIR, `${locale}-go-error.png`)));
   } catch (e) { problems.push(`go 出错页：${e.message}`); }
   finally { await go?.close(); }
+  const v4 = await v04I18nChecks(ctx, locale); problems.push(...v4.problems); shots.push(...v4.shots);
   const missing = missingSince(ctx, n0);
   if (missing.length) problems.push(`控制台有 ${missing.length} 条 missing message：${missing.slice(0, 3).map(e => e.text).join("；")}`);
   const noCollector = ctx.consoleCollector ? "" : "（没有控制台收集器，未查 missing message）";

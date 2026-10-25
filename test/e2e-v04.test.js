@@ -6,6 +6,7 @@ import { GRANT_ORIGINS, HOSTS, UNGRANTED_HOSTS, mockEngineU, mockImageEngine } f
 import { popupStateOf } from "../scripts/e2e/steps/v03-popup.mjs";
 import { MENU_INDEX, MENU_MIN_ITEMS } from "../scripts/e2e/steps/v04-lib.mjs";
 import { settleMenu, MENU_SETTLE_MS } from "../scripts/e2e/steps/v04-lookup-lib.mjs";
+import { guardProblems } from "../scripts/e2e/steps/v04-guard.mjs";
 
 test("UNGRANTED_HOSTS 不进 HOSTS，也不进 GRANT_ORIGINS（一次性授权不覆盖它们）", () => {
   assert.deepEqual(UNGRANTED_HOSTS, { u: "engine-u.localhost", page: "page-u.localhost", img: "engine-i.localhost" });
@@ -153,4 +154,36 @@ test("settleMenu：expected 为 null 时等到连续两次行数相同", async (
   const f = fakeCounts([6, 7, 7]);
   assert.equal(await settleMenu(f.count, null, { wait: f.wait }), 7);
   assert.deepEqual(f.log.filter(x => x.startsWith("count")), ["count 6", "count 7", "count 7"]);
+});
+
+// guardProblems：两份 { tabId: { url, mark } } 快照（mark 是页面里读回的标记，读不到为 null）
+test("guardProblems：网址与标记都没变 → 空数组", () => {
+  const snap = { 5: { url: "http://page-u.localhost:8765/article?n=1", mark: "ss-a" }, 6: { url: "http://engine-b.localhost:8765/search?q=x", mark: "ss-b" } };
+  assert.deepEqual(guardProblems(snap, structuredClone(snap)), []);
+});
+
+test("guardProblems：网址相同、标记丢了 → 报“被重载”", () => {
+  const before = { 5: { url: "http://page-u.localhost:8765/article?n=1", mark: "ss-a" } };
+  const p = guardProblems(before, { 5: { url: before[5].url, mark: null } });
+  assert.equal(p.length, 1);
+  assert.match(p[0], /标签 5/);
+  assert.match(p[0], /被重载/);
+  assert.doesNotMatch(p[0], /被导航/);
+});
+
+test("guardProblems：网址变了 → 报“被导航”，写出前后网址", () => {
+  const before = { 5: { url: "http://page-u.localhost:8765/article?n=1", mark: "ss-a" }, 6: { url: "http://site-x.localhost:8765/a", mark: "ss-b" } };
+  const p = guardProblems(before, { 5: { url: "http://engine-b.localhost:8765/search?q=x", mark: null }, 6: before[6] });
+  assert.equal(p.length, 1);
+  assert.match(p[0], /标签 5 被导航/);
+  assert.ok(p[0].includes(before[5].url) && p[0].includes("http://engine-b.localhost:8765/search?q=x"));
+});
+
+test("guardProblems：标签不见了也报出来；每个被改的标签各一条", () => {
+  const before = { 5: { url: "http://a/", mark: "m5" }, 6: { url: "http://b/", mark: "m6" }, 7: { url: "http://c/", mark: "m7" } };
+  const p = guardProblems(before, { 5: { url: "http://a/", mark: "other" }, 6: { url: "http://b2/", mark: "m6" } });
+  assert.equal(p.length, 3);
+  assert.match(p.find(x => x.includes("标签 5")), /被重载/);
+  assert.match(p.find(x => x.includes("标签 6")), /被导航/);
+  assert.match(p.find(x => x.includes("标签 7")), /不见了/);
 });

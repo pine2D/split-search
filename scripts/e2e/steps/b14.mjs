@@ -1,6 +1,6 @@
-// B14 深色模式（auto）：经 CDP Emulation.setEmulatedMedia 把设置页、向导页和工具栏弹窗页切到 prefers-color-scheme: dark，
+// B14 深色模式（auto）：经 CDP Emulation.setEmulatedMedia 把设置页、向导页和工具栏弹窗页（说明文字，以及 v0.4 的“补成分屏”区）切到 prefers-color-scheme: dark，
 // 断言 body 的背景色、文字色变成样式表里深色 :root 定义的值，再切到 light 断言回到浅色值，最后清除模拟。
-// 期望值从页面实际加载的样式表源码里读（schemeTokens），不写死颜色；深色截图存到 .e2e/ 供报告引用。
+// 期望值从页面实际加载的样式表源码里读（schemeTokens），不写死颜色；深色截图存到 .e2e/ 供报告引用（设置页截整页，含“右键查询”卡片）。
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { OUT_DIR } from "../ext.mjs";
@@ -8,6 +8,9 @@ import { pageTargets, sleep } from "./util.mjs";
 import { openOptions } from "./optpage.mjs";
 import { activate, focusGuide, guideUrl } from "./guided.mjs";
 import { POPUP_URL, popupPage } from "./v03-popup.mjs";
+import { openResultTab, openCompletePopup } from "./v04-i18n.mjs";
+import { mockEngines } from "../config.mjs";
+import { E2E_LOCALE } from "../i18n.mjs";
 
 const stripComments = css => String(css).replace(/\/\*[\s\S]*?\*\//g, "");
 
@@ -87,7 +90,8 @@ export function schemeVerdict(name, scheme, c) {
 
 const media = scheme => ({ media: "", features: scheme ? [{ name: "prefers-color-scheme", value: scheme }] : [] });
 
-async function checkPage(ctx, { name, targetId, sid, file }) {
+// full：截整页（captureBeyondViewport），设置页的卡片多半在首屏以外
+async function checkPage(ctx, { name, targetId, sid, file, full = false }) {
   const { client, evaluate } = ctx.browser;
   const ev = expr => evaluate(sid, expr, { timeoutMs: 10000 });
   const tok = schemeTokens(await ev(CSS_EXPR));
@@ -101,7 +105,12 @@ async function checkPage(ctx, { name, targetId, sid, file }) {
       if (bad) problems.push(bad);
       if (scheme === "dark") {
         await activate(ctx, targetId);
-        const { data } = await client.send("Page.captureScreenshot", { format: "png" }, sid, { timeoutMs: 10000 })
+        const params = { format: "png" };
+        if (full) {
+          const { cssContentSize: c } = await client.send("Page.getLayoutMetrics", {}, sid);
+          Object.assign(params, { captureBeyondViewport: true, clip: { x: 0, y: 0, width: Math.ceil(c.width), height: Math.ceil(c.height), scale: 1 } });
+        }
+        const { data } = await client.send("Page.captureScreenshot", params, sid, { timeoutMs: 15000 })
           .catch(e => ({ data: null, err: e.message }));
         if (data) { mkdirSync(OUT_DIR, { recursive: true }); writeFileSync(file, Buffer.from(data, "base64")); shot = file; }
       }
@@ -116,7 +125,7 @@ export const B14 = {
   id: "B14", title: "深色模式：设置页、向导页与弹窗配色跟随（CDP 模拟，自动判定）", kind: "auto", needs: [],
   async run(ctx) {
     const page = await openOptions(ctx.browser);
-    let gsid = null, gTarget = null, made = false, popup = null;
+    let gsid = null, gTarget = null, made = false, popup = null, result = null, complete = null;
     try {
       gTarget = (await pageTargets(ctx.browser)).find(t => t.url.startsWith(guideUrl(ctx.port)))?.targetId;
       if (!gTarget) { // --auto-only 不打开向导页：自己开一个，用完关掉
@@ -125,21 +134,27 @@ export const B14 = {
       }
       gsid = await ctx.browser.attach(gTarget);
       await ctx.browser.waitFor(() => ctx.browser.evaluate(gsid, `document.readyState === "complete"`, { timeoutMs: 3000 }), { timeoutMs: 10000 });
-      const opt = await checkPage(ctx, { name: "设置页", targetId: page.targetId, sid: page.sid, file: join(OUT_DIR, "b14-options-dark.png") });
+      const opt = await checkPage(ctx, { name: "设置页", targetId: page.targetId, sid: page.sid, file: join(OUT_DIR, "b14-options-dark.png"), full: true });
       const gd = await checkPage(ctx, { name: "向导页", targetId: gTarget, sid: gsid, file: join(OUT_DIR, "b14-guide-dark.png") });
       // 工具栏弹窗：直接打开 popup.html（没有 tabId，显示说明文字），等它渲染完再比较
       popup = await popupPage(ctx, { url: POPUP_URL });
       await popup.read();
       const pp = await checkPage(ctx, { name: "弹窗", targetId: popup.targetId, sid: popup.sid, file: join(OUT_DIR, "b14-popup-dark.png") });
-      const problems = [...opt.problems, ...gd.problems, ...pp.problems];
-      const shots = [opt.shot, gd.shot, pp.shot].filter(Boolean);
-      const tail = `设置页 ${opt.tokens}；向导页 ${gd.tokens}；弹窗 ${pp.tokens}${shots.length ? `；深色截图：${shots.join("、")}` : "；截图没有保存成功"}`;
+      // “补成分屏”区：popup.html?tabId= 指向一个模拟引擎 A 的结果页（已授权、不在分屏里）
+      result = await openResultTab(ctx);
+      complete = await openCompletePopup(ctx, result, { locale: E2E_LOCALE, engine: mockEngines(ctx.port).find(e => e.id === "ea").name });
+      const pc = await checkPage(ctx, { name: "弹窗“补成分屏”区", targetId: complete.targetId, sid: complete.sid, file: join(OUT_DIR, "b14-popup-complete-dark.png") });
+      const problems = [...opt.problems, ...gd.problems, ...pp.problems, ...pc.problems];
+      const shots = [opt.shot, gd.shot, pp.shot, pc.shot].filter(Boolean);
+      const tail = `设置页 ${opt.tokens}；向导页 ${gd.tokens}；弹窗 ${pp.tokens}；“补成分屏”区 ${pc.tokens}${shots.length ? `；深色截图：${shots.join("、")}` : "；截图没有保存成功"}`;
       return problems.length ? { status: "fail", detail: `${problems.join("；")}\n${tail}` }
         : { status: "pass", detail: `设置页、向导页与弹窗在深色/浅色下 body 背景色与文字色都等于样式表里的变量值。${tail}` };
     } finally {
       if (gsid) await ctx.browser.client.send("Target.detachFromTarget", { sessionId: gsid }).catch(() => {});
       if (made) await ctx.browser.client.send("Target.closeTarget", { targetId: gTarget }).catch(() => {});
       await popup?.close();
+      await complete?.close();
+      await result?.close();
       await page.close();
       if (!made) await focusGuide(ctx).catch(() => {});
     }
