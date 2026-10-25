@@ -24,7 +24,7 @@
 - 关键词、选中文字、图片网址只进 `storage.session`，不进 `storage.sync`，只发给用户所选引擎。
 - ② ⑧ 不读、不存、不发 `pageUrl`、`frameUrl`；⑦ 只在用户点图标后读当前标签 `url`，不保存网址本身。不注入内容脚本，不读页面里选区和被右键图片网址以外的内容；不改 Chrome 原生菜单项。
 - 只改写记录确认属于本扩展的那一侧（spec 3.1“谁能改写哪一侧”表）；`fallback-own` 不允许任何调用方改写标签。
-- 调分屏 API 前必须 `splitWindowType(win) === "normal"`（`src/lib/window-kind.js`：`type === "normal"` 且 `alwaysOnTop !== true`，把 Document PiP 窗口排除在外，见 Spike 结论 S5）；挑“最后聚焦的 normal 窗口”一律经 `lastSplitWindow()`（Task 3），不直接用 `windows.getLastFocused` 的结果；窄窗口阈值 `960`（`width < 960`），`narrowFallback` 缺省 `true`。
+- 调分屏 API 前必须 `splitWindowType(win) === "normal"`（`src/lib/window-kind.js`：`type === "normal"` 且 `alwaysOnTop !== true`，把 Document PiP 窗口排除在外，见 Spike 结论 S5）；挑“最后聚焦的 normal 窗口”一律经 `lastSplitWindow()`（Task 3），不直接用 `windows.getLastFocused` 的结果；窄窗口阈值 `960`（`width < 960`），`narrowFallback` 缺省 `true`。`window-kind.js`、`lastSplitWindow()` 及其在 v0.3 go.js、`openInOtherWindow`、`cycleRight` 的接入已在 v0.3.0 热修中完成（e21e10e），v0.4 新增的调用方照此使用。
 - 菜单项 id：`ss-lookup-text`（`contexts: ["selection"]`）、`ss-lookup-image`（`contexts: ["image"]`，`targetUrlPatterns: ["https://*/*", "http://*/*"]`），两项 `documentUrlPatterns: ["https://*/*", "http://*/*"]`。
 - `storage.sync` 新顶层键：`lookupEngine`（缺省 = 跟随默认组合右侧，不写默认值）、`imageEngine`（缺省 `lens`）、`imageEngines`（`{ id, name, url }[]`）；单项 8192 字节上限沿用 `saveKeys` 预检。
 - ⑦ 消息形状 `{ type: "complete-split", tabId, engineId }`；回复 `{ ok: true, mode: "split" | "adjacent" | "plain" }` 或 `{ ok: false, code }`。新错误码：`not_results_page`、`window_unsupported`、`split_failed`、`message_rejected`。
@@ -135,9 +135,9 @@ Claude-Session: https://claude.ai/code/session_01QAFczmx2FRoPgu46A1z6D9"
 ### Task 2: 记录模型与归属判定纯逻辑（W1）
 
 **Files:**
-- Create: `src/lib/window-kind.js`
+- ~~Create: `src/lib/window-kind.js`~~（已在 v0.3.0 热修中完成（e21e10e），不再新建）
 - Modify: `src/lib/split-owner.js`、`src/lib/split-decision.js`
-- Test: `test/window-kind.test.js`（新建）、`test/split-owner.test.js`、`test/split-decision.test.js`；期望值随记录形状改：`test/split-actions.test.js`、`test/split-state.test.js`、`test/right-switch.test.js`、`test/background.test.js`
+- Test: ~~`test/window-kind.test.js`（新建）~~（已在 v0.3.0 热修中完成（e21e10e））、`test/split-owner.test.js`、`test/split-decision.test.js`；期望值随记录形状改：`test/split-actions.test.js`、`test/split-state.test.js`、`test/right-switch.test.js`、`test/background.test.js`
 
 **Interfaces:**
 - Produces（`src/lib/split-owner.js`）：
@@ -146,7 +146,7 @@ Claude-Session: https://claude.ai/code/session_01QAFczmx2FRoPgu46A1z6D9"
   - `makeRecords({ a, b, splitViewId, mode, engineA, engineB, query, roleA = "search", roleB = "search", input })`：两条记录总是写 `role`（搜索对写 `role: "search"`）；`roleA`/`roleB` 不是 `search` 时两条都写同一个 `input`；搜索对不写 `input` 键。
   - `staleMarker`、`judgeOwnership` 签名不变；`recordMatches` 多两条：角色配对（`search`↔`search` 或 `page`↔`lookup`）、查询对两侧 `input` 相同，不满足 → `"stale"`。
 - Produces（`src/lib/split-decision.js`）：`decideSplit({ windowType, splitViewId, peer, ownership, narrow, role })`：先算 `own = ownership === "own" && role !== "lookup"`（`fallback-own` 不算），再沿用 v0.3 的分支（`own` 代替原来的 `ownership === "own"`；分屏中只有 `own` 才 `reuse`，其余 `foreign`）。`windowType` 仍按 `!== "normal"` 判 `other-window`，调用方传 `splitWindowType(win)`（Task 3）。
-- Produces（`src/lib/window-kind.js`，S5）：
+- Produces（`src/lib/window-kind.js`，S5）——已在 v0.3.0 热修中完成（e21e10e），下列接口已存在，本任务不重做：
   - `splitWindowType(win): string`：`win` 缺失 → `"none"`；`win.type === "normal" && win.alwaysOnTop === true` → `"pip"`；其余返回 `win.type`。
   - `canSplitIn(win): boolean`：`splitWindowType(win) === "normal"`。
   - 文件头注释写明原因：Document PiP 窗口报 `type: "normal"`、`alwaysOnTop: true`，在它上面按 `createPaired` 的参数调用分屏 API 会让 Chrome 156 崩溃。
@@ -201,8 +201,9 @@ test("当前标签是 page：照常 reuse / join", () => {
 test("没有 role（旧调用方）按 search", () => assert.equal(decideSplit({ ...base, ownership: "own" }), "reuse"));
 test("PiP 窗口 → other-window", () => assert.equal(decideSplit({ ...base, windowType: "pip", ownership: "own" }), "other-window"));
 ```
+  （最后一条“PiP 窗口 → other-window”已在 v0.3.0 热修中完成（e21e10e），已在 `test/split-decision.test.js` 里，不要重复添加。）
 
-  `test/window-kind.test.js`：
+  `test/window-kind.test.js`（已在 v0.3.0 热修中完成（e21e10e），以下用例已在仓库里，本任务不再写）：
 
 ```js
 test("splitWindowType：普通窗口、PiP、popup、缺失", () => {
@@ -225,7 +226,7 @@ test("canSplitIn 只放行非置顶的 normal", () => {
 Run: `node --test test/window-kind.test.js test/split-owner.test.js test/split-decision.test.js`
 Expected: FAIL
 
-- [ ] **Step 3: 实现** `window-kind.js`、`parseRecord`、`makeRecords`、`recordMatches`、`decideSplit`；`judgeOwnership` 的兜底逻辑与 `looksLikeSearchPage` 不改（spec 3.1“兜底”）。文件头注释里的记录形状同步改。
+- [ ] **Step 3: 实现** ~~`window-kind.js`~~（已在 v0.3.0 热修中完成（e21e10e））、`parseRecord`、`makeRecords`、`recordMatches`、`decideSplit`；`judgeOwnership` 的兜底逻辑与 `looksLikeSearchPage` 不改（spec 3.1“兜底”）。文件头注释里的记录形状同步改。
 
 - [ ] **Step 4: 跑测试确认通过**
 
@@ -235,7 +236,7 @@ Expected: PASS。对 `session.set` 做全等断言的旧用例会因多了 `role
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/lib/window-kind.js src/lib/split-owner.js src/lib/split-decision.js test/window-kind.test.js test/split-owner.test.js test/split-decision.test.js test/split-actions.test.js test/split-state.test.js test/right-switch.test.js test/background.test.js
+git add src/lib/split-owner.js src/lib/split-decision.js test/split-owner.test.js test/split-decision.test.js test/split-actions.test.js test/split-state.test.js test/right-switch.test.js test/background.test.js
 git -c user.name=pine2D -c user.email=oumu323@gmail.com commit -m "feat(split): tell search pairs from lookup pairs and stop fallback reuse" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01QAFczmx2FRoPgu46A1z6D9"
 ```
@@ -256,8 +257,8 @@ Claude-Session: https://claude.ai/code/session_01QAFczmx2FRoPgu46A1z6D9"
   - `export async function confirmedSplitViewId(aId, bId): Promise<number>`（改成导出，逻辑不变）。
   - `export async function openRight(left, rightUrl, narrow, { leftId, rightId, query, roleA = "search", roleB = "search", input, active = false }): Promise<"split" | "adjacent" | "plain">`：建成分屏写 `split` 记录、窄窗口写 `adjacent`、退化不写并返回 `"plain"`。`recordNewPair` 收同样的角色参数。
   - `refreshPair` 写回时 `roleA = roleB = "search"`、不传 `input`。
-  - `go.js` 调 `decideSplit` 时传 `role: ctx.record?.role`、`windowType: splitWindowType(ctx.win)`（S5：PiP 走 `other-window`，不在它上面调分屏 API）。
-  - `export async function lastSplitWindow(): Promise<Window | null>`（`split-actions.js`，S5）：`windows.getLastFocused({ windowTypes: ["normal"] })` 的结果 `canSplitIn` 就用它；不是（PiP 获得焦点时拿到的就是 PiP）就在 `windows.getAll({ windowTypes: ["normal"] })` 里取第一个 `canSplitIn` 的窗口；都没有或抛错 → `null`。`openInOtherWindow` 改用它选目标窗口（`null` 时照旧 `windows.create`），宽度取选中窗口的 `width`。
+  - `go.js` 调 `decideSplit` 时传 `role: ctx.record?.role`、`windowType: splitWindowType(ctx.win)`（S5：PiP 走 `other-window`，不在它上面调分屏 API；`windowType` 这部分已在 v0.3.0 热修中完成（e21e10e），本任务只加 `role`）。
+  - `export async function lastSplitWindow(): Promise<Window | null>`（`split-actions.js`，S5；已在 v0.3.0 热修中完成（e21e10e），连同 `openInOtherWindow` 改用它，本任务不重做）：`windows.getLastFocused({ windowTypes: ["normal"] })` 的结果 `canSplitIn` 就用它；不是（PiP 获得焦点时拿到的就是 PiP）就在 `windows.getAll({ windowTypes: ["normal"] })` 里取第一个 `canSplitIn` 的窗口；都没有或抛错 → `null`。`openInOtherWindow` 改用它选目标窗口（`null` 时照旧 `windows.create`），宽度取选中窗口的 `width`。
   - e2e：`checkPairRecords(recs, left, right, want)` 的 `want` 多 `roles: [左, 右]`（缺省 `["search", "search"]`）和可选 `input`；期望字段集合按角色算（`search` 对 `engine,mode,peer,query,role,splitViewId`，查询对再加 `input`）。
 
 - [ ] **Step 1: 写失败的测试**
@@ -267,8 +268,8 @@ Claude-Session: https://claude.ai/code/session_01QAFczmx2FRoPgu46A1z6D9"
     - `openRight(T, url, false, { leftId: "", rightId: "bing", query: "x", roleA: "page", roleB: "lookup", input: "text" })`：`splitWithTabId` 成功、复核一致 → 返回 `"split"`，写 `page`/`lookup` 记录。
     - `openRight(T, url, true, { …, active: true })`：`tabs.create` 收到 `active: true`、没有 `splitWithTabId` → 返回 `"adjacent"`，写 `adjacent` 记录。
     - `splitWithTabId` 抛错 → 返回 `"plain"`，不写记录。
-    - `lastSplitWindow`：`getLastFocused` 返回 `{ id: 9, type: "normal", alwaysOnTop: true }`、`getAll` 返回 PiP 与 `{ id: 1, type: "normal", alwaysOnTop: false, width: 1200 }` → 返回窗口 1；两者都只有 PiP → `null`；`getLastFocused` 抛错 → `null`。
-    - `openInOtherWindow` 在最后聚焦的是 PiP 时：`tabs.create` 的 `windowId` 是 1，窄窗口判定用 1200（不是 PiP 的 524），没有任何以 PiP 的窗口或标签为参数的分屏调用。
+    - （已在 v0.3.0 热修中完成（e21e10e），测试已在 `test/split-actions.test.js`）`lastSplitWindow`：`getLastFocused` 返回 `{ id: 9, type: "normal", alwaysOnTop: true }`、`getAll` 返回 PiP 与 `{ id: 1, type: "normal", alwaysOnTop: false, width: 1200 }` → 返回窗口 1；两者都只有 PiP → `null`；`getLastFocused` 抛错 → `null`。
+    - （已在 v0.3.0 热修中完成（e21e10e））`openInOtherWindow` 在最后聚焦的是 PiP 时：`tabs.create` 的 `windowId` 是 1，窄窗口判定用 1200（不是 PiP 的 524），没有任何以 PiP 的窗口或标签为参数的分屏调用。
   - `e2e-v03.test.js`：`checkPairRecords` 对带 `role: "search"` 的记录通过；缺 `role` 报字段不符；查询对 `want.roles = ["page", "lookup"], input: "text"` 时校验 `input`。
 
 - [ ] **Step 2: 跑测试确认失败**
@@ -276,7 +277,7 @@ Claude-Session: https://claude.ai/code/session_01QAFczmx2FRoPgu46A1z6D9"
 Run: `node --test test/split-state.test.js test/split-actions.test.js test/e2e-v03.test.js`
 Expected: FAIL
 
-- [ ] **Step 3: 实现**上述接口；`openNew`/`openForeign`/`openInOtherWindow` 改调导出的 `openRight`，行为不变（`active: false`）；`openInOtherWindow` 选窗口改经 `lastSplitWindow()`。
+- [ ] **Step 3: 实现**上述接口；`openNew`/`openForeign`/`openInOtherWindow` 改调导出的 `openRight`，行为不变（`active: false`）；`openInOtherWindow` 选窗口改经 `lastSplitWindow()`（已在 v0.3.0 热修中完成（e21e10e））。
 
 - [ ] **Step 4: 改 e2e 的重启兜底期望**：`T5_RESTART` 现在期望“恢复的分屏两侧都不动，在右边新开一对”（spec 3.1“兜底”），判定复用 `v03-split.mjs` 的 `expectForeign`。为免 `v03-lib.mjs` ↔ `flow-restart.mjs` 循环引用，`ids`、`fmt` 与 `expectForeign` 一起移到 `v03-lib.mjs` 导出，`flow-restart.mjs`、`flow.mjs`、`v03-split.mjs` 改从那里 import。`expectForeign` 靠扩展读得到的 `tabUrl`，只适用于已授权的模拟 host（`page-u` 这类未授权标签用 Task 12 的 `cdpUrl` + 标记，T23、T24 不直接复用它）。子项名改成“重启后在左侧触发：不覆盖，在旁边新开一对”；`flow.mjs` 第 54 行 T5 标题的“重启后仍就地更新”改成“重启后在旁边新开一对”，`flow-restart.mjs` 第 43 行注释同步改。
 
@@ -404,11 +405,11 @@ Claude-Session: https://claude.ai/code/session_01QAFczmx2FRoPgu46A1z6D9"
   - `cycleCandidates(cfg, kind): { engines: Engine[], exclude: string[] }`：`image` → `{ engines: cfg.imageEngines, exclude: [] }`；其余 → `{ engines: cfg.engines, exclude: cfg.cycleExclude }`。`nextRightEngine` 不改。
   - `popupView(pair, cfg): { kind, query, imageHost: string | null, left: Engine | null, right: Engine | null, leftIsPage: boolean, choices: Engine[] }`：引擎经 `engineById(cfg, pair.kind, id)`；`choices = enginesFor(cfg, pair.kind)` 去掉右侧当前引擎；`leftIsPage = pair.kind !== "search"`；`imageHost` 只在 `kind === "image"` 时是 `new URL(query).host`，解析失败为 `""`，其余为 `null`。
   - 弹窗：`popup.html` 的两个 `dt` 加 id `left-label`、`right-label`；`kind !== "search"` 时用 `popup_role_page`/`popup_role_lookup`，左侧值显示 `popup_page_origin`；图片查询的关键词行显示 `t("popup_lookup_image", imageHost)`，不加载缩略图；`onSwitch` 改用 `enginesFor(state.cfg, state.pair.kind).find(…)`。
-  - `background.js` 的 `cycleRight`：窗口改经 Task 3 的 `lastSplitWindow()` 取（S5：PiP 获得焦点时不拿 PiP 的标签）；`const cfg = await loadConfig()` → `ownedPair(tab, cfg.engines)` → `const { engines, exclude } = cycleCandidates(cfg, pair.kind)` → `nextRightEngine(engines, pair.right.engineId, exclude)`。
+  - `background.js` 的 `cycleRight`：窗口改经 `lastSplitWindow()` 取（S5：PiP 获得焦点时不拿 PiP 的标签；已在 v0.3.0 热修中完成（e21e10e），本任务只改后面的轮换候选）；`const cfg = await loadConfig()` → `ownedPair(tab, cfg.engines)` → `const { engines, exclude } = cycleCandidates(cfg, pair.kind)` → `nextRightEngine(engines, pair.right.engineId, exclude)`。
 
 - [ ] **Step 1: 写失败的测试**
-  - `background.test.js` 的 chrome 替身先补 `windows.getAll`（`lastSplitWindow` 要用）。
-  - `background.test.js`：`getLastFocused` 返回 PiP（`type: "normal"`、`alwaysOnTop: true`）、`getAll` 里另有一个普通窗口，它的活动标签属于本扩展搜索对 → `cycleRight` 换的是这一对的右侧。
+  - ~~`background.test.js` 的 chrome 替身先补 `windows.getAll`（`lastSplitWindow` 要用）。~~（已在 v0.3.0 热修中完成（e21e10e））
+  - （已在 v0.3.0 热修中完成（e21e10e），测试已在 `test/background.test.js`）`background.test.js`：`getLastFocused` 返回 PiP（`type: "normal"`、`alwaysOnTop: true`）、`getAll` 里另有一个普通窗口，它的活动标签属于本扩展搜索对 → `cycleRight` 换的是这一对的右侧。
   - `right-switch.test.js`：会话里 `split:10 = page/text`（index 1）、`split:11 = lookup/text`（index 0，用户对调过）→ `ownedPair` 返回 `kind: "text"`、`right.tabId === 11`、`left.tabId === 10`；`switchRight` 之后 `split:11` 的 `role`、`input` 不变。
   - `cycle.test.js`：`cycleCandidates(mergeConfig({ cycleExclude: ["ddg"] }), "image")` 的 `exclude` 是 `[]`、`engines[0].id === "lens"`；`"text"` 时 `exclude` 是 `["ddg"]`。
   - `popup-view.test.js`：
@@ -1125,7 +1126,7 @@ Expected: PASS
 - [ ] **Step 2: CLAUDE.md**（spec 3.9“CLAUDE.md”逐条）：
   - 硬约束、反目标、路线图、机制速览：照 spec 3.9“CLAUDE.md”第 2–6 条改；路线图写“已实现（<日期> 代码完成，尚未上传商店）”；反目标里“读取或保存页面网址”注明 ② ⑧ 不读 `pageUrl`/`frameUrl`、⑦ 只在点图标时读当前标签网址且不保存；机制速览的右键路径写成 `contextMenus.onClicked` → SW 串行链 → `lookup-decision` 八行判定，补成分屏写成 `complete-split` 消息 → SW 重新识别与判定。
   - 目录与职责：`lib/image-engines.js`、`lib/result-match.js`、`lib/messages.js`、`lib/lookup-input.js`、`lib/lookup-decision.js`、`lib/menu-spec.js`、`lib/serial.js`、`chrome/menus.js`、`chrome/lookup-actions.js`、`chrome/complete-actions.js`、`popup/complete.js`、`options/lookup.js`、`options/image-edits.js`、`options/actions.js`、e2e 的 `steps/v04-*.mjs`、新测试文件、`docs/acceptance-v0.4.md`；`config-store.js` 一行加 `lookupEngine`、`imageEngine`、`imageEngines`。
-  - 已知事实：spec 附录 A 的 F1–F8、F10、F13、F17、F20，以及已完成 spike 的结论（见本计划“Spike 结论”）：真点工具栏图标授予 activeTab、SW 读得到网址（S2）；弹窗建分屏后没有被关掉（S1，只在 Xvfb 上测过）；`selectionText` 不截断、`\n`/`\t` 各换成一个空格（S3）；PiP 是 `type: "normal"`、`alwaysOnTop: true`，在它上面按 `createPaired` 的参数调分屏 API 会崩溃（S5）；`documentUrlPatterns` 按 frame 网址匹配、可编辑区域里菜单项出现、密码框 `selectionText` 是掩码、PDF 查看器里出现选区项（S6）；`srcUrl` 是 `currentSrc`（S7）；重启恢复拆分视图后 `splitViewId` 不变、标签 id 变化（S14）；Task 11b 写进“Spike 结论”的 S8–S12。
+  - 已知事实：spec 附录 A 的 F1–F8、F10、F13、F17、F20，以及已完成 spike 的结论（见本计划“Spike 结论”）：真点工具栏图标授予 activeTab、SW 读得到网址（S2）；弹窗建分屏后没有被关掉（S1，只在 Xvfb 上测过）；`selectionText` 不截断、`\n`/`\t` 各换成一个空格（S3）；PiP 是 `type: "normal"`、`alwaysOnTop: true`，在它上面按 `createPaired` 的参数调分屏 API 会崩溃（S5；已在 v0.3.0 热修中完成（e21e10e），CLAUDE.md 已写入，不要重复）；`documentUrlPatterns` 按 frame 网址匹配、可编辑区域里菜单项出现、密码框 `selectionText` 是掩码、PDF 查看器里出现选区项（S6）；`srcUrl` 是 `currentSrc`（S7）；重启恢复拆分视图后 `splitViewId` 不变、标签 id 变化（S14）；Task 11b 写进“Spike 结论”的 S8–S12。
   - e2e 说明：T20–T24、B18；不授权的模拟 host（`UNGRANTED_HOSTS`，不进 `GRANT_ORIGINS`）；右键菜单按行定位、不发任何按键，图片右键前清掉选区；`MENU_INDEX` 常量来自 S11；预期的拒绝只记 `info` 级日志，B15 不受影响；T5 重启子项改为期望在旁边新开一对。
   - 命令节 `--smoke` 的核对项加两条：权限警告与 v0.3 相同（只有 DNR 一条）；SW 里菜单文案加载正常（切 `uiLocale` 重建菜单后没有 `[split-search]` 错误）。
 - [ ] **Step 3: 全量测试与 e2e**
