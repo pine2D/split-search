@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { generateKeyPairSync } from "node:crypto";
 import {
-  extensionId, parsePublicKey, transformManifest, checkManifest, checkLocales, msgRefs,
+  HARD, extensionId, parsePublicKey, transformManifest, checkManifest, checkLocales, msgRefs,
   checkReferenced, referencedFiles, checkFileSet, dirtyPaths, parseArgs,
 } from "../scripts/pack-lib.mjs";
 
@@ -78,6 +78,16 @@ test("checkManifest：版本不一致、权限多出、加了 host_permissions�
     assert.match(errs, new RegExp(`manifest\\.?${s}|${s}`), s);
   }
   assert.equal(checkManifest(m, pkg).length, 5);
+});
+
+test("checkManifest：多出别的权限照样报错", () => {
+  const bad = { ...clone(manifest), permissions: [...HARD.permissions, "tabs"] };
+  assert.ok(checkManifest(bad, { version: bad.version }).length > 0);
+});
+
+test("checkManifest：少一个新权限也报错", () => {
+  const bad = { ...clone(manifest), permissions: ["declarativeNetRequest", "storage"] };
+  assert.ok(checkManifest(bad, { version: bad.version }).length > 0);
 });
 
 const readLocales = () => Object.fromEntries(["en", "es", "zh_CN", "zh_TW"]

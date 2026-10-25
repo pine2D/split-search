@@ -138,7 +138,7 @@ split-search/
 ## 硬约束（违反任一条视为缺陷）
 
 - `manifest_version: 3`；`minimum_chrome_version: "155"`；`incognito: "not_allowed"`。
-- `permissions` 只能是 `["declarativeNetRequest", "storage"]`。禁止 `tabs`，禁止必需的 `host_permissions`。
+- `permissions` 只能是 `["activeTab", "contextMenus", "declarativeNetRequest", "storage"]`（字母序）。禁止 `tabs`，禁止必需的 `host_permissions`。
 - `optional_host_permissions: ["https://*/*", "http://*/*"]`。运行时只为引擎的精确 origin（`<origin>/*`）申请。
 - `web_accessible_resources: [{ "resources": ["go.html"], "matches": ["<all_urls>"], "use_dynamic_url": true }]`。
 - manifest 里固定 `key`（公钥），不得修改：扩展 ID 只由它决定，改了 ID 就变，已有授权和 `storage.sync` 数据都会对不上。不保留私钥：私钥只在自签 `.crx` 时才用得上，本项目走“加载未打包的扩展程序”和 CWS 上传，都不需要。发布包里的 `key` 由 `npm run pack` 处理（去掉或换成商店公钥，见“命令”），源码里的不动。

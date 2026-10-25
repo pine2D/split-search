@@ -14,6 +14,8 @@
   },
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0ZNKfhoaeTQJvk8txOrxu1Wq4hmZhmp/4E2vj30HbSQ/YRtVBf1TyCp3i3VUQG5U/ASACVmPXvsBHkNKey+Njh0cSTV5CshU0OUDfbkG31oJzdM0IASE4GHmKAZTrTA1H7ns+QtK1zKCl7zYhUNd4Zn4GBix1TcErn8auhJBW+om8TuNjl2/5D3U74/u8esbsRt4AXdEshhqRtSUsjI8WCTN0QeFn9I7CG6rPPqVWI33Yusgup33XG10n25mk6Wqr0wc6VOXwYFYG4dowHc5PmKQvfVqtWiM06s/6rWNw+EamJaaml01bHp9eWuGdLDVKf0qwhO2BZS8snn9R/0flwIDAQAB",
   "permissions": [
+    "activeTab",
+    "contextMenus",
     "declarativeNetRequest",
     "storage"
   ],

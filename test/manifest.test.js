@@ -10,7 +10,8 @@ test("manifest 满足硬约束", () => {
   assert.equal(m.manifest_version, 3);
   assert.equal(m.minimum_chrome_version, "155");
   assert.equal(m.incognito, "not_allowed");
-  assert.deepEqual(m.permissions, ["declarativeNetRequest", "storage"]);
+  assert.deepEqual(m.permissions, ["activeTab", "contextMenus", "declarativeNetRequest", "storage"]);
+  assert.ok(!m.permissions.includes("tabs"));
   assert.equal(m.host_permissions, undefined);
   assert.deepEqual(m.optional_host_permissions, ["https://*/*", "http://*/*"]);
   assert.deepEqual(m.web_accessible_resources, [{ resources: ["go.html"], matches: ["<all_urls>"], use_dynamic_url: true }]);

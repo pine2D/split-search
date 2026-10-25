@@ -6,7 +6,7 @@ export const HARD = Object.freeze({
   manifest_version: 3,
   minimum_chrome_version: "155",
   incognito: "not_allowed",
-  permissions: ["declarativeNetRequest", "storage"],
+  permissions: ["activeTab", "contextMenus", "declarativeNetRequest", "storage"],
   optional_host_permissions: ["https://*/*", "http://*/*"],
   web_accessible_resources: [{ resources: ["go.html"], matches: ["<all_urls>"], use_dynamic_url: true }],
 });
