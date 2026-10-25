@@ -895,6 +895,26 @@
     "message": "已新增",
     "description": "Disabled button on a catalog row whose engine is already in the list."
   },
+  "catalog_add_aria": {
+    "message": "新增 $NAME$",
+    "description": "Accessible name of the Add button on a catalog row. The placeholder is the engine name. Must contain the visible text of catalog_add word for word (WCAG 2.5.3 label in name).",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "Bilibili"
+      }
+    }
+  },
+  "catalog_added_aria": {
+    "message": "$NAME$：已新增",
+    "description": "Accessible name of the disabled Added button on a catalog row. The placeholder is the engine name. Must contain the visible text of catalog_added word for word (WCAG 2.5.3 label in name).",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "Bilibili"
+      }
+    }
+  },
   "notice_catalog_added": {
     "message": "已從引擎庫新增「$NAME$」。",
     "description": "Notice after adding an engine from the catalog. $NAME$ is the engine name.",

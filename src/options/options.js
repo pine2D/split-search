@@ -8,7 +8,7 @@ import {
 } from "./edits.js";
 import { renderEngineList, renderHiddenList, setupEngineDialog, confirmRemoval } from "./engine-list.js";
 import { setupCatalogDialog, refreshCatalog } from "./catalog.js";
-import { renderShortcut } from "./shortcut.js";
+import { renderShortcut, SHORTCUT_BUTTON_ID } from "./shortcut.js";
 import { renderTriggers, setupGuide } from "./guide.js";
 import { applyRichText, renderLangPicker } from "./locale-ui.js";
 import { initI18n, applyI18n, setLocale, currentPref, currentLocale, t } from "../chrome/i18n.js";
@@ -192,7 +192,8 @@ async function render() {
   syncLangPicker(cfg.uiLocale);
   const ctx = { cfg, granted, attention, actions, refresh: render };
   const byId = new Map(all.map(e => [e.id, e]));
-  const focusedId = document.activeElement?.id; // 重建区块会丢掉焦点：键盘用户刚改的开关、下拉框要拿回焦点
+  // 有意为之：重建下面几个区块会丢掉焦点，记下有 id 的焦点元素（键盘用户刚改的开关、下拉框），重建后还给它
+  const focusedId = document.activeElement?.id;
   $("banner").replaceChildren(...banner(cfg, byId, granted));
   $("pair-body").replaceChildren(...pairSection(cfg, byId, granted));
   $("triggers").replaceChildren(renderTriggers(ctx));
@@ -211,7 +212,11 @@ async function refreshShortcut() {
     await i18nReady;
     await localeSwitch;
     const node = await renderShortcut();
-    if (seq === shortcutSeq) $("shortcut").replaceChildren(node);
+    if (seq !== shortcutSeq) return;
+    // 用户点按钮去绑快捷键、回来时（focus）这一行会重画：焦点原来在按钮上就还给新按钮
+    const hadFocus = document.activeElement?.id === SHORTCUT_BUTTON_ID;
+    $("shortcut").replaceChildren(node);
+    if (hadFocus) $(SHORTCUT_BUTTON_ID)?.focus();
   } catch (err) {
     log("failed to render the keyboard shortcut", err);
   }

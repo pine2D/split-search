@@ -62,9 +62,12 @@ function show(state) {
 
   const q = $("query");
   q.classList.toggle("placeholder", view.query === "");
-  if (view.query === "") setI18nText(q, "popup_empty_query");
-  else {
+  if (view.query === "") {
+    setI18nText(q, "popup_empty_query");
+    q.removeAttribute("title");
+  } else {
     q.textContent = view.query;
+    q.title = view.query; // 很长时只显示前几行（popup.css），悬停看完整的关键词
     q.removeAttribute("data-i18n");
     q.removeAttribute("data-i18n-args");
   }
@@ -105,6 +108,13 @@ async function render() {
   }
 }
 
+// 列表重建会丢掉焦点：还给刚点的引擎；它成了当前右侧、不在列表里了，就给第一个按钮；
+// 列表为空或这一对已经不是本扩展的，给“打开设置页”
+function restoreFocus(engineId) {
+  const buttons = $("pair").hidden ? [] : [...$("choices").querySelectorAll("button")];
+  (buttons.find((b) => b.dataset.engine === engineId) ?? buttons[0] ?? $("open-options")).focus();
+}
+
 // 点击时重新判定一次：弹窗打开期间这一对可能已被拆开或关掉。换完弹窗保持打开并刷新，方便连续切换。
 async function onSwitch(engineId) {
   if (busy) return;
@@ -126,6 +136,7 @@ async function onSwitch(engineId) {
   } finally {
     busy = false;
     await render();
+    restoreFocus(engineId);
   }
 }
 

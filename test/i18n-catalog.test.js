@@ -180,3 +180,16 @@ test("fetch 只在 src/chrome/i18n.js，且只读包内文件", () => {
     }
   }
 });
+
+// WCAG 2.5.3（label in name）：带引擎名的无障碍名称必须逐字包含按钮上看得见的文字
+test("带引擎名的 aria 文案包含可见文字，且有 $NAME$ 占位符", () => {
+  const pairs = [["catalog_add_aria", "catalog_add"], ["catalog_added_aria", "catalog_added"], ["engine_cycle_aria", "engine_cycle_label"]];
+  for (const l of langs) {
+    for (const [aria, visible] of pairs) {
+      const a = catalogs[l][aria];
+      assert.ok(a, `${l}/${aria} 缺失`);
+      assert.ok(a.message.includes(catalogs[l][visible].message), `${l}/${aria} 应包含 “${catalogs[l][visible].message}”`);
+      assert.ok(a.message.includes("$NAME$") && a.placeholders?.NAME?.content === "$1", `${l}/${aria} 的 NAME 占位符`);
+    }
+  }
+});

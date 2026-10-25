@@ -93,7 +93,9 @@ code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
 
 .section-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
 .catalog-list { list-style: none; margin: 0; padding: 0; }
-.catalog-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 4px; }
+.catalog-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 4px; border-radius: 6px; }
+/* 添加后按钮变成禁用的“已添加”，焦点留在这一行（catalog.js） */
+.catalog-row:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 #catalog-dialog { max-height: calc(100vh - 48px); overflow-y: auto; }
 .section-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 

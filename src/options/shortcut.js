@@ -5,6 +5,8 @@ import { h, ht } from "./ui.js";
 const COMMAND = "cycle-right";
 const SHORTCUTS_URL = "chrome://extensions/shortcuts";
 const log = (...args) => console.error("[split-search]", ...args);
+// 固定 id：重画这一行后设置页据此把焦点还给按钮
+export const SHORTCUT_BUTTON_ID = "shortcut-open";
 
 // 读不到命令列表时按“未设置”显示，只记日志
 async function currentShortcut() {
@@ -25,5 +27,5 @@ export async function renderShortcut() {
   const open = () => chrome.tabs.create({ url: SHORTCUTS_URL }).catch(err => log("failed to open the shortcuts page", err));
   return h("div", { class: "shortcut-row" },
     h("span", { class: "shortcut-current" }, ht("span", null, "options_shortcut_label"), value),
-    ht("button", { type: "button", class: "btn btn-small", onclick: open }, "options_shortcut_open"));
+    ht("button", { type: "button", id: SHORTCUT_BUTTON_ID, class: "btn btn-small", onclick: open }, "options_shortcut_open"));
 }

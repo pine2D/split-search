@@ -56,8 +56,14 @@ p { margin: 0 0 10px; }
 .facts dt { color: var(--muted); }
 .facts dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
 .facts dd.placeholder { color: var(--muted); font-style: italic; }
+/* 很长的关键词最多显示 3 行，完整内容在 title 里 */
+#query { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; }
 
-.choices { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+/* 引擎很多时列表自己滚动，“打开设置页”始终露在下面；留 3px 内边距，焦点框不被裁掉 */
+.choices {
+  list-style: none; margin: 0 -3px; padding: 3px; display: flex; flex-direction: column; gap: 4px;
+  max-height: 260px; overflow-y: auto;
+}
 .choices .btn { width: 100%; text-align: start; }
 
 .btn {
