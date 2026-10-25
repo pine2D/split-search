@@ -661,6 +661,16 @@
       }
     }
   },
+  "notice_save_partial": {
+    "message": "已保存，但有一项相关设置没能清除：$DETAIL$",
+    "description": "Warning when the change was saved but a related setting (for example the chosen lookup or image search engine) could not be removed afterwards. The placeholder is the reason (another message or a browser error).",
+    "placeholders": {
+      "DETAIL": {
+        "content": "$1",
+        "example": "MAX_WRITE_OPERATIONS_PER_MINUTE quota exceeded"
+      }
+    }
+  },
   "notice_added": {
     "message": "已新增“$NAME$”。",
     "description": "Notice after adding an engine.",

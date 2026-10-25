@@ -23,19 +23,41 @@ const render = () => deps.render();
 
 let writeChain = Promise.resolve();
 
+// patch 已经写进去之后再删键：storage.sync 没有“写入并删除”的原子操作，删键失败时重新读一次，
+// 键确实都不在了就算成功；否则抛 partial 错误（保留原因），提示改动已保存、只是有一项没清掉，不报成“保存失败”
+async function removeAfterSave(keys) {
+  try {
+    await removeKeys(keys);
+  } catch (err) {
+    let raw = null;
+    try { raw = await loadRaw(); } catch { /* 读不出来就按没删掉处理 */ }
+    if (raw && keys.every(k => !Object.hasOwn(raw, k))) return;
+    throw Object.assign(new Error(err?.message ?? String(err)), { partial: true });
+  }
+}
+
 // compute(raw) 返回 { ok, patch?, remove?, ... }；ok 时先写 patch（有的话），再删 remove 里的键。返回 compute 的结果。
 export function write(compute) {
   const run = async () => {
     const raw = await loadRaw();
     const result = compute(raw);
     if (result.ok && result.patch) await saveKeys(result.patch);
-    if (result.ok && result.remove?.length) await removeKeys(result.remove);
+    if (result.ok && result.remove?.length) {
+      if (result.patch) await removeAfterSave(result.remove);
+      else await removeKeys(result.remove);
+    }
     return result;
   };
   const p = writeChain.then(run);
   writeChain = p.catch(() => {});
   return p;
 }
+
+// write 抛错时的提示：partial（改动已保存，有一项没清掉）用警告级的单独文案，其余是“保存失败”
+export function saveFailure(err) {
+  return err?.partial ? { key: "notice_save_partial", level: "warn" } : { key: "notice_save_failed", level: "error" };
+}
+const failText = (err) => t(saveFailure(err).key, errorText(err));
 
 // ok 是成功提示的 LabelSpec（[key, ...subs]），null 表示不提示
 export async function act(compute, ok) {
@@ -45,7 +67,7 @@ export async function act(compute, ok) {
     else if (ok) notify(t(...ok));
     return result;
   } catch (err) {
-    notify(t("notice_save_failed", errorText(err)), "error");
+    notify(failText(err), saveFailure(err).level);
     return { ok: false };
   } finally {
     render();
@@ -59,7 +81,7 @@ async function saveEngine(compute, okKey) {
   try {
     result = await write(compute);
   } catch (err) {
-    return { ok: false, errors: { form: t("notice_save_failed", errorText(err)) } };
+    return { ok: false, errors: { form: failText(err) } };
   }
   if (!result.ok) return result;
   const warn = needsGrantWarning(result.engine, await isGranted(result.engine));
@@ -79,7 +101,7 @@ async function saveImage(compute, okKey) {
   try {
     result = await write(compute);
   } catch (err) {
-    return { ok: false, errors: { form: t("notice_save_failed", errorText(err)) } };
+    return { ok: false, errors: { form: failText(err) } };
   }
   if (!result.ok) return result;
   notify(t(okKey, result.engine.name));
