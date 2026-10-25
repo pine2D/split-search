@@ -27,7 +27,8 @@ export async function readRecord(tabId) {
   }
 }
 
-// 一次 set 写两个方向，不做读-改-写。roleA/roleB/input 原样交给 makeRecords（不传时是搜索对）
+// 一次 set 写两个方向，不做读-改-写。roleA/roleB/input 原样交给 makeRecords（不传时是搜索对）；
+// 组合不合法时 makeRecords 抛错，这里记日志、一条都不写（之后按“没有记录”判定，不会覆盖任何标签）
 export function writePair({ a, b, splitViewId, mode, engineA, engineB, query, roleA, roleB, input }) {
   return serial(async () => {
     try {

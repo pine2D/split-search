@@ -27,13 +27,21 @@ export function parseRecord(value) {
   return { peer, splitViewId, mode, role, input, engine, query };
 }
 
-// 两条记录总是写 role；不是搜索对时两条写同一个 input，搜索对不写 input 键
+// 两条记录总是写 role；不是搜索对时两条写同一个 input，搜索对不写 input 键。
+// 不合法的组合（role 配不成对：search 只配 search、page 只配 lookup；查询对的 input 不是 text/image；
+// 任一条 parseRecord 不认）直接抛错，不写出读回来会被当成“没有记录”或判 stale 的东西。
+// 调用方 split-state.js 的 writePair 在 try 里调用：抛错时记日志、一条都不写
 export function makeRecords({ a, b, splitViewId, mode, engineA, engineB, query, roleA = "search", roleB = "search", input }) {
-  const extra = roleA === "search" && roleB === "search" ? {} : { input };
-  return {
+  const search = roleA === "search" && roleB === "search";
+  const extra = search ? {} : { input };
+  const out = {
     [recordKey(a)]: { peer: b, splitViewId, mode, role: roleA, ...extra, engine: engineA, query },
     [recordKey(b)]: { peer: a, splitViewId, mode, role: roleB, ...extra, engine: engineB, query },
   };
+  const valid = Number.isInteger(a) && Number.isInteger(b) && partnerRole(roleA) === roleB &&
+    (search || input === "text" || input === "image") && Object.values(out).every(r => parseRecord(r) !== null);
+  if (!valid) throw new Error("invalid split record");
+  return out;
 }
 
 // 永久失效标记：mode "split" 配 splitViewId -1，parseRecord 接受、recordMatches 永远不认。

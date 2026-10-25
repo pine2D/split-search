@@ -323,3 +323,12 @@ test("writeEngine：在解析后的 lookup 记录上改 engine，role、input �
   assert.equal(got.engine, "ddg");
   assert.deepEqual(parseRecord(got), { ...lookupRec, engine: "ddg" });
 });
+
+test("writePair：不合法的组合（makeRecords 抛错）只记日志、一条都不写，不抛给调用方", async () => {
+  await writePair({ a: 1, b: 2, splitViewId: 7, mode: "split", engineA: "", engineB: "bing", query: "q",
+    roleA: "page", roleB: "lookup" });
+  await writePair({ a: 1, b: 2, splitViewId: 7, mode: "split", engineA: "google", engineB: "bing", query: "q",
+    roleA: "search", roleB: "lookup", input: "text" });
+  assert.deepEqual(calls, []);
+  assert.equal(console.error.mock.callCount(), 2);
+});

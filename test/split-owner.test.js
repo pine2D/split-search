@@ -53,6 +53,29 @@ test("makeRecords：查询对两侧同一个 input", () => {
   const s = makeRecords({ a: 1, b: 2, splitViewId: 7, mode: "split", engineA: "ea", engineB: "eb", query: "q" })["split:1"];
   assert.equal(s.role, "search"); assert.equal("input" in s, false);
 });
+test("makeRecords：不合法的组合直接抛错，不写出 parseRecord 不认的记录", () => {
+  const ok = { a: 1, b: 2, splitViewId: 7, mode: "split", engineA: "", engineB: "bing", query: "x" };
+  const bad = [
+    { ...ok, roleA: "page", roleB: "lookup" },                          // 查询对缺 input
+    { ...ok, roleA: "page", roleB: "lookup", input: "video" },          // input 不认
+    { ...ok, engineA: "ea", roleA: "search", roleB: "lookup", input: "text" }, // search 与 lookup 混配
+    { ...ok, roleA: "page", roleB: "search", input: "text" },           // page 与 search 混配
+    { ...ok, roleA: "page", roleB: "page", input: "text" },             // page 配 page
+    { ...ok, engineA: "ea", roleA: "lookup", roleB: "lookup", input: "text" },
+    { ...ok, roleA: "owner", roleB: "lookup", input: "text" },          // 未知 role
+    { ...ok, engineA: "ea", roleA: "page", roleB: "lookup", input: "text" }, // page 的 engine 必须为空
+    { ...ok, engineA: "", roleA: "search", roleB: "search" },           // search 的 engine 不能为空
+    { ...ok, engineA: "ea", mode: "x" },                                // mode 不认
+    { ...ok, engineA: "ea", a: "1" },                                   // 标签 id 不是整数
+  ];
+  for (const args of bad) assert.throws(() => makeRecords(args), /invalid split record/, JSON.stringify(args));
+  // 合法的组合照常写出，且两条都能被 parseRecord 读回
+  for (const args of [{ ...ok, engineA: "ea" }, { ...ok, roleA: "page", roleB: "lookup", input: "image" },
+    { ...ok, engineA: "bing", engineB: "", roleA: "lookup", roleB: "page", input: "text" }]) {
+    const out = makeRecords(args);
+    for (const v of Object.values(out)) assert.notEqual(parseRecord(v), null, JSON.stringify(args));
+  }
+});
 test("staleMarker 保留 role 与 input", () => {
   const r = staleMarker({ ...base, role: "lookup", input: "image" });
   assert.equal(r.role, "lookup"); assert.equal(r.input, "image"); assert.equal(r.splitViewId, -1);
