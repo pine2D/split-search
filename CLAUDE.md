@@ -57,12 +57,13 @@ Chrome MV3 扩展：用户在地址栏搜索，或把文字拖到标签栏时，
       3. 窗口检查：当前窗口不是 normal 类型（popup/app）时 → 在一个 normal 窗口里新建一对标签组成分屏；当前标签 location.replace(左侧网址)
       4. 分屏（“本扩展的分屏”按 storage.session 里的记录判定，不按网址猜；记录形状 {peer, splitViewId, mode: split|adjacent, engine, query}，见 lib/split-owner.js、chrome/split-state.js）：
           ├─ 窄窗口（windows.get 的 width < 960，且 narrowFallback 不为 false）：不建分屏，右侧在紧邻的后台标签打开，记 adjacent 记录；同标签再触发复用右边那个
+          │   窗口变宽或关掉开关后再触发：更新右边那个，再 tabs.createSplit([左, 右]) 拼成分屏、复核后改记 split（decideSplit 返回 join；拼不成退回复用）
           ├─ 当前标签不在分屏中：tabs.create({url: 右侧, splitWithTabId: 当前, index: 当前+1, windowId, active:false})
           │                   → 然后 location.replace(左侧网址)
           ├─ 当前标签在“本扩展的分屏”中（判定见 spec 5.3）：tabs.update(另一侧, 右侧) → location.replace(左侧)
           └─ 当前标签在其他分屏中：见 spec 5.3
   工具栏弹窗（popup/）与快捷键 cycle-right（默认不绑定，background.js 的 onCommand）：读记录，经 chrome/right-switch.js 把右侧换成指定/下一个引擎，关键词取自记录（只在 storage.session，不进 sync，不外发）。
-  记录在 tabs.onRemoved 时清理。
+  记录在 tabs.onRemoved 时清理。读到失效记录（stale，例如拆开后又拼回去）时，只有记录里的对侧已经关掉才顺手清理；对侧还在就保留两条，这一对一直判“不是本扩展的”，不会落到兜底被覆盖。
 ```
 
 触发网址 = 左侧引擎真实搜索网址 + 标记参数 `_ss=<左id>,<右id>`，例如 `https://www.google.com/search?q=%s&_ss=google,bing`。
@@ -106,11 +107,11 @@ split-search/
 │   ├── options/options.html|css  设置页静态结构、引导文字与样式
 │   ├── options/options.js        设置页编排：读配置、查授权、渲染、串行写入
 │   ├── options/edits.js          设置页纯逻辑：表单校验、算出写回存储的补丁
-│   ├── options/engine-list.js    引擎列表、已隐藏列表、新增/编辑对话框
+│   ├── options/engine-list.js    引擎列表（每个引擎的“参与快捷键轮换”开关）、已隐藏列表、新增/编辑对话框
 │   ├── options/guide.js          触发网址卡片与组合生成器
 │   ├── options/ui.js             DOM 小工具、提示、复制按钮、host 权限查询与申请
 │   ├── options/catalog.js        右侧引擎库对话框（添加时不申请权限）
-│   ├── options/shortcut.js       快捷键区：显示当前绑定、各引擎“参与轮换”开关
+│   ├── options/shortcut.js       快捷键区：显示当前绑定、打开 Chrome 快捷键页
 │   ├── options/locale-ui.js      设置页与语言相关的界面：带内联元素的句子、语言下拉框
 │   ├── lib/engines.js            预置引擎、模板校验、配置合并
 │   ├── lib/trigger.js            触发网址生成与解析、模板展开
@@ -125,10 +126,10 @@ split-search/
 │   ├── lib/errors.js             错误码：lib 和设置页逻辑只返回码，页面经 t("err_<code>") 显示
 │   ├── chrome/i18n.js            页内文案加载器：t()，fetch 读包内 _locales，按 uiLocale 切换
 │   ├── chrome/config-store.js    storage.sync 读写封装；顶层键 uiLocale（"auto"|"en"|"zh_CN"|"zh_TW"|"es"）、narrowFallback（缺省 true）、cycleExclude（不参与轮换的引擎 id 数组）；自定义引擎可带 leftDiscouraged
-│   ├── chrome/split-actions.js   分屏动作执行（tabs / windows / storage.session 薄封装）
+│   ├── chrome/split-actions.js   分屏动作执行（tabs / windows 薄封装，记录经 split-state.js）
 │   ├── chrome/split-state.js     记录读写与 inspectTab（对侧已关闭、storage 抛错都按“无记录”处理）
 │   └── chrome/right-switch.js    换右侧：弹窗与快捷键共用
-└── test/                         node --test（每个 lib 一个文件，另有 manifest、config-store、split-actions、options-edits、options-ui；i18n.test.js、chrome-i18n.test.js、i18n-catalog.test.js（4 种语言 key 对齐与 fetch 守门）、errors.test.js、i18n-pak.test.js（Chrome 术语表脚本）、store-i18n.test.js（宣传图文案键对齐）；e2e-*.test.js 测 e2e 脚本，其中 e2e-i18n.test.js 测 I18N 步骤；pack.test.js 测发布打包）
+└── test/                         node --test（每个 lib 一个文件，另有 manifest、config-store、split-actions、options-edits、options-ui；i18n.test.js、chrome-i18n.test.js、i18n-catalog.test.js（4 种语言 key 对齐与 fetch 守门、带引擎名的 aria 文案含可见文字）、popup-css.test.js（弹窗颜色变量与设置页一致）、errors.test.js、i18n-pak.test.js（Chrome 术语表脚本）、store-i18n.test.js（宣传图文案键对齐）；e2e-*.test.js 测 e2e 脚本，其中 e2e-i18n.test.js 测 I18N 步骤；pack.test.js 测发布打包）
 ```
 
 纯逻辑放 `src/lib/`（不碰 `chrome.*`），`src/chrome/` 是对 `chrome.*` 的薄封装，页面脚本只负责编排。
@@ -161,7 +162,7 @@ split-search/
 ## 测试纪律
 
 - `src/lib/` 新增逻辑先写 node 测试，再写实现。
-- 涉及分屏、DNR、权限的行为，先跑 `npm run e2e`。v0.1 不做 Windows 冒烟（2026-10-24 用户决定跳过；`docs/acceptance-v0.1.md` 第 2 节保留作以后的参考）。WSL 里的 Google Chrome 155（155.0.8059.84）经 WSLg 可以验证除“从外部 Windows 应用拖入”（T3b）以外的全部项目，包括真实拖拽、地址栏、右键、授权框；涉及 Windows 环境本身的问题仍以 Windows Chrome 为准。
+- 涉及分屏、DNR、权限的行为，先跑 `npm run e2e`。v0.1 不做 Windows 冒烟（2026-10-24 用户决定跳过；`docs/acceptance-v0.1.md` 第 2 节保留作以后的参考）。WSL 里的 Google Chrome（v0.1 时是 155.0.8059.84，v0.3 起是 156.0.8078.47；v0.3 的事实只在 156 上实测过）经 WSLg 可以验证除“从外部 Windows 应用拖入”（T3b）以外的全部项目，包括真实拖拽、地址栏、右键、授权框；涉及 Windows 环境本身的问题仍以 Windows Chrome 为准。
 
 ## 端到端验收（scripts/e2e）
 
