@@ -38,10 +38,13 @@ function hostOf(url) {
 }
 
 // 弹窗显示哪一区（spec 3.2 的表）：本扩展的一对 → "pair"；在任何分屏中、窗口不能分屏（windowType 来自
-// splitWindowType，只有 "normal" 可以）、识别不出结果页 → "not-ours"（v0.3 的说明）；其余 → "complete"（补成分屏）。
-export function popupMode({ pair, tab, windowType, match }) {
+// splitWindowType，只有 "normal" 可以）、识别不出结果页 → "not-ours"（v0.3 的说明）；
+// engines（未隐藏的文字引擎）里除了识别出的引擎再没有别的 → 也是 "not-ours"（补成区不会只剩一个没有按钮的标题）；
+// 其余 → "complete"（补成分屏）。
+export function popupMode({ pair, tab, windowType, match, engines }) {
   if (pair) return "pair";
   if ((tab?.splitViewId ?? -1) !== -1 || windowType !== "normal" || match == null) return "not-ours";
+  if (completeView(match, engines ?? []).choices.length === 0) return "not-ours";
   return "complete";
 }
 

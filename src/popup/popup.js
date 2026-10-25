@@ -41,7 +41,7 @@ async function load() {
     windowType = splitWindowType(await chrome.windows.get(tab.windowId, { populate: true }));
     match = matchResultPage(tab.url, cfg);
   }
-  const mode = popupMode({ pair, tab, windowType, match });
+  const mode = popupMode({ pair, tab, windowType, match, engines: cfg.engines });
   return mode === "not-ours" ? null : { mode, pair, match, cfg, tab };
 }
 

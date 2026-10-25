@@ -94,17 +94,25 @@ test("popupMode：本扩展的一对 → pair（哪怕在分屏里、窗口不�
   const pairRec = { kind: "search", left: { engineId: "google" }, right: { engineId: "bing" } };
   assert.equal(popupMode({ pair: pairRec, tab: { splitViewId: 3 }, windowType: "popup", match: null }), "pair");
 });
+// 识别出的结果页（match）与未隐藏的文字引擎（engines）：至少还有一个别的引擎才有按钮可点
+const M = { engine: { id: "google" } };
+const E = [{ id: "google" }, { id: "bing" }];
 test("popupMode：在别的分屏里 → not-ours", () => {
-  assert.equal(popupMode({ pair: null, tab: { splitViewId: 3 }, windowType: "normal", match: {} }), "not-ours");
+  assert.equal(popupMode({ pair: null, tab: { splitViewId: 3 }, windowType: "normal", match: M, engines: E }), "not-ours");
 });
 test("popupMode：窗口不是 normal、识别不出 → not-ours", () => {
-  assert.equal(popupMode({ pair: null, tab: { splitViewId: -1 }, windowType: "pip", match: {} }), "not-ours");
-  assert.equal(popupMode({ pair: null, tab: {}, windowType: "normal", match: null }), "not-ours");
-  assert.equal(popupMode({ pair: null, tab: {}, windowType: "normal", match: undefined }), "not-ours");
+  assert.equal(popupMode({ pair: null, tab: { splitViewId: -1 }, windowType: "pip", match: M, engines: E }), "not-ours");
+  assert.equal(popupMode({ pair: null, tab: {}, windowType: "normal", match: null, engines: E }), "not-ours");
+  assert.equal(popupMode({ pair: null, tab: {}, windowType: "normal", match: undefined, engines: E }), "not-ours");
 });
 test("popupMode：不在分屏、normal 窗口、识别出结果页 → complete（没有 splitViewId 字段按 -1）", () => {
-  assert.equal(popupMode({ pair: null, tab: {}, windowType: "normal", match: {} }), "complete");
-  assert.equal(popupMode({ pair: null, tab: { splitViewId: -1 }, windowType: "normal", match: {} }), "complete");
+  assert.equal(popupMode({ pair: null, tab: {}, windowType: "normal", match: M, engines: E }), "complete");
+  assert.equal(popupMode({ pair: null, tab: { splitViewId: -1 }, windowType: "normal", match: M, engines: E }), "complete");
+});
+test("popupMode：除了识别出的引擎再没有别的文字引擎（没有按钮可点）→ not-ours", () => {
+  assert.equal(popupMode({ pair: null, tab: {}, windowType: "normal", match: M, engines: [{ id: "google" }] }), "not-ours");
+  assert.equal(popupMode({ pair: null, tab: {}, windowType: "normal", match: M, engines: [] }), "not-ours");
+  assert.equal(popupMode({ pair: null, tab: {}, windowType: "normal", match: M }), "not-ours");
 });
 test("completeView：choices 不含识别出的引擎，建议的排第一，其余保持显示顺序", () => {
   const { engines } = mergeConfig({});
