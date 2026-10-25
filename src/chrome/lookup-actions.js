@@ -38,12 +38,14 @@ function openNewPair(ctx) {
   });
 }
 
-// 第 3、5 行：就地更新查询标签；tabs.update 抛错（查询标签刚被关掉）时退回新建
+// 第 3、5 行：就地更新查询标签；tabs.update 抛错（查询标签刚被关掉）时退回新建。
+// 新建前先清掉这一对的旧记录：旧查询标签万一还在，它的记录不会继续指向当前标签
 async function updateLookup(ctx, props, onUpdated) {
   try {
     await chrome.tabs.update(ctx.peer.id, props);
   } catch (err) {
     log("failed to update the lookup tab, opening a new one", err);
+    await clearPair(ctx.tab.id);
     await openNewPair(ctx);
     return;
   }

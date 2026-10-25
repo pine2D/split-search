@@ -27,9 +27,14 @@ test("normalizeSelection：按码点截断，不切断代理对", () => {
   assert.ok(!/[\uD800-\uDBFF]$/.test(s));
 });
 test("normalizeSelection：粗截处不留孤立的代理项", () => {
-  const s = normalizeSelection("😀".repeat(SELECTION_PRECUT + 5), SELECTION_PRECUT);
+  // 开头一个 ASCII 字符让后面的代理对错开一位：按码元先切的 2 × SELECTION_PRECUT 正好落在代理对中间
+  const text = "a" + "😀".repeat(SELECTION_PRECUT + 5);
+  assert.ok(/[\uD800-\uDBFF]$/.test(text.slice(0, 2 * SELECTION_PRECUT)), "前提：码元切点落在代理对中间");
+  const s = normalizeSelection(text, SELECTION_PRECUT);
   assert.equal([...s].length, SELECTION_PRECUT);
+  assert.ok(s.endsWith("😀"));
   assert.ok(!/[\uD800-\uDBFF]$/.test(s));
+  assert.ok(!/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/.test(s));
 });
 test("normalizeSelection：截断处是空格时不留尾空格", () => assert.equal(normalizeSelection("a ".repeat(400), 6), "a a a"));
 test("normalizeSelection：非字符串按空串处理", () => {

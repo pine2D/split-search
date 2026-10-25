@@ -176,6 +176,12 @@ test("mergeConfig：lens 在前，自定义以图搜图引擎被清洗", () => {
   assert.equal(mergeConfig({ imageEngine: "gone" }).imageEngine, "lens");
 });
 
+test("mergeConfig：imageEngine 是现存的自定义以图搜图引擎时原样返回", () => {
+  const imageEngines = [{ id: "bing-img", name: "Bing", url: "https://www.bing.com/images/searchbyimage?cbir=sbi&imgurl=%s" }];
+  assert.equal(mergeConfig({ imageEngines, imageEngine: "bing-img" }).imageEngine, "bing-img");
+  assert.equal(mergeConfig({ imageEngines, imageEngine: "lens" }).imageEngine, "lens");
+});
+
 test("mergeConfig：lookupEngine 缺省跟随默认组合右侧，隐藏或无效时回退", () => {
   assert.equal(mergeConfig({}).lookupEngine, "bing");
   assert.equal(mergeConfig({ lookupEngine: "ddg" }).lookupEngine, "ddg");

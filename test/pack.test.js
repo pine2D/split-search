@@ -82,12 +82,17 @@ test("checkManifest：版本不一致、权限多出、加了 host_permissions�
 
 test("checkManifest：多出别的权限照样报错", () => {
   const bad = { ...clone(manifest), permissions: [...HARD.permissions, "tabs"] };
-  assert.ok(checkManifest(bad, { version: bad.version }).length > 0);
+  const errs = checkManifest(bad, { version: bad.version });
+  assert.equal(errs.length, 1);
+  assert.match(errs[0], /^manifest\.permissions /);
+  assert.match(errs[0], /"tabs"/);
 });
 
 test("checkManifest：少一个新权限也报错", () => {
   const bad = { ...clone(manifest), permissions: ["declarativeNetRequest", "storage"] };
-  assert.ok(checkManifest(bad, { version: bad.version }).length > 0);
+  const errs = checkManifest(bad, { version: bad.version });
+  assert.equal(errs.length, 1);
+  assert.match(errs[0], /^manifest\.permissions /);
 });
 
 const readLocales = () => Object.fromEntries(["en", "es", "zh_CN", "zh_TW"]

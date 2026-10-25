@@ -156,6 +156,11 @@ test("第 3 行：tabs.update 抛 No tab with id → 退回新建", async () => 
   assert.equal(out.action, "reuse-split");
   assert.equal(named("tabs.create").length, 1);
   assert.equal(named("tabs.create")[0][1].url, LENS_URL);
+  // 新的一对写成 page ↔ lookup，旧查询标签的记录一并清掉，不留指向 T 的孤立记录
+  const img = { splitViewId: 50, input: "image", query: SRC };
+  assert.deepEqual(state.session.get("split:5"), rec(100, "page", img));
+  assert.deepEqual(state.session.get("split:100"), rec(5, "lookup", { ...img, engine: "lens" }));
+  assert.equal(state.session.has("split:6"), false);
 });
 
 test("第 4 行：T 是搜索对的左侧（分屏中、own、search）→ 分屏右边开普通标签，不改任何标签和记录", async () => {
@@ -243,6 +248,19 @@ test("第 6 行 join：相邻 page/lookup、窗口变宽 → createSplit([左, �
   assert.deepEqual(state.session.get("split:6"), rec(5, "lookup", { splitViewId: 50, query: NEW }));
 });
 
+test("第 6 行 join：第一次 tabs.update 抛错 → 退回新建（宽窗口拼成分屏），不调 createSplit，不留孤立记录", async () => {
+  adjacentPair(1200);
+  state.fail.update = true;
+  const out = await handleMenuClick(newInfo, T);
+  assert.deepEqual(out, { action: "join" });
+  assert.deepEqual(named("tabs.create"), [["tabs.create",
+    { url: NEW_URL, index: 3, windowId: 1, active: false, splitWithTabId: 5 }]]);
+  assert.equal(named("tabs.createSplit").length, 0);
+  assert.deepEqual(state.session.get("split:5"), rec(100, "page", { splitViewId: 50, query: NEW }));
+  assert.deepEqual(state.session.get("split:100"), rec(5, "lookup", { splitViewId: 50, query: NEW }));
+  assert.equal(state.session.has("split:6"), false);
+});
+
 test("第 6 行 join：T 在右边时 createSplit 仍按 [左, 右] 传", async () => {
   reset({
     tabs: [{ ...T, index: 4 }, { id: 6, index: 3, windowId: 1, splitViewId: -1 }],
@@ -317,3 +335,4 @@ test("读 pageUrl/frameUrl 就抛的 info 照样走完 new 路径", async () => 
   assert.deepEqual(await handleMenuClick(info, T), { action: "new" });
   assert.equal(named("tabs.create").length, 1);
 });
+
