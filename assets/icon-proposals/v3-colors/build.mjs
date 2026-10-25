@@ -1,7 +1,9 @@
 // 方案 3 配色变体生成器：node assets/icon-proposals/v3-colors/build.mjs
-// 形状、白色搜索框横条、16/32 像素对齐版和 96×96 安全区全部沿用方案 3（../build.mjs），只换配色；
-// 唯一例外：128 母版里两条次级横线的不透明度由 .6 提到 .72，让 48px 下在浅格上也看得清（16/32px 版没有这两条线）。
-// 每套配色写出 icon.svg / icon-16.svg / icon-32.svg / icon-16|32|48|128.png / notes.md，再渲染 compare.html → compare.png。
+// 形状、白色搜索框横条和 128 母版的 96×96 安全区沿用方案 3（../build.mjs），只换配色；
+// 例外：128 母版里两条次级横线的不透明度由 .6 提到 .72，让小尺寸下在浅格上也看得清；
+// 16/32/48 是按像素网格单独画的版本，图形几乎占满画布（与工具栏里其他图标同大），不再像 128 那样四周留白。
+// 每套配色写出 icon.svg / icon-16|32|48.svg / icon-16|32|48|128.png / notes.md，再渲染 compare.html → compare.png。
+// 只重渲指定配色：node build.mjs c6（只写该目录，不重渲对比图）。
 // 无 npm 依赖；需要 /opt/google/chrome/google-chrome（或 CHROME 环境变量）和 ImageMagick convert。
 import { writeFileSync, mkdirSync, rmSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
@@ -71,10 +73,15 @@ const s128 = (A, B) => {
   const ui = (x) => `<rect x="${x}" y="38" width="29" height="9" rx="4.5" fill="#fff"/><rect x="${x}" y="56" width="23" height="5" rx="2.5" fill="#fff" opacity="${SUB_ALPHA}"/><rect x="${x}" y="68" width="17" height="5" rx="2.5" fill="#fff" opacity="${SUB_ALPHA}"/>`;
   return svg(128, `<path fill="${A}" d="${rr(16, 26, 45, 76, [18, 6, 6, 18])}"/><path fill="${B}" d="${rr(67, 26, 45, 76, [6, 18, 18, 6])}"/>${ui(24)}${ui(75)}`);
 };
-const s32 = (A, B) => svg(32, `<path fill="${A}" d="${rr(2, 5, 13, 22, [5, 1.5, 1.5, 5])}"/><path fill="${B}" d="${rr(17, 5, 13, 22, [1.5, 5, 5, 1.5])}"/>` +
-  `<rect x="5" y="9" width="7" height="2" rx="1" fill="#fff"/><rect x="20" y="9" width="7" height="2" rx="1" fill="#fff"/>`);
-const s16 = (A, B) => svg(16, `<path fill="${A}" d="${rr(1, 2, 6, 12, [2.5, 0.5, 0.5, 2.5])}"/><path fill="${B}" d="${rr(9, 2, 6, 12, [0.5, 2.5, 2.5, 0.5])}"/>` +
-  `<rect x="2" y="4" width="4" height="1" fill="#fff"/><rect x="10" y="4" width="4" height="1" fill="#fff"/>`);
+// 小尺寸：两格宽高比与 128 母版一致（整体约 1.15:1），横向占满画布（16px 不留边、32/48 各留 1/2px），边缘落在整数像素上
+const s48 = (A, B) => {
+  const ui = (x) => `<rect x="${x}" y="11" width="13" height="4" rx="2" fill="#fff"/><rect x="${x}" y="20" width="11" height="2" rx="1" fill="#fff" opacity="${SUB_ALPHA}"/><rect x="${x}" y="26" width="8" height="2" rx="1" fill="#fff" opacity="${SUB_ALPHA}"/>`;
+  return svg(48, `<path fill="${A}" d="${rr(2, 5, 21, 38, [9, 3, 3, 9])}"/><path fill="${B}" d="${rr(25, 5, 21, 38, [3, 9, 9, 3])}"/>${ui(6)}${ui(29)}`);
+};
+const s32 = (A, B) => svg(32, `<path fill="${A}" d="${rr(1, 3, 14, 26, [6, 1.5, 1.5, 6])}"/><path fill="${B}" d="${rr(17, 3, 14, 26, [1.5, 6, 6, 1.5])}"/>` +
+  `<rect x="4" y="8" width="8" height="2" rx="1" fill="#fff"/><rect x="20" y="8" width="8" height="2" rx="1" fill="#fff"/>`);
+const s16 = (A, B) => svg(16, `<path fill="${A}" d="${rr(0, 1, 7, 14, [3, 0.5, 0.5, 3])}"/><path fill="${B}" d="${rr(9, 1, 7, 14, [0.5, 3, 3, 0.5])}"/>` +
+  `<rect x="1" y="3" width="5" height="1" fill="#fff"/><rect x="10" y="3" width="5" height="1" fill="#fff"/>`);
 
 function shot(file, out, w, h) {
   execFileSync(CHROME, ['--headless=new', `--user-data-dir=${PROFILE}`, '--disable-sync', '--no-first-run', '--disable-gpu',
@@ -94,32 +101,36 @@ ${p.caption}。形状沿用方案 3（两块实心圆角窗格 + 白色搜索框
 | 左 | ${p.deep.name} | \`${p.deep.hex}\` | ${p.deep.C} / ${p.deep.h}° | ${f2(p.deep.onLight)}:1 | ${f2(p.deep.onDark)}:1 | ${f2(p.deep.white)}:1 |
 | 右 | ${p.light.name} | \`${p.light.hex}\` | ${p.light.C} / ${p.light.h}° | ${f2(p.light.onLight)}:1 | ${f2(p.light.onDark)}:1 | ${f2(p.light.white)}:1 |
 
-- 两格之间的亮度对比：${f2(p.between)}:1（另有 2px 透明缝隔开；16px 下两格各 6×12 像素）。
+- 两格之间的亮度对比：${f2(p.between)}:1（另有 2px 透明缝隔开；16px 下两格各 7×14 像素）。
 - 两格对浅、深两种工具栏都 ≥3:1（非文本图形门槛），所以 16/32px 不需要额外描边。
-- 128 母版里两条次级横线是 ${Math.round(SUB_ALPHA * 100)}% 白（方案 3 原为 60%），对窗格：左 ${f2(p.deep.sub)}:1、右 ${f2(p.light.sub)}:1。它们是装饰线，只出现在 48/128px；16/32px 版没有。
+- 两条次级横线是 ${Math.round(SUB_ALPHA * 100)}% 白（方案 3 原为 60%），对窗格：左 ${f2(p.deep.sub)}:1、右 ${f2(p.light.sub)}:1。它们是装饰线，只出现在 48/128px；16/32px 版没有。
 - 饱和度：OKLCH 彩度 ≤0.07（原方案 3 的紫 #6A5CFF 约 0.23、橙 #E0561F 约 0.18）。
 - ${p.extra}
 
 为什么两格都是中等明度：要同时对 #f1f3f4 和 #202124 达到 3:1，窗格的相对亮度只能落在 0.146–0.265 之间；再浅，白色横条和浅色工具栏都会看不清，再深，在深色工具栏上会糊成一块。所以“深/浅”两档只能拉开约 1.5 倍亮度，区分更多靠色相差（c1 两格同色相，除外）和中间的透明缝。
 
-文件：\`icon.svg\` 是 128×128 母版（图形在中央 96×96，四周 16px 透明留白），48 和 128 由它渲染；\`icon-32.svg\`、\`icon-16.svg\` 是按像素网格单独调整的小尺寸版本。由 \`../build.mjs\`（即 v3-colors/build.mjs）生成，改色请改脚本后重跑。
+文件：\`icon.svg\` 是 128×128 母版（图形在中央 96×96，四周 16px 透明留白，符合商店图标规范），128 由它渲染；\`icon-48.svg\`、\`icon-32.svg\`、\`icon-16.svg\` 是按像素网格单独画的小尺寸版本，图形几乎占满画布，和工具栏、扩展管理页里其他图标一样大。由 \`../build.mjs\`（即 v3-colors/build.mjs）生成，改色请改脚本后重跑。
 `;
 
+const only = process.argv.slice(2);
 mkdirSync(PROFILE, { recursive: true });
-for (const p of palettes) {
+for (const p of only.length ? palettes.filter((q) => only.includes(`c${q.n}`)) : palettes) {
   const dir = join(HERE, `c${p.n}-${p.slug}`);
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, 'icon.svg'), s128(p.deep.hex, p.light.hex));
   writeFileSync(join(dir, 'icon-32.svg'), s32(p.deep.hex, p.light.hex));
+  writeFileSync(join(dir, 'icon-48.svg'), s48(p.deep.hex, p.light.hex));
   writeFileSync(join(dir, 'icon-16.svg'), s16(p.deep.hex, p.light.hex));
   writeFileSync(join(dir, 'notes.md'), notes(p));
   const tmp = join(dir, '.render.html');
-  for (const [size, src] of [[128, 'icon.svg'], [48, 'icon.svg'], [32, 'icon-32.svg'], [16, 'icon-16.svg']]) {
+  for (const [size, src] of [[128, 'icon.svg'], [48, 'icon-48.svg'], [32, 'icon-32.svg'], [16, 'icon-16.svg']]) {
     writeFileSync(tmp, wrap(src, size));
     shot(tmp, join(dir, `icon-${size}.png`), size, size);
   }
   rmSync(tmp);
 }
+
+if (only.length) { console.log('rendered', only.join(' ')); process.exit(0); }
 
 // ---------- 对比图 ----------
 const ref = {
