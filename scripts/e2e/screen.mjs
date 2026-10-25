@@ -112,6 +112,20 @@ export async function selectionCenter(browser, targetId, text) {
   return { ...cssToScreen(m, cx, cy), w: Math.round(r.w * m.dpr), h: Math.round(r.h * m.dpr) };
 }
 
+// 页面里 selector 元素中心的屏幕坐标 { x, y }（换算同 selectionCenter；页面要整页宽、不在分屏里，见 cssToScreen）
+export async function elementCenter(browser, targetId, selector) {
+  const r = await inPage(browser, targetId, `(() => {
+    const el = document.querySelector(${JSON.stringify(String(selector))});
+    if (!el) return null;
+    const b = el.getBoundingClientRect();
+    return { x: b.x, y: b.y, w: b.width, h: b.height, iw: innerWidth, ih: innerHeight };
+  })()`);
+  if (!r) throw new Error(`页面里找不到 ${selector}`);
+  const cx = r.x + r.w / 2, cy = r.y + r.h / 2;
+  if (!(r.w > 0 && r.h > 0 && cx > 0 && cy > 0 && cx < r.iw && cy < r.ih)) throw new Error(`${selector} 不在可视区域内`);
+  return cssToScreen(await metrics(browser, targetId), cx, cy);
+}
+
 // 标签栏几何（CSS px，按 dpr 换算成 X 像素；spike 在 dpr 1.5 下实测：扫描行 4–40、截 80 行、背景取第 8 行、中线 30）
 const STRIP_CSS = { rows: [3, 27], height: 54, bgRow: 5.5, mid: 20, maxTab: 260 };
 export const stripGeometry = dpr => ({

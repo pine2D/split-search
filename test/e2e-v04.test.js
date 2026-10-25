@@ -4,6 +4,7 @@ import http from "node:http";
 import { startServer } from "../scripts/e2e/server.mjs";
 import { GRANT_ORIGINS, HOSTS, UNGRANTED_HOSTS, mockEngineU, mockImageEngine } from "../scripts/e2e/config.mjs";
 import { popupStateOf } from "../scripts/e2e/steps/v03-popup.mjs";
+import { MENU_INDEX, MENU_MIN_ITEMS } from "../scripts/e2e/steps/v04-lib.mjs";
 
 test("UNGRANTED_HOSTS 不进 HOSTS，也不进 GRANT_ORIGINS（一次性授权不覆盖它们）", () => {
   assert.deepEqual(UNGRANTED_HOSTS, { u: "engine-u.localhost", page: "page-u.localhost", img: "engine-i.localhost" });
@@ -111,4 +112,14 @@ test("popupStateOf：对视图与说明文字保持 v0.3 的字段；提示与�
   const not = popupStateOf(snap({ notOurs: { hidden: false, text: "不是" } }));
   assert.deepEqual({ ours: not.ours, notOurs: not.notOurs, notOursText: not.notOursText, note: not.note, error: not.error },
     { ours: false, notOurs: true, notOursText: "不是", note: "", error: "" });
+});
+
+test("MENU_INDEX / MENU_MIN_ITEMS：整数；行号从末尾数（负数），落在最少项数以内（只防写错，行号对不对由 T21/T22 以效果判定）", () => {
+  for (const k of ["text", "image"]) {
+    assert.ok(Number.isInteger(MENU_INDEX[k]) && MENU_INDEX[k] < 0, `MENU_INDEX.${k} 从末尾数`);
+    assert.ok(Number.isInteger(MENU_MIN_ITEMS[k]), `MENU_MIN_ITEMS.${k}`);
+    assert.ok(MENU_INDEX[k] < MENU_MIN_ITEMS[k] && -MENU_INDEX[k] <= MENU_MIN_ITEMS[k], `MENU_INDEX.${k} 落在 MENU_MIN_ITEMS.${k} 行以内`);
+  }
+  assert.deepEqual(Object.keys(MENU_INDEX).sort(), ["image", "text"]);
+  assert.deepEqual(Object.keys(MENU_MIN_ITEMS).sort(), ["image", "text"]);
 });

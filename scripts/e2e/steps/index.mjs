@@ -26,6 +26,7 @@ import { V03_OPTIONS_STEPS } from "./v03-options.mjs";
 import { XAUTO_T19 } from "./xauto-t19.mjs";
 import { V04_COMPLETE_STEPS } from "./v04-complete.mjs";
 import { V04_OPTIONS_STEPS } from "./v04-options.mjs";
+import { V04_LOOKUP_STEPS } from "./v04-lookup.mjs";
 
 // B 系列在前，CORE-* 其次，T 系列最后；同类按数字排序
 const GROUP = { B: 0, CORE: 1, T: 2 };
@@ -40,7 +41,7 @@ export function compareStepIds(a, b) {
 
 // last: true 的步骤（B15 汇总控制台错误）无论编号都排在最后，以覆盖此前所有步骤
 export const sortSteps = steps => [...steps].sort((a, b) => (a.last ? 1 : 0) - (b.last ? 1 : 0) || compareStepIds(a.id, b.id));
-const XAUTO = [...XAUTO_STEPS, ...XAUTO_T12, ...XAUTO_T14, ...XAUTO_T19].map(x => ({ ...x, fallback: withNeeds(x.fallback) }));
+const XAUTO = [...XAUTO_STEPS, ...XAUTO_T12, ...XAUTO_T14, ...XAUTO_T19, ...V04_LOOKUP_STEPS].map(x => ({ ...x, fallback: withNeeds(x.fallback) }));
 const replaced = new Set(XAUTO.map(x => x.id));
 const MANUAL = [...ASSISTED_STEPS, ...DRAG_STEPS, ...ASSISTED_2].filter(s => !replaced.has(s.id));
 export const STEPS = sortSteps([...OPTIONS_STEPS, ...FLOW_STEPS, B1, B4, B14, ...MANUAL, T8, I18N,

@@ -10,6 +10,13 @@ import { infra } from "../ext-webui.mjs";
 
 const J = JSON.stringify;
 
+// 右键菜单里本扩展项的行号（负数从末尾数）与菜单至少的行数。本扩展项总在倒数第二行，紧挨着最后的“检查”（Inspect）：
+// Spike S11（一次性配置，默认搜索引擎 Google）选区菜单、图片菜单都是 8 行，本扩展项是 0 起算第 6 行；
+// e2e 测试配置（界面英文、默认搜索引擎 Kagi，T11/T2 之后是 sse2e）没有“翻译所选内容”和“用 Google 智能镜头搜索”，两种菜单都是 7 行，
+// 本扩展项是第 5 行。Chrome 自带项随配置增减，都在本扩展项上面，所以从末尾数；T21/T22 的 detail 照写当次的实际行数
+export const MENU_INDEX = { text: -2, image: -2 };
+export const MENU_MIN_ITEMS = { text: 7, image: 7 };
+
 // 在页面里写一个随机标记，返回它；页面重载（哪怕网址相同）后标记就没了
 export async function markPage(ctx, targetId) {
   const mark = `ss-${nonce()}${nonce()}`;

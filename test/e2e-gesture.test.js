@@ -4,7 +4,7 @@ import { createXinput } from "../scripts/e2e/xinput.mjs";
 import {
   idle, dragText, cursorHome, held, releaseAfterClose, REASON_CURSOR, REASON_BUSY, REASON_STUCK,
 } from "../scripts/e2e/gesture.mjs";
-import { omnibox, menuRows, contextMenuPick } from "../scripts/e2e/gesture-ui.mjs";
+import { omnibox, menuRows, contextMenuPick, contextMenuCount } from "../scripts/e2e/gesture-ui.mjs";
 import { releaseHeldSync } from "../scripts/e2e/gesture-guard.mjs";
 
 const ROOT = "1080", WID = "12582915"; // 0xC00003：测试 Chrome 的 X 客户端 0xC00000
@@ -373,8 +373,81 @@ test("contextMenuPick：右键后冒出多个新窗口 → 在测试窗口里点
   const clicks = st.calls.map((c, i) => [c, i]).filter(([c]) => c[1] === "click");
   assert.deepEqual(clicks.map(([c]) => c.at(-1)), ["3", "1"]);
   const [, i1] = clicks[1];
-  assert.deepEqual(lastMoveBefore(st, i1).slice(2), ["200", "570"]);
+  // 关菜单的点在右键点左边（菜单从右键点向右下展开）；不再是 (at.x, at.y + 400)——那里落在菜单里（S11）
+  assert.deepEqual(lastMoveBefore(st, i1).slice(2), ["140", "170"]);
   assert.equal(st.calls[i1 - 1][1], "getmouselocation", "点之前核对指针在测试窗口里");
+});
+
+// 白底菜单截图：rows 是各项文字行的中心 y（与 menuRows 的单测同一画法）
+function menuShot(W, H, rows) {
+  const buf = Buffer.alloc(W * H * 3);
+  const fill = (x0, x1, y0, y1, v) => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) buf.fill(v, (y * W + x) * 3, (y * W + x) * 3 + 3); };
+  fill(10, W - 10, 5, H - 5, 255);
+  for (const c of rows) fill(30, 80, c - 5, c + 5, 40);
+  return buf;
+}
+
+test("contextMenuCount：右键后按行数出菜单项数，在菜单矩形外的页面里左键点一下关菜单；不点任何项、不按任何键", async () => {
+  const MENU = "12582990";
+  const rect = { x: 200, y: 170, width: 200, height: 120 };
+  let open = false;
+  const inMenu = (x, y) => open && x >= rect.x && x < rect.x + rect.width && y >= rect.y && y < rect.y + rect.height;
+  const { st, xi } = sim({ windows: () => (open ? [WID, MENU] : [WID]), windowAt: (x, y) => (inMenu(x, y) ? MENU : WID) });
+  const clicks = [];
+  const origClick = xi.click;
+  xi.click = async (b, o) => { clicks.push([b, o?.expectWindow]); await origClick(b, o); open = b === 3; };
+  xi.windowRect = async w => { assert.equal(w, MENU); return rect; };
+  xi.captureRgb = async (w, { width, height }) => { assert.equal(w, MENU); return menuShot(width, height, [20, 45, 95]); };
+  const n = await contextMenuCount(mkCtx(xi), { at: { x: 200, y: 170 }, wid: WID });
+  assert.equal(n, 3);
+  assert.deepEqual(clicks, [[3, WID], [1, WID]], "只有一次右键和一次关菜单用的左键，左键核对的是测试窗口");
+  const i1 = st.calls.findLastIndex(c => c[1] === "click");
+  const [x, y] = lastMoveBefore(st, i1).slice(2).map(Number);
+  assert.equal(inMenu(x, y) || (x >= rect.x && x < rect.x + rect.width && y >= rect.y && y < rect.y + rect.height), false, `关菜单的点 ${x},${y} 不在菜单矩形里`);
+  assert.equal(open, false, "菜单已关掉");
+  assert.equal(st.calls.some(c => c[1] === "key" || c[1] === "type"), false, "不向菜单发送任何按键");
+});
+
+test("contextMenuPick：itemIndex 为负数时从末尾数（-2 = 倒数第二项），悬停确认高亮后在菜单上点击；不按任何键", async () => {
+  const MENU = "12582990";
+  const rect = { x: 200, y: 170, width: 200, height: 120 };
+  const rows = [20, 45, 70, 95];
+  let open = false;
+  const inMenu = (x, y) => open && x >= rect.x && x < rect.x + rect.width && y >= rect.y && y < rect.y + rect.height;
+  const { st, xi } = sim({ windows: () => (open ? [WID, MENU] : [WID]), windowAt: (x, y) => (inMenu(x, y) ? MENU : WID) });
+  const clicks = [];
+  const origClick = xi.click;
+  xi.click = async (b, o) => { clicks.push([b, o?.expectWindow]); await origClick(b, o); open = b === 3; };
+  xi.windowRect = async () => rect;
+  // 整张截图：四行文字；1×1 取样：指针所在行（悬停）暗，其余亮
+  xi.captureRgb = async (w, { width, height, y }) => (width === 1
+    ? Buffer.alloc(3, y === st.y - rect.y ? 120 : 250) : menuShot(width, height, rows));
+  const m = await contextMenuPick(mkCtx(xi), { at: { x: 200, y: 170 }, itemIndex: -2, expectItems: 4, wid: WID });
+  assert.equal(m.items, 4);
+  assert.equal(m.y, rect.y + rows[2], "点的是倒数第二行");
+  assert.deepEqual(clicks, [[3, WID], [1, MENU]]);
+  assert.equal(st.calls.some(c => c[1] === "key" || c[1] === "type"), false);
+});
+
+test("contextMenuPick：itemIndex 为负数、菜单行数不到 -itemIndex 或 expectItems → 环境问题，在菜单外关菜单，不点菜单", async () => {
+  const MENU = "12582990";
+  const rect = { x: 200, y: 170, width: 200, height: 120 };
+  let open = false;
+  const inMenu = (x, y) => open && x >= rect.x && x < rect.x + rect.width && y >= rect.y && y < rect.y + rect.height;
+  const { xi } = sim({ windows: () => (open ? [WID, MENU] : [WID]), windowAt: (x, y) => (inMenu(x, y) ? MENU : WID) });
+  const clicks = [];
+  const origClick = xi.click;
+  xi.click = async (b, o) => { clicks.push([b, o?.expectWindow]); await origClick(b, o); open = b === 3; };
+  xi.windowRect = async () => rect;
+  xi.captureRgb = async (w, { width, height }) => menuShot(width, height, [20, 45, 95]);
+  await assert.rejects(contextMenuPick(mkCtx(xi), { at: { x: 200, y: 170 }, itemIndex: -2, expectItems: 4, wid: WID }), e => e.kind === "env");
+  assert.deepEqual(clicks, [[3, WID], [1, WID]]);
+});
+
+test("contextMenuCount：右键后没有出现菜单 → 失败，不按任何键", async () => {
+  const { st, xi } = sim();
+  await assert.rejects(contextMenuCount(mkCtx(xi), { at: { x: 200, y: 170 }, wid: WID, menuWaitMs: 50 }), e => e.kind === "fail");
+  assert.equal(st.calls.some(c => c[1] === "key" || c[1] === "type"), false);
 });
 
 // ---- fix round 2：xwininfo 叠放顺序（WSLg 没有 _NET_CLIENT_LIST_STACKING）----
