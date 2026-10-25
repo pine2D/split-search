@@ -6,3 +6,4 @@ exclude:
   - store
   - i18n
   - acceptance-v0.1.md
+  - acceptance-v0.3.md
