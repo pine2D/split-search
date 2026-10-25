@@ -3,7 +3,7 @@ import { loadRaw, saveKeys } from "../chrome/config-store.js";
 import { mergeConfig } from "../lib/engines.js";
 import { h, ht, notify, errorText, authButton, option, isGranted, joinSentences } from "./ui.js";
 import {
-  addEngine, editEngine, hideEngine, restoreEngine, deleteEngine, setDefaultPair, moveId, canBeLeft,
+  addEngine, editEngine, hideEngine, restoreEngine, deleteEngine, setDefaultPair, moveId, canBeLeft, setNarrowFallback,
 } from "./edits.js";
 import { renderEngineList, renderHiddenList, setupEngineDialog, confirmRemoval } from "./engine-list.js";
 import { renderTriggers, setupGuide } from "./guide.js";
@@ -216,10 +216,16 @@ function pairSection(cfg, byId, granted) {
   leftSel.addEventListener("change", save);
   rightSel.addEventListener("change", save);
 
+  const narrow = h("input", { type: "checkbox", id: "narrow-fallback" });
+  narrow.checked = cfg.narrowFallback;
+  narrow.addEventListener("change", () => act(raw => setNarrowFallback(raw, narrow.checked), ["notice_narrow_saved"]));
+
   const nodes = [h("div", { class: "pair-pickers" },
     h("label", null, ht("span", null, "common_left"), leftSel),
     ht("span", { class: "pair-sep", "aria-hidden": "true" }, "common_pair_separator"),
-    h("label", null, ht("span", null, "common_right"), rightSel))];
+    h("label", null, ht("span", null, "common_right"), rightSel)),
+  h("label", { class: "check-row" }, narrow, ht("span", null, "options_narrow_label")),
+  ht("p", { class: "hint" }, "options_narrow_hint")];
   const left = byId.get(l);
   if (left && !granted.get(left.id)) {
     nodes.push(h("div", { class: "callout callout-warn" },

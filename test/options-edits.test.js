@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { PRESETS, ID_PATTERN, isIdTaken } from "../src/lib/engines.js";
 import {
-  addEngine, editEngine, hideEngine, deleteEngine, restoreEngine, setDefaultPair, describeTemplate,
+  addEngine, editEngine, hideEngine, deleteEngine, restoreEngine, setDefaultPair, setNarrowFallback, describeTemplate,
 } from "../src/options/edits.js";
 
 const preset = (id) => PRESETS.find(p => p.id === id);
@@ -100,4 +100,9 @@ test("describeTemplate 返回 level 和消息 key", () => {
   assert.deepEqual(describeTemplate("https://x.com/s/%s"), { level: "warn", msg: ["engine_tpl_right_only"] });
   assert.deepEqual(describeTemplate(" https://x.com/?q=%s "), { level: "ok", msg: ["engine_tpl_ok"] });
   assert.deepEqual(describeTemplate("https://*.x.com/?q=%s"), { level: "error", msg: ["err_tpl_wildcard_host"] });
+});
+
+test("setNarrowFallback：补丁只含 narrowFallback", () => {
+  assert.deepEqual(setNarrowFallback({}, false), { ok: true, patch: { narrowFallback: false } });
+  assert.deepEqual(setNarrowFallback({ narrowFallback: false }, true).patch, { narrowFallback: true });
 });

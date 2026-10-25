@@ -248,3 +248,6 @@ dialog::backdrop { background: rgb(0 0 0 / 0.4); }
 .notice-error { border-left-color: var(--danger); }
 .notice-text { flex: 1; }
 .notice-close { font: inherit; font-size: 16px; line-height: 1; border: 0; background: none; color: var(--muted); cursor: pointer; padding: 0 2px; }
+
+.check-row { display: flex; align-items: flex-start; gap: 8px; margin-top: 12px; font-size: 13px; }
+.check-row input { margin-top: 2px; flex: none; }

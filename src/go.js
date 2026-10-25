@@ -54,8 +54,7 @@ async function gatherContext(engines) {
   return { tab, win, ...(await inspectTab(tab, engines)) };
 }
 
-// narrowEnabled 留给窄窗口降级，目前固定为 false
-async function split(engines, { left, right, query }, leftUrl, rightUrl) {
+async function split(engines, narrowEnabled, { left, right, query }, leftUrl, rightUrl) {
   const ctx = await gatherContext(engines);
   const action = decideSplit({
     windowType: ctx.win.type,
@@ -64,7 +63,7 @@ async function split(engines, { left, right, query }, leftUrl, rightUrl) {
     ownership: ctx.ownership,
   });
   const outcome = await ACTIONS[action]({
-    ...ctx, leftUrl, rightUrl, leftId: left.id, rightId: right.id, query, narrowEnabled: false,
+    ...ctx, leftUrl, rightUrl, leftId: left.id, rightId: right.id, query, narrowEnabled,
   });
   if (!outcome.leave) {
     location.replace(outcome.replaceWith);
@@ -85,8 +84,9 @@ async function main() {
   }
 
   let engines;
+  let narrowFallback;
   try {
-    ({ engines } = await loadConfig());
+    ({ engines, narrowFallback } = await loadConfig());
   } catch (err) {
     log("failed to read the config", err);
     const fallback = safeOriginal(original);
@@ -114,7 +114,7 @@ async function main() {
 
   try {
     const rightUrl = expandTemplate(right.url, query);
-    await split(engines, parsed, leftUrl, rightUrl);
+    await split(engines, narrowFallback, parsed, leftUrl, rightUrl);
   } catch (err) {
     log("split failed, opening the left side only", err);
     location.replace(leftUrl);

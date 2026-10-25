@@ -134,3 +134,9 @@ test("PRESETS: 只有 Perplexity 标了 leftDiscouraged（站点 SW 接管导航
   assert.equal(cfg.engines.find(e => e.id === "perplexity").leftDiscouraged, true);
   assert.equal(cfg.engines.find(e => e.id === "google").leftDiscouraged, undefined);
 });
+
+test("mergeConfig：narrowFallback 缺省或非 false 都是 true", () => {
+  assert.equal(mergeConfig({}).narrowFallback, true);
+  assert.equal(mergeConfig({ narrowFallback: false }).narrowFallback, false);
+  assert.equal(mergeConfig({ narrowFallback: "no" }).narrowFallback, true);
+});

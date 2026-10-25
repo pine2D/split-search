@@ -820,5 +820,17 @@
   "lang_name_es": {
     "message": "Español",
     "description": "Native name of Spanish in the language drop-down (本名，不要翻译): identical in every locale, do not translate."
+  },
+  "options_narrow_label": {
+    "message": "Si la ventana es estrecha, abrir el lado derecho en una pestaña en segundo plano",
+    "description": "Checkbox label in the default pair card. Narrow means the window is under 960 px wide."
+  },
+  "options_narrow_hint": {
+    "message": "Con menos de 960 px de ancho, la vista dividida queda muy apretada. La búsqueda izquierda se abre en esta pestaña y la derecha en la pestaña de al lado.",
+    "description": "Hint under the narrow-window checkbox. Split view is Chrome's feature name; keep the Chrome term."
+  },
+  "notice_narrow_saved": {
+    "message": "Ajuste de ventana estrecha guardado.",
+    "description": "Notice after toggling the narrow-window checkbox."
   }
 }

@@ -820,5 +820,17 @@
   "lang_name_es": {
     "message": "Español",
     "description": "Native name of Spanish in the language drop-down (本名，不要翻译): identical in every locale, do not translate."
+  },
+  "options_narrow_label": {
+    "message": "When the window is narrow, open the right side in a background tab",
+    "description": "Checkbox label in the default pair card. Narrow means the window is under 960 px wide."
+  },
+  "options_narrow_hint": {
+    "message": "Below 960 px wide, a split view is too cramped. The left search opens in this tab and the right one in a tab beside it.",
+    "description": "Hint under the narrow-window checkbox. Split view is Chrome's feature name; keep the Chrome term."
+  },
+  "notice_narrow_saved": {
+    "message": "Narrow-window setting saved.",
+    "description": "Notice after toggling the narrow-window checkbox."
   }
 }

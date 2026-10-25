@@ -12,6 +12,7 @@ function installChrome(fail = {}, extra = {}) {
   calls = [];
   let nextId = 100;
   let creates = 0;
+  const splitMade = new Set();
   const check = (name) => { if (fail[name] === true) throw new Error(`${name} failed`); };
   globalThis.chrome = {
     tabs: {
@@ -21,12 +22,15 @@ function installChrome(fail = {}, extra = {}) {
         if (typeof fail.create === "function" && fail.create(props, creates)) throw new Error("create failed");
         if (props.splitWithTabId === undefined) return { id: nextId++, index: props.index ?? 0, windowId: props.windowId, splitViewId: -1 };
         check("createSplit");
+        splitMade.add(nextId);
         return { id: nextId++, index: props.index ?? 0, windowId: props.windowId, splitViewId: extra.newSplitViewId ?? 55 };
       },
       // 复核用：返回 withTab 当前的 splitViewId，默认与新标签一致
       async get(id) {
         calls.push(["tabs.get", id]);
         check("get");
+        // 带 splitWithTabId 新建的标签：复核读到 newGetSplitViewId（默认等于创建时返回的值）
+        if (splitMade.has(id)) return { id, splitViewId: extra.newGetSplitViewId ?? extra.newSplitViewId ?? 55 };
         return { id, splitViewId: extra.getSplitViewId ?? 55 };
       },
       async update(id, props) { calls.push(["tabs.update", id, props]); check("update"); },
@@ -36,11 +40,11 @@ function installChrome(fail = {}, extra = {}) {
       async getLastFocused(opts) {
         calls.push(["windows.getLastFocused", opts]);
         check("getLastFocused");
-        return extra.lastFocused ?? { id: 7 };
+        return extra.lastFocused ?? { id: 7, width: 1400 };
       },
       async create(props) {
         calls.push(["windows.create", props]);
-        return { id: 8, tabs: [{ id: 50, index: 0, windowId: 8 }] };
+        return { id: 8, width: extra.createdWidth ?? 1400, tabs: [{ id: 50, index: 0, windowId: 8 }] };
       },
       async update(id, props) { calls.push(["windows.update", id, props]); check("focus"); },
     },
@@ -68,6 +72,7 @@ test("new：右侧新建并与当前标签分屏，复核后写两条 split 记�
   assert.deepEqual(calls, [
     ["tabs.create", { url: R, index: 4, windowId: 9, active: false, splitWithTabId: 1 }],
     ["tabs.get", 1],
+    ["tabs.get", 100],
     ["session.set", { "split:1": rec(100, "kagi"), "split:100": rec(1, "google") }],
   ]);
 });
@@ -172,6 +177,7 @@ test("foreign：在原分屏右侧新建一对并记录，再离开当前标签�
     ["tabs.create", { url: L, index: 4, windowId: 9, active: true }],
     ["tabs.create", { url: R, index: 5, windowId: 9, active: false, splitWithTabId: 100 }],
     ["tabs.get", 100],
+    ["tabs.get", 101],
     ["session.set", { "split:100": rec(101, "kagi"), "split:101": rec(100, "google") }],
     ["history.back"],
   ]);
@@ -216,6 +222,7 @@ test("other-window：在已有的普通窗口建一对、记录后把该窗口�
     ["tabs.create", { url: L, windowId: 7, active: true }],
     ["tabs.create", { url: R, index: 1, windowId: 7, active: false, splitWithTabId: 100 }],
     ["tabs.get", 100],
+    ["tabs.get", 101],
     ["session.set", { "split:100": rec(101, "kagi"), "split:101": rec(100, "google") }],
     ["windows.update", 7, { focused: true }],
   ]);
@@ -236,6 +243,7 @@ test("other-window：没有普通窗口时新建窗口，不再额外切前台",
     ["windows.create", { type: "normal", url: L }],
     ["tabs.create", { url: R, index: 1, windowId: 8, active: false, splitWithTabId: 50 }],
     ["tabs.get", 50],
+    ["tabs.get", 100],
     ["session.set", { "split:50": rec(100, "kagi"), "split:100": rec(50, "google") }],
   ]);
 });
@@ -244,4 +252,73 @@ test("other-window：复核失败（-1）时不写记录", async () => {
   installChrome({}, { lastFocused: { id: 7 }, getSplitViewId: -1 });
   await openInOtherWindow({ leftUrl: L, rightUrl: R, ...ids });
   assert.ok(!names().includes("session.set"));
+});
+
+test("createPaired：新标签复核读到 -1（其他一致）→ 返回 -1", async () => {
+  installChrome({}, { newGetSplitViewId: -1 });
+  assert.equal((await createPaired(R, { id: 1, index: 3, windowId: 9 })).splitViewId, -1);
+});
+
+test("createPaired：新标签复核读到不同的 splitViewId → 返回 -1", async () => {
+  installChrome({}, { newGetSplitViewId: 56 });
+  assert.equal((await createPaired(R, { id: 1, index: 3, windowId: 9 })).splitViewId, -1);
+});
+
+test("createPaired：复核同时读两个标签", async () => {
+  await createPaired(R, { id: 1, index: 3, windowId: 9 });
+  assert.deepEqual(calls.filter(c => c[0] === "tabs.get"), [["tabs.get", 1], ["tabs.get", 100]]);
+});
+
+test("new：窄窗口右侧不带 splitWithTabId，在后台相邻位置，写 adjacent 记录", async () => {
+  const out = await openNew({
+    tab: { id: 1, index: 3, windowId: 9 }, win: { width: 800 }, leftUrl: L, rightUrl: R, ...ids, narrowEnabled: true,
+  });
+  assert.deepEqual(out, { replaceWith: L });
+  const adj = { mode: "adjacent", splitViewId: -1 };
+  assert.deepEqual(calls, [
+    ["tabs.create", { url: R, index: 4, windowId: 9, active: false }],
+    ["session.set", { "split:1": rec(100, "kagi", adj), "split:100": rec(1, "google", adj) }],
+  ]);
+});
+
+test("new：窗口宽度 1200 或开关关闭时照常分屏", async () => {
+  await openNew({ tab: { id: 1, index: 3, windowId: 9 }, win: { width: 1200 }, leftUrl: L, rightUrl: R, ...ids, narrowEnabled: true });
+  assert.equal(calls[0][1].splitWithTabId, 1);
+  installChrome();
+  await openNew({ tab: { id: 1, index: 3, windowId: 9 }, win: { width: 500 }, leftUrl: L, rightUrl: R, ...ids, narrowEnabled: false });
+  assert.equal(calls[0][1].splitWithTabId, 1);
+});
+
+test("foreign：窄窗口新左侧在 maxIndex+1，右侧紧挨其后且不分屏，记 adjacent", async () => {
+  const tab = { id: 1, index: 2, windowId: 9 };
+  const out = await openForeign({
+    tab, win: { width: 700 }, splitTabs: [tab, { id: 2, index: 3, windowId: 9 }], leftUrl: L, rightUrl: R, ...ids, narrowEnabled: true,
+  });
+  assert.deepEqual(out, { leave: true });
+  const adj = { mode: "adjacent", splitViewId: -1 };
+  assert.deepEqual(calls, [
+    ["tabs.create", { url: L, index: 4, windowId: 9, active: true }],
+    ["tabs.create", { url: R, index: 5, windowId: 9, active: false }],
+    ["session.set", { "split:100": rec(101, "kagi", adj), "split:101": rec(100, "google", adj) }],
+  ]);
+});
+
+test("other-window：看目标窗口的宽度，窄则不分屏", async () => {
+  installChrome({}, { lastFocused: { id: 7, width: 800 } });
+  await openInOtherWindow({ leftUrl: L, rightUrl: R, ...ids, narrowEnabled: true });
+  const adj = { mode: "adjacent", splitViewId: -1 };
+  assert.deepEqual(calls[2], ["tabs.create", { url: R, index: 1, windowId: 7, active: false }]);
+  assert.deepEqual(calls[3], ["session.set", { "split:100": rec(101, "kagi", adj), "split:101": rec(100, "google", adj) }]);
+});
+
+test("other-window：新建窗口时看 windows.create 返回的宽度", async () => {
+  installChrome({ getLastFocused: true }, { createdWidth: 600 });
+  await openInOtherWindow({ leftUrl: L, rightUrl: R, ...ids, narrowEnabled: true });
+  assert.deepEqual(calls[2], ["tabs.create", { url: R, index: 1, windowId: 8, active: false }]);
+});
+
+test("other-window：目标窗口宽度读不到时照常分屏", async () => {
+  installChrome({}, { lastFocused: { id: 7 } });
+  await openInOtherWindow({ leftUrl: L, rightUrl: R, ...ids, narrowEnabled: true });
+  assert.equal(calls[2][1].splitWithTabId, 100);
 });

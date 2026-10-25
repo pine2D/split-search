@@ -820,5 +820,17 @@
   "lang_name_es": {
     "message": "Español",
     "description": "Native name of Spanish in the language drop-down (本名，不要翻译): identical in every locale, do not translate."
+  },
+  "options_narrow_label": {
+    "message": "視窗較窄時，右側改在背景分頁開啟",
+    "description": "Checkbox label in the default pair card. Narrow means the window is under 960 px wide."
+  },
+  "options_narrow_hint": {
+    "message": "視窗寬度低於 960 像素時，分割畫面會太擠：左側搜尋在目前分頁開啟，右側搜尋在旁邊的分頁開啟。",
+    "description": "Hint under the narrow-window checkbox. Split view is Chrome's feature name; keep the Chrome term."
+  },
+  "notice_narrow_saved": {
+    "message": "已儲存窄視窗設定。",
+    "description": "Notice after toggling the narrow-window checkbox."
   }
 }

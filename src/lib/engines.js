@@ -91,7 +91,8 @@ export function mergeConfig(stored = {}) {
       else pair = [...DEFAULT_PAIR];
     }
   }
-  return { engines, hidden, defaultPair: pair, uiLocale: normalizeLocalePref(stored.uiLocale) };
+  return { engines, hidden, defaultPair: pair, uiLocale: normalizeLocalePref(stored.uiLocale),
+    narrowFallback: stored.narrowFallback !== false };
 }
 
 export function isIdTaken(id, stored = {}) {
