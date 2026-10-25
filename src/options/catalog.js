@@ -1,6 +1,6 @@
 // 引擎库对话框：按分类列出条目，每条“名称 + 添加/已添加”。添加后的引擎与目录脱钩，是普通自定义引擎。
 import { CATALOG, CATEGORIES, isAdded } from "../lib/engine-catalog.js";
-import { h, ht } from "./ui.js";
+import { h, ht, focusedRow, restoreRowFocus } from "./ui.js";
 import { currentLocale, t } from "../chrome/i18n.js";
 
 let actionsRef = null;
@@ -32,26 +32,15 @@ function entryRow(entry, cfg) {
     button);
 }
 
-// 焦点在对话框的某一行里时，返回那一行的条目 id
-function focusedEntry(body) {
-  const row = document.activeElement?.closest?.("[data-entry]");
-  return row && body.contains(row) ? row.dataset.entry : null;
-}
-
 function renderBody(cfg) {
   const body = document.getElementById("catalog-body");
-  const want = focusEntry ?? focusedEntry(body);
+  const want = focusEntry ?? focusedRow(body);
   focusEntry = null;
   body.replaceChildren(...CATEGORIES.flatMap(cat => {
     const rows = CATALOG.filter(e => e.category === cat.id).map(e => entryRow(e, cfg));
     return rows.length ? [ht("h3", null, cat.key), h("ul", { class: "catalog-list" }, rows)] : [];
   }));
-  // 重建会丢掉焦点：按钮还能点就回到按钮上（例如添加失败），已添加（禁用）就停在这一行，Tab 从这里继续
-  const row = want ? [...body.querySelectorAll("[data-entry]")].find(r => r.dataset.entry === want) : null;
-  if (row) {
-    const button = row.querySelector("button");
-    (button && !button.disabled ? button : row).focus();
-  }
+  restoreRowFocus(body, want);
 }
 
 export function setupCatalogDialog(actions) {

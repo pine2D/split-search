@@ -1,15 +1,15 @@
 // 设置页“右键查询”卡片：查词引擎、以图搜图引擎的选择与列表，以及以图搜图的引擎库 / 新增对话框。
 // 没有授权按钮，也没有轮换开关（以图搜图引擎不经过 DNR，不进快捷键轮换）。
-import { h, ht, option, errorText } from "./ui.js";
+import { h, ht, option, clearFieldErrors, showFieldErrors, focusedRow, restoreRowFocus } from "./ui.js";
 import { IMAGE_PRESET, IMAGE_CATALOG } from "../lib/image-engines.js";
-import { engineById } from "../lib/engines.js";
+import { engineById, engineOrigin } from "../lib/engines.js";
 import { t } from "../chrome/i18n.js";
 
 const FOLLOW = "";
 const $ = (id) => document.getElementById(id);
 
 function originOf(engine) {
-  try { return new URL(engine.url.replace("%s", "x")).origin; } catch { return engine.url; }
+  try { return engineOrigin(engine); } catch { return engine.url; }
 }
 
 // cfg.lookupFollow：存储里没有可用的 lookupEngine，正在跟随默认组合的右侧（options.js 传入）
@@ -58,7 +58,8 @@ export function renderLookupCard(cfg, actions) {
 // ---- 以图搜图引擎库对话框 ----
 
 let lastCfg = null;
-const pending = new Set();
+const pending = new Set(); // 正在添加的条目：按钮保持禁用，连点也只发一次添加
+let focusEntry = null;     // 刚点过的条目：按钮一禁用焦点就丢了，重建列表后把焦点还给这一行（同 catalog.js）
 
 function catalogRow(entry, cfg, actions) {
   const added = cfg.imageEngines.some(e => e.url === entry.url);
@@ -68,18 +69,23 @@ function catalogRow(entry, cfg, actions) {
   button.addEventListener("click", () => {
     if (pending.has(entry.id)) return;
     pending.add(entry.id);
+    focusEntry = entry.id;
     button.disabled = true;
     Promise.resolve(actions.addImageFromCatalog(entry)).finally(() => pending.delete(entry.id));
   });
-  return h("li", { class: "catalog-row" },
+  return h("li", { class: "catalog-row", tabindex: "-1", "data-entry": entry.id },
     h("strong", { class: "catalog-name" }, entry.name), button);
 }
 
 let actionsRef = null;
 function renderCatalogBody() {
   if (!lastCfg || !actionsRef) return;
-  $("image-catalog-body").replaceChildren(
+  const body = $("image-catalog-body");
+  const want = focusEntry ?? focusedRow(body);
+  focusEntry = null;
+  body.replaceChildren(
     h("ul", { class: "catalog-list" }, IMAGE_CATALOG.map(e => catalogRow(e, lastCfg, actionsRef))));
+  restoreRowFocus(body, want);
 }
 
 // 每次渲染后调用：对话框开着就按最新配置刷新“添加 / 已添加”
@@ -90,20 +96,6 @@ export function refreshImageCatalog(cfg) {
 
 // ---- 新增对话框 ----
 
-function showErrors(form, errors) {
-  for (const el of form.querySelectorAll(".field-error")) { el.textContent = ""; el.hidden = true; }
-  let first = null;
-  for (const [name, err] of Object.entries(errors || {})) {
-    const msg = typeof err === "string" ? err : errorText(err);
-    const el = form.querySelector(`.field-error[data-for="${name}"]`);
-    if (!el) continue;
-    el.textContent = msg;
-    el.hidden = false;
-    first ??= form.elements[name];
-  }
-  first?.focus();
-}
-
 export function setupLookupDialogs(actions) {
   actionsRef = actions;
   const catalog = $("image-catalog-dialog");
@@ -113,20 +105,21 @@ export function setupLookupDialogs(actions) {
   $("lookup-body").addEventListener("click", (ev) => {
     const id = ev.target.closest?.("button")?.id;
     if (id === "image-catalog-open") { renderCatalogBody(); if (!catalog.open) catalog.showModal(); }
-    else if (id === "image-add-open") { form.reset(); showErrors(form, {}); dlg.showModal(); form.elements.name.focus(); }
+    else if (id === "image-add-open") { form.reset(); clearFieldErrors(form); dlg.showModal(); form.elements.name.focus(); }
   });
   $("image-catalog-close").addEventListener("click", () => catalog.close());
   $("image-cancel").addEventListener("click", () => dlg.close());
   form.addEventListener("submit", async (ev) => {
     ev.preventDefault();
+    clearFieldErrors(form);
     const save = $("image-save");
     save.disabled = true;
     try {
       const result = await actions.addImageEngine({ name: form.elements.name.value, url: form.elements.url.value });
       if (result.ok) dlg.close();
-      else showErrors(form, result.errors);
+      else showFieldErrors(form, result.errors);
     } catch (err) {
-      showErrors(form, { form: err });
+      showFieldErrors(form, { form: err });
     } finally {
       save.disabled = false;
     }

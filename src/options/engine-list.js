@@ -1,5 +1,5 @@
 // 引擎列表、已隐藏的预置引擎、新增 / 编辑对话框。
-import { h, ht, authButton, notify, errorText } from "./ui.js";
+import { h, ht, authButton, clearFieldErrors, showFieldErrors } from "./ui.js";
 import { canBeLeft, describeTemplate, isPresetId } from "./edits.js";
 import { PRESETS } from "../lib/engines.js";
 import { t, setI18nText } from "../chrome/i18n.js";
@@ -100,7 +100,7 @@ export function setupEngineDialog(actions) {
   form.addEventListener("submit", async (ev) => {
     ev.preventDefault();
     if (!dialogState) return;
-    clearErrors(form);
+    clearFieldErrors(form);
     const input = {
       id: field("id").value,
       name: field("name").value,
@@ -113,9 +113,9 @@ export function setupEngineDialog(actions) {
         ? await actions.add(input)
         : await actions.edit(dialogState.id, input);
       if (result.ok) dlg.close();
-      else showErrors(form, result.errors);
+      else showFieldErrors(form, result.errors, field);
     } catch (err) {
-      showErrors(form, { form: err });
+      showFieldErrors(form, { form: err }, field);
     } finally {
       save.disabled = false;
     }
@@ -126,7 +126,7 @@ export function openEngineDialog(mode, engine) {
   const dlg = document.getElementById("engine-dialog");
   const form = document.getElementById("engine-form");
   dialogState = { mode, id: engine?.id ?? null };
-  clearErrors(form);
+  clearFieldErrors(form);
   const isEdit = mode === "edit";
   // 按模式写不同 key：切换语言时 applyI18n 按当前 key 和参数重写，不会改回“新增”或丢引擎名
   if (isEdit) setI18nText(document.getElementById("dlg-title"), "options_dlg_title_edit", engine.name);
@@ -160,37 +160,8 @@ function showTemplateHint(url) {
   el.className = `hint hint-${d.level}`;
 }
 
-function clearErrors(form) {
-  for (const el of form.querySelectorAll(".field-error")) {
-    el.textContent = "";
-    el.hidden = true;
-  }
-  for (const el of form.querySelectorAll("[aria-invalid]")) el.removeAttribute("aria-invalid");
-}
-
 function clearI18nText(el) {
   el.textContent = "";
   el.removeAttribute("data-i18n");
   el.removeAttribute("data-i18n-args");
-}
-
-// errors 的值是 ErrorSpec（edits.js）、异常，或调用方已用 t() 算好的句子
-function showErrors(form, errors) {
-  let first = null;
-  for (const [name, spec] of Object.entries(errors || {})) {
-    const msg = typeof spec === "string" ? spec : errorText(spec);
-    const el = form.querySelector(`.field-error[data-for="${name}"]`);
-    if (!el) {
-      notify(msg, "error");
-      continue;
-    }
-    el.textContent = msg;
-    el.hidden = false;
-    const input = field(name);
-    if (input) {
-      input.setAttribute("aria-invalid", "true");
-      first ??= input;
-    }
-  }
-  first?.focus();
 }
