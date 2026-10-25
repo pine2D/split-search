@@ -1,7 +1,8 @@
 // 设置页的纯逻辑：校验表单输入，根据原始存储（loadRaw 的结果）算出要写回的整键补丁。
 // 不碰 chrome.* 和 DOM，方便在 node 里单独验证。
 // 失败时只返回错误码（见 lib/errors.js），由页面翻译成当前语言。
-import { PRESETS, ID_PATTERN, validateTemplate, mergeConfig, isIdTaken } from "../lib/engines.js";
+import { PRESETS, ID_PATTERN, validateTemplate, mergeConfig, isIdTaken, engineOrigin } from "../lib/engines.js";
+import { catalogUrl, uniqueId, isAdded } from "../lib/engine-catalog.js";
 import { spec, fail, errorKey } from "../lib/errors.js";
 
 export const NAME_MAX = 40;
@@ -45,6 +46,15 @@ export function addEngine(raw, input) {
   return { ok: true, engine, patch: { customEngines: [...(raw.customEngines || []), engine] } };
 }
 
+// 解析失败视为不同
+function sameOrigin(a, b) {
+  try {
+    return engineOrigin({ url: a }) === engineOrigin({ url: b });
+  } catch {
+    return false;
+  }
+}
+
 export function editEngine(raw, id, input) {
   const { errors, name, url, v } = checkFields(input);
   const preset = presetOf(id);
@@ -71,10 +81,27 @@ export function editEngine(raw, id, input) {
   } else {
     before = customs[idx].url;
     const list = customs.slice();
-    list[idx] = { ...customs[idx], name, url };
+    const next = { ...customs[idx], name, url };
+    if (next.leftDiscouraged && !sameOrigin(before, url)) delete next.leftDiscouraged;
+    list[idx] = next;
     patch = { customEngines: list };
   }
   return { ok: true, patch, engine: { id, name, url }, templateChanged: before !== url };
+}
+
+// 引擎库条目复制成一条自定义引擎，加到显示顺序末尾；ai 条目同时排除出快捷键轮换
+export function addFromCatalog(raw, entry, locale) {
+  const { engines } = mergeConfig(raw);
+  if (isAdded(entry, locale, engines)) return fail("catalog_already_added", entry.name);
+  const engine = {
+    id: uniqueId(entry.id, id => isIdTaken(id, raw)),
+    name: entry.name,
+    url: catalogUrl(entry, locale),
+    ...(entry.leftDiscouraged ? { leftDiscouraged: true } : {}),
+  };
+  const patch = { customEngines: [...(raw.customEngines || []), engine] };
+  if (entry.ai) patch.cycleExclude = [...(raw.cycleExclude || []), engine.id];
+  return { ok: true, engine, patch };
 }
 
 function inDefaultPair(raw, id) {

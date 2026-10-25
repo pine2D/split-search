@@ -62,7 +62,11 @@ export function mergeConfig(stored = {}) {
     if (o.url) e.url = o.url;
     if (o.hidden) hidden.push(e); else all.push(e);
   }
-  for (const c of customEngines) all.push({ ...c });
+  for (const c of customEngines) {
+    const e = { id: c.id, name: c.name, url: c.url };
+    if (c.leftDiscouraged === true) e.leftDiscouraged = true;
+    all.push(e);
+  }
 
   const byId = new Map(all.map(e => [e.id, e]));
   const engines = [];

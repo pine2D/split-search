@@ -1,8 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { PRESETS, ID_PATTERN, isIdTaken } from "../src/lib/engines.js";
+import { PRESETS, ID_PATTERN, isIdTaken, mergeConfig } from "../src/lib/engines.js";
+import { CATALOG } from "../src/lib/engine-catalog.js";
 import {
-  addEngine, editEngine, hideEngine, deleteEngine, restoreEngine, setDefaultPair, setNarrowFallback, describeTemplate,
+  addEngine, editEngine, hideEngine, deleteEngine, restoreEngine, setDefaultPair, setNarrowFallback, describeTemplate, addFromCatalog,
 } from "../src/options/edits.js";
 
 const preset = (id) => PRESETS.find(p => p.id === id);
@@ -105,4 +106,47 @@ test("describeTemplate 返回 level 和消息 key", () => {
 test("setNarrowFallback：补丁只含 narrowFallback", () => {
   assert.deepEqual(setNarrowFallback({}, false), { ok: true, patch: { narrowFallback: false } });
   assert.deepEqual(setNarrowFallback({ narrowFallback: false }, true).patch, { narrowFallback: true });
+});
+
+const yt = CATALOG.find(e => e.id === "youtube");
+
+test("addFromCatalog：追加自定义引擎并带上 leftDiscouraged", () => {
+  const r = addFromCatalog({}, yt, "en");
+  assert.equal(r.ok, true);
+  assert.deepEqual(r.engine, { id: "youtube", name: "YouTube", url: "https://www.youtube.com/results?search_query=%s", leftDiscouraged: true });
+  assert.deepEqual(r.patch.customEngines, [r.engine]);
+  assert.equal("cycleExclude" in r.patch, false);
+});
+
+test("addFromCatalog：重复添加报 catalog_already_added", () => {
+  const first = addFromCatalog({}, yt, "en");
+  const again = addFromCatalog({ customEngines: first.patch.customEngines }, yt, "en");
+  assert.equal(again.ok, false);
+  assert.deepEqual(again.error, { code: "catalog_already_added", args: ["YouTube"] });
+});
+
+test("addFromCatalog：id 被占用时加后缀；不带 leftDiscouraged 的条目不写该字段", () => {
+  const gh = CATALOG.find(e => e.id === "github");
+  const raw = { customEngines: [{ id: "github", name: "mine", url: "https://x.example/?q=%s" }] };
+  const r = addFromCatalog(raw, gh, "en");
+  assert.equal(r.engine.id, "github-2");
+  assert.equal("leftDiscouraged" in r.engine, false);
+  assert.equal(r.patch.customEngines.length, 2);
+});
+
+test("addFromCatalog：ai 条目写进 cycleExclude（合成条目）", () => {
+  const ai = { id: "fakeai", name: "FakeAI", url: "https://ai.example/?q=%s", category: "ai", ai: true };
+  const r = addFromCatalog({ cycleExclude: ["x"] }, ai, "en");
+  assert.deepEqual(r.patch.cycleExclude, ["x", "fakeai"]);
+  assert.deepEqual(addFromCatalog({}, ai, "en").patch.cycleExclude, ["fakeai"]);
+});
+
+test("editEngine：模板 origin 变了就去掉 leftDiscouraged，没变则保留", () => {
+  const raw = addFromCatalog({}, yt, "en").patch;
+  const moved = editEngine(raw, "youtube", { name: "YouTube", url: "https://example.org/?q=%s" });
+  assert.equal(moved.ok, true);
+  assert.equal("leftDiscouraged" in moved.patch.customEngines[0], false);
+  const same = editEngine(raw, "youtube", { name: "YT", url: "https://www.youtube.com/results?q=%s" });
+  assert.equal(same.patch.customEngines[0].leftDiscouraged, true);
+  assert.equal(mergeConfig({ ...raw, ...moved.patch }).engines.find(e => e.id === "youtube").leftDiscouraged, undefined);
 });

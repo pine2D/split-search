@@ -140,3 +140,16 @@ test("mergeConfig：narrowFallback 缺省或非 false 都是 true", () => {
   assert.equal(mergeConfig({ narrowFallback: false }).narrowFallback, false);
   assert.equal(mergeConfig({ narrowFallback: "no" }).narrowFallback, true);
 });
+
+test("mergeConfig 清洗自定义引擎：leftDiscouraged 只认 true，丢掉其他字段", () => {
+  const base = { id: "a", name: "A", url: "https://a.example/?q=%s" };
+  const { engines } = mergeConfig({ customEngines: [
+    { ...base, id: "a", leftDiscouraged: "yes", junk: 1 },
+    { ...base, id: "b", leftDiscouraged: true },
+    { ...base, id: "c" },
+  ] });
+  const get = id => engines.find(e => e.id === id);
+  assert.deepEqual(get("a"), base);
+  assert.deepEqual(get("b"), { ...base, id: "b", leftDiscouraged: true });
+  assert.deepEqual(get("c"), { ...base, id: "c" });
+});

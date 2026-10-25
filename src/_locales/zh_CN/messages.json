@@ -832,5 +832,47 @@
   "notice_narrow_saved": {
     "message": "已保存窄窗口设置。",
     "description": "Notice after toggling the narrow-window checkbox."
+  },
+  "catalog_cat_translate": {
+    "message": "翻译",
+    "description": "Category heading in the engine catalog dialog: Translation."
+  },
+  "catalog_cat_reference": {
+    "message": "百科与词典",
+    "description": "Category heading in the engine catalog dialog: Reference."
+  },
+  "catalog_cat_video": {
+    "message": "视频",
+    "description": "Category heading in the engine catalog dialog: Video."
+  },
+  "catalog_cat_dev": {
+    "message": "开发",
+    "description": "Category heading in the engine catalog dialog: Development."
+  },
+  "catalog_cat_maps": {
+    "message": "地图",
+    "description": "Category heading in the engine catalog dialog: Maps."
+  },
+  "catalog_cat_academic": {
+    "message": "学术",
+    "description": "Category heading in the engine catalog dialog: Academic."
+  },
+  "catalog_cat_shopping": {
+    "message": "购物",
+    "description": "Category heading in the engine catalog dialog: Shopping."
+  },
+  "catalog_cat_chinese": {
+    "message": "中文",
+    "description": "Category heading in the engine catalog dialog: Chinese web."
+  },
+  "err_catalog_already_added": {
+    "message": "“$NAME$”已经在你的引擎里了。",
+    "description": "Error when adding a catalog engine that already exists. $NAME$ is the engine name.",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "YouTube"
+      }
+    }
   }
 }

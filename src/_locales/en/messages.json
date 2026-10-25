@@ -832,5 +832,47 @@
   "notice_narrow_saved": {
     "message": "Narrow-window setting saved.",
     "description": "Notice after toggling the narrow-window checkbox."
+  },
+  "catalog_cat_translate": {
+    "message": "Translation",
+    "description": "Category heading in the engine catalog dialog: Translation."
+  },
+  "catalog_cat_reference": {
+    "message": "Reference",
+    "description": "Category heading in the engine catalog dialog: Reference."
+  },
+  "catalog_cat_video": {
+    "message": "Video",
+    "description": "Category heading in the engine catalog dialog: Video."
+  },
+  "catalog_cat_dev": {
+    "message": "Development",
+    "description": "Category heading in the engine catalog dialog: Development."
+  },
+  "catalog_cat_maps": {
+    "message": "Maps",
+    "description": "Category heading in the engine catalog dialog: Maps."
+  },
+  "catalog_cat_academic": {
+    "message": "Academic",
+    "description": "Category heading in the engine catalog dialog: Academic."
+  },
+  "catalog_cat_shopping": {
+    "message": "Shopping",
+    "description": "Category heading in the engine catalog dialog: Shopping."
+  },
+  "catalog_cat_chinese": {
+    "message": "Chinese web",
+    "description": "Category heading in the engine catalog dialog: Chinese web."
+  },
+  "err_catalog_already_added": {
+    "message": "$NAME$ is already in your engines.",
+    "description": "Error when adding a catalog engine that already exists. $NAME$ is the engine name.",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "YouTube"
+      }
+    }
   }
 }
