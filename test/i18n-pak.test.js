@@ -42,7 +42,10 @@ test("本机 Chrome 155 的 zh-CN 把 Split view 译作拆分视图", (t) => {
   assert.ok(ids.some((id) => zh.get(id)?.toString("utf8") === "拆分视图"));
 });
 
-test("术语表含键盘快捷键；本机 Chrome 的快捷键页标题与项目文案一致", (t) => {
+// Chrome 快捷键页（chrome://extensions/shortcuts）的页名，以术语表为准
+const SHORTCUTS_PAGE = { en: "Keyboard shortcuts", zh_CN: "键盘快捷键", zh_TW: "鍵盤快速鍵", es: "Accesos directos" };
+
+test("术语表含键盘快捷键；本机 Chrome 的快捷键页标题与术语表一致", (t) => {
   const term = TERMS.find(x => x.id === "keyboard-shortcuts");
   assert.ok(term && term.en.test("Keyboard shortcuts") && term.en.test("Keyboard shortcut"));
   const dir = "/opt/google/chrome/locales";
@@ -50,6 +53,14 @@ test("术语表含键盘快捷键；本机 Chrome 的快捷键页标题与项目
   const [en, zhCN, zhTW, es] = ["en-US", "zh-CN", "zh-TW", "es"].map(l => parsePak(readFileSync(`${dir}/${l}.pak`)));
   const ids = findIds(en, /^Keyboard shortcuts$/);
   assert.ok(ids.length > 0);
-  const want = [[zhCN, "键盘快捷键"], [zhTW, "鍵盤快速鍵"], [es, "Accesos directos"]];
+  const want = [[zhCN, SHORTCUTS_PAGE.zh_CN], [zhTW, SHORTCUTS_PAGE.zh_TW], [es, SHORTCUTS_PAGE.es]];
   for (const [pak, text] of want) assert.ok(ids.some(id => pak.get(id)?.toString("utf8") === text), text);
+});
+
+test("设置页快捷键说明里的 Chrome 页名与术语表一致（4 种语言）", () => {
+  for (const [locale, page] of Object.entries(SHORTCUTS_PAGE)) {
+    const url = new URL(`../src/_locales/${locale}/messages.json`, import.meta.url);
+    const hint = JSON.parse(readFileSync(url, "utf8")).options_shortcut_hint.message;
+    assert.ok(hint.includes(page), `${locale}: ${hint}`);
+  }
 });

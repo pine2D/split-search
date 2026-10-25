@@ -1,6 +1,6 @@
 # Chrome 术语表
 
-- Chrome 版本：155.0.8059.84（`/opt/google/chrome/google-chrome --version`）
+- Chrome 版本：156.0.8078.47（`/opt/google/chrome/google-chrome --version`；2026-10-25 重新生成，首版取自 155.0.8059.84）
 - 生成命令：`node scripts/i18n/chrome-terms.mjs [--chrome-dir /opt/google/chrome]`（读 `locales/*.pak`，以 en-US 原文为锚对齐资源 id，去掉 `&` 加速键标记）
 - 生成日期：2026-10-24；2026-10-25 用 Chrome 156.0.8078.47 重新生成，原有各行结果不变，新增“键盘快捷键”一行（`chrome://extensions/shortcuts` 页标题，资源 8097；单数 Keyboard shortcut 另有 2116/6866/6906，zh-CN、zh-TW、es 相同，es-419 为 Combinación de teclas）。
 - 用途：各语言的功能术语与 Chrome 对应语言界面一字不差，以本表为准。
