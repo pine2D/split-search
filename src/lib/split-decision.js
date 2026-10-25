@@ -3,17 +3,10 @@ export function sideOf(tabIndex, peerIndex) {
   return tabIndex < peerIndex ? "left" : "right";
 }
 
-export function decideSplit({ windowType, splitViewId, peer, recordedPeerId, engineOrigins }) {
+// ownership 来自 split-owner.js 的 judgeOwnership
+export function decideSplit({ windowType, splitViewId, peer, ownership }) {
   if (windowType !== "normal") return "other-window";
-  if (splitViewId === -1) return "new";
+  if (splitViewId === -1) return ownership === "own" ? "reuse" : "new";
   if (peer == null) return "foreign";
-  if (recordedPeerId !== undefined && recordedPeerId === peer.id) return "reuse";
-  if (typeof peer.url === "string") {
-    try {
-      if (engineOrigins.includes(new URL(peer.url).origin)) return "reuse";
-    } catch {
-      // 无法解析：按其他分屏处理
-    }
-  }
-  return "foreign";
+  return ownership === "own" || ownership === "fallback-own" ? "reuse" : "foreign";
 }
