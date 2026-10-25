@@ -20,22 +20,33 @@ const htmlLang = locale => locale.replace("_", "-");
 const J = JSON.stringify;
 
 // 页面自查：lang、文字仍是 key 的 [data-i18n]、页面横向溢出、按钮/label 内容溢出
-const AUDIT = `(() => {
+// 页面自查：原样显示的 key、横向溢出、元素内容溢出。scope 把查找限制在某个容器里（选择器前缀，带空格）；
+// items 是逐个查内容溢出的元素；box 给出时横向溢出改看这个元素自己（scrollWidth > clientWidth），
+// 用于对话框和弹窗：弹窗当作标签页打开时窗口比它宽，比 innerWidth 看不出溢出。
+const audit = ({ scope = "", items = "button, label", box = null } = {}) => `(() => {
   const keyLike = /^[a-z]+_[a-z0-9_]+$/;
-  const raw = [...document.querySelectorAll("[data-i18n]")]
+  const all = sel => [...document.querySelectorAll(sel.split(",").map(x => ${J(scope)} + x.trim()).join(", "))];
+  const raw = all("[data-i18n]")
     .map(el => ({ key: el.getAttribute("data-i18n"), text: el.textContent.trim() }))
     .filter(x => x.text === x.key || keyLike.test(x.text));
-  const tight = [...document.querySelectorAll("button, label")].filter(el => el.scrollWidth > el.clientWidth + 1)
+  const tight = all(${J(items)}).filter(el => el.scrollWidth > el.clientWidth + 1)
     .map(el => ({ tag: el.tagName.toLowerCase(), key: el.getAttribute("data-i18n") || el.id || el.className, sw: el.scrollWidth, cw: el.clientWidth }));
-  return { lang: document.documentElement.lang, scrollWidth: document.documentElement.scrollWidth, innerWidth, raw, tight };
+  const b = ${box ? `document.querySelector(${J(box)})` : "null"};
+  return { lang: document.documentElement.lang, box: ${J(box)},
+    scrollWidth: b ? b.scrollWidth : document.documentElement.scrollWidth, innerWidth: b ? b.clientWidth : innerWidth, raw, tight };
 })()`;
+const AUDIT = audit();
+const POPUP_AUDIT = audit({ box: "body" });
 
 // 纯逻辑：a = AUDIT 的结果，返回问题列表（空 = 通过）
 export function auditProblems(locale, a) {
   const out = [];
   if (a.lang !== htmlLang(locale)) out.push(`lang 应为 ${htmlLang(locale)}，实际 ${a.lang}`);
   for (const r of a.raw) out.push(`[data-i18n="${r.key}"] 显示的是 key 样的文字“${r.text}”`);
-  if (a.scrollWidth > a.innerWidth) out.push(`页面横向溢出：scrollWidth ${a.scrollWidth} > innerWidth ${a.innerWidth}`);
+  if (a.scrollWidth > a.innerWidth) {
+    out.push(a.box ? `${a.box} 横向溢出：scrollWidth ${a.scrollWidth} > clientWidth ${a.innerWidth}`
+      : `页面横向溢出：scrollWidth ${a.scrollWidth} > innerWidth ${a.innerWidth}`);
+  }
   for (const t of a.tight) out.push(`${t.tag}（${t.key}）内容溢出：scrollWidth ${t.sw} > clientWidth ${t.cw} + 1`);
   return out;
 }
@@ -103,8 +114,7 @@ async function openPopup(ctx, locale, tabId) {
 const bodyClip = page => page.ev(`(() => { const r = document.body.getBoundingClientRect(); return { x: 0, y: 0, width: Math.ceil(r.width), height: Math.ceil(r.height), scale: 1 }; })()`);
 
 // 引擎库对话框：在已打开的设置页里打开，自查对话框里的文字与溢出、截图，再关掉
-const CATALOG_AUDIT = AUDIT.replace(`document.querySelectorAll("[data-i18n]")`, `document.querySelectorAll("#catalog-dialog [data-i18n]")`)
-  .replace(`document.querySelectorAll("button, label")`, `document.querySelectorAll("#catalog-dialog button, #catalog-dialog label")`);
+const CATALOG_AUDIT = audit({ scope: "#catalog-dialog ", items: "button, label, .catalog-name, .catalog-row", box: "#catalog-dialog" });
 async function catalogDialog(ctx, opt, locale) {
   await waitPage(opt, `(() => { document.getElementById("catalog-open").click(); const d = document.getElementById("catalog-dialog");
     return d.open && d.querySelectorAll(".catalog-row").length > 0
@@ -131,7 +141,7 @@ async function perLocale(ctx, locale, pairTab) {
   let pop = null;
   try {
     pop = await openPopup(ctx, locale, pairTab);
-    problems.push(...auditProblems(locale, await pop.ev(AUDIT)).map(p => `弹窗：${p}`));
+    problems.push(...auditProblems(locale, await pop.ev(POPUP_AUDIT)).map(p => `弹窗：${p}`));
     shots.push(await shoot(ctx, pop, join(SHOT_DIR, `${locale}-popup.png`), { clip: await bodyClip(pop) }));
   } catch (e) { problems.push(`弹窗：${e.message}`); }
   finally { await pop?.close(); }

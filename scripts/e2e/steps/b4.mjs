@@ -10,8 +10,8 @@ import { L } from "./labels.mjs";
 
 export const GB_ORIGINS = ["https://www.google.com/*", "https://www.bing.com/*"];
 
-// 页面里：记录 chrome.permissions.request 的调用（只记 origins），原样转给 Chrome
-const RECORD = `(() => {
+// 页面里：记录 chrome.permissions.request 的调用（只记 origins），原样转给 Chrome。B16(b) 也用它断言“添加不申请权限”
+export const RECORD = `(() => {
   if (!globalThis.__e2eReq) {
     globalThis.__e2eReq = [];
     const orig = chrome.permissions.request.bind(chrome.permissions);

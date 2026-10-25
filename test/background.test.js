@@ -57,17 +57,20 @@ globalThis.chrome = {
       return Object.values(state.tabs).filter(t =>
         q.splitViewId !== undefined ? t.splitViewId === q.splitViewId : t.active === q.active && t.windowId === q.windowId);
     },
-    async update(id, props) { state.calls.push(["tabs.update", id, props]); return { id, ...props }; },
+    async update(id, props) {
+      state.calls.push(["tabs.update", id, props]);
+      if (state.updateFails) throw new Error("No tab with id: 11.");
+      return { id, ...props };
+    },
   },
 };
 reset();
 await import("../src/background.js");
 
+// 监听器返回处理完成的 promise（其他命令名返回 undefined），直接等它
 async function press(name = "cycle-right") {
   assert.equal(listeners["commands.onCommand"].length, 1);
-  listeners["commands.onCommand"][0](name);
-  // cycleRight 不返回给监听器；等它跑完
-  for (let i = 0; i < 20; i++) await new Promise(r => setImmediate(r));
+  await listeners["commands.onCommand"][0](name);
 }
 const updates = () => state.calls.filter(c => c[0] === "tabs.update");
 
@@ -134,4 +137,13 @@ test("其他命令名被忽略", async () => {
 
 test("有 action.default_popup 时 SW 不再监听 action.onClicked（点图标打开弹窗，设置页从弹窗进入）", () => {
   assert.equal(listeners["action.onClicked"], undefined);
+});
+
+test("cycle-right：换右侧时 tabs.update 抛错 → 只记 [split-search] 日志，不抛出监听器，记录不改", async () => {
+  state.updateFails = true;
+  await press();
+  assert.equal(updates().length, 1);
+  assert.equal(console.error.mock.callCount(), 1);
+  assert.equal(console.error.mock.calls[0].arguments[0], "[split-search]");
+  assert.equal(state.session.get("split:11").engine, "bing");
 });

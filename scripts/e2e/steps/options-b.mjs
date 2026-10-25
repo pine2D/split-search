@@ -1,6 +1,6 @@
 // 设置页自动步骤（一）：B2（工具栏图标出现弹窗）B3 B6 B7 B8 B10 B11
 import { EXT_ID } from "../config.mjs";
-import { pageTargets } from "./util.mjs";
+import { pageTargets, siteX, nonce } from "./util.mjs";
 import { POPUP_URL, popupPage } from "./v03-popup.mjs";
 import {
   withOptions, fillDialog, dialogState, closeDialog,
@@ -11,8 +11,36 @@ import { msg } from "../i18n.mjs";
 // 有 action.default_popup 时，Extensions.triggerAction（只接受 tab 目标）会出现 type "page"、网址为 popup.html 的目标（Task 8 实测）
 const popupTargets = async browser => (await pageTargets(browser)).filter(t => t.url.startsWith(POPUP_URL));
 
+const OPTIONS_PREFIX = `chrome-extension://${EXT_ID}/options/`;
+
+// 弹窗里的“打开设置页”：openOptionsPage 在已有设置页时只把它切到前台、不新开。所以先让设置页标签都退到后台
+// （在它所在的窗口里新开一个 site-x 标签），再点按钮：出现新的设置页目标，或某个设置页标签回到前台，都算打开了。
+// 返回 { problems, how }（how："new" 新开了设置页 | "activated" 已有的设置页回到前台）
+async function openOptionsFromPopup(ctx, page) {
+  const J = JSON.stringify;
+  const blank = siteX(ctx.port, `/b2-open-options?n=${nonce()}`);
+  await ctx.ext.eval(`(async () => {
+    for (const t of await chrome.tabs.query({ active: true })) {
+      if (t.url?.startsWith(${J(OPTIONS_PREFIX)})) await chrome.tabs.create({ windowId: t.windowId, url: ${J(blank)}, active: true });
+    }
+    return true;
+  })()`);
+  const optionTargets = async () => (await pageTargets(ctx.browser)).filter(t => t.url.startsWith(OPTIONS_PREFIX));
+  const before = new Set((await optionTargets()).map(t => t.targetId));
+  const activeOptions = `chrome.tabs.query({ active: true }).then(ts => ts.some(t => t.url?.startsWith(${J(OPTIONS_PREFIX)})))`;
+  if (await ctx.ext.eval(activeOptions)) return { problems: ["没能先把设置页标签切到后台，无法判断“打开设置页”是否生效"] };
+  if (!(await page.ev(`(() => { const b = document.getElementById("open-options"); if (!b) return false; b.click(); return true; })()`))) {
+    return { problems: ["弹窗里找不到“打开设置页”按钮"] };
+  }
+  const how = await ctx.browser.waitFor(async () => {
+    if ((await optionTargets()).some(t => !before.has(t.targetId))) return "new";
+    return (await ctx.ext.eval(activeOptions)) && "activated";
+  }, { timeoutMs: 10000, intervalMs: 200 }).catch(() => null);
+  return { how, problems: how ? [] : ["点弹窗的“打开设置页”后 10 秒内既没有新的设置页，也没有设置页回到前台"] };
+}
+
 const B2 = {
-  id: "B2", title: "点工具栏图标出现弹窗", kind: "auto", needs: [],
+  id: "B2", title: "点工具栏图标出现弹窗，弹窗里的“打开设置页”能打开设置页", kind: "auto", needs: [],
   async run(ctx) {
     const { browser } = ctx;
     // triggerAction 只接受 tab 目标：取一个非扩展页的 tab（没有就新建 about:blank）
@@ -34,7 +62,9 @@ const B2 = {
     try {
       const s = await page.read().catch(e => ({ err: e.message }));
       if (s.err) return { status: "fail", detail: `出现了弹窗页 ${t.url}，但 10 秒内没有渲染完（${s.err}）` };
-      return { status: "pass", detail: `触发图标动作后出现弹窗页 ${t.url}，已渲染（${s.ours ? `本扩展的一对：${s.left} ｜ ${s.right}` : `说明文字“${s.notOursText}”`}）` };
+      const { problems: p, how } = await openOptionsFromPopup(ctx, page);
+      if (p.length) return { status: "fail", detail: `弹窗已渲染，但${p.join("；")}` };
+      return { status: "pass", detail: `触发图标动作后出现弹窗页 ${t.url}，已渲染（${s.ours ? `本扩展的一对：${s.left} ｜ ${s.right}` : `说明文字“${s.notOursText}”`}）；点“打开设置页”后${how === "new" ? "新开了设置页" : "已有的设置页回到前台"}` };
     } finally { await page.close(); }
   },
 };

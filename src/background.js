@@ -55,6 +55,8 @@ chrome.permissions.onRemoved.addListener(rebuildRules);
 // 点工具栏图标打开 action.default_popup（有弹窗时 action.onClicked 不再触发），设置页从弹窗进入。
 // 标签关闭时删掉它的分屏记录；对侧记录只有指回它时才删。clearPair 自己吞掉错误。
 chrome.tabs.onRemoved.addListener((tabId) => { clearPair(tabId); });
+// 返回处理完成的 promise（Chrome 不用这个返回值），测试据此等它跑完
 chrome.commands.onCommand.addListener((command) => {
-  if (command === "cycle-right") cycleRight().catch(err => log("cycle-right failed", err));
+  if (command !== "cycle-right") return undefined;
+  return cycleRight().catch(err => log("cycle-right failed", err));
 });

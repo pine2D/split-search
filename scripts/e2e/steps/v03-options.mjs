@@ -6,6 +6,7 @@ import { openOptions, guarded, keySel } from "./optpage.mjs";
 import { summarize } from "./util.mjs";
 import { sub, verdict } from "./v03-lib.mjs";
 import { COMMAND, TEST_KEYS, bindShortcut, clearShortcut, restoreShortcut } from "../ext-shortcuts.mjs";
+import { RECORD } from "./b4.mjs";
 
 const J = JSON.stringify;
 export const ITEM_LIMIT = 8192; // chrome.storage.sync 单项上限（键名 + JSON 值），同 src/chrome/config-store.js
@@ -41,8 +42,9 @@ const CATALOG_STATE = `const d = document.getElementById("catalog-dialog");
     })),
     raw: [...d.querySelectorAll("[data-i18n]")].map(el => ({ key: el.getAttribute("data-i18n"), text: el.textContent.trim() }))
       .filter(x => x.text === x.key || keyLike.test(x.text)) };`;
-const clickAdd = name => `const r = [...document.querySelectorAll("#catalog-dialog .catalog-row")].find(r => r.querySelector(".catalog-name").textContent === ${J(name)});
-  const b = r?.querySelector("button"); if (!b || b.disabled) return false; b.click(); return true;`;
+// times > 1 时同步连点（模拟双击）：第一次点击就应禁用按钮，后面的点击不再发起添加
+const clickAdd = (name, times = 1) => `const r = [...document.querySelectorAll("#catalog-dialog .catalog-row")].find(r => r.querySelector(".catalog-name").textContent === ${J(name)});
+  const b = r?.querySelector("button"); if (!b || b.disabled) return false; b.focus(); for (let i = 0; i < ${times}; i++) b.click(); return true;`;
 const notices = `return [...document.querySelectorAll("#notices .notice")].map(n => ({ kind: n.className, text: n.querySelector(".notice-text").textContent }));`;
 
 // 纯逻辑：对话框的内容与引擎库数据核对（没有添加过任何条目时）。返回问题列表
@@ -86,30 +88,40 @@ const render = ctx => sub("(a) 引擎库对话框：逐个分类渲染、条目�
 
 // 添加一个非 AI、还没授权的条目（Bilibili：search.bilibili.com 不在一次性授权的 origin 里）
 const ADD = CATALOG.find(e => e.id === "bilibili");
-const addOne = ctx => sub(`(b) 添加 ${ADD.name}：在引擎列表末尾，对话框显示“已添加”，没有“需授权”的持久警告`, () => withPage(ctx, async page => {
+const addOne = ctx => sub(`(b) 连点两次添加 ${ADD.name}：只加一次、在引擎列表末尾，对话框显示“已添加”，不申请权限，没有“需授权”的持久警告`, () => withPage(ctx, async page => {
   const before = await storedCustom(ctx);
+  // 引擎库条目按右侧用途处理：添加时不申请任何权限（chrome.permissions.request 调用次数应为 0）
+  if (!(await page.run(`return ${RECORD};`))) return { status: "fail", detail: "chrome.permissions.request 的记录器没装上" };
   await page.until(OPEN_CATALOG);
-  if (!(await page.run(clickAdd(ADD.name)))) return { status: "fail", detail: `对话框里 ${ADD.name} 的“添加”按钮找不到或不可点` };
+  if (!(await page.run(clickAdd(ADD.name, 2)))) return { status: "fail", detail: `对话框里 ${ADD.name} 的“添加”按钮找不到或不可点` };
   await page.until(`return !!row(${J(ADD.id)})`, 5000);
+  await page.until(`const b = [...document.querySelectorAll("#catalog-dialog .catalog-row")].find(r => r.dataset.entry === ${J(ADD.id)})?.querySelector("button");
+    return b?.getAttribute("data-i18n") === "catalog_added";`, 5000).catch(() => {});
+  const requests = await page.run(`return globalThis.__e2eReq;`);
   const r = await page.run(`const rw = row(${J(ADD.id)}), b = rw.querySelector(${keySel("engine_grant")});
     const dr = [...document.querySelectorAll("#catalog-dialog .catalog-row")].find(r => r.querySelector(".catalog-name").textContent === ${J(ADD.name)});
     const db = dr?.querySelector("button");
     return { last: ids().at(-1), grant: !!b, attention: !!b?.classList.contains("btn-attention"),
-      dlg: { key: db?.getAttribute("data-i18n"), text: db?.textContent, disabled: !!db?.disabled }, open: document.getElementById("catalog-dialog").open };`);
+      dlg: { key: db?.getAttribute("data-i18n"), text: db?.textContent, disabled: !!db?.disabled }, open: document.getElementById("catalog-dialog").open,
+      focus: document.activeElement?.closest?.("[data-entry]")?.dataset.entry ?? document.activeElement?.tagName ?? null };`);
   const ns = await page.run(notices);
   const after = await storedCustom(ctx);
   const want = asEngine(ADD);
   const p = [];
+  if (!Array.isArray(requests) || requests.length) p.push(`添加时不应申请权限，实际 chrome.permissions.request 调用 ${J(requests)}`);
   if (r.last !== ADD.id) p.push(`引擎列表末尾应是 ${ADD.id}，实际 ${r.last}`);
   if (!r.open) p.push("添加后对话框被关掉了");
+  if (r.focus !== ADD.id) p.push(`列表重建后焦点应留在 ${ADD.name} 这一行，实际在 ${r.focus}`);
   if (r.dlg.key !== "catalog_added" || r.dlg.text !== msg("catalog_added") || !r.dlg.disabled) p.push(`对话框里应显示禁用的“${msg("catalog_added")}”，实际 ${r.dlg.key}“${r.dlg.text}”`);
   if (!r.grant) p.push("引擎行上应保留“授权”按钮");
   else if (r.attention) p.push("引擎行的授权按钮不应高亮（btn-attention）");
   if (ns.some(n => n.text.includes(msg("notice_needs_grant")))) p.push(`出现了“需授权”的提示：${ns.map(n => n.text).join("；")}`);
+  if (ns.some(n => n.kind.includes("notice-error"))) p.push(`连点两次“添加”不应出现错误提示：${ns.map(n => n.text).join("；")}`);
+  if (ns.filter(n => n.text === msg("notice_catalog_added", ADD.name)).length > 1) p.push("连点两次“添加”出现了两条成功提示");
   if (!ns.some(n => n.text === msg("notice_catalog_added", ADD.name))) p.push(`没有“${msg("notice_catalog_added", ADD.name)}”的提示（实际 ${ns.map(n => n.text).join("；") || "无"}）`);
   if (J(after.customEngines?.at(-1)) !== J(want)) p.push(`存储里最后一个自定义引擎应为 ${J(want)}，实际 ${J(after.customEngines?.at(-1))}`);
   if (J(after.cycleExclude) !== J(before.cycleExclude)) p.push(`非 AI 条目不应改 cycleExclude：${J(before.cycleExclude)} → ${J(after.cycleExclude)}`);
-  return verdict(p, `${ADD.name} 加在列表末尾（${want.url}），对话框显示“${msg("catalog_added")}”，授权按钮不高亮，只有“${msg("notice_catalog_added", ADD.name)}”提示`);
+  return verdict(p, `${ADD.name} 加在列表末尾（${want.url}），对话框显示“${msg("catalog_added")}”，授权按钮不高亮，只有“${msg("notice_catalog_added", ADD.name)}”提示，没有申请权限`);
 }));
 
 const AI = CATALOG.find(e => e.ai);
@@ -193,10 +205,11 @@ const rowShows = ctx => subX("(b) 设置页“快捷键”一行显示“未设�
   await focusPage(page);
   const s1 = await page.until(`const s = (() => { ${SHORTCUT_STATE} })(); return s.key === ${J(bound)} && s;`, 5000).catch(() => null);
   if (!s1) p.push(`绑定 ${TEST_KEYS} 后派发 focus，一行没有显示“${bound}”（实际 ${J(await page.run(SHORTCUT_STATE))}）`);
-  await restoreShortcut(ctx.browser);
+  // 清除阶段直接清掉绑定（不靠快照改回：运行前若本来就有绑定，改回的就不是“未设置”）；步骤结束仍按快照改回
+  await clearShortcut(ctx.browser, COMMAND);
   await focusPage(page);
   const s2 = await page.until(`const s = (() => { ${SHORTCUT_STATE} })(); return s.unset === ${J(unset)} && s;`, 5000).catch(() => null);
-  if (!s2) p.push(`改回未绑定后派发 focus，一行没有恢复“${unset}”（实际 ${J(await page.run(SHORTCUT_STATE))}）`);
+  if (!s2) p.push(`清除绑定后派发 focus，一行没有恢复“${unset}”（实际 ${J(await page.run(SHORTCUT_STATE))}）`);
   return verdict(p, `显示“${unset}”与“${s0.open}”按钮；绑定后显示“${bound}”，清除后恢复“${unset}”`);
 }));
 

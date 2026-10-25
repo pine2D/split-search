@@ -55,3 +55,11 @@ test("auditProblems: lang、原样 key、横向溢出、按钮/label 溢出逐�
   assert.ok(bad.some(p => p.includes("1300")));
   assert.ok(bad.some(p => p.includes("engine_edit")));
 });
+
+test("auditProblems: 给了 box 时横向溢出按那个元素报（scrollWidth > clientWidth）", async () => {
+  const { auditProblems } = await import("../scripts/e2e/steps/i18n.mjs");
+  const out = auditProblems("en", { lang: "en", box: "#catalog-dialog", scrollWidth: 620, innerWidth: 600, raw: [], tight: [] });
+  assert.equal(out.length, 1);
+  assert.match(out[0], /#catalog-dialog 横向溢出：scrollWidth 620 > clientWidth 600/);
+  assert.deepEqual(auditProblems("en", { lang: "en", box: "body", scrollWidth: 340, innerWidth: 340, raw: [], tight: [] }), []);
+});
