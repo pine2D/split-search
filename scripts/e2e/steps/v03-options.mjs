@@ -127,7 +127,7 @@ const addOne = ctx => sub(`(b) 连点两次添加 ${ADD.name}：只加一次、�
 const AI = CATALOG.find(e => e.ai);
 const addAi = ctx => (!AI
   ? { name: "(c) 添加 AI 条目：进 cycleExclude", status: "skip",
-    detail: "引擎库里目前没有 ai: true 的条目（AI 类候选都待用户确认，见 spec 附录 A），无从在页面上验证；addFromCatalog 的这条逻辑由 node 测试覆盖" }
+    detail: "引擎库里没有 ai: true 的条目，无从在页面上验证；addFromCatalog 的这条逻辑由 node 测试覆盖" }
   : sub(`(c) 添加 AI 条目 ${AI.name}：进 cycleExclude`, () => withPage(ctx, async page => {
     await page.until(OPEN_CATALOG);
     if (!(await page.run(clickAdd(AI.name)))) return { status: "fail", detail: `对话框里 ${AI.name} 的“添加”按钮找不到或不可点` };

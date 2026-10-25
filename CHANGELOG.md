@@ -15,7 +15,7 @@
 
 - 工具栏弹窗：显示当前拆分视图的关键词和左右引擎，点一个引擎就把右侧换成它，不用重新搜索。点工具栏按钮改为打开弹窗，设置页从弹窗底部进入。
 - 快捷键“把右侧换成下一个引擎”：默认未设置，在 `chrome://extensions/shortcuts` 设置，设置页显示当前绑定。引擎列表里可以逐个选择是否“参与快捷键轮换”，存在 `cycleExclude`。
-- 引擎库：设置页“从引擎库添加”列出 12 个已实测可用的网站（Google Translate、Bing Translator、Wikipedia、Cambridge Dictionary、YouTube、Bilibili、GitHub、MDN、Google Maps、Google Scholar、Amazon、Baidu）。添加后是普通的自定义引擎，添加时不申请权限，也不显示“需授权”提示。
+- 引擎库：设置页“从引擎库添加”列出 14 个已实测可用的网站（Google Translate、Bing Translator、Wikipedia、Cambridge Dictionary、YouTube、Bilibili、GitHub、MDN、Google Maps、Google Scholar、Amazon、Baidu，以及 AI 助手 ChatGPT、Claude）。添加后是普通的自定义引擎，添加时不申请权限，也不显示“需授权”提示。ChatGPT 和 Claude 只把关键词填进输入框，不自动发送；添加时默认不参与快捷键轮换。
 - 窄窗口：窗口宽度不到 960 像素时，右侧改在旁边的后台标签页打开，不建拆分视图。默认开启，可在“默认组合”里关闭，存在 `narrowFallback`。窗口变宽或关掉这个选项后，在同一个标签页里再搜索，这两个标签页会合成拆分视图。
 
 ### 变更

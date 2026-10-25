@@ -11,6 +11,7 @@ export const CATEGORIES = [
   { id: "academic", key: "catalog_cat_academic" },
   { id: "shopping", key: "catalog_cat_shopping" },
   { id: "chinese", key: "catalog_cat_chinese" },
+  { id: "ai", key: "catalog_cat_ai" },
 ];
 
 // url 里的 <target> 取 targets[locale]，<lang> 取 LANG[locale]；
@@ -40,6 +41,11 @@ export const CATALOG = [
   { id: "scholar", name: "Google Scholar", category: "academic", url: "https://scholar.google.com/scholar?q=%s" },
   { id: "amazon", name: "Amazon", category: "shopping", url: "https://www.amazon.com/s?k=%s", leftDiscouraged: true },
   { id: "baidu", name: "Baidu", category: "chinese", url: "https://www.baidu.com/s?wd=%s" },
+  // AI：只预填输入框、不自动发送（用户 2026-10-25 在自己的浏览器里实测；Gemini 不预填，不收录）。
+  // ai: true 的条目添加时默认排除出快捷键轮换。leftDiscouraged：输入框页不是搜索结果页；两者都是 SPA，
+  // 站点 Service Worker 可能接管 document 导航，DNR 的 main_frame 规则看不到（同预置的 Perplexity），作左侧会退化为普通打开。
+  { id: "chatgpt", name: "ChatGPT", category: "ai", url: "https://chatgpt.com/?q=%s", ai: true, leftDiscouraged: true },
+  { id: "claude", name: "Claude", category: "ai", url: "https://claude.ai/new?q=%s", ai: true, leftDiscouraged: true },
 ];
 
 const LANG = { en: "en", zh_CN: "zh", zh_TW: "zh", es: "es" };

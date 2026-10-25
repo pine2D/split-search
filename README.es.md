@@ -10,7 +10,7 @@ Busca en la barra de direcciones o arrastra texto a la barra de pestañas, y Spl
 
 - Funciona al buscar en la barra de direcciones, al arrastrar texto a la barra de pestañas y con la opción «Buscar … en X» («Buscar “…” en X») del menú contextual.
 - Incluye Google, Bing, DuckDuckGo, Perplexity y Kagi, y puedes añadir otros buscadores.
-- El catálogo de buscadores incluye sitios de traducción, enciclopedias, video, mapas y más, pensados para el lado derecho y listos para añadir.
+- El catálogo de buscadores incluye sitios de traducción, enciclopedias, video, mapas y asistentes de IA, entre otros, pensados para el lado derecho y listos para añadir.
 - Puedes crear varias combinaciones, cada una con su propio atajo. Por ejemplo, escribe «gb palabras clave» para comparar Google y Bing.
 - Haz clic en el botón de la barra de herramientas para cambiar el buscador de la derecha sin volver a buscar.
 - También puedes pulsar un acceso directo de teclado para pasar el lado derecho al siguiente buscador. No viene configurado: elígelo en `chrome://extensions/shortcuts`.

@@ -10,7 +10,7 @@ Search from the address bar or drag text to the tab strip, and Split Search open
 
 - Works from the address bar, from text dragged to the tab strip, and from the Search [engine] for “…” item in Chrome’s right-click menu
 - Google, Bing, DuckDuckGo, Perplexity and Kagi are built in, and you can add other search engines
-- The engine catalog has translation, reference, video, map and other sites that work well on the right side, ready to add
+- The engine catalog has translation, reference, video, map and other sites that work well on the right side, plus AI assistants, ready to add
 - Set up several engine pairs, each with its own shortcut. For example, type “gb your search” to compare Google and Bing
 - Click the toolbar button to switch the right side to another engine without searching again
 - Or press a keyboard shortcut to switch the right side to the next engine. No shortcut is set by default; set one at `chrome://extensions/shortcuts`

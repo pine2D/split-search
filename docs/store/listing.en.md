@@ -34,7 +34,7 @@ Search from the address bar or drag selected text onto the tab strip, and Split 
 FEATURES
 • Works from the address bar, from text dragged onto the tab strip, and from the Search [engine] for “…” item in Chrome’s right-click menu
 • Google, Bing, DuckDuckGo, Perplexity and Kagi are built in, and you can add other search engines
-• The engine catalog has translation, reference, video, map and other sites that work well on the right side, ready to add
+• The engine catalog has translation, reference, video, map and other sites that work well on the right side, plus AI assistants, ready to add
 • Set up several engine pairs, each with its own shortcut. For example, type “gb your search” to compare Google and Bing
 • Click the toolbar button to switch the right side to another engine without searching again
 • Or press a keyboard shortcut to switch the right side to the next engine. No shortcut is set by default; set one on Chrome’s Keyboard shortcuts page (chrome://extensions/shortcuts)
@@ -56,7 +56,7 @@ PRIVACY
 Your data stays on your device. Split Search has no servers, analytics or ads, and sends nothing to the developer or any third party. Your search terms go only to the search engines you chose, including one you switch to from the popup or with the keyboard shortcut. To open the split view, it reads the URL of your search on your device and, when needed, the URL of the other tab. It doesn’t store those URLs. Your search terms and the two engines are kept in browser memory so the popup can show them and switch the right side, and they’re cleared when you close the browser. Split Search doesn’t read your browsing history or page content.
 ```
 
-字数：2318（含换行）
+字数：2338（含换行）
 
 措辞说明：
 

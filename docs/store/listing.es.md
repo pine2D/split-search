@@ -28,7 +28,7 @@ Busca en la barra de direcciones o arrastra texto seleccionado a la barra de pes
 FUNCIONES
 • Funciona al buscar en la barra de direcciones, al arrastrar texto a la barra de pestañas y con la opción «Buscar … en X» («Buscar “…” en X») del menú contextual
 • Incluye Google, Bing, DuckDuckGo, Perplexity y Kagi; también puedes añadir otros buscadores
-• El catálogo de buscadores incluye sitios de traducción, enciclopedias, video, mapas y más, pensados para el lado derecho y listos para añadir
+• El catálogo de buscadores incluye sitios de traducción, enciclopedias, video, mapas y asistentes de IA, entre otros, pensados para el lado derecho y listos para añadir
 • Puedes crear varias combinaciones, cada una con su propio atajo; por ejemplo, escribe «gb palabras clave» para comparar Google y Bing
 • Haz clic en el botón de la barra de herramientas para cambiar el buscador de la derecha sin volver a buscar
 • También puedes pulsar un acceso directo de teclado para pasar el lado derecho al siguiente buscador. No viene configurado: elígelo en la página Accesos directos de Chrome (chrome://extensions/shortcuts)
@@ -50,7 +50,7 @@ PRIVACIDAD
 Tus datos se quedan en tu dispositivo: Split Search no usa servidores propios, no incluye estadísticas de uso ni publicidad y no envía nada al desarrollador ni a terceros. Tus términos de búsqueda solo llegan a los buscadores que elijas, incluido el que pongas a la derecha desde la ventana emergente o con el acceso directo. Para abrir la vista dividida, la extensión lee en tu dispositivo la URL de tu búsqueda y, si hace falta, la de la otra pestaña; no guarda esas URL. Los términos de búsqueda y los dos buscadores solo se guardan en la memoria del navegador, para mostrarlos en la ventana emergente y cambiar el lado derecho, y se borran al cerrar el navegador. Split Search no lee tu historial ni el contenido de las páginas.
 ```
 
-字数：2800（含换行）
+字数：2826（含换行）
 
 用词说明（v0.3，2026-10-25）：
 

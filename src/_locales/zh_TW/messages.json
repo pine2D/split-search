@@ -865,6 +865,10 @@
     "message": "中文網站",
     "description": "Category heading in the engine catalog dialog: Chinese-language sites (Baidu)."
   },
+  "catalog_cat_ai": {
+    "message": "AI 助理",
+    "description": "Catalog category heading: AI assistants (ChatGPT, Claude). The prompt is prefilled, not sent."
+  },
   "err_catalog_already_added": {
     "message": "你的引擎清單裡已經有「$NAME$」了。",
     "description": "Error when adding a catalog engine that already exists. $NAME$ is the engine name.",

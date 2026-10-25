@@ -18,13 +18,23 @@ for (const locale of ["en", "zh_CN", "zh_TW", "es"]) {
 
 test("目录 id 互不重复", () => assert.equal(new Set(CATALOG.map(e => e.id)).size, CATALOG.length));
 
-test("目录恰好收录附录 A 的 12 个条目，leftDiscouraged 只有 3 个", () => {
+test("目录恰好收录附录 A 的 14 个条目，leftDiscouraged 有 5 个，AI 只有 ChatGPT 和 Claude", () => {
   assert.deepEqual(CATALOG.map(e => e.name).sort(), [
-    "Amazon", "Baidu", "Bilibili", "Bing Translator", "Cambridge Dictionary", "GitHub",
+    "Amazon", "Baidu", "Bilibili", "Bing Translator", "Cambridge Dictionary", "ChatGPT", "Claude", "GitHub",
     "Google Maps", "Google Scholar", "Google Translate", "MDN", "Wikipedia", "YouTube",
   ]);
-  assert.deepEqual(CATALOG.filter(e => e.leftDiscouraged).map(e => e.name).sort(), ["Amazon", "Google Maps", "YouTube"]);
-  assert.ok(CATALOG.every(e => !e.ai));
+  assert.deepEqual(CATALOG.filter(e => e.leftDiscouraged).map(e => e.name).sort(),
+    ["Amazon", "ChatGPT", "Claude", "Google Maps", "YouTube"]);
+  assert.deepEqual(CATALOG.filter(e => e.ai).map(e => e.name).sort(), ["ChatGPT", "Claude"]);
+  assert.ok(CATALOG.every(e => (e.category === "ai") === (e.ai === true)));
+  assert.ok(!CATALOG.some(e => /gemini/i.test(e.name + e.url)), "Gemini 不预填，不收录");
+});
+
+test("AI 条目的模板照用户实测", () => {
+  const by = Object.fromEntries(CATALOG.map(e => [e.id, e]));
+  assert.equal(catalogUrl(by.chatgpt, "zh_CN"), "https://chatgpt.com/?q=%s");
+  assert.equal(catalogUrl(by.claude, "es"), "https://claude.ai/new?q=%s");
+  assert.equal(CATEGORIES.at(-1).id, "ai");
 });
 
 test("分类 key 是字面量且按 catalog_cat_ 命名", () => {

@@ -22,7 +22,7 @@ v0.1 的 B/T 表（`docs/acceptance-v0.1.md` 第 3 节）照旧有效，运行�
 |---|---|---|---|
 | B2（改写） | 点工具栏图标，再点弹窗里的“打开设置” | manifest 有 `action.default_popup`；出现弹窗页并渲染完成；点“打开设置”后设置页打开（已有设置页时回到前台） | e2e auto（CDP `Extensions.triggerAction` 作用在一个标签目标上，断言出现 `popup.html` 的页面目标且已渲染；先把设置页标签切到后台，再点 `#open-options`，断言出现新的设置页目标或设置页标签回到前台） |
 | B14（扩充） | 深色模式 | 设置页、向导页和工具栏弹窗的配色都跟随 | e2e auto（CDP 模拟深色/浅色，body 背景色与文字色要等于各自样式表里的变量值；深色截图存 `.e2e/b14-options-dark.png`、`b14-guide-dark.png`、`b14-popup-dark.png`） |
-| B16 | 设置页“从引擎库添加” | (a) 对话框按分类列出全部条目，分类名是界面语言的文案，没有显示成 key 的文字；(b) 连点两次“添加”（Bilibili）只加一次（一条成功提示、没有错误提示）、不调用 `chrome.permissions.request`，它在引擎列表末尾，对话框里变成禁用的“已添加”、焦点留在这一行，引擎行保留不高亮的“授权”按钮，没有“需授权”的持久提示；(c) 添加 `ai: true` 的条目后它进了 `cycleExclude`；(d) `customEngines` 接近 8192 字节时再添加，拒绝写入并提示“配置过大” | (a)(b)(d) e2e auto；(c) 引擎库目前没有 `ai: true` 的条目（AI 类候选都待用户确认，见 spec 附录 A），e2e 记“跳过”，逻辑由 node 测试（`addFromCatalog`）覆盖 |
+| B16 | 设置页“从引擎库添加” | (a) 对话框按分类列出全部条目，分类名是界面语言的文案，没有显示成 key 的文字；(b) 连点两次“添加”（Bilibili）只加一次（一条成功提示、没有错误提示）、不调用 `chrome.permissions.request`，它在引擎列表末尾，对话框里变成禁用的“已添加”、焦点留在这一行，引擎行保留不高亮的“授权”按钮，没有“需授权”的持久提示；(c) 添加 `ai: true` 的条目后它进了 `cycleExclude`；(d) `customEngines` 接近 8192 字节时再添加，拒绝写入并提示“配置过大” | e2e auto（(c) 添加引擎库里第一个 `ai: true` 的条目 ChatGPT；逻辑另由 node 测试 `addFromCatalog` 覆盖） |
 | B17 | 快捷键设置 | (a) `chrome.commands.getAll()` 里有 `cycle-right`、描述正确、没有快捷键，manifest 不写 `suggested_key`，`_execute_action` 不绑定；(b) 设置页“快捷键”一行显示“未设置”和“设置快捷键”按钮，绑定后设置页获得焦点即显示组合键，清除后恢复“未设置”；(c) 引擎行的“参与快捷键轮换”开关关掉写入 `cycleExclude`、打开移除 | e2e auto（先清掉测试配置里可能遗留的绑定再断言；(b) 的绑定经 `chrome://extensions/shortcuts`，步骤结束改回） |
 | I18N（扩充） | 多语言 | 4 种语言下，除设置页与 go.html 出错页外，引擎库对话框和工具栏弹窗（本扩展的一对）的 `lang` 正确、没有显示成 key 的文字、没有横向或按钮溢出 | e2e auto（截图存 `.e2e/i18n/<语言>-catalog.png`、`<语言>-popup.png`） |
 
@@ -43,4 +43,4 @@ v0.1 的 B/T 表（`docs/acceptance-v0.1.md` 第 3 节）照旧有效，运行�
 
 ## 3. 反馈方式
 
-把整份 e2e 报告（`.e2e/report-*.md`）贴回给 Claude。多子项步骤（B16、B17、T16、T17、T18、I18N）的各子项写在报告的“详细说明”小节里，跳过的子项（如 B16(c)）列在“未覆盖”小节。
+把整份 e2e 报告（`.e2e/report-*.md`）贴回给 Claude。多子项步骤（B16、B17、T16、T17、T18、I18N）的各子项写在报告的“详细说明”小节里，跳过的子项列在“未覆盖”小节。
