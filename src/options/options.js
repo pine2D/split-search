@@ -11,9 +11,10 @@ import { renderShortcut, SHORTCUT_BUTTON_ID } from "./shortcut.js";
 import { renderTriggers, setupGuide } from "./guide.js";
 import { applyRichText, renderLangPicker } from "./locale-ui.js";
 import { initI18n, applyI18n, setLocale, currentPref, currentLocale, t } from "../chrome/i18n.js";
+import { safeArgs } from "../lib/safe-error.js";
 
 const $ = (id) => document.getElementById(id);
-const log = (...args) => console.error("[split-search]", ...args);
+const log = (...args) => console.error("[split-search]", ...safeArgs(args));
 
 // 目录加载前不得调用 t / ht / tNodes：凡是要用它们的路径都先 await i18nReady
 const i18nReady = initI18n().catch(log);

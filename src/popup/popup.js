@@ -10,9 +10,10 @@ import { splitWindowType } from "../lib/window-kind.js";
 import { showComplete } from "./complete.js";
 import { normalizeLocalePref } from "../lib/i18n.js";
 import { initI18n, applyI18n, setLocale, setI18nText } from "../chrome/i18n.js";
+import { safeArgs } from "../lib/safe-error.js";
 
 const $ = (id) => document.getElementById(id);
-const log = (...args) => console.error("[split-search]", ...args);
+const log = (...args) => console.error("[split-search]", ...safeArgs(args));
 
 // 目录加载前不得调用 t / setI18nText：渲染都先 await i18nReady
 const i18nReady = initI18n().catch(log);

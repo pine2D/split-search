@@ -9,8 +9,9 @@ import { expandTemplate } from "../lib/trigger.js";
 import { loadConfig } from "./config-store.js";
 import { inspectTab } from "./split-state.js";
 import { openRight } from "./split-actions.js";
+import { safeArgs } from "../lib/safe-error.js";
 
-const log = (...args) => console.error("[split-search]", ...args);
+const log = (...args) => console.error("[split-search]", ...safeArgs(args));
 // 预期的拒绝只记 info 级，只带错误码，不带标签网址和关键词
 const rejected = (code) => {
   console.info("[split-search]", "complete rejected", code);

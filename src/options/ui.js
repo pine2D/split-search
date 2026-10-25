@@ -2,6 +2,7 @@
 import { engineOrigin } from "../lib/engines.js";
 import { errorKey } from "../lib/errors.js";
 import { t, setI18nText, currentLocale } from "../chrome/i18n.js";
+import { safeError } from "../lib/safe-error.js";
 
 export function h(tag, props, ...children) {
   const el = document.createElement(tag);
@@ -92,7 +93,7 @@ export async function isGranted(engine) {
   try {
     return await chrome.permissions.contains({ origins: [pattern] });
   } catch (err) {
-    console.warn("[split-search]", err);
+    console.warn("[split-search]", safeError(err));
     return false;
   }
 }

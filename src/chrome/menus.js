@@ -4,8 +4,9 @@ import { initI18n, setLocale, t } from "./i18n.js";
 import { engineById } from "../lib/engines.js";
 import { menuItems } from "../lib/menu-spec.js";
 import { serialQueue } from "../lib/serial.js";
+import { safeArgs } from "../lib/safe-error.js";
 
-const log = (...args) => console.error("[split-search]", ...args);
+const log = (...args) => console.error("[split-search]", ...safeArgs(args));
 const queue = serialQueue();
 
 // 模块 SW 不能用顶层 await：第一次用到时才加载文案并缓存；失败清掉缓存，下次重试
@@ -20,7 +21,7 @@ function create(props) {
   return new Promise((resolve) => {
     chrome.contextMenus.create(props, () => {
       const err = chrome.runtime.lastError;
-      if (err) log("contextMenus.create failed", props.id, err.message);
+      if (err) log("contextMenus.create failed", props.id, err);
       resolve();
     });
   });

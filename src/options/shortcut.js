@@ -1,10 +1,11 @@
 // 设置页“快捷键”一行：显示 cycle-right 当前绑定的组合键，按钮打开 Chrome 的快捷键页。
 // 绑定只能由用户在 chrome://extensions/shortcuts 里设置；manifest 不写 suggested_key（默认不绑定）。
 import { h, ht } from "./ui.js";
+import { safeArgs } from "../lib/safe-error.js";
 
 const COMMAND = "cycle-right";
 const SHORTCUTS_URL = "chrome://extensions/shortcuts";
-const log = (...args) => console.error("[split-search]", ...args);
+const log = (...args) => console.error("[split-search]", ...safeArgs(args));
 // 固定 id：重画这一行后设置页据此把焦点还给按钮
 export const SHORTCUT_BUTTON_ID = "shortcut-open";
 

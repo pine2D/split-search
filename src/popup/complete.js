@@ -2,9 +2,10 @@
 // （background.js 的 runtime.onMessage，见 chrome/complete-actions.js）。弹窗里的 JS 可能在新标签进分屏时被杀，
 // 所以这里不建标签、不写记录；消息只带标签 id 和引擎 id，不带网址和关键词，SW 自己重新读标签、重新识别。
 import { t, setI18nText } from "../chrome/i18n.js";
+import { safeArgs } from "../lib/safe-error.js";
 
 const $ = (id) => document.getElementById(id);
-const log = (...args) => console.error("[split-search]", ...args);
+const log = (...args) => console.error("[split-search]", ...safeArgs(args));
 
 // 回复 mode 对应的提示；split 不提示（弹窗随后换成对视图）
 const NOTE = { adjacent: "popup_complete_narrow", plain: "popup_complete_plain" };

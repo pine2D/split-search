@@ -336,3 +336,16 @@ test("读 pageUrl/frameUrl 就抛的 info 照样走完 new 路径", async () => 
   assert.equal(named("tabs.create").length, 1);
 });
 
+
+test("日志不带网址和查询词：tabs.update 抛出含网址的 Chrome 错误时，console.error 只收到清理过的文字", async (t) => {
+  splitPair();
+  t.mock.method(chrome.tabs, "update", async () => { throw new Error(`Invalid url: "${LENS_URL}" (${SRC})`); });
+  await handleMenuClick(imageInfo, { ...T, splitViewId: 9 });
+  assert.ok(console.error.mock.callCount() >= 1);
+  const logged = JSON.stringify(console.error.mock.calls.map(c => c.arguments));
+  for (const leak of ["img.example.com", "lens.google.com", "a%20b", SRC]) assert.ok(!logged.includes(leak), leak);
+  for (const c of console.error.mock.calls) {
+    assert.equal(c.arguments[0], "[split-search]");
+    assert.ok(c.arguments.every(a => typeof a !== "object"), "不把 Error 对象原样交给 console");
+  }
+});

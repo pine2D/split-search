@@ -2,8 +2,9 @@
 // 记录形状与归属规则见 lib/split-owner.js。storage 读写失败一律只记日志：
 // 读失败当作没有记录，写失败不影响已经打开的页面。
 import { recordKey, parseRecord, makeRecords, judgeOwnership, staleMarker } from "../lib/split-owner.js";
+import { safeArgs } from "../lib/safe-error.js";
 
-const log = (...args) => console.error("[split-search]", ...args);
+const log = (...args) => console.error("[split-search]", ...safeArgs(args));
 
 // 记录写入（writePair / writeEngine / clearPair / markStale）在同一个上下文（页面或 SW）里串行执行：
 // clearPair 先读后删，不串行时紧随其后的 writePair 会被它删掉。每个操作自己吞掉错误，链不会断。

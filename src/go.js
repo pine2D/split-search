@@ -6,8 +6,9 @@ import { ACTIONS, leaveTab } from "./chrome/split-actions.js";
 import { inspectTab } from "./chrome/split-state.js";
 import { initI18n, applyI18n, setI18nText } from "./chrome/i18n.js";
 import { errorKey } from "./lib/errors.js";
+import { safeArgs } from "./lib/safe-error.js";
 
-const log = (...args) => console.error("[split-search]", ...args);
+const log = (...args) => console.error("[split-search]", ...safeArgs(args));
 const $ = (id) => document.getElementById(id);
 
 // 文案并行加载，不 await：分屏路径（解析、读配置、分屏、跳转）不等它。

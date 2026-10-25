@@ -4,6 +4,7 @@ import {
   DEFAULT_LOCALE, MARK_OPEN, MARK_CLOSE,
   resolveLocale, normalizeLocalePref, formatMessage, splitMarked,
 } from "../lib/i18n.js";
+import { safeError } from "../lib/safe-error.js";
 
 let chosen = null;
 let fallback = null;
@@ -20,7 +21,7 @@ function load(l) {
       return r.json();
     })
     .catch((err) => {
-      console.error("[split-search] failed to load locale", l, err);
+      console.error("[split-search] failed to load locale", l, safeError(err));
       return null;
     });
 }
@@ -100,7 +101,7 @@ export function applyI18n(root = document) {
       try {
         el.textContent = t(key, ...JSON.parse(el.getAttribute("data-i18n-args") ?? "[]"));
       } catch (err) {
-        console.error("[split-search] applyI18n", key, err);
+        console.error("[split-search] applyI18n", key, safeError(err));
       }
     }
     for (const el of root.querySelectorAll("[data-i18n-attr]")) {
@@ -111,7 +112,7 @@ export function applyI18n(root = document) {
           if (attr && key) el.setAttribute(attr, t(key));
         }
       } catch (err) {
-        console.error("[split-search] applyI18n", spec, err);
+        console.error("[split-search] applyI18n", spec, safeError(err));
       }
     }
   } finally {

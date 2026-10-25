@@ -13,8 +13,9 @@ import { expandTemplate } from "../lib/trigger.js";
 import { loadConfig } from "./config-store.js";
 import { inspectTab, writePair, clearPair } from "./split-state.js";
 import { openRight, confirmedSplitViewId, lastSplitWindow } from "./split-actions.js";
+import { safeArgs } from "../lib/safe-error.js";
 
-const log = (...args) => console.error("[split-search]", ...args);
+const log = (...args) => console.error("[split-search]", ...safeArgs(args));
 // 预期的忽略只记 info 级，只带 reason，不带选中文字、图片网址或任何网址
 const ignored = (reason) => {
   console.info("[split-search]", "lookup ignored", reason);

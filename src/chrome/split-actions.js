@@ -7,8 +7,9 @@ import { sideOf } from "../lib/split-decision.js";
 import { isNarrow } from "../lib/narrow.js";
 import { canSplitIn, pickSplitWindow } from "../lib/window-kind.js";
 import { writePair, clearPair } from "./split-state.js";
+import { safeArgs } from "../lib/safe-error.js";
 
-const log = (...args) => console.error("[split-search]", ...args);
+const log = (...args) => console.error("[split-search]", ...safeArgs(args));
 
 // 两个标签真的在同一个分屏里才返回该 splitViewId，否则返回 -1。
 // 两个标签都重新读一次，读到的值一致且不是 -1 才算数；任一读取抛错也算不一致。

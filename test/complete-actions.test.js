@@ -198,3 +198,15 @@ test("预期的拒绝都只记一条 info，不带标签网址和关键词", asy
   ]);
   assert.equal(console.error.mock.callCount(), 0);
 });
+
+test("日志不带网址和关键词：tabs.create 抛出含网址的 Chrome 错误时，console.error 只收到清理过的文字", async (t) => {
+  t.mock.method(chrome.tabs, "create", async (props) => {
+    state.calls.push(["tabs.create", props]);
+    throw new Error(`Invalid url: "${props.url}" hello`);
+  });
+  assert.deepEqual(await handleCompleteMessage(MSG, SENDER), { ok: false, code: "split_failed" });
+  const logged = JSON.stringify(console.error.mock.calls.map(c => c.arguments));
+  assert.ok(console.error.mock.callCount() >= 1);
+  for (const leak of ["bing.com", "q=hello", RIGHT_URL]) assert.ok(!logged.includes(leak), leak);
+  for (const c of console.error.mock.calls) assert.ok(c.arguments.every(a => typeof a !== "object"));
+});
