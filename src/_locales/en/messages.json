@@ -1001,6 +1001,10 @@
     "message": "Search terms",
     "description": "Toolbar popup: label in front of the search terms of the current split view."
   },
+  "popup_lookup_label": {
+    "message": "Looking up",
+    "description": "Toolbar popup, lookup pair (the user's web page next to a lookup result opened from the right-click menu): label in front of what is being looked up: the selected text, or \"Image: <host>\" for an image. Used instead of \"Search terms\" because an image lookup has no search terms."
+  },
   "popup_empty_query": {
     "message": "(empty)",
     "description": "Toolbar popup: shown instead of the search terms when the search was empty."
@@ -1043,13 +1047,17 @@
     "message": "Switch the right side to",
     "description": "Toolbar popup: heading above the list of engines; clicking one loads it on the right side."
   },
+  "popup_lookup_switch_title": {
+    "message": "Look it up with",
+    "description": "Toolbar popup, lookup pair: heading above the list of engines; clicking one loads it on the lookup side. Used instead of \"Switch the right side to\" because the user may have swapped the two sides."
+  },
   "popup_no_choices": {
     "message": "No other engines to switch to.",
     "description": "Toolbar popup: shown instead of the engine list when there is no other engine to switch to."
   },
   "popup_switch_failed": {
-    "message": "Couldn’t switch the right side. Try again.",
-    "description": "Toolbar popup: error shown when loading the chosen engine on the right side failed (for example the tab was just closed)."
+    "message": "Couldn’t switch engines. Try again.",
+    "description": "Toolbar popup: shown when switching to the clicked engine failed (the split view was closed or split up, or loading the engine failed). Doesn't say \"right side\": in a lookup pair the switched side may be on the left."
   },
   "popup_open_options": {
     "message": "Open settings",
@@ -1096,7 +1104,7 @@
     "description": "Title of the settings card for the right-click lookup feature (select text or right-click an image)."
   },
   "options_lookup_intro": {
-    "message": "Select text or right-click an image on a web page, then choose the Split Search item. The page stays on the left and the result opens on the right.",
+    "message": "Select text on a web page and right-click it, or right-click an image, then choose the Split Search item. The page stays on the left and the result opens on the right.",
     "description": "Intro of the right-click lookup card. Menu items are added by Split Search to Chrome's right-click menu."
   },
   "options_lookup_engine_label": {
@@ -1126,15 +1134,15 @@
     "description": "Button that opens the dialog for adding a custom reverse image search engine."
   },
   "options_image_note_embedded": {
-    "message": "Images embedded in the page have no public address, so they can't be searched. The menu item doesn't appear for them.",
+    "message": "Images embedded in the page have no public address, so they can’t be searched. The menu item doesn’t appear for them.",
     "description": "Limitation note: images that exist only inside a page (no public URL)."
   },
   "options_image_note_login": {
-    "message": "Images you need to sign in to see are usually out of reach for the engine.",
+    "message": "If you have to sign in to see an image, the engine usually can’t get it.",
     "description": "Limitation note: images that need a login."
   },
   "options_lookup_privacy": {
-    "message": "Selected text and image addresses go only to the engine you choose here. Some image addresses carry access rights, so the engine can open that image too. An image address can also show which site it came from.",
+    "message": "Selected text and image addresses go only to the engines you choose here. Some image addresses include access credentials, so the engine can open that image too. An image address may also show which site it came from.",
     "description": "Privacy note: what is sent to the chosen engine."
   },
   "catalog_image_title": {

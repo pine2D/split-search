@@ -902,7 +902,7 @@
     "description": "Toolbar popup, completing a split view: opening the right-side search failed."
   },
   "err_message_rejected": {
-    "message": "没能执行，请重新点一下工具栏按钮再试。",
+    "message": "这次没有成功，请重新点一下工具栏按钮再试。",
     "description": "Toolbar popup, completing a split view: the extension rejected the request (unknown sender, bad fields, or the chosen engine is no longer available)."
   },
   "options_add_from_catalog": {
@@ -1001,6 +1001,10 @@
     "message": "关键词",
     "description": "Toolbar popup: label in front of the search terms of the current split view."
   },
+  "popup_lookup_label": {
+    "message": "查询内容",
+    "description": "Toolbar popup, lookup pair (the user's web page next to a lookup result opened from the right-click menu): label in front of what is being looked up: the selected text, or \"Image: <host>\" for an image. Used instead of \"Search terms\" because an image lookup has no search terms."
+  },
   "popup_empty_query": {
     "message": "（空）",
     "description": "Toolbar popup: shown instead of the search terms when the search was empty."
@@ -1043,13 +1047,17 @@
     "message": "把右侧换成",
     "description": "Toolbar popup: heading above the list of engines; clicking one loads it on the right side."
   },
+  "popup_lookup_switch_title": {
+    "message": "换个引擎查询",
+    "description": "Toolbar popup, lookup pair: heading above the list of engines; clicking one loads it on the lookup side. Used instead of \"Switch the right side to\" because the user may have swapped the two sides."
+  },
   "popup_no_choices": {
     "message": "没有其他可换的引擎。",
     "description": "Toolbar popup: shown instead of the engine list when there is no other engine to switch to."
   },
   "popup_switch_failed": {
-    "message": "右侧引擎没换成，请再试一次。",
-    "description": "Toolbar popup: error shown when loading the chosen engine on the right side failed (for example the tab was just closed)."
+    "message": "引擎没换成，请再试一次。",
+    "description": "Toolbar popup: shown when switching to the clicked engine failed (the split view was closed or split up, or loading the engine failed). Doesn't say \"right side\": in a lookup pair the switched side may be on the left."
   },
   "popup_open_options": {
     "message": "打开设置页",
@@ -1084,7 +1092,7 @@
     }
   },
   "popup_complete_narrow": {
-    "message": "窗口较窄，右侧在旁边的标签页打开。",
+    "message": "窗口较窄，右侧已在旁边的标签页打开。",
     "description": "Toolbar popup, completing a split view: shown after the click when the window is narrow, so the right-side search opened in the background tab next to the current one instead of a split view."
   },
   "popup_complete_plain": {
@@ -1096,7 +1104,7 @@
     "description": "Title of the settings card for the right-click lookup feature (select text or right-click an image)."
   },
   "options_lookup_intro": {
-    "message": "在网页上选中文字，或在图片上右键，选 Split Search 的菜单项：当前网页留在左边，结果在右边打开。",
+    "message": "在网页上选中文字后右键，或直接在图片上右键，再选 Split Search 的菜单项。当前网页留在左边，结果在右边打开。",
     "description": "Intro of the right-click lookup card. Menu items are added by Split Search to Chrome's right-click menu."
   },
   "options_lookup_engine_label": {
@@ -1122,11 +1130,11 @@
     "description": "Button that opens the catalog of reverse image search engines."
   },
   "options_image_add_custom": {
-    "message": "新增",
+    "message": "新增引擎",
     "description": "Button that opens the dialog for adding a custom reverse image search engine."
   },
   "options_image_note_embedded": {
-    "message": "页面内嵌的图片没有公开网址，不能以图搜图，菜单里不会出现这一项。",
+    "message": "页面内嵌的图片没有公开网址，不能以图搜图，右键菜单里不会出现这一项。",
     "description": "Limitation note: images that exist only inside a page (no public URL)."
   },
   "options_image_note_login": {
@@ -1134,7 +1142,7 @@
     "description": "Limitation note: images that need a login."
   },
   "options_lookup_privacy": {
-    "message": "选中的文字和图片网址只发给这里选的引擎。有些图片网址本身带访问凭证，发出去引擎也能打开这张图；图片网址也可能看得出它来自哪个网站。",
+    "message": "选中的文字和图片网址只发给这里选的引擎。有些图片网址本身带访问凭证，发出去后引擎也能打开这张图；图片网址也可能看得出它来自哪个网站。",
     "description": "Privacy note: what is sent to the chosen engine."
   },
   "catalog_image_title": {

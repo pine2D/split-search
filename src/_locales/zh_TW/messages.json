@@ -890,7 +890,7 @@
     }
   },
   "err_not_results_page": {
-    "message": "頁面已經變了，請重新點一下工具列按鈕。",
+    "message": "頁面已經變了，請重新點選工具列按鈕。",
     "description": "Toolbar popup, completing a split view: the page is no longer a recognized search results page (navigated away, closed, joined a split view or the query is gone) when the user clicked an engine."
   },
   "err_window_unsupported": {
@@ -898,11 +898,11 @@
     "description": "Toolbar popup, completing a split view: the current window can't hold a split view (for example a popup or picture-in-picture window)."
   },
   "err_split_failed": {
-    "message": "右側的搜尋沒能開啟，請再試一次。",
+    "message": "無法開啟右側的搜尋，請再試一次。",
     "description": "Toolbar popup, completing a split view: opening the right-side search failed."
   },
   "err_message_rejected": {
-    "message": "沒能執行，請重新點一下工具列按鈕再試。",
+    "message": "這次沒有成功，請重新點選工具列按鈕再試一次。",
     "description": "Toolbar popup, completing a split view: the extension rejected the request (unknown sender, bad fields, or the chosen engine is no longer available)."
   },
   "options_add_from_catalog": {
@@ -1001,6 +1001,10 @@
     "message": "關鍵字",
     "description": "Toolbar popup: label in front of the search terms of the current split view."
   },
+  "popup_lookup_label": {
+    "message": "查詢內容",
+    "description": "Toolbar popup, lookup pair (the user's web page next to a lookup result opened from the right-click menu): label in front of what is being looked up: the selected text, or \"Image: <host>\" for an image. Used instead of \"Search terms\" because an image lookup has no search terms."
+  },
   "popup_empty_query": {
     "message": "（空白）",
     "description": "Toolbar popup: shown instead of the search terms when the search was empty."
@@ -1043,13 +1047,17 @@
     "message": "將右側換成",
     "description": "Toolbar popup: heading above the list of engines; clicking one loads it on the right side."
   },
+  "popup_lookup_switch_title": {
+    "message": "換個引擎查詢",
+    "description": "Toolbar popup, lookup pair: heading above the list of engines; clicking one loads it on the lookup side. Used instead of \"Switch the right side to\" because the user may have swapped the two sides."
+  },
   "popup_no_choices": {
     "message": "沒有其他可換的引擎。",
     "description": "Toolbar popup: shown instead of the engine list when there is no other engine to switch to."
   },
   "popup_switch_failed": {
-    "message": "右側引擎沒換成，請再試一次。",
-    "description": "Toolbar popup: error shown when loading the chosen engine on the right side failed (for example the tab was just closed)."
+    "message": "無法切換引擎，請再試一次。",
+    "description": "Toolbar popup: shown when switching to the clicked engine failed (the split view was closed or split up, or loading the engine failed). Doesn't say \"right side\": in a lookup pair the switched side may be on the left."
   },
   "popup_open_options": {
     "message": "開啟設定頁",
@@ -1096,7 +1104,7 @@
     "description": "Title of the settings card for the right-click lookup feature (select text or right-click an image)."
   },
   "options_lookup_intro": {
-    "message": "在網頁上選取文字，或在圖片上按右鍵，選 Split Search 的選單項目：目前網頁留在左邊，結果在右邊開啟。",
+    "message": "在網頁上選取文字後按右鍵，或直接在圖片上按右鍵，再選擇 Split Search 的選單項目。目前的網頁會留在左邊，結果在右邊開啟。",
     "description": "Intro of the right-click lookup card. Menu items are added by Split Search to Chrome's right-click menu."
   },
   "options_lookup_engine_label": {
@@ -1122,11 +1130,11 @@
     "description": "Button that opens the catalog of reverse image search engines."
   },
   "options_image_add_custom": {
-    "message": "新增",
+    "message": "新增引擎",
     "description": "Button that opens the dialog for adding a custom reverse image search engine."
   },
   "options_image_note_embedded": {
-    "message": "頁面內嵌的圖片沒有公開網址，無法以圖搜圖，選單裡不會出現這個項目。",
+    "message": "頁面內嵌的圖片沒有公開網址，無法以圖搜圖，右鍵選單裡不會出現這個項目。",
     "description": "Limitation note: images that exist only inside a page (no public URL)."
   },
   "options_image_note_login": {
@@ -1134,7 +1142,7 @@
     "description": "Limitation note: images that need a login."
   },
   "options_lookup_privacy": {
-    "message": "選取的文字和圖片網址只會傳給這裡選的引擎。有些圖片網址本身帶有存取憑證，傳出去引擎也能開啟那張圖；圖片網址也可能看得出來自哪個網站。",
+    "message": "選取的文字和圖片網址只會傳給這裡選的引擎。有些圖片網址本身帶有存取憑證，傳出去後引擎也能開啟那張圖片；從圖片網址也可能看得出它來自哪個網站。",
     "description": "Privacy note: what is sent to the chosen engine."
   },
   "catalog_image_title": {
@@ -1176,7 +1184,7 @@
     "description": "Notice after choosing the image search engine."
   },
   "menu_lookup_text": {
-    "message": "在分割畫面中以 $ENGINE$ 搜尋「%s」",
+    "message": "在分割畫面中透過 $ENGINE$ 搜尋「%s」",
     "description": "Right-click menu item shown when text is selected on a web page: the page stays on the left and the text lookup engine opens on the right. $ENGINE$ is the engine name. Keep %s as is: Chrome replaces it with the selected text.",
     "placeholders": {
       "ENGINE": {
@@ -1186,7 +1194,7 @@
     }
   },
   "menu_lookup_image": {
-    "message": "在分割畫面中以 $ENGINE$ 搜尋圖片",
+    "message": "在分割畫面中使用 $ENGINE$ 搜尋圖片",
     "description": "Right-click menu item shown on an image on a web page: the page stays on the left and the image search engine opens on the right. $ENGINE$ is the engine name.",
     "placeholders": {
       "ENGINE": {

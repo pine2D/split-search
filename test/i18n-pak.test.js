@@ -64,3 +64,29 @@ test("设置页快捷键说明里的 Chrome 页名与术语表一致（4 种语�
     assert.ok(hint.includes(page), `${locale}: ${hint}`);
   }
 });
+
+// 图片右键菜单项照 Chrome 原生项“Search image with $1”的措辞（spec 3.13）：各语言去掉引擎名后的核心字样
+const SEARCH_IMAGE = { en: "Search image with", zh_CN: "搜索图片", zh_TW: "搜尋圖片", es: "Buscar imagen con" };
+
+test("术语表含“使用 X 搜索图片”和标签页；本机 Chrome 的原文与术语表一致", (t) => {
+  const image = TERMS.find(x => x.id === "search-image-with");
+  assert.ok(image && image.en.test("Search &image with $1") && image.en.test("Search image with $1"));
+  const tab = TERMS.find(x => x.id === "open-image-new-tab");
+  assert.ok(tab && tab.en.test("Open &image in new tab"));
+  const dir = "/opt/google/chrome/locales";
+  if (!["en-US", "zh-CN", "zh-TW", "es"].every(l => existsSync(`${dir}/${l}.pak`))) return t.skip("无本机 Chrome");
+  const [en, zhCN, zhTW, es] = ["en-US", "zh-CN", "zh-TW", "es"].map(l => parsePak(readFileSync(`${dir}/${l}.pak`)));
+  const ids = findIds(en, image.en);
+  assert.ok(ids.length > 0);
+  for (const [pak, text] of [[zhCN, SEARCH_IMAGE.zh_CN], [zhTW, SEARCH_IMAGE.zh_TW], [es, SEARCH_IMAGE.es]]) {
+    assert.ok(ids.some(id => pak.get(id)?.toString("utf8").includes(text)), text);
+  }
+});
+
+test("图片右键菜单项的措辞与 Chrome 原生项一致（4 种语言）", () => {
+  for (const [locale, words] of Object.entries(SEARCH_IMAGE)) {
+    const url = new URL(`../src/_locales/${locale}/messages.json`, import.meta.url);
+    const title = JSON.parse(readFileSync(url, "utf8")).menu_lookup_image.message;
+    assert.ok(title.includes(words), `${locale}: ${title}`);
+  }
+});

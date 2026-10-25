@@ -48,6 +48,9 @@ export const TERMS = [
   { id: "site-access", en: /^Site access$/, note: "网站访问权限" },
   { id: "search-for", en: /^&Search \$1 for “\$2”$/, note: "右键“在 X 中搜索”" },
   { id: "keyboard-shortcuts", en: /^Keyboard shortcuts?$/, note: "键盘快捷键（chrome://extensions/shortcuts 页）" },
+  { id: "search-image-with", en: /^Search &?images? with \$1$/, note: "图片右键“使用 X 搜索图片”" },
+  { id: "open-image-new-tab", en: /^Open &?image in new tab$/, note: "图片右键“在新标签页中打开图片”（标签页）" },
+  { id: "toolbar", en: /^Toolbar$/, note: "工具栏" },
 ];
 
 const LOCALES = ["en-US", "zh-CN", "zh-TW", "es", "es-419"];

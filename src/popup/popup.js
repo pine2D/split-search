@@ -82,9 +82,12 @@ function show(state) {
   if (mode !== "pair") return;
   const view = popupView(state.pair, state.cfg);
 
-  // 查询对按角色写行标签（“网页”“查询”），不写左右：原生互换位置之后看得见的位置会变
+  // 查询对按角色写行标签（“网页”“查询”）和列表标题，不写左右：原生互换位置之后看得见的位置会变；
+  // 图片查询没有关键词，第一行也不叫“关键词”
   setI18nText($("left-label"), view.leftIsPage ? "popup_role_page" : "popup_left_label");
   setI18nText($("right-label"), view.leftIsPage ? "popup_role_lookup" : "popup_right_label");
+  setI18nText($("query-label"), view.leftIsPage ? "popup_lookup_label" : "popup_query_label");
+  setI18nText($("choices-title"), view.leftIsPage ? "popup_lookup_switch_title" : "popup_switch_title");
 
   const q = $("query");
   q.classList.toggle("placeholder", view.imageHost === null && view.query === "");

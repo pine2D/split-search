@@ -902,7 +902,7 @@
     "description": "Toolbar popup, completing a split view: opening the right-side search failed."
   },
   "err_message_rejected": {
-    "message": "No se pudo hacer. Haz clic en el botón de la barra de herramientas y vuelve a intentarlo.",
+    "message": "No funcionó. Haz clic en el botón de la barra de herramientas y vuelve a intentarlo.",
     "description": "Toolbar popup, completing a split view: the extension rejected the request (unknown sender, bad fields, or the chosen engine is no longer available)."
   },
   "options_add_from_catalog": {
@@ -1001,6 +1001,10 @@
     "message": "Palabras clave",
     "description": "Toolbar popup: label in front of the search terms of the current split view."
   },
+  "popup_lookup_label": {
+    "message": "Consulta",
+    "description": "Toolbar popup, lookup pair (the user's web page next to a lookup result opened from the right-click menu): label in front of what is being looked up: the selected text, or \"Image: <host>\" for an image. Used instead of \"Search terms\" because an image lookup has no search terms."
+  },
   "popup_empty_query": {
     "message": "(ninguna)",
     "description": "Toolbar popup: shown instead of the search terms when the search was empty."
@@ -1043,13 +1047,17 @@
     "message": "Cambiar el lado derecho a",
     "description": "Toolbar popup: heading above the list of engines; clicking one loads it on the right side."
   },
+  "popup_lookup_switch_title": {
+    "message": "Buscar con",
+    "description": "Toolbar popup, lookup pair: heading above the list of engines; clicking one loads it on the lookup side. Used instead of \"Switch the right side to\" because the user may have swapped the two sides."
+  },
   "popup_no_choices": {
     "message": "No hay otros buscadores a los que cambiar.",
     "description": "Toolbar popup: shown instead of the engine list when there is no other engine to switch to."
   },
   "popup_switch_failed": {
-    "message": "No se pudo cambiar el lado derecho. Vuelve a intentarlo.",
-    "description": "Toolbar popup: error shown when loading the chosen engine on the right side failed (for example the tab was just closed)."
+    "message": "No se pudo cambiar de buscador. Vuelve a intentarlo.",
+    "description": "Toolbar popup: shown when switching to the clicked engine failed (the split view was closed or split up, or loading the engine failed). Doesn't say \"right side\": in a lookup pair the switched side may be on the left."
   },
   "popup_open_options": {
     "message": "Abrir configuración",
@@ -1084,7 +1092,7 @@
     }
   },
   "popup_complete_narrow": {
-    "message": "La ventana es estrecha: el lado derecho se abrió en la pestaña de al lado.",
+    "message": "La ventana es estrecha, así que el lado derecho se abrió en la pestaña de al lado.",
     "description": "Toolbar popup, completing a split view: shown after the click when the window is narrow, so the right-side search opened in the background tab next to the current one instead of a split view."
   },
   "popup_complete_plain": {
@@ -1096,7 +1104,7 @@
     "description": "Title of the settings card for the right-click lookup feature (select text or right-click an image)."
   },
   "options_lookup_intro": {
-    "message": "Selecciona texto en una página, o haz clic derecho en una imagen, y elige la opción de Split Search. La página se queda a la izquierda y el resultado se abre a la derecha.",
+    "message": "Selecciona texto en una página y haz clic con el botón derecho, o haz clic con el botón derecho en una imagen, y elige la opción de Split Search. La página se queda a la izquierda y el resultado se abre a la derecha.",
     "description": "Intro of the right-click lookup card. Menu items are added by Split Search to Chrome's right-click menu."
   },
   "options_lookup_engine_label": {
@@ -1104,7 +1112,7 @@
     "description": "Label of the dropdown that picks the engine used to look up selected text."
   },
   "options_lookup_follow": {
-    "message": "El de la derecha del par predeterminado (ahora: $ENGINE$)",
+    "message": "El de la derecha de la combinación predeterminada (ahora: $ENGINE$)",
     "description": "First option of the text lookup dropdown: use whatever engine is on the right side of the default pair. $ENGINE$ is its current name.",
     "placeholders": {
       "ENGINE": {
@@ -1122,19 +1130,19 @@
     "description": "Button that opens the catalog of reverse image search engines."
   },
   "options_image_add_custom": {
-    "message": "Añadir",
+    "message": "Añadir buscador",
     "description": "Button that opens the dialog for adding a custom reverse image search engine."
   },
   "options_image_note_embedded": {
-    "message": "Las imágenes incrustadas en la página no tienen dirección pública y no se pueden buscar. La opción no aparece para ellas.",
+    "message": "Las imágenes incrustadas en la página no tienen una dirección pública y no se pueden buscar. La opción no aparece en el menú para ellas.",
     "description": "Limitation note: images that exist only inside a page (no public URL)."
   },
   "options_image_note_login": {
-    "message": "Las imágenes que requieren iniciar sesión suelen quedar fuera del alcance del buscador.",
+    "message": "Si hace falta iniciar sesión para ver una imagen, normalmente el buscador no puede acceder a ella.",
     "description": "Limitation note: images that need a login."
   },
   "options_lookup_privacy": {
-    "message": "El texto seleccionado y las direcciones de imagen solo se envían al buscador que elijas aquí. Algunas direcciones de imagen incluyen permiso de acceso, así que el buscador también puede abrir esa imagen. La dirección también puede indicar de qué sitio viene.",
+    "message": "El texto seleccionado y las direcciones de imagen solo se envían a los buscadores que elijas aquí. Algunas direcciones de imagen incluyen credenciales de acceso, así que el buscador también puede abrir esa imagen. Una dirección de imagen también puede revelar de qué sitio viene.",
     "description": "Privacy note: what is sent to the chosen engine."
   },
   "catalog_image_title": {
@@ -1176,7 +1184,7 @@
     "description": "Notice after choosing the image search engine."
   },
   "menu_lookup_text": {
-    "message": "Buscar “%s” con $ENGINE$ en vista dividida",
+    "message": "Buscar «%s» con $ENGINE$ en vista dividida",
     "description": "Right-click menu item shown when text is selected on a web page: the page stays on the left and the text lookup engine opens on the right. $ENGINE$ is the engine name. Keep %s as is: Chrome replaces it with the selected text.",
     "placeholders": {
       "ENGINE": {
