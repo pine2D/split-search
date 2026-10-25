@@ -5,6 +5,7 @@
 // 分支内的关键 chrome 调用失败时直接抛出，由 go.js 兜底打开左侧搜索。
 import { sideOf } from "../lib/split-decision.js";
 import { isNarrow } from "../lib/narrow.js";
+import { canSplitIn } from "../lib/window-kind.js";
 import { writePair, clearPair } from "./split-state.js";
 
 const log = (...args) => console.error("[split-search]", ...args);
@@ -130,14 +131,24 @@ export async function openForeign({ tab, win, splitTabs, leftUrl, rightUrl, left
   return { leave: true };
 }
 
-// 当前窗口不是 normal（popup/app）：不能在这里调用分屏 API，改到一个 normal 窗口里新建一对。
-export async function openInOtherWindow({ leftUrl, rightUrl, leftId, rightId, query, narrowEnabled }) {
-  let target = null;
+// 最后聚焦的、能分屏的窗口（canSplitIn：非置顶的 normal）。PiP 获得焦点时 getLastFocused 返回的就是 PiP，
+// 这时在 getAll 里挑：优先 focused 的，否则第一个。都没有或任一调用抛错 → null。
+// 挑窗口一律经这里，不直接用 getLastFocused 的结果。
+export async function lastSplitWindow() {
   try {
-    target = await chrome.windows.getLastFocused({ windowTypes: ["normal"] });
+    const last = await chrome.windows.getLastFocused({ windowTypes: ["normal"] });
+    if (canSplitIn(last)) return last;
+    const ok = (await chrome.windows.getAll({ windowTypes: ["normal"] })).filter(canSplitIn);
+    return ok.find(w => w.focused) ?? ok[0] ?? null;
   } catch (err) {
-    log("no normal window available, creating one", err);
+    log("failed to find a window that can hold a split view", err);
+    return null;
   }
+}
+
+// 当前窗口不能分屏（popup/app/PiP）：不在这里调用分屏 API，改到一个能分屏的窗口里新建一对；没有就新建窗口。
+export async function openInOtherWindow({ leftUrl, rightUrl, leftId, rightId, query, narrowEnabled }) {
+  const target = await lastSplitWindow();
   let newLeft;
   let width = target?.width;
   if (target) {

@@ -6,6 +6,7 @@ const peer = { id: 2, index: 5 };
 const base = { windowType: "normal", splitViewId: 7, peer, ownership: "own" };
 test("sideOf", () => { assert.equal(sideOf(4, 5), "left"); assert.equal(sideOf(6, 5), "right"); });
 test("非 normal 窗口", () => assert.equal(decideSplit({ ...base, windowType: "popup" }), "other-window"));
+test("PiP 窗口 → other-window", () => assert.equal(decideSplit({ ...base, windowType: "pip", ownership: "own" }), "other-window"));
 test("不在分屏中、没有相邻对", () => {
   assert.equal(decideSplit({ ...base, splitViewId: -1, peer: null, ownership: "none" }), "new");
   assert.equal(decideSplit({ ...base, splitViewId: -1, ownership: "stale" }), "new");

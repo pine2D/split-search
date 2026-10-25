@@ -45,6 +45,12 @@ globalThis.chrome = {
       if (state.win instanceof Error) throw state.win;
       return state.win;
     },
+    // state.all：windows.getAll 的结果；缺省只有 state.win（它是 Error 或缺失时为空）
+    async getAll(opts) {
+      state.calls.push(["windows.getAll", opts]);
+      if (state.all) return state.all;
+      return state.win && !(state.win instanceof Error) ? [state.win] : [];
+    },
   },
   tabs: {
     onRemoved: event("tabs.onRemoved"),
@@ -146,4 +152,25 @@ test("cycle-right：换右侧时 tabs.update 抛错 → 只记 [split-search] �
   assert.equal(console.error.mock.callCount(), 1);
   assert.equal(console.error.mock.calls[0].arguments[0], "[split-search]");
   assert.equal(state.session.get("split:11").engine, "bing");
+});
+
+test("cycle-right：最后聚焦的是 PiP 时，换的是普通窗口里本扩展那一对的右侧，不读 PiP 的标签", async () => {
+  const pip = { id: 9, type: "normal", alwaysOnTop: true, focused: true };
+  state.win = pip;
+  state.all = [pip, { id: 1, type: "normal", alwaysOnTop: false }];
+  state.tabs[90] = { id: 90, index: 0, windowId: 9, splitViewId: -1, active: true };
+  await press();
+  const queries = state.calls.filter(c => c[0] === "tabs.query" && c[1].windowId !== undefined);
+  assert.deepEqual(queries, [["tabs.query", { active: true, windowId: 1 }]]);
+  assert.deepEqual(updates(), [["tabs.update", 11, { url: "https://duckduckgo.com/?q=" + encodeURIComponent(QUERY) }]]);
+});
+
+test("cycle-right：只有 PiP 时什么都不做", async () => {
+  const pip = { id: 9, type: "normal", alwaysOnTop: true, focused: true };
+  state.win = pip;
+  state.all = [pip];
+  state.tabs[90] = { id: 90, index: 0, windowId: 9, splitViewId: -1, active: true };
+  await press();
+  assert.ok(!state.calls.some(c => c[0] === "tabs.query"));
+  assert.deepEqual(updates(), []);
 });

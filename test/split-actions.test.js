@@ -1,7 +1,7 @@
 import { test, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import {
-  ACTIONS, createPaired, openNew, reuse, join, openForeign, openInOtherWindow, leaveTab,
+  ACTIONS, createPaired, openNew, reuse, join, openForeign, openInOtherWindow, leaveTab, lastSplitWindow,
 } from "../src/chrome/split-actions.js";
 
 // 最小 chrome 桩：按顺序记录调用。fail.<name> 为 true 时对应调用抛错；
@@ -46,7 +46,13 @@ function installChrome(fail = {}, extra = {}) {
       async getLastFocused(opts) {
         calls.push(["windows.getLastFocused", opts]);
         check("getLastFocused");
-        return extra.lastFocused ?? { id: 7, width: 1400 };
+        return extra.lastFocused ?? { id: 7, type: "normal", width: 1400 };
+      },
+      // extra.all：windows.getAll 的结果（默认只有最后聚焦的那个窗口）
+      async getAll(opts) {
+        calls.push(["windows.getAll", opts]);
+        check("getAll");
+        return extra.all ?? [extra.lastFocused ?? { id: 7, type: "normal", width: 1400 }];
       },
       async create(props) {
         calls.push(["windows.create", props]);
@@ -224,7 +230,7 @@ test("foreign：右侧两次创建都失败时不抛错，也不再打开第二�
 });
 
 test("other-window：在已有的普通窗口建一对、记录后把该窗口切到前台", async () => {
-  installChrome({}, { lastFocused: { id: 7 } });
+  installChrome({}, { lastFocused: { id: 7, type: "normal" } });
   const out = await openInOtherWindow({ leftUrl: L, rightUrl: R, ...ids });
   assert.deepEqual(out, { replaceWith: L });
   assert.deepEqual(calls, [
@@ -239,7 +245,7 @@ test("other-window：在已有的普通窗口建一对、记录后把该窗口�
 });
 
 test("other-window：切前台失败只记录，不影响结果", async () => {
-  installChrome({ focus: true }, { lastFocused: { id: 7 } });
+  installChrome({ focus: true }, { lastFocused: { id: 7, type: "normal" } });
   assert.deepEqual(await openInOtherWindow({ leftUrl: L, rightUrl: R, ...ids }), { replaceWith: L });
   assert.ok(names().includes("windows.update"));
 });
@@ -259,7 +265,7 @@ test("other-window：没有普通窗口时新建窗口，不再额外切前台",
 });
 
 test("other-window：复核失败（-1）时不写记录", async () => {
-  installChrome({}, { lastFocused: { id: 7 }, getSplitViewId: -1 });
+  installChrome({}, { lastFocused: { id: 7, type: "normal" }, getSplitViewId: -1 });
   await openInOtherWindow({ leftUrl: L, rightUrl: R, ...ids });
   assert.ok(!names().includes("session.set"));
 });
@@ -314,7 +320,7 @@ test("foreign：窄窗口新左侧在 maxIndex+1，右侧紧挨其后且不分�
 });
 
 test("other-window：看目标窗口的宽度，窄则不分屏", async () => {
-  installChrome({}, { lastFocused: { id: 7, width: 800 } });
+  installChrome({}, { lastFocused: { id: 7, type: "normal", width: 800 } });
   await openInOtherWindow({ leftUrl: L, rightUrl: R, ...ids, narrowEnabled: true });
   const adj = { mode: "adjacent", splitViewId: -1 };
   assert.deepEqual(calls[2], ["tabs.create", { url: R, index: 1, windowId: 7, active: false }]);
@@ -328,7 +334,7 @@ test("other-window：新建窗口时看 windows.create 返回的宽度", async (
 });
 
 test("other-window：目标窗口宽度读不到时照常分屏", async () => {
-  installChrome({}, { lastFocused: { id: 7 } });
+  installChrome({}, { lastFocused: { id: 7, type: "normal" } });
   await openInOtherWindow({ leftUrl: L, rightUrl: R, ...ids, narrowEnabled: true });
   assert.equal(calls[2][1].splitWithTabId, 100);
 });
@@ -421,4 +427,55 @@ test("join：更新右侧失败时照常抛出（由 go.js 兜底打开左侧）
     tab: { id: 1, index: 3, windowId: 9 }, peer: { id: 2, index: 4, windowId: 9 }, splitViewId: -1, leftUrl: L, rightUrl: R, ...ids,
   }));
   assert.ok(!names().includes("tabs.createSplit"));
+});
+
+// Document PiP 窗口：type 报 normal、alwaysOnTop 为 true（spike S5）。在它上面调分屏 API 会让 Chrome 156 崩溃。
+const PIP = { id: 9, type: "normal", alwaysOnTop: true, focused: true, width: 524 };
+const W1 = { id: 1, type: "normal", alwaysOnTop: false, width: 1200 };
+
+test("lastSplitWindow：最后聚焦的是普通窗口 → 直接用它，不读 getAll", async () => {
+  installChrome({}, { lastFocused: W1 });
+  assert.equal(await lastSplitWindow(), W1);
+  assert.deepEqual(names(), ["windows.getLastFocused"]);
+});
+
+test("lastSplitWindow：最后聚焦的是 PiP → 在 getAll 里取第一个可分屏的窗口", async () => {
+  installChrome({}, { lastFocused: PIP, all: [PIP, W1] });
+  assert.equal(await lastSplitWindow(), W1);
+  assert.deepEqual(calls[1], ["windows.getAll", { windowTypes: ["normal"] }]);
+});
+
+test("lastSplitWindow：可分屏的窗口里优先取 focused 的，否则取第一个", async () => {
+  const W2 = { id: 2, type: "normal", alwaysOnTop: false, focused: true };
+  installChrome({}, { lastFocused: PIP, all: [PIP, W1, W2] });
+  assert.equal(await lastSplitWindow(), W2);
+});
+
+test("lastSplitWindow：只有 PiP、getLastFocused 抛错、getAll 抛错 → null", async () => {
+  installChrome({}, { lastFocused: PIP, all: [PIP] });
+  assert.equal(await lastSplitWindow(), null);
+  installChrome({ getLastFocused: true });
+  assert.equal(await lastSplitWindow(), null);
+  installChrome({ getAll: true }, { lastFocused: PIP });
+  assert.equal(await lastSplitWindow(), null);
+});
+
+test("other-window：最后聚焦的是 PiP → 一对建在普通窗口 1，窄窗口判定用 1200，从不拿 PiP 的窗口或标签", async () => {
+  installChrome({}, { lastFocused: PIP, all: [PIP, W1] });
+  await openInOtherWindow({ leftUrl: L, rightUrl: R, ...ids, narrowEnabled: true });
+  const creates = calls.filter(c => c[0] === "tabs.create");
+  assert.deepEqual(creates, [
+    ["tabs.create", { url: L, windowId: 1, active: true }],
+    ["tabs.create", { url: R, index: 1, windowId: 1, active: false, splitWithTabId: 100 }],
+  ]);
+  assert.ok(!calls.some(c => c[0] === "tabs.createSplit"));
+  assert.deepEqual(calls.at(-1), ["windows.update", 1, { focused: true }]);
+});
+
+test("other-window：只有 PiP → 新建普通窗口，不在 PiP 里建标签", async () => {
+  installChrome({}, { lastFocused: PIP, all: [PIP] });
+  await openInOtherWindow({ leftUrl: L, rightUrl: R, ...ids });
+  assert.ok(names().includes("windows.create"));
+  assert.ok(!calls.some(c => c[0] === "tabs.create" && c[1].windowId === PIP.id));
+  assert.ok(!calls.some(c => c[0] === "windows.update"));
 });

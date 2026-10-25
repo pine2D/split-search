@@ -2,6 +2,7 @@
 import { extractOriginalUrl, parseTrigger, expandTemplate, stripMarker } from "./lib/trigger.js";
 import { decideSplit } from "./lib/split-decision.js";
 import { isNarrow } from "./lib/narrow.js";
+import { splitWindowType } from "./lib/window-kind.js";
 import { loadConfig } from "./chrome/config-store.js";
 import { ACTIONS, leaveTab } from "./chrome/split-actions.js";
 import { inspectTab } from "./chrome/split-state.js";
@@ -58,7 +59,8 @@ async function gatherContext(engines) {
 async function split(engines, narrowEnabled, { left, right, query }, leftUrl, rightUrl) {
   const ctx = await gatherContext(engines);
   const action = decideSplit({
-    windowType: ctx.win.type,
+    // PiP 窗口报 type "normal"，经 splitWindowType 归为 "pip"，走 other-window，不在它上面调分屏 API
+    windowType: splitWindowType(ctx.win),
     splitViewId: ctx.splitViewId,
     peer: ctx.peer,
     ownership: ctx.ownership,

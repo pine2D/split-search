@@ -3,6 +3,7 @@ import { RULE_ID, buildRedirectRule, leftHosts } from "./lib/rules.js";
 import { clearPair } from "./chrome/split-state.js";
 import { ownedPair, switchRight } from "./chrome/right-switch.js";
 import { nextRightEngine } from "./lib/cycle.js";
+import { lastSplitWindow } from "./chrome/split-actions.js";
 
 const log = (...args) => console.error("[split-search]", ...args);
 
@@ -19,10 +20,10 @@ async function doRebuild() {
   }
 }
 
-// 快捷键：最后聚焦的 normal 窗口里的活动标签属于本扩展的一对时，右侧换成下一个参与轮换的引擎。
-// 不是本扩展的、没有可换的引擎，都什么也不做，也不弹任何东西。
+// 快捷键：最后聚焦的能分屏的窗口（lastSplitWindow，PiP 获得焦点时不取 PiP）里的活动标签属于本扩展的一对时，
+// 右侧换成下一个参与轮换的引擎。不是本扩展的、没有可换的引擎，都什么也不做，也不弹任何东西。
 async function cycleRight() {
-  const win = await chrome.windows.getLastFocused({ windowTypes: ["normal"] });
+  const win = await lastSplitWindow();
   if (!win) return;
   const [tab] = await chrome.tabs.query({ active: true, windowId: win.id });
   if (!tab) return;
