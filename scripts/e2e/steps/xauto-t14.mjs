@@ -20,7 +20,7 @@ async function leftItem(ctx, e) {
   catch (err) { if (err.kind === "skip") return { name: `${e.name} 作左侧`, status: "skip", detail: err.message }; throw err; }
   const r = await withAttempts(ctx, async () => {
     const base = await resetTabs(ctx);
-    await fixWindow(ctx, base.targetId);
+    await fixWindow(ctx, base.targetId, { windowId: base.windowId });
     const wid = await testWindow(ctx, base.targetId);
     const st0 = await ctx.ext.state();
     const before = new Set(splitPairs(st0).map(p => p[0].splitViewId)), beforeTabs = new Set(st0.tabs.map(t => t.id));

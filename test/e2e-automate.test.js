@@ -126,3 +126,21 @@ test("fixWindow: 嵌套显示把错开的测试窗口移回左上角（否则右
   // 要改尺寸或位置时才记快照（尺寸已对时不记）
   assert.deepEqual(remembered.map(b => b.left + "," + b.windowState), ["29,normal", "0,maximized"]);
 });
+
+test("fixWindow: 给了 windowId 时嵌套显示经 chrome.windows.update 把焦点交给测试窗口；host 模式或没给 windowId 不动焦点", async () => {
+  const { fixWindow } = await import("../scripts/e2e/steps/xauto-lib.mjs");
+  const run = async (nested, windowId) => {
+    const evals = [];
+    const ok = { windowState: "normal", left: 0, top: 0, width: 1600, height: 1000 };
+    const client = { send: async (m) => (m === "Browser.getWindowForTarget" ? { windowId: 9, bounds: ok } : {}) };
+    const ext = { eval: async (expr) => { evals.push(expr); return true; } };
+    await fixWindow({ browser: { client }, gx: { nested }, ext }, "T", { remember: () => {}, windowId });
+    return evals;
+  };
+  const xv = await run("xvfb", 7);
+  assert.equal(xv.length, 1);
+  assert.match(xv[0], /chrome\.windows\.update\(7, \{ focused: true \}\)/);
+  assert.equal((await run("xephyr", 7)).length, 1);
+  assert.deepEqual(await run(false, 7), []);
+  assert.deepEqual(await run("xvfb", undefined), []);
+});

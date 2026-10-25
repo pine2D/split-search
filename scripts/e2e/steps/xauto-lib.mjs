@@ -40,7 +40,9 @@ export async function settingsRetry(ctx, fn, { tries = 3, waitMs = 2000 } = {}) 
 // 嵌套显示（没有窗口管理器）还把窗口移回左上角：屏幕正好 2400×1500，Chrome 新开窗口会错开约 30px（层叠），
 // 测试窗口若是这样一个窗口，右侧就伸出屏幕，标签栏截图被裁（实测整次 --auto-only 里 T3/T4 报“截图大小不符”）
 // remember：改尺寸前记快照（单测传替身，免得写进真实的 .e2e/）
-export async function fixWindow(ctx, targetId, { remember = rememberWindow } = {}) {
+// windowId（扩展侧的窗口 id）：给了就在最后经 focusTestWindow 把焦点交给测试窗口（只在嵌套显示里做）。
+// 每个 xauto 现场都传：前面的步骤开关过窗口时，焦点可能停在根窗口上，右键、拖拽都不生效
+export async function fixWindow(ctx, targetId, { remember = rememberWindow, windowId: focusWindowId } = {}) {
   const { client } = ctx.browser;
   const { windowId, bounds } = await client.send("Browser.getWindowForTarget", { targetId });
   const same = bounds.windowState === "normal" && bounds.width === WIN_W && bounds.height === WIN_H && (!ctx.gx?.nested || (bounds.left === 0 && bounds.top === 0));
@@ -54,6 +56,16 @@ export async function fixWindow(ctx, targetId, { remember = rememberWindow } = {
     await client.send("Browser.setWindowBounds", { windowId, bounds: { width: WIN_W, height: WIN_H } });
     await sleep(400);
   }
+  if (focusWindowId != null) await focusTestWindow(ctx, focusWindowId);
+}
+
+// 嵌套显示没有窗口管理器：别的窗口（例如 T20 (g) 的 popup 窗口）关掉后 X 焦点落回根窗口，之后在页面里点击也拿不回来，
+// Chrome 在没有焦点的窗口里右键不出菜单（整次 --auto-only 里 T21、T22、T24 曾因此全部“右键后没有出现菜单”）。
+// 经 chrome.windows.update 让 Chrome 自己把焦点给测试窗口；host 模式有窗口管理器，焦点跟着点击走，不动
+export async function focusTestWindow(ctx, windowId) {
+  if (!ctx.gx?.nested) return;
+  await ctx.ext.eval(`chrome.windows.update(${windowId}, { focused: true }).then(() => true)`);
+  await sleep(300);
 }
 
 // 页面标题设成一次性 token，按标题找到它所在的 X 窗口（同一进程、WM_CLASS 含测试配置路径），唯一才返回

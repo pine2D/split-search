@@ -1,14 +1,13 @@
 // I18N 步骤（i18n.mjs）在每种语言下调用的 v0.4 检查：工具栏弹窗的“补成分屏”区（#complete）与设置页“右键查询”卡片。
-// 沿用 i18n.mjs 的自查（lang、原样 key、溢出）与截图；截图存 .e2e/i18n/<语言>-popup-complete.png、<语言>-options-lookup.png。
+// 沿用 i18n-audit.mjs 的自查（lang、原样 key、溢出）与截图；截图存 .e2e/i18n/<语言>-popup-complete.png、<语言>-options-lookup.png。
 // openResultTab 也给 B14 用（深色模式下的 #complete）。
-// 与 i18n.mjs 互相引用：这里只在函数里用它导出的工具，模块求值时不碰，循环引用不会读到未初始化的绑定。
 import { join } from "node:path";
 import { waitState, engineA, nonce } from "./util.mjs";
 import { openOptions } from "./optpage.mjs";
 import { POPUP_URL, popupPage } from "./v03-popup.mjs";
 import { mockEngines } from "../config.mjs";
 import { msgIn, sel } from "../i18n.mjs";
-import { audit, auditProblems, waitPage, shoot, bodyClip, htmlLang, SHOT_DIR } from "./i18n.mjs";
+import { audit, auditProblems, waitPage, shoot, bodyClip, htmlLang, SHOT_DIR } from "./i18n-audit.mjs";
 
 const J = JSON.stringify;
 const CARD = `[aria-labelledby="lookup-title"]`;

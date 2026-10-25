@@ -21,9 +21,8 @@ export async function articleScene(ctx, { xinput = true } = {}) {
   const P = await openTabIn(ctx, base.windowId, articleUrl(ctx.port));
   let wid = null;
   if (xinput) {
-    await fixWindow(ctx, P.targetId);
+    await fixWindow(ctx, P.targetId, { windowId: base.windowId });
     wid = await testWindow(ctx, P.targetId);
-    await focusTestWindow(ctx, base.windowId);
     const m = await metrics(ctx.browser, P.targetId);
     await primeClick(ctx, cssToScreen(m, m.innerWidth * 0.75, m.innerHeight * 0.9), wid);
   }
@@ -31,14 +30,6 @@ export async function articleScene(ctx, { xinput = true } = {}) {
   return { base, P, wid, mark };
 }
 
-// 嵌套显示没有窗口管理器：别的窗口（例如 T20 (g) 的 popup 窗口）关掉后 X 焦点落回根窗口，之后在页面里点击也拿不回来，
-// Chrome 在没有焦点的窗口里右键不出菜单（整次 --auto-only 里 T21、T22、T24 因此全部“右键后没有出现菜单”）。
-// 右键前经 chrome.windows.update 让 Chrome 自己把焦点给测试窗口；host 模式有窗口管理器，焦点跟着点击走，不动
-export async function focusTestWindow(ctx, windowId) {
-  if (!ctx.gx?.nested) return;
-  await ctx.ext.eval(`chrome.windows.update(${windowId}, { focused: true }).then(() => true)`);
-  await sleep(300);
-}
 
 // 在页面里建选区：{ in, word }（元素里的一个词）或 { from, to }（从 from 段开头到 to 段结尾）。
 // 返回选区第一个矩形里的一点（CSS）与选区文字

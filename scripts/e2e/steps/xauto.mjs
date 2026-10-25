@@ -21,7 +21,7 @@ export const WORDS = ["xkw", "xdef", "xalt", "xgap", "xonto", "xright", "xntp", 
 // 拖拽现场：整理标签（site-x 为当前标签）、固定窗口尺寸、按标题取测试窗口 id
 async function dragScene(ctx) {
   const base = await resetTabs(ctx);
-  await fixWindow(ctx, base.targetId);
+  await fixWindow(ctx, base.targetId, { windowId: base.windowId });
   const wid = await testWindow(ctx, base.targetId);
   return { base, wid };
 }

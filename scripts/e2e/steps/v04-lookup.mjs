@@ -127,29 +127,36 @@ async function runT21(ctx) {
   return done();
 }
 
-// 回退：向导请用户在 page-u 上选中文字、右键点本扩展的菜单项，脚本照 (a) 的断言判定
+// 回退：向导请用户在 page-u 上选中文字、右键点本扩展的菜单项，脚本照 (a) 的断言判定。
+// 同自动版本：外层 guarded 写回 lookupEngine，每次准备现场（含“重试”）先删掉它，查词引擎才是缺省的 eb
 const T21_MANUAL = {
   id: "T21", title: "② 边读边查：选中文字右键查词，网页留在左侧不动（人工右键）", kind: "assist", needs: [], timeoutFactor: 3,
-  async run(ctx) {
-    const eb = mock(ctx.port, "eb");
-    let scene;
-    const prepare = async () => { scene = await articleScene(ctx, { xinput: false }); await focusGuide(ctx); };
-    await prepare();
-    const prefix = new URL(expandTemplate(eb.url, "x")).origin + "/search?";
-    const title = msg("menu_lookup_text", eb.name).replace("%s", "…");
-    return assist(ctx, {
-      title: "T21 边读边查", what: "网页与模拟引擎 B 的搜索组成分屏",
-      instruction: `切到标签“page-u article”，在第一段里选中一个英文词，右键，点“${title}”（本扩展的菜单项）。\n期望：网页留在左边不动，右边是模拟引擎 B 搜索这个词。\n做错了或现场乱了，点“重试”。`,
-      onRetry: prepare,
-      probe: async () => lookupPair(await ctx.ext.state(), scene.P.id, t => t.url?.startsWith(prefix)),
-      verdict: async ([p, l]) => {
-        const q = new URL(l.url).searchParams.get("q") ?? "";
-        return verdict([...await pageUntouched(ctx, scene.P, scene.mark), ...await pairRecords(ctx, p, l, "eb", q)],
-          `分屏 ${p.id}｜${l.id}，右侧 ${l.url}，网页网址与标记不变；(b)–(d) 只在自动版本里测`);
-      },
-    });
-  },
+  run: ctx => guarded(ctx, LOOKUP_KEYS, () => runT21Manual(ctx)),
 };
+
+async function runT21Manual(ctx) {
+  const eb = mock(ctx.port, "eb");
+  let scene;
+  const prepare = async () => {
+    await resetLookupEngine(ctx);
+    scene = await articleScene(ctx, { xinput: false });
+    await focusGuide(ctx);
+  };
+  await prepare();
+  const prefix = new URL(expandTemplate(eb.url, "x")).origin + "/search?";
+  const title = msg("menu_lookup_text", eb.name).replace("%s", "…");
+  return assist(ctx, {
+    title: "T21 边读边查", what: "网页与模拟引擎 B 的搜索组成分屏",
+    instruction: `切到标签“page-u article”，在第一段里选中一个英文词，右键，点“${title}”（本扩展的菜单项）。\n期望：网页留在左边不动，右边是模拟引擎 B 搜索这个词。\n做错了或现场乱了，点“重试”。`,
+    onRetry: prepare,
+    probe: async () => lookupPair(await ctx.ext.state(), scene.P.id, t => t.url?.startsWith(prefix)),
+    verdict: async ([p, l]) => {
+      const q = new URL(l.url).searchParams.get("q") ?? "";
+      return verdict([...await pageUntouched(ctx, scene.P, scene.mark), ...await pairRecords(ctx, p, l, "eb", q)],
+        `分屏 ${p.id}｜${l.id}，右侧 ${l.url}，网页网址与标记不变；(b)–(d) 只在自动版本里测`);
+    },
+  });
+}
 
 const T21 = xauto({
   id: "T21", title: "② 边读边查：选中文字右键查词，网页留在左侧不动；复用查询标签、查词引擎设置、长选区规范化（真实鼠标）",

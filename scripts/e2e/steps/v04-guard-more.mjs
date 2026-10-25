@@ -14,7 +14,7 @@ import { deps, idle, gestureError, REASON_BUSY } from "../gesture.mjs";
 import { primeClick, contextMenuCount } from "../gesture-ui.mjs";
 import { metrics, cssToScreen, newFocusedWindow } from "../screen.mjs";
 import { openTabIn } from "./v04-lib.mjs";
-import { articleUrl, selectIn, mock, focusTestWindow } from "./v04-lookup-lib.mjs";
+import { articleUrl, selectIn, mock } from "./v04-lookup-lib.mjs";
 import { guardTabs, guardCheck, makeQueryPair, queryRecords } from "./v04-guard.mjs";
 
 const J = JSON.stringify;
@@ -22,12 +22,11 @@ const tabOf = (st, id) => st.tabs.find(t => t.id === id);
 // T24 外层 guarded 要写回的键（(d') 改 cycleExclude）
 export const MORE_KEYS = ["cycleExclude"];
 
-// 每次尝试的起点：整理标签，测试窗口固定尺寸、按 site-x 标签（此时是当前标签）的标题取 X 窗口 id、把焦点给它（focusTestWindow）。之后的现场都建在这个窗口里
+// 每次尝试的起点：整理标签，测试窗口固定尺寸、按 site-x 标签（此时是当前标签）的标题取 X 窗口 id、把焦点给它（fixWindow 的 windowId）。之后的现场都建在这个窗口里
 export async function xBase(ctx) {
   const base = await resetTabs(ctx);
-  await fixWindow(ctx, base.targetId);
+  await fixWindow(ctx, base.targetId, { windowId: base.windowId });
   const wid = await testWindow(ctx, base.targetId);
-  await focusTestWindow(ctx, base.windowId);
   return { base: { id: base.tabId, targetId: base.targetId, windowId: base.windowId }, wid };
 }
 

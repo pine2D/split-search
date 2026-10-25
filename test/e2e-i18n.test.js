@@ -44,7 +44,7 @@ test("I18N 步骤：auto，--auto-only 也跑", async () => {
 });
 
 test("auditProblems: lang、原样 key、横向溢出、按钮/label 溢出逐条报出；都没问题返回空", async () => {
-  const { auditProblems } = await import("../scripts/e2e/steps/i18n.mjs");
+  const { auditProblems } = await import("../scripts/e2e/steps/i18n-audit.mjs");
   const ok = { lang: "zh-TW", scrollWidth: 1200, innerWidth: 1200, raw: [], tight: [] };
   assert.deepEqual(auditProblems("zh_TW", ok), []);
   const bad = auditProblems("zh_TW", { lang: "en", scrollWidth: 1300, innerWidth: 1200,
@@ -57,9 +57,15 @@ test("auditProblems: lang、原样 key、横向溢出、按钮/label 溢出逐�
 });
 
 test("auditProblems: 给了 box 时横向溢出按那个元素报（scrollWidth > clientWidth）", async () => {
-  const { auditProblems } = await import("../scripts/e2e/steps/i18n.mjs");
+  const { auditProblems } = await import("../scripts/e2e/steps/i18n-audit.mjs");
   const out = auditProblems("en", { lang: "en", box: "#catalog-dialog", scrollWidth: 620, innerWidth: 600, raw: [], tight: [] });
   assert.equal(out.length, 1);
   assert.match(out[0], /#catalog-dialog 横向溢出：scrollWidth 620 > clientWidth 600/);
   assert.deepEqual(auditProblems("en", { lang: "en", box: "body", scrollWidth: 340, innerWidth: 340, raw: [], tight: [] }), []);
+});
+
+test("i18n.mjs 与 v04-i18n.mjs 不互相 import（共用工具在 i18n-audit.mjs）", () => {
+  const src = f => readFileSync(new URL(`../scripts/e2e/steps/${f}`, import.meta.url), "utf8");
+  assert.doesNotMatch(src("v04-i18n.mjs"), /from "\.\/i18n\.mjs"/);
+  assert.doesNotMatch(src("i18n-audit.mjs"), /from "\.\/(v04-)?i18n\.mjs"/);
 });
