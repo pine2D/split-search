@@ -11,7 +11,7 @@ test("parseRecord 拒绝裸数字和缺字段", () => {
   assert.equal(parseRecord(42), null);
   assert.equal(parseRecord({ peer: 2, splitViewId: 7, mode: "split", engine: "ea" }), null); // 缺 query
   assert.deepEqual(parseRecord({ peer: 2, splitViewId: 7, mode: "split", engine: "ea", query: "" }),
-    { peer: 2, splitViewId: 7, mode: "split", engine: "ea", query: "" });
+    { peer: 2, splitViewId: 7, mode: "split", role: "search", engine: "ea", query: "" });
 });
 test("parseRecord 拒绝类型不对的字段", () => {
   const ok = { peer: 2, splitViewId: 7, mode: "split", engine: "ea", query: "q" };
@@ -22,9 +22,40 @@ test("parseRecord 拒绝类型不对的字段", () => {
 });
 test("makeRecords 写两个方向", () => {
   assert.deepEqual(makeRecords({ a: 1, b: 2, splitViewId: 7, mode: "split", engineA: "ea", engineB: "eb", query: "q" }), {
-    "split:1": { peer: 2, splitViewId: 7, mode: "split", engine: "ea", query: "q" },
-    "split:2": { peer: 1, splitViewId: 7, mode: "split", engine: "eb", query: "q" },
+    "split:1": { peer: 2, splitViewId: 7, mode: "split", role: "search", engine: "ea", query: "q" },
+    "split:2": { peer: 1, splitViewId: 7, mode: "split", role: "search", engine: "eb", query: "q" },
   });
+});
+
+const base = { peer: 2, splitViewId: 7, mode: "split", engine: "ea", query: "q" };
+test("parseRecord：没有 role 按 search，search 不带 input", () => {
+  assert.deepEqual(parseRecord(base), { ...base, role: "search" });
+  assert.equal("input" in parseRecord({ ...base, role: "search", input: "text" }), false);
+});
+test("parseRecord：查询对", () => {
+  assert.equal(parseRecord({ ...base, role: "lookup" }), null);               // 缺 input
+  assert.equal(parseRecord({ ...base, role: "lookup", input: "video" }), null);
+  assert.deepEqual(parseRecord({ ...base, role: "lookup", input: "image" }), { ...base, role: "lookup", input: "image" });
+  assert.deepEqual(parseRecord({ ...base, engine: "", role: "page", input: "text" }), { ...base, engine: "", role: "page", input: "text" });
+  assert.equal(parseRecord({ ...base, role: "page", input: "text" }), null);  // page 的 engine 必须为空
+});
+test("parseRecord：未知 role、engine 为空却不是 page", () => {
+  assert.equal(parseRecord({ ...base, role: "owner" }), null);
+  assert.equal(parseRecord({ ...base, engine: "" }), null);
+  assert.equal(parseRecord({ ...base, engine: "", role: "lookup", input: "text" }), null);
+});
+test("makeRecords：查询对两侧同一个 input", () => {
+  assert.deepEqual(makeRecords({ a: 1, b: 2, splitViewId: 7, mode: "split", engineA: "", engineB: "bing",
+    query: "x", roleA: "page", roleB: "lookup", input: "text" }), {
+    "split:1": { peer: 2, splitViewId: 7, mode: "split", role: "page", input: "text", engine: "", query: "x" },
+    "split:2": { peer: 1, splitViewId: 7, mode: "split", role: "lookup", input: "text", engine: "bing", query: "x" },
+  });
+  const s = makeRecords({ a: 1, b: 2, splitViewId: 7, mode: "split", engineA: "ea", engineB: "eb", query: "q" })["split:1"];
+  assert.equal(s.role, "search"); assert.equal("input" in s, false);
+});
+test("staleMarker 保留 role 与 input", () => {
+  const r = staleMarker({ ...base, role: "lookup", input: "image" });
+  assert.equal(r.role, "lookup"); assert.equal(r.input, "image"); assert.equal(r.splitViewId, -1);
 });
 test("looksLikeSearchPage：query 型比 origin+pathname", () => {
   const yt = "https://www.youtube.com/results?search_query=%s";
@@ -49,6 +80,19 @@ const engines = [{ id: "google", url: "https://www.google.com/search?q=%s" }];
 
 test("judgeOwnership：互指且 splitViewId 一致 → own", () =>
   assert.equal(judgeOwnership({ tab, peer, record: rec(2), peerRecord: rec(1), engines }), "own"));
+test("judgeOwnership：角色配对与 input", () => {
+  const j = (r, pr) => judgeOwnership({ tab, peer, record: rec(2, r), peerRecord: rec(1, pr), engines });
+  const page = (input = "text") => ({ role: "page", input, engine: "" });
+  const lookup = (input = "text") => ({ role: "lookup", input });
+  assert.equal(j(page(), lookup()), "own");
+  assert.equal(j(lookup("image"), page("image")), "own");
+  assert.equal(j({ role: "search" }, lookup()), "stale");
+  assert.equal(j(page(), page()), "stale");
+  assert.equal(j(lookup(), lookup()), "stale");
+  assert.equal(j(page("text"), lookup("image")), "stale");
+  assert.equal(j({}, {}), "own"); // 旧形状两侧都无 role（调用方未经 parseRecord）
+  assert.equal(j({ role: "search" }, {}), "own");
+});
 test("judgeOwnership：splitViewId 变了 → stale，即使对侧是 Google 搜索页", () =>
   assert.equal(judgeOwnership({
     tab, peer: { ...peer, url: "https://www.google.com/search?q=x" },
@@ -126,7 +170,7 @@ test("looksLikeSearchPage：模板里的占位与 engines.js 共用 PLACEHOLDER�
 test("staleMarker：形状合法、引擎与关键词保留，任何位置关系下都判 stale", () => {
   const m = staleMarker(rec(2, { mode: "adjacent", splitViewId: -1, engine: "ea", query: "w" }));
   assert.deepEqual(m, { peer: 2, splitViewId: -1, mode: "split", engine: "ea", query: "w" });
-  assert.deepEqual(parseRecord(m), m);
+  assert.deepEqual(parseRecord(m), { ...m, role: "search" });
   const back = staleMarker(rec(1, { mode: "adjacent", splitViewId: -1 }));
   const url = "https://www.google.com/search?q=x";
   const t = { id: 1, index: 4, windowId: 9, splitViewId: -1 }, p = { id: 2, index: 5, windowId: 9, splitViewId: -1, url };

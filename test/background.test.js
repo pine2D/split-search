@@ -6,7 +6,7 @@ const listeners = {};
 const event = (name) => ({ addListener: (fn) => { (listeners[name] ||= []).push(fn); } });
 let state;
 const QUERY = "a&b #c+d 中文 😀";
-const rec = (peer, engine) => ({ peer, splitViewId: 7, mode: "split", engine, query: QUERY });
+const rec = (peer, engine) => ({ peer, splitViewId: 7, mode: "split", role: "search", engine, query: QUERY });
 const L = { id: 10, index: 0, windowId: 1, splitViewId: 7, active: false };
 const R = { id: 11, index: 1, windowId: 1, splitViewId: 7, active: true };
 

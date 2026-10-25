@@ -43,7 +43,7 @@ function installChrome({ fail = {}, tabs = {}, data = {} } = {}) {
   };
 }
 
-const rec = (peer, over = {}) => ({ peer, splitViewId: 7, mode: "split", engine: "google", query: "q", ...over });
+const rec = (peer, over = {}) => ({ peer, splitViewId: 7, mode: "split", role: "search", engine: "google", query: "q", ...over });
 const engines = [{ id: "google", url: "https://www.google.com/search?q=%s" }];
 
 beforeEach((t) => {
@@ -71,8 +71,8 @@ test("readRecord：storage.session.get 抛错时返回 null，不抛", async () 
 test("writePair：一次 set 写两条", async () => {
   await writePair({ a: 1, b: 2, splitViewId: 7, mode: "split", engineA: "google", engineB: "bing", query: "a&b" });
   assert.deepEqual(calls, [["session.set", {
-    "split:1": { peer: 2, splitViewId: 7, mode: "split", engine: "google", query: "a&b" },
-    "split:2": { peer: 1, splitViewId: 7, mode: "split", engine: "bing", query: "a&b" },
+    "split:1": { peer: 2, splitViewId: 7, mode: "split", role: "search", engine: "google", query: "a&b" },
+    "split:2": { peer: 1, splitViewId: 7, mode: "split", role: "search", engine: "bing", query: "a&b" },
   }]]);
 });
 

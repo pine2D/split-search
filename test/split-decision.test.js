@@ -26,7 +26,18 @@ test("narrow 不影响其他结果", () => {
   }
 });
 test("本扩展分屏 → reuse", () => assert.equal(decideSplit(base), "reuse"));
-test("无记录兜底判为本扩展 → reuse", () => assert.equal(decideSplit({ ...base, ownership: "fallback-own" }), "reuse"));
+test("fallback-own 在分屏中 → foreign", () => assert.equal(decideSplit({ ...base, ownership: "fallback-own" }), "foreign"));
+test("fallback-own 不在分屏中 → new", () =>
+  assert.equal(decideSplit({ ...base, splitViewId: -1, ownership: "fallback-own", narrow: true }), "new"));
+test("当前标签是 lookup：分屏中 foreign，相邻对 new", () => {
+  assert.equal(decideSplit({ ...base, ownership: "own", role: "lookup" }), "foreign");
+  assert.equal(decideSplit({ ...base, splitViewId: -1, ownership: "own", role: "lookup", narrow: true }), "new");
+});
+test("当前标签是 page：照常 reuse / join", () => {
+  assert.equal(decideSplit({ ...base, ownership: "own", role: "page" }), "reuse");
+  assert.equal(decideSplit({ ...base, splitViewId: -1, ownership: "own", role: "page", narrow: false }), "join");
+});
+test("没有 role（旧调用方）按 search", () => assert.equal(decideSplit({ ...base, ownership: "own" }), "reuse"));
 test("记录失效 → foreign", () => assert.equal(decideSplit({ ...base, ownership: "stale" }), "foreign"));
 test("无记录且不像搜索页 → foreign", () => assert.equal(decideSplit({ ...base, ownership: "none" }), "foreign"));
 test("在分屏中却找不到另一侧", () => {
@@ -53,4 +64,13 @@ test("decideFor：窄窗口判定用 ctx.win.width 和降级开关", () => {
   assert.equal(decideFor(ctx({ type: "normal", width: 800 }, own), true), "reuse");
   assert.equal(decideFor(ctx({ type: "normal", width: 800 }, own), false), "join");
   assert.equal(decideFor(ctx({ type: "normal", width: 1400 }, own), true), "join");
+});
+test("decideFor：role 取自 ctx.record（lookup 一侧不改写对侧）", () => {
+  const win = { type: "normal", width: 1400 };
+  const own = (role) => ({ splitViewId: 7, peer, ownership: "own", record: { role } });
+  assert.equal(decideFor(ctx(win, own("lookup")), true), "foreign");
+  assert.equal(decideFor(ctx(win, own("page")), true), "reuse");
+  assert.equal(decideFor(ctx(win, own("search")), true), "reuse");
+  assert.equal(decideFor(ctx(win, { splitViewId: -1, peer, ownership: "own", record: { role: "lookup" } }), true), "new");
+  assert.equal(decideFor(ctx(win, { splitViewId: 7, peer, ownership: "own", record: null }), true), "reuse");
 });

@@ -71,7 +71,7 @@ const names = () => calls.map(c => c[0]);
 const L = "https://kagi.com/search?q=x";
 const R = "https://www.google.com/search?q=x";
 const ids = { leftId: "kagi", rightId: "google", query: "x", narrowEnabled: false };
-const rec = (peer, engine, over = {}) => ({ peer, splitViewId: 55, mode: "split", engine, query: "x", ...over });
+const rec = (peer, engine, over = {}) => ({ peer, splitViewId: 55, mode: "split", role: "search", engine, query: "x", ...over });
 
 beforeEach((t) => {
   installChrome();

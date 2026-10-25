@@ -51,7 +51,7 @@ const engines = [
 ];
 const L = { id: 10, index: 3, windowId: 1, splitViewId: 7, url: "https://www.google.com/search?q=x" };
 const R = { id: 11, index: 4, windowId: 1, splitViewId: 7, url: "https://www.bing.com/search?q=x" };
-const rec = (peer, engine, over = {}) => ({ peer, splitViewId: 7, mode: "split", engine, query: QUERY, ...over });
+const rec = (peer, engine, over = {}) => ({ peer, splitViewId: 7, mode: "split", role: "search", engine, query: QUERY, ...over });
 const ownData = () => ({ "split:10": rec(11, "google"), "split:11": rec(10, "bing") });
 
 beforeEach((t) => {
