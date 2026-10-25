@@ -51,7 +51,7 @@ test("STEPS: T16、T17、T18 是 auto，--auto-only 会跑；T16 标了 restarts
   for (const id of ["T16", "T17", "T18"]) assert.equal(byId[id]?.kind, "auto", id);
   assert.equal(byId.T16.restarts, true);
   assert.equal(byId.T16.timeoutMs, 180000);
-  assert.equal(byId.T17.timeoutMs, 180000);
+  assert.equal(byId.T17.timeoutMs, 240000); // 8 个子项（含 (g)(h)）
   assert.match(byId.B2.title, /弹窗/);
   const auto = selectSteps(STEPS, { autoOnly: true, xinput: false }).map(s => s.id);
   for (const id of ["B2", "T16", "T17", "T18"]) assert.ok(auto.includes(id), id);

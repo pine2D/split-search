@@ -15,7 +15,7 @@ import { query } from "./xauto.mjs";
 import { readRecords, checkPairRecords, tabUrl, pairOn, queryOf } from "./v03-lib.mjs";
 import { guarded } from "./optpage.mjs";
 import { judge, focusGuide } from "./guided.mjs";
-import { COMMAND, TEST_KEYS, SHORTCUTS_URL, bindShortcut, restoreShortcut, xdoCombo } from "../ext-shortcuts.mjs";
+import { COMMAND, TEST_KEYS, SHORTCUTS_URL, bindShortcut, restoreShortcut, xdoCombo, remember } from "../ext-shortcuts.mjs";
 
 export const CYCLE_EXCLUDE = [...PRESETS.map(p => p.id), "ec"];
 export const T19_PRESSES = ["ea", "eb"]; // 每按一次，右侧应换成的引擎
@@ -68,6 +68,26 @@ async function attempt(ctx) {
   return { status: "pass", detail: `分屏 ${L.id}｜${R.id}（关键词“${text}”）：按 ${TEST_KEYS} ${done.join("，")}（ec 与预置引擎被排除、跳过），右侧网址都是 expandTemplate 的结果，左侧不动` };
 }
 
+// 纯逻辑：自动绑定快捷键的结果 → 下一步。bindError 为 null 表示绑好了。
+// auto：继续（xauto 按真实按键，judge 请用户按）；manual：快捷键页认不出，只有引导式的人工版本能请用户自己绑；
+// skip：--auto-only 不回退到人工，或原有绑定录不回去（不改动它）；throw：别的错误照常抛出
+export function t19Plan({ bindError, autoOnly }) {
+  if (!bindError) return { action: "auto" };
+  if (bindError.kind === "unrestorable") return { action: "skip", detail: bindError.message };
+  if (bindError.kind !== "infra") return { action: "throw", error: bindError };
+  if (autoOnly) return { action: "skip", detail: `${bindError.message}；--auto-only 不回退到人工` };
+  return { action: "manual", detail: bindError.message };
+}
+
+// 人工路径开始前：读出运行前的绑定（经 chrome.commands，快捷键页认不出时只能这样读）。
+// 未绑定就记进快照（收尾与下次启动按它清除，清不掉至少报警告）；已有绑定时人工改动后脚本改不回，返回跳过原因
+export async function manualSnapshot(ctx, { save = remember } = {}) {
+  const before = (await ctx.ext.eval("chrome.commands.getAll()")).find(c => c.name === COMMAND)?.shortcut ?? "";
+  if (before) return `测试配置里 ${COMMAND} 已绑定“${before}”，人工路径改动后脚本没法可靠改回，跳过`;
+  save(COMMAND, "");
+  return null;
+}
+
 // ---- 人工版本（judge）：快捷键能自动绑就自动绑，绑不了请用户在快捷键页自己绑、用完清除 ----
 const MANUAL_Q = "t19+manual";
 const fallback = {
@@ -76,11 +96,13 @@ const fallback = {
     await setExclude(ctx);
     let manualBind = null;
     try {
-      try { await bindShortcut(ctx.browser, COMMAND, TEST_KEYS); }
-      catch (e) {
-        if (e.kind !== "infra") throw e;
-        if (ctx.autoOnly) return { status: "skip", detail: `${e.message}；--auto-only 不回退到人工` };
-        manualBind = e.message;
+      const plan = t19Plan({ bindError: await bindShortcut(ctx.browser, COMMAND, TEST_KEYS).then(() => null, e => e), autoOnly: ctx.autoOnly });
+      if (plan.action === "throw") throw plan.error;
+      if (plan.action === "skip") return { status: "skip", detail: plan.detail };
+      if (plan.action === "manual") {
+        const why = await manualSnapshot(ctx);
+        if (why) return { status: "skip", detail: `${plan.detail}；${why}` };
+        manualBind = plan.detail;
       }
       const { pair: [L, R] } = await pairOn(ctx, MANUAL_Q);
       await focusGuide(ctx);
@@ -98,7 +120,8 @@ const fallback = {
       return p.length ? { status: "fail", detail: `用户判通过，但脚本核对不符：${p.join("；")}` }
         : { status: "pass", detail: `用户按 ${KEY_LABEL} 后右侧 ${R.id} 换成模拟引擎 A（${engineUrl(ctx, "ea", text)}），记录一致` };
     } finally {
-      if (!manualBind) await restoreShortcut(ctx.browser).catch(e => ctx.log?.(`  改回快捷键失败（收尾会再试）：${e.message}`));
+      // 人工路径也有快照（未绑定）：快捷键页还是认不出时改回会失败，收尾与下次启动再试并报警告
+      await restoreShortcut(ctx.browser).catch(e => ctx.log?.(`  改回快捷键失败（收尾会再试）：${e.message}`));
     }
   }),
 };
@@ -108,12 +131,12 @@ export const T19 = xauto({
   run: ctx => guarded(ctx, ["cycleExclude"], async () => {
     await setExclude(ctx);
     try {
-      try { await bindShortcut(ctx.browser, COMMAND, TEST_KEYS); }
-      catch (e) {
-        if (e.kind !== "infra") throw e;
-        if (ctx.autoOnly) return { status: "skip", detail: `${e.message}；--auto-only 不回退到人工` };
+      const plan = t19Plan({ bindError: await bindShortcut(ctx.browser, COMMAND, TEST_KEYS).then(() => null, e => e), autoOnly: ctx.autoOnly });
+      if (plan.action === "throw") throw plan.error;
+      if (plan.action === "skip") return { status: "skip", detail: plan.detail };
+      if (plan.action === "manual") {
         const r = await fallback.run(ctx);
-        return { ...r, detail: `${r.detail}（自动版本做不了：${e.message}，改由人工完成）` };
+        return { ...r, detail: `${r.detail}（自动版本做不了：${plan.detail}，改由人工完成）` };
       }
       return await withAttempts(ctx, () => attempt(ctx));
     } finally {

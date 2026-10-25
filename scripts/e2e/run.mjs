@@ -10,6 +10,7 @@ import * as ext from "./ext.mjs";
 import { switchSource, restoreHome, readSourceState, verifySourceDir } from "./ext-source.mjs";
 import * as se from "./settings-se.mjs";
 import * as shortcuts from "./ext-shortcuts.mjs";
+import * as winSnap from "./window-snap.mjs";
 import { useKagi } from "./settings-kagi.mjs";
 import { collectConsole } from "./console.mjs";
 import { STEPS, selectSteps } from "./steps/index.mjs";
@@ -205,6 +206,8 @@ async function main() {
       notes.push(ok ? "启动时发现上次遗留的快捷键快照，已先改回运行前的绑定" : "启动时改回遗留的快捷键失败，快照保留，收尾再试");
       log(notes.at(-1));
     }
+    const winNote = await winSnap.restorePendingWindow(browser); // T17 等改窗口尺寸期间被强制退出
+    if (winNote) { notes.push(winNote); log(winNote); }
     const grants = await ensureGrants(setupCtx, { autoOnly: args.autoOnly });
     if (!grants.ok) {
       if (args.autoOnly) { warn(`前置条件缺失：${grants.detail}。请先完成一次引导式运行（npm run e2e）。`); return 2; }
@@ -264,6 +267,7 @@ async function main() {
   } finally {
     await teardown(rt, s, {
       ext, extAlive, se, exists: existsSync, shortcut: { restore: shortcuts.restoreShortcut, SHORTCUT_FILE: shortcuts.SHORTCUT_FILE },
+      win: { restore: winSnap.restoreWindow, WINDOW_FILE: winSnap.WINDOW_FILE, describe: winSnap.describeBounds },
       sourceHome: () => (s.sourceSwitched ? readSourceState(SOURCE_STATE_FILE).home : null),
       restoreSource: b => restoreHome(b, { file: SOURCE_STATE_FILE, reload: ext.reloadExtension }), enableExt, cleanupItems, cleanupNote, cleanupText, ...reportDeps,
       afterClose: async () => (rt.ctx?.gx ? releaseAfterClose(xinput, rt.ctx.gx.root) : "none"),

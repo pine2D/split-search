@@ -15,16 +15,17 @@ const OPTIONS_PREFIX = `chrome-extension://${EXT_ID}/options/`;
 
 // 弹窗里的“打开设置页”：openOptionsPage 在已有设置页时只把它切到前台、不新开。所以先让设置页标签都退到后台
 // （在它所在的窗口里新开一个 site-x 标签），再点按钮：出现新的设置页目标，或某个设置页标签回到前台，都算打开了。
-// 返回 { problems, how }（how："new" 新开了设置页 | "activated" 已有的设置页回到前台）
-async function openOptionsFromPopup(ctx, page) {
+// 返回 { problems, how }（how："new" 新开了设置页 | "activated" 已有的设置页回到前台）。made 收集新开的 site-x 标签 id，由 B2 收尾关掉
+async function openOptionsFromPopup(ctx, page, made) {
   const J = JSON.stringify;
   const blank = siteX(ctx.port, `/b2-open-options?n=${nonce()}`);
-  await ctx.ext.eval(`(async () => {
+  made.push(...await ctx.ext.eval(`(async () => {
+    const made = [];
     for (const t of await chrome.tabs.query({ active: true })) {
-      if (t.url?.startsWith(${J(OPTIONS_PREFIX)})) await chrome.tabs.create({ windowId: t.windowId, url: ${J(blank)}, active: true });
+      if (t.url?.startsWith(${J(OPTIONS_PREFIX)})) made.push((await chrome.tabs.create({ windowId: t.windowId, url: ${J(blank)}, active: true })).id);
     }
-    return true;
-  })()`);
+    return made;
+  })()`));
   const optionTargets = async () => (await pageTargets(ctx.browser)).filter(t => t.url.startsWith(OPTIONS_PREFIX));
   const before = new Set((await optionTargets()).map(t => t.targetId));
   const activeOptions = `chrome.tabs.query({ active: true }).then(ts => ts.some(t => t.url?.startsWith(${J(OPTIONS_PREFIX)})))`;
@@ -47,27 +48,43 @@ const B2 = {
     const tabs = async () => (await browser.client.send("Target.getTargets", { filter: [{ type: "tab" }] })).targetInfos;
     const notExt = list => list.find(t => !t.url.startsWith(`chrome-extension://${EXT_ID}/`));
     let host = notExt(await tabs());
+    let blankTarget = null; // 本步新开的 about:blank，结束时关掉
     if (!host) {
-      await browser.client.send("Target.createTarget", { url: "about:blank" });
+      ({ targetId: blankTarget } = await browser.client.send("Target.createTarget", { url: "about:blank" }));
       host = await browser.waitFor(async () => notExt(await tabs()), { timeoutMs: 5000 });
     }
-    for (const t of await popupTargets(browser)) await browser.client.send("Target.closeTarget", { targetId: t.targetId }).catch(() => {});
-    await browser.waitFor(async () => (await popupTargets(browser)).length === 0, { timeoutMs: 5000 });
-    const manifest = await ctx.ext.eval("chrome.runtime.getManifest().action?.default_popup ?? null");
-    if (manifest !== "popup/popup.html") return { status: "fail", detail: `manifest 的 action.default_popup 应为 popup/popup.html，实际 ${manifest}` };
-    await browser.client.send("Extensions.triggerAction", { id: EXT_ID, targetId: host.targetId });
-    const t = await browser.waitFor(async () => (await popupTargets(browser))[0], { timeoutMs: 10000 }).catch(() => null);
-    if (!t) return { status: "fail", detail: "触发扩展图标动作后 10 秒内没有出现弹窗页" };
-    const page = await popupPage(ctx, { targetId: t.targetId });
     try {
-      const s = await page.read().catch(e => ({ err: e.message }));
-      if (s.err) return { status: "fail", detail: `出现了弹窗页 ${t.url}，但 10 秒内没有渲染完（${s.err}）` };
-      const { problems: p, how } = await openOptionsFromPopup(ctx, page);
-      if (p.length) return { status: "fail", detail: `弹窗已渲染，但${p.join("；")}` };
-      return { status: "pass", detail: `触发图标动作后出现弹窗页 ${t.url}，已渲染（${s.ours ? `本扩展的一对：${s.left} ｜ ${s.right}` : `说明文字“${s.notOursText}”`}）；点“打开设置页”后${how === "new" ? "新开了设置页" : "已有的设置页回到前台"}` };
-    } finally { await page.close(); }
+      return await popupFlow(ctx, host);
+    } finally {
+      if (blankTarget) await browser.client.send("Target.closeTarget", { targetId: blankTarget }).catch(() => {});
+    }
   },
 };
+
+// B2 主体：触发图标动作 → 弹窗渲染 → 点“打开设置页”
+async function popupFlow(ctx, host) {
+  const { browser } = ctx;
+  for (const t of await popupTargets(browser)) await browser.client.send("Target.closeTarget", { targetId: t.targetId }).catch(() => {});
+  await browser.waitFor(async () => (await popupTargets(browser)).length === 0, { timeoutMs: 5000 });
+  const manifest = await ctx.ext.eval("chrome.runtime.getManifest().action?.default_popup ?? null");
+  if (manifest !== "popup/popup.html") return { status: "fail", detail: `manifest 的 action.default_popup 应为 popup/popup.html，实际 ${manifest}` };
+  await browser.client.send("Extensions.triggerAction", { id: EXT_ID, targetId: host.targetId });
+  const t = await browser.waitFor(async () => (await popupTargets(browser))[0], { timeoutMs: 10000 }).catch(() => null);
+  if (!t) return { status: "fail", detail: "触发扩展图标动作后 10 秒内没有出现弹窗页" };
+  const page = await popupPage(ctx, { targetId: t.targetId });
+  const made = [];
+  try {
+    const s = await page.read().catch(e => ({ err: e.message }));
+    if (s.err) return { status: "fail", detail: `出现了弹窗页 ${t.url}，但 10 秒内没有渲染完（${s.err}）` };
+    const { problems: p, how } = await openOptionsFromPopup(ctx, page, made);
+    if (p.length) return { status: "fail", detail: `弹窗已渲染，但${p.join("；")}` };
+    return { status: "pass", detail: `触发图标动作后出现弹窗页 ${t.url}，已渲染（${s.ours ? `本扩展的一对：${s.left} ｜ ${s.right}` : `说明文字“${s.notOursText}”`}）；点“打开设置页”后${how === "new" ? "新开了设置页" : "已有的设置页回到前台"}` };
+  } finally {
+    await page.close();
+    // 不留现场：关掉为了把设置页切到后台而新开的 site-x 标签（设置页随之回到前台）
+    if (made.length) await ctx.ext.eval(`chrome.tabs.remove(${JSON.stringify(made)}).then(() => true, () => false)`).catch(() => {});
+  }
+}
 
 const B3 = {
   id: "B3", title: "无痕模式不可用（not_allowed）", kind: "auto", needs: [],

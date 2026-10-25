@@ -1,14 +1,14 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { parseKeys, xdoCombo, keyEvents, TEST_KEYS, COMMAND } from "../scripts/e2e/ext-shortcuts.mjs";
+import { parseKeys, xdoCombo, keyEvents, TEST_KEYS, COMMAND, canReenter, guardBefore } from "../scripts/e2e/ext-shortcuts.mjs";
 import { fillToLimit, itemBytes, ITEM_LIMIT, catalogProblems } from "../scripts/e2e/steps/v03-options.mjs";
-import { CYCLE_EXCLUDE, T19_PRESSES, T19_WORDS } from "../scripts/e2e/steps/xauto-t19.mjs";
+import { CYCLE_EXCLUDE, T19_PRESSES, T19_WORDS, t19Plan, manualSnapshot } from "../scripts/e2e/steps/xauto-t19.mjs";
 import { T18_QUERY, encodeQ } from "../scripts/e2e/steps/v03-popup.mjs";
 import { queryOf } from "../scripts/e2e/steps/v03-lib.mjs";
 import { expectPair } from "../scripts/e2e/steps/util.mjs";
 import { expandTemplate } from "../src/lib/trigger.js";
 import { restoreShortcutStep } from "../scripts/e2e/teardown.mjs";
-import { STEPS } from "../scripts/e2e/steps/index.mjs";
+import { STEPS, selectSteps } from "../scripts/e2e/steps/index.mjs";
 import { mockBaseline } from "../scripts/e2e/ext.mjs";
 import { mergeConfig } from "../src/lib/engines.js";
 import { nextRightEngine } from "../src/lib/cycle.js";
@@ -122,4 +122,41 @@ test("restoreShortcutStep: 没有快照不动；有快照改回；浏览器不�
   const failed = mkRt();
   await restoreShortcutStep(failed, {}, { shortcut: { SHORTCUT_FILE: FILE, restore: async () => { throw new Error("boom"); } }, exists: () => true });
   assert.match(failed.notes[0], /改回快捷键失败：boom.*快照保留/);
+});
+
+test("canReenter / guardBefore：录不回去的原有绑定（媒体键等）不清除、不改写", () => {
+  assert.equal(canReenter("Ctrl+Shift+Y"), true);
+  assert.equal(canReenter("MediaNextTrack"), false);
+  assert.equal(canReenter("Shift+K"), false);
+  assert.doesNotThrow(() => guardBefore(COMMAND, "", TEST_KEYS));
+  assert.doesNotThrow(() => guardBefore(COMMAND, "Ctrl+Shift+Y", ""));
+  assert.doesNotThrow(() => guardBefore(COMMAND, "MediaNextTrack", "MediaNextTrack"));
+  assert.throws(() => guardBefore(COMMAND, "MediaNextTrack", ""), e => e.kind === "unrestorable" && /MediaNextTrack/.test(e.message));
+  assert.throws(() => guardBefore(COMMAND, "MediaPlayPause", TEST_KEYS), e => e.kind === "unrestorable");
+});
+
+test("t19Plan：绑定成功 → auto；录不回去 → 两种模式都跳过；快捷键页认不出 → auto-only 跳过、引导式走人工；其他错误抛出", () => {
+  const infra = Object.assign(new Error("认不出"), { kind: "infra" });
+  const keep = Object.assign(new Error("录不回去"), { kind: "unrestorable" });
+  const boom = new Error("boom");
+  assert.deepEqual(t19Plan({ bindError: null, autoOnly: true }), { action: "auto" });
+  for (const autoOnly of [true, false]) assert.deepEqual(t19Plan({ bindError: keep, autoOnly }), { action: "skip", detail: "录不回去" });
+  assert.equal(t19Plan({ bindError: infra, autoOnly: true }).action, "skip");
+  assert.match(t19Plan({ bindError: infra, autoOnly: true }).detail, /--auto-only 不回退到人工/);
+  assert.deepEqual(t19Plan({ bindError: infra, autoOnly: false }), { action: "manual", detail: "认不出" });
+  assert.deepEqual(t19Plan({ bindError: boom, autoOnly: false }), { action: "throw", error: boom });
+});
+
+test("manualSnapshot：运行前未绑定 → 记快照（before 为空）；已有绑定 → 返回跳过原因、不记快照", async () => {
+  const saved = [];
+  const ctx = shortcut => ({ ext: { eval: async () => [{ name: COMMAND, shortcut }, { name: "_execute_action", shortcut: "" }] } });
+  assert.equal(await manualSnapshot(ctx(""), { save: (c, b) => saved.push([c, b]) }), null);
+  assert.deepEqual(saved, [[COMMAND, ""]]);
+  assert.match(await manualSnapshot(ctx("Alt+Shift+K"), { save: () => assert.fail("不该记快照") }), /已绑定“Alt\+Shift\+K”.*跳过/);
+});
+
+test("selectSteps：xinput 不可用时 T19 换成人工 judge 版本；--auto-only 下不选它", () => {
+  assert.deepEqual(selectSteps(STEPS, { only: ["T19"], xinput: false }).map(s => s.kind), ["judge"]);
+  assert.deepEqual(selectSteps(STEPS, { only: ["T19"], xinput: true }).map(s => s.kind), ["xauto"]);
+  assert.deepEqual(selectSteps(STEPS, { only: ["T19"], xinput: false, autoOnly: true }), []);
 });

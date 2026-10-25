@@ -96,6 +96,22 @@ export async function restoreShortcutStep(rt, s, d) {
   }
 }
 
+// 测试窗口尺寸（T17、xauto 的 fixWindow 改过）：有快照就按它改回运行前的尺寸，成功才删快照；
+// 浏览器不在了或改回失败保留快照，下次启动先改回。d: { win: { restore(browser), WINDOW_FILE, describe }, exists, log, warn }
+export async function restoreWindowStep(rt, s, d) {
+  const { log = noop, warn = noop } = d;
+  if (!d.win || !d.exists(d.win.WINDOW_FILE)) return;
+  const keep = `快照保留在 ${d.win.WINDOW_FILE}，下次启动会自动改回`;
+  if (browserGone(rt)) { rt.notes.push(`${goneWhy(rt)}，无法改回测试窗口尺寸；${keep}`); warn(rt.notes.at(-1)); return; }
+  try {
+    const r = await d.win.restore(rt.browser);
+    log(`测试窗口已改回运行前的尺寸（${d.win.describe ? d.win.describe(r) : JSON.stringify(r)}）`);
+  } catch (e) {
+    rt.notes.push(`改回测试窗口尺寸失败：${e.message}；${keep}`);
+    warn(rt.notes.at(-1));
+  }
+}
+
 // 测试配置里的扩展改回运行前装自的目录（别的检出的 src/，见 ext-source.mjs 的 restoreHome）：恢复 storage 和网站搜索之后、关浏览器之前。
 // d: { sourceHome() → 运行前的目录 | null, restoreSource(browser) → { restored, home?, missing? }, log, warn }
 export async function restoreSourceStep(rt, s, d) {
@@ -225,6 +241,7 @@ export async function teardown(rt, s, d) {
   await restoreStorageStep(rt, s, d);
   await restoreSettingsStep(rt, s, d);
   await restoreShortcutStep(rt, s, d);
+  await restoreWindowStep(rt, s, d);
   await restoreSourceStep(rt, s, d);
   cleanupStep(rt, s, d);
   await closeStep(rt, s, d);

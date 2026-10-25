@@ -4,6 +4,7 @@
 import { sleep, evalIn, nonce } from "./util.mjs";
 import { REASON_STUCK, isSnap, snapReason, snapGuide, held, releaseHeld } from "../gesture.mjs";
 import { measureTab } from "../screen.mjs";
+import { rememberWindow } from "../window-snap.mjs";
 
 export const WIN_W = 1600, WIN_H = 1000;
 const ASCII_RE = /^[\x20-\x7e]+$/;
@@ -38,9 +39,12 @@ export async function settingsRetry(ctx, fn, { tries = 3, waitMs = 2000 } = {}) 
 // 固定为 normal 1600×1000（每次都检查，重启或用户动过窗口后也能恢复）。
 // 嵌套显示（没有窗口管理器）还把窗口移回左上角：屏幕正好 2400×1500，Chrome 新开窗口会错开约 30px（层叠），
 // 测试窗口若是这样一个窗口，右侧就伸出屏幕，标签栏截图被裁（实测整次 --auto-only 里 T3/T4 报“截图大小不符”）
-export async function fixWindow(ctx, targetId) {
+// remember：改尺寸前记快照（单测传替身，免得写进真实的 .e2e/）
+export async function fixWindow(ctx, targetId, { remember = rememberWindow } = {}) {
   const { client } = ctx.browser;
   const { windowId, bounds } = await client.send("Browser.getWindowForTarget", { targetId });
+  const same = bounds.windowState === "normal" && bounds.width === WIN_W && bounds.height === WIN_H && (!ctx.gx?.nested || (bounds.left === 0 && bounds.top === 0));
+  if (!same) remember(bounds); // 第一次改尺寸前记下原来的，收尾改回（window-snap.mjs）
   if (bounds.windowState !== "normal") await client.send("Browser.setWindowBounds", { windowId, bounds: { windowState: "normal" } });
   if (ctx.gx?.nested && (bounds.left !== 0 || bounds.top !== 0)) {
     await client.send("Browser.setWindowBounds", { windowId, bounds: { left: 0, top: 0 } });

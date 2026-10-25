@@ -3,6 +3,7 @@
 // (a) 默认开启（删掉 narrowFallback）+ 窄窗口：右侧是相邻的后台标签、写 adjacent 记录；同一标签再触发复用它
 // (b) 窄窗口下的 foreign：用户分屏两侧不变 (c) 开关为 false：窄窗口照常分屏 (d) 宽窗口照常分屏
 // (e)(f) 相邻对在窗口变宽 / 关掉开关后，同一标签再触发：这两个标签拼成分屏，记录改为 split，不新开标签。
+// (g) 宽窗口建的分屏在窗口变窄后再触发：仍复用分屏 (h) popup 窗口里触发、目标 normal 窗口窄：在目标窗口建相邻对。
 // finally 恢复窗口尺寸；narrowFallback 由 guarded 写回步骤前的值。
 import { NARROW_WIDTH } from "../../../src/lib/narrow.js";
 import {
@@ -10,6 +11,7 @@ import {
 } from "./util.mjs";
 import { ids, fmt } from "./flow-restart.mjs";
 import { guarded } from "./optpage.mjs";
+import { rememberWindow } from "../window-snap.mjs";
 import { sub, verdict, queryOf, readRecords, checkPairRecords, findAdjacent, tabUrl } from "./v03-lib.mjs";
 
 const NARROW = 900; // 低于阈值 960；Xvfb 下实测能设到（原型里最小 500）
@@ -24,6 +26,7 @@ async function sizeTo(ctx, base, width, saved) {
   const { client } = ctx.browser;
   const { windowId, bounds } = await client.send("Browser.getWindowForTarget", { targetId: base.targetId });
   if (!saved.has(windowId)) saved.set(windowId, bounds);
+  rememberWindow(bounds); // 强制退出时 finally 来不及还原：收尾与下次启动按快照改回（window-snap.mjs）
   if (bounds.windowState !== "normal") await client.send("Browser.setWindowBounds", { windowId, bounds: { windowState: "normal" } });
   await client.send("Browser.setWindowBounds", { windowId, bounds: { width } });
   // 读回直到连续两次一致（窗口尺寸变化是异步的）
@@ -149,6 +152,62 @@ const joins = (ctx, saved, name, change, q) => sub(name, skipOr(async () => {
   return verdict(p, `相邻对 ${ids(adj)}；${how}后再触发，拼成分屏 ${pair[0].splitViewId}：${fmt(pair)}，记录 mode split，没有新开标签`);
 }));
 
+// 宽窗口里建好的本扩展分屏，窗口变窄后同一标签再触发：仍是分屏（就地复用），不拆成相邻对、不新开标签
+const staysSplit = (ctx, saved) => sub("(g) 宽窗口建的分屏在窗口变窄后再触发：仍就地复用分屏，不变成相邻对", skipOr(async () => {
+  const { port } = ctx;
+  await setNarrowPref(ctx, undefined);
+  const base = await resetTabs(ctx);
+  const w0 = await sizeTo(ctx, base, WIDE, saved);
+  if (w0 < NARROW_WIDTH) return { status: "skip", detail: `窗口宽度设不到 ${NARROW_WIDTH} 以上（设 ${WIDE}，读回 ${w0}）` };
+  const q = "t17+keep", q2 = "t17+keep2";
+  await navigate(ctx, base.targetId, trigger(port, q));
+  const pair = await waitState(ctx, st => findPair(st, port, q), `分屏 ${expectPair(port, q).join(" ｜ ")}`);
+  const n0 = countTabs(await ctx.ext.state());
+  const w = await sizeTo(ctx, base, NARROW, saved);
+  if (!(w < NARROW_WIDTH)) return { status: "skip", detail: `窗口宽度设不到 ${NARROW_WIDTH} 以下（设 ${NARROW}，读回 ${w}）` };
+  await navigate(ctx, base.targetId, trigger(port, q2));
+  const pair2 = await waitState(ctx, st => findPair(st, port, q2), `分屏更新为 ${expectPair(port, q2).join(" ｜ ")}`);
+  const st = await ctx.ext.state();
+  const p = [];
+  if (pair2[0].id !== pair[0].id || pair2[1].id !== pair[1].id) p.push(`再触发应复用 ${ids(pair)}，实际 ${ids(pair2)}`);
+  if (pair2[0].splitViewId !== pair[0].splitViewId) p.push(`分屏 id 从 ${pair[0].splitViewId} 变成 ${pair2[0].splitViewId}`);
+  if (countTabs(st) !== n0) p.push(`标签数从 ${n0} 变成 ${countTabs(st)}`);
+  if (findAdjacent(st, port, q2)) p.push("出现了相邻对");
+  p.push(...checkPairRecords(await readRecords(ctx, pair2.map(t => t.id)), pair2[0], pair2[1],
+    { mode: "split", splitViewId: pair2[0].splitViewId, engines: ["ea", "eb"], query: queryOf(q2) }));
+  return verdict(p, `宽 ${w0} 时建分屏 ${ids(pair)}，窗口变窄到 ${w} 后再触发：仍是分屏 ${pair2[0].splitViewId}（${fmt(pair2)}），没有新开标签`);
+}));
+
+// popup 窗口里触发、目标 normal 窗口是窄的：在目标窗口里建相邻对（看的是目标窗口的宽度）
+const otherWindow = (ctx, saved) => sub("(h) 在 popup 窗口里触发、目标 normal 窗口是窄的：在目标窗口里建相邻对", skipOr(async () => {
+  const { port } = ctx;
+  await setNarrowPref(ctx, undefined);
+  const { base, width } = await narrowBase(ctx, saved);
+  const q = "t17+popup";
+  const pw = await ctx.ext.eval(`chrome.windows.create({ type: "popup", url: ${JSON.stringify(trigger(port, q))} }).then(w => ({ id: w.id, tab: w.tabs[0].id }))`);
+  try {
+    const got = await waitState(ctx, st => (findAdjacent(st, port, q) && { adj: findAdjacent(st, port, q) }) || (findPair(st, port, q) && { pair: findPair(st, port, q) }),
+      `normal 窗口里的相邻对 ${expectPair(port, q).join(" ｜ ")}`);
+    if (got.pair) {
+      if (got.pair[0].windowId !== base.windowId) {
+        return { status: "skip", detail: `windows.getLastFocused 选了另一个 normal 窗口 ${got.pair[0].windowId}（不是设窄的 ${base.windowId}），现场不可控；逻辑由 node 测试（other-window 看目标窗口宽度）覆盖` };
+      }
+      return { status: "fail", detail: `目标窗口宽 ${width}，却建了分屏 ${fmt(got.pair)}` };
+    }
+    const { adj } = got;
+    const st = await ctx.ext.state();
+    const p = [];
+    if (adj[0].windowId !== base.windowId) p.push(`相邻对应在设窄的窗口 ${base.windowId} 里，实际在 ${adj[0].windowId}`);
+    if (adj.some(t => t.windowId === pw.id)) p.push("popup 窗口里不应出现相邻对");
+    if (adj[1].active) p.push(`右侧 ${adj[1].id} 应是后台标签`);
+    if (splitPairs(st).length) p.push(`不应有分屏，实际 ${splitPairs(st).length} 个`);
+    p.push(...checkPairRecords(await readRecords(ctx, adj.map(t => t.id)), adj[0], adj[1], adjRecordsWant(q)));
+    return verdict(p, `目标窗口 ${base.windowId} 宽 ${width}：popup 窗口 ${pw.id} 里触发，在目标窗口建了相邻对 ${fmt(adj)}`);
+  } finally {
+    await ctx.ext.eval(`chrome.windows.remove(${pw.id}).then(() => true, () => false)`).catch(() => {});
+  }
+}));
+
 const widen = (ctx, saved) => async base => {
   const w = await sizeTo(ctx, base, WIDE, saved);
   if (w < NARROW_WIDTH) throw Object.assign(new Error(`窗口宽度设不到 ${NARROW_WIDTH} 以上（设 ${WIDE}，读回 ${w}）`), { skip: true });
@@ -158,7 +217,7 @@ const switchOff = ctx => async () => { await setNarrowPref(ctx, false); return "
 
 const T17 = {
   id: "T17", title: "窄窗口降级：右侧改在相邻后台标签、复用、不动用户分屏；关掉开关或宽窗口照常分屏，相邻对随之拼成分屏（自动判定）", kind: "auto", needs: [],
-  timeoutMs: 180000,
+  timeoutMs: 240000,
   run: ctx => guarded(ctx, ["narrowFallback"], async () => {
     const saved = new Map();
     try {
@@ -169,6 +228,8 @@ const T17 = {
         await splits(ctx, saved, "(d) 默认开启 + 宽窗口：照常分屏", undefined, WIDE, "t17+wide"),
         await joins(ctx, saved, "(e) 相邻对在窗口变宽后再触发：拼成分屏", widen(ctx, saved), "t17+join"),
         await joins(ctx, saved, "(f) 相邻对在关掉开关后再触发：拼成分屏", switchOff(ctx), "t17+joinoff"),
+        await staysSplit(ctx, saved),
+        await otherWindow(ctx, saved),
       ]);
     } finally { await restoreWindows(ctx, saved); }
   }),

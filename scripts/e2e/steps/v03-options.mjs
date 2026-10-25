@@ -68,10 +68,14 @@ export function catalogProblems(s, { catalog = CATALOG, categories = CATEGORIES,
   return p;
 }
 
-// 子项包装：快捷键页结构认不出（infra）记跳过并写明原因，其余异常记失败
+// 子项包装：快捷键页结构认不出（infra）或原有绑定录不回去（unrestorable）记跳过并写明原因，其余异常记失败
 const subX = (name, fn) => sub(name, async () => {
   try { return await fn(); }
-  catch (e) { if (e.kind === "infra") return { status: "skip", detail: `测试设施问题：${e.message}` }; throw e; }
+  catch (e) {
+    if (e.kind === "infra") return { status: "skip", detail: `测试设施问题：${e.message}` };
+    if (e.kind === "unrestorable") return { status: "skip", detail: e.message };
+    throw e;
+  }
 });
 
 async function withPage(ctx, fn) {

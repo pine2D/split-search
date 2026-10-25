@@ -116,8 +116,21 @@ async function withShortcuts(browser, command, fn) {
   try { return await fn(page); } finally { await page.close(); }
 }
 
-// 第一次改动前记下原来的绑定（文件已在就不覆盖：那才是运行前的值）
-function remember(command, before) {
+// 脚本能不能把这个绑定重新录回去（parseKeys 认得的组合键；媒体键、不带 Ctrl/Alt 的组合等录不回）
+export function canReenter(keys) {
+  try { parseKeys(keys); return true; } catch { return false; }
+}
+
+// 改动前的守卫：原来有绑定、要改成别的、而它录不回去时拒绝改动（kind "unrestorable"），
+// 免得清掉用户在测试配置里设的、脚本改不回的快捷键。调用方据此跳过步骤并写明原因
+export function guardBefore(command, before, keys) {
+  if (before && before !== keys && !canReenter(before)) {
+    throw Object.assign(new Error(`测试配置里 ${command} 已绑定“${before}”，脚本没法把它重新录回去，为了不丢掉这个绑定不做改动`), { kind: "unrestorable" });
+  }
+}
+
+// 第一次改动前记下原来的绑定（文件已在就不覆盖：那才是运行前的值）。人工路径（快捷键页认不出时）也用它记快照
+export function remember(command, before) {
   if (existsSync(SHORTCUT_FILE)) return;
   mkdirSync(OUT_DIR, { recursive: true });
   writeFileSync(SHORTCUT_FILE, JSON.stringify({ command, before }));
@@ -127,6 +140,7 @@ async function change(browser, command, keys) {
   return withShortcuts(browser, command, async page => {
     const before = await page.binding();
     if (before === null) throw infra(`developerPrivate 读不到本扩展的命令 ${command}`);
+    guardBefore(command, before, keys);
     if (before !== keys) remember(command, before);
     return page.set(keys);
   });
