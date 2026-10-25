@@ -5,7 +5,7 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/en/2.0.0/)，
 版本号遵循[语义化版本](https://semver.org/lang/zh-CN/)。
 
-## [未发布]
+## [0.4.0] - 2026-10-25
 
 本版让拆分视图也能用在正在看的网页旁边：已经打开的搜索可以补成拆分视图，选中的文字和网页上的图片可以右键在旁边查。新增 `activeTab`、`contextMenus` 两个权限，都没有安装警告。
 

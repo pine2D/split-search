@@ -19,21 +19,22 @@ Chrome MV3 扩展：用户在地址栏搜索，或把文字拖到标签栏时，
 - 无痕窗口内分屏（按 G5 降级）。
 - 模式 B：默认引擎保持单一，只有拖拽才分屏。（已取消，任何版本都不做，2026-10-24 用户决定）
 - `chrome.omnibox` 关键词和地址栏实时联想。
-- 右键菜单、多语言、上架 Chrome 网上应用店（快捷键见 v0.3，已实现）。
+- 右键菜单、多语言、上架 Chrome 网上应用店（多语言与上架见 v0.2，快捷键见 v0.3，右键菜单见 v0.4，均已实现）。
 
 **反目标（即使能用也算失败）**
 - 破坏 Chrome 原生的拖拽搜索或地址栏行为，包括同步到的其他设备和无痕窗口。
 - 劫持与本扩展无关的标签或新标签页。
 - 使用 iframe，或修改任何网站的响应头。
-- 申请 `<all_urls>` 或宽泛 host 权限、申请 `tabs` 权限，或把查询词发给用户所选引擎以外的任何一方。（`web_accessible_resources` 的 `matches` 写 `<all_urls>` 不算权限申请。）
-- 未经允许覆盖用户手动建的分屏里的页面。
+- 申请 `<all_urls>` 或宽泛 host 权限、申请 `tabs` 权限、为以图搜图引擎申请 host 权限，或把查询词、选中文字、图片网址发给用户所选引擎以外的任何一方、写进 `storage.sync`（它们只进 `storage.session`）。（`web_accessible_resources` 的 `matches` 写 `<all_urls>` 不算权限申请。）
+- 读取或保存页面网址、注入内容脚本。按功能分开：② 边读边查、⑧ 以图搜图不读、不存、不发 `pageUrl`/`frameUrl`；⑦ 补成分屏只在用户点工具栏图标时经 activeTab 读当前标签网址（识别结果页和关键词），不保存网址本身。不读页面里除选区和被右键图片网址以外的任何内容，不改动 Chrome 原生右键菜单项。
+- 未经允许覆盖用户手动建的分屏里的页面，或用户正在读的网页（② ⑧ 的左侧是任意网页：只有记录确认是本扩展打开的那一侧才允许改写）。
 
 **路线图（方向，不承诺）**
 - v0.2 多语言（en/zh_CN/zh_TW/es，页内切换，见 `docs/superpowers/specs/2026-10-24-i18n-design.md`），已随 v0.2.0 首次提交 Chrome 网上应用店（2026-10-25）。
 - 模式 B 已取消（2026-10-24 用户决定），不再列入任何版本，也不要再提议。
 - 新功能落地顺序（2026-10-25 用户同意）：
   - v0.3（已实现，2026-10-25 代码完成，尚未上传商店；不加权限，设计见 `docs/superpowers/specs/2026-10-25-v0.3-split-tools-design.md`）：分屏状态加固（记录绑定 `splitViewId`，不监听 `onUpdated`）→ 右侧专用引擎库（设置页一键添加的模板清单）→ 窄窗口降级 → 工具栏弹窗（换右侧引擎）与快捷键（右侧换下一个引擎，默认不绑定）。互换左右、拆开分屏用 Chrome 原生菜单，不重复做（2026-10-25 用户决定）。
-  - v0.4（加 `activeTab`、`contextMenus`，届时改硬约束、`pack-lib` 检查与商店隐私说明）：把现有搜索补成分屏（并入弹窗）→ 边读边查（选中文字右键，当前页留左、右侧搜索并复用）→ 以图搜图分屏。
+  - v0.4（已实现，2026-10-25 代码完成，尚未上传商店；加 `activeTab`、`contextMenus`，设计见 `docs/superpowers/specs/2026-10-25-v0.4-read-and-search-design.md`，验收见 `docs/acceptance-v0.4.md`）：把现有搜索补成分屏（⑦，并入弹窗）→ 边读边查（②，选中文字右键，当前页留左、右侧搜索并复用）→ 以图搜图分屏（⑧）。
   - 之后：按关键词自动选右侧（go.html 本地判断，不外发查询词）。
 - 无痕窗口内分屏，需要 `incognito: "split"` 并重新设计生命周期。
 - 每个引擎可配置“附加 host”，应对跨 origin 跳转。
@@ -55,15 +56,29 @@ Chrome MV3 扩展：用户在地址栏搜索，或把文字拖到标签栏时，
       2. 解析：取 location.search 中 "u=" 之后的全部文本作为原始网址（\0 未经编码，不能用 URLSearchParams.get('u')）
               → 用 URL + URLSearchParams 读出 _ss（可兼容 %2C）和左侧模板里 %s 所在参数的值作为关键词（+ 会自动还原为空格）
       3. 窗口检查：当前窗口不能分屏（popup/app，或 Document PiP：type 为 normal、alwaysOnTop 且只有一个标签，判定经 lib/split-decision.js 的 decideFor）时 → 在一个能分屏的 normal 窗口（lastSplitWindow()）里新建一对标签组成分屏；当前标签 location.replace(左侧网址)
-      4. 分屏（“本扩展的分屏”按 storage.session 里的记录判定，不按网址猜；记录形状 {peer, splitViewId, mode: split|adjacent, engine, query}，见 lib/split-owner.js、chrome/split-state.js）：
+      4. 分屏（“本扩展的分屏”按 storage.session 里的记录判定，不按网址猜；记录形状 {peer, splitViewId, mode: split|adjacent, role: search|page|lookup, input: text|image（只有 page/lookup 有）, engine, query}，没有 role 按 search 解析；两侧 role 要配对（search↔search 或 page↔lookup）、查询对两侧 input 相同，否则判 stale；见 lib/split-owner.js、chrome/split-state.js）：
           ├─ 窄窗口（windows.get 的 width < 960，且 narrowFallback 不为 false）：不建分屏，右侧在紧邻的后台标签打开，记 adjacent 记录；同标签再触发复用右边那个
           │   窗口变宽或关掉开关后再触发：更新右边那个，再 tabs.createSplit([左, 右]) 拼成分屏、复核后改记 split（decideSplit 返回 join；拼不成退回复用）
           ├─ 当前标签不在分屏中：tabs.create({url: 右侧, splitWithTabId: 当前, index: 当前+1, windowId, active:false})
           │                   → 然后 location.replace(左侧网址)
-          ├─ 当前标签在“本扩展的分屏”中（判定见 spec 5.3）：tabs.update(另一侧, 右侧) → location.replace(左侧)
-          └─ 当前标签在其他分屏中：见 spec 5.3
-  工具栏弹窗（popup/）与快捷键 cycle-right（默认不绑定，background.js 的 onCommand）：读记录，经 chrome/right-switch.js 把右侧换成指定/下一个引擎，关键词取自记录（只在 storage.session，不进 sync，不外发）。
-  记录在 tabs.onRemoved 时清理。读到失效记录（stale，例如拆开后又拼回去）时，只有记录里的对侧已经关掉才顺手清理；对侧还在就保留两条，这一对一直判“不是本扩展的”，不会落到兜底被覆盖。当前标签没有记录、对侧却有记录时同样判“不是”；只有两侧都没有记录（如浏览器重启后）才走兜底。相邻对（adjacent）失效且对侧还在时（拖开、中间夹进别的标签），两条记录改写成永久失效标记（mode "split" 配 splitViewId -1），之后拖回相邻或手动拼成分屏都不再算本扩展的。记录写入在同一页面/SW 里串行执行（split-state.js 的队列）。join 时 `createSplit` 成功但复核两次（间隔 150 ms）都不一致，不写 adjacent 记录，删掉旧记录，之后按实际状态判定。兜底的路径型模板 `%s` 前只有根路径 `/` 时不认。
+          ├─ 当前标签在“本扩展的分屏”中（判定见 spec 5.3；当前标签是 page 一侧时整对改写成 search 对）：tabs.update(另一侧, 右侧) → location.replace(左侧)
+          └─ 当前标签在其他分屏中（含查询对的 lookup 一侧、兜底判出的 fallback-own）：在该分屏右边新建一对，原分屏两侧不动，见 spec 5.3
+  工具栏弹窗（popup/）与快捷键 cycle-right（默认不绑定，background.js 的 onCommand）：读记录，经 chrome/right-switch.js 把右侧换成指定/下一个引擎，关键词取自记录（只在 storage.session，不进 sync，不外发）。查询对换的永远是 role 为 lookup 的一侧（与标签顺序无关），图片查询对在以图搜图引擎里换、轮换不看 cycleExclude。
+  补成分屏（⑦，popup/complete.js）：弹窗经 activeTab 读当前标签网址，lib/result-match.js 认出某个文字引擎的结果页和关键词，且标签不在分屏中、不是本扩展的一对、窗口能分屏时显示“补成分屏”区
+    → 点引擎：runtime.sendMessage({ type: "complete-split", tabId, engineId })（不带网址和关键词）
+    → SW 的 runtime.onMessage（return true 后 sendResponse 异步回复）：lib/messages.js 校验发送方是本扩展的 popup/popup.html、字段合法
+    → 在 SW 全局串行链上执行 chrome/complete-actions.js：重新 tabs.get、重新识别、windows.get（populate）必须能分屏、inspectTab 重新判定，条件仍满足才 openRight：
+       当前标签不导航，右侧在它右边后台打开（窄窗口开相邻标签记 adjacent），两侧记 search；回 { ok: true, mode: split|adjacent|plain } 或 { ok: false, code }
+  右键菜单（ss-lookup-text 选区、ss-lookup-image 图片，只在 http(s) 页面、图片只认 http(s) 网址；chrome/menus.js 每次 removeAll 后重建，标题经 t()，安装、启动和 sync 任何变化时重建）：
+    contextMenus.onClicked → SW 全局串行链（lib/serial.js，与 complete-split 共用；每次在链上重新 tabs.get、inspectTab 再判定）→ chrome/lookup-actions.js：
+       lib/lookup-input.js 只读 selectionText/editable/mediaType/srcUrl（选区规范化后截到 500 码点，editable 不处理）→ lib/lookup-decision.js 八行判定：
+       1 ignore（没有 tab、输入无效）  2 other-window（窗口不能分屏：在 lastSplitWindow() 开普通标签，不写记录）
+       3 reuse-split（分屏中、own、当前标签是 page 一侧：tabs.update 查询一侧，整对改写 engine/query/input）
+       4 beside-split（分屏中的其他一切情况：在分屏右边开普通标签，不写记录）
+       5 reuse-adjacent / 6 join（相邻查询对的 page 一侧：窄窗口更新并激活查询标签；否则更新后 createSplit 拼成分屏）
+       7 beside-pair（相邻查询对的 lookup 一侧：在这一对右边开普通标签）  8 new（其他：createPaired，记 page ↔ lookup）
+       只有当前标签是查询对的 page 一侧时才改写它的 lookup 一侧，用户的页面一律不导航。
+  记录在 tabs.onRemoved 时清理。读到失效记录（stale，例如拆开后又拼回去）时，只有记录里的对侧已经关掉才顺手清理；对侧还在就保留两条，这一对一直判“不是本扩展的”，不会落到兜底被覆盖。当前标签没有记录、对侧却有记录时同样判“不是”；两侧都没有记录（如浏览器重启后）时兜底仍可能判出 fallback-own，但它不允许任何调用方改写标签：decideSplit 按 foreign 处理，在旁边新开一对，原来两侧都不动（v0.4 起，取消了 v0.3 的兜底复用）。相邻对（adjacent）失效且对侧还在时（拖开、中间夹进别的标签），两条记录改写成永久失效标记（mode "split" 配 splitViewId -1），之后拖回相邻或手动拼成分屏都不再算本扩展的。记录写入在同一页面/SW 里串行执行（split-state.js 的队列）。join 时 `createSplit` 成功但复核两次（间隔 150 ms）都不一致，不写 adjacent 记录，删掉旧记录，之后按实际状态判定。兜底的路径型模板 `%s` 前只有根路径 `/` 时不认。
 ```
 
 触发网址 = 左侧引擎真实搜索网址 + 标记参数 `_ss=<左id>,<右id>`，例如 `https://www.google.com/search?q=%s&_ss=google,bing`。
@@ -77,6 +92,7 @@ split-search/
 ├── .gitignore
 ├── package.json                  "test": "node --test"、"e2e": "node scripts/e2e/run.mjs"、"pack": "node scripts/pack.mjs"
 ├── dist/                         发布 ZIP（npm run pack 生成，不进 git）
+├── docs/acceptance-v0.4.md       v0.4 验收清单（对应 e2e 步骤 T20–T24、B18，以及扩充的 B14、I18N；T5 重启期望的改动）
 ├── docs/acceptance-v0.3.md       v0.3 验收清单（对应 e2e 步骤 T16–T19、B16、B17、B2）
 ├── docs/acceptance-v0.1.md       v0.1 验收：跑 e2e（Windows 冒烟 v0.1 不做，2026-10-24 用户决定）；B/T 表注明覆盖方式
 ├── docs/i18n/chrome-terms.md     Chrome 术语表：各语言功能术语以此为准（由 scripts/i18n/chrome-terms.mjs 生成）
@@ -96,13 +112,16 @@ split-search/
 │                                 display.mjs 嵌套显示（Xephyr/Xvfb）起停与遗留清理、fonts.mjs 测试浏览器屏蔽 9P 挂载上的字体、
 │                                 settings-se/settings-kagi.mjs 网站搜索、ext-webui.mjs chrome://extensions 详情页、
 │                                 ext-source.mjs 让测试配置里的扩展装自本检出的 src/、
-│                                 ext-shortcuts.mjs 快捷键（chrome://extensions/shortcuts）快照与恢复，steps/v03-*.mjs、xauto-t19.mjs 是 v0.3 步骤
+│                                 ext-shortcuts.mjs 快捷键（chrome://extensions/shortcuts）快照与恢复，steps/v03-*.mjs、xauto-t19.mjs 是 v0.3 步骤，
+│                                 steps/v04-*.mjs 是 v0.4 步骤（v04-lib 页面标记/CDP 读网址/triggerAction 与 MENU_INDEX，v04-complete(-more) T20，
+│                                 v04-lookup/-lookup-image/-lookup-lib T21、T22，v04-guard T23，v04-guard-x/-guard-more T24，v04-options B18，v04-i18n 供 I18N 与 B14）
 ├── src/                          扩展根目录（加载这个目录）
 │   ├── manifest.json
 │   ├── _locales/                 界面文案：en、zh_CN（源文案）、zh_TW、es 各一份 messages.json
 │   ├── icons/                    工具栏与扩展管理页图标，16/32/48/128，配色 c6 pine-fog；16/32/48 由按像素对齐的 icon-16|32|48.svg 导出
-│   ├── background.js             SW：重建 DNR 规则、tabs.onRemoved 清理记录、onCommand（cycle-right）；无 action.onClicked
-│   ├── popup/popup.html|css|js   工具栏弹窗（action.default_popup）：显示关键词与左右引擎、换右侧、进入设置页
+│   ├── background.js             SW：重建 DNR 规则与右键菜单、tabs.onRemoved 清理记录、onCommand（cycle-right）、contextMenus.onClicked 与 runtime.onMessage（complete-split，二者共用一条串行链）；无 action.onClicked
+│   ├── popup/popup.html|css|js   工具栏弹窗（action.default_popup）：显示关键词与左右引擎（查询对按“网页”“查询”）、换右侧、进入设置页
+│   ├── popup/complete.js         弹窗的“补成分屏”区：显示识别结果与右侧候选，点一个就发 complete-split 给 SW（自己不建标签、不写记录）
 │   ├── go.html / go.js           触发处理页（解析、判定、出错页与“只打开左侧搜索”兜底）
 │   ├── options/options.html|css  设置页静态结构、引导文字与样式
 │   ├── options/options.js        设置页编排：读配置、查授权、渲染、串行写入
@@ -113,6 +132,9 @@ split-search/
 │   ├── options/catalog.js        右侧引擎库对话框（添加时不申请权限）
 │   ├── options/shortcut.js       快捷键区：显示当前绑定、打开 Chrome 快捷键页
 │   ├── options/locale-ui.js      设置页与语言相关的界面：带内联元素的句子、语言下拉框
+│   ├── options/actions.js        设置页的写入与动作：串行写入（loadRaw → 改整键 → saveKeys / removeKeys）、提示、各区块的 actions
+│   ├── options/lookup.js         “右键查询”卡片：查词引擎、以图搜图引擎的选择与列表，以图搜图引擎库与新增对话框（没有授权按钮和轮换开关）
+│   ├── options/image-edits.js    以图搜图引擎的纯逻辑：新增、从引擎库添加、删除、选用
 │   ├── lib/engines.js            预置引擎、模板校验、配置合并
 │   ├── lib/trigger.js            触发网址生成与解析、模板展开
 │   ├── lib/rules.js              DNR 规则构造
@@ -121,16 +143,26 @@ split-search/
 │   ├── lib/narrow.js             窄窗口判定（阈值 960，宽度非数字不判窄）
 │   ├── lib/window-kind.js        窗口能否分屏（splitWindowType / canSplitIn：Document PiP 不算）、PiP 获得焦点时挑哪个窗口（pickSplitWindow）
 │   ├── lib/engine-catalog.js     右侧引擎库数据（内置，不来自网络）
+│   ├── lib/image-engines.js      以图搜图引擎：内置 lens 与引擎库（bing-img、yandex-img、tineye、saucenao），纯数据
+│   ├── lib/result-match.js       识别搜索结果页（⑦）：带 _ss 时只按 _ss 声明的左侧引擎认；否则比 origin、pathname、固定参数与 %s 所在参数
+│   ├── lib/messages.js           complete-split 消息校验（发送方、字段、引擎 id）
+│   ├── lib/lookup-input.js       右键输入处理：选区规范化与截断、editable、图片 srcUrl 只认 http(s)
+│   ├── lib/lookup-decision.js    右键查询判定表（八行）与普通标签的位置
+│   ├── lib/menu-spec.js          右键菜单两项的属性与标题（引擎名里 & 写成 &&、%s 拆成 % s）
+│   ├── lib/serial.js             串行队列（SW 全局串行链、菜单重建各用一条）
 │   ├── lib/cycle.js              快捷键轮换：下一个参与轮换的引擎
 │   ├── lib/popup-view.js         弹窗视图状态（纯逻辑）
 │   ├── lib/i18n.js               语言选择、占位符替换等纯逻辑
 │   ├── lib/errors.js             错误码：lib 和设置页逻辑只返回码，页面经 t("err_<code>") 显示
 │   ├── chrome/i18n.js            页内文案加载器：t()，fetch 读包内 _locales，按 uiLocale 切换
-│   ├── chrome/config-store.js    storage.sync 读写封装；顶层键 uiLocale（"auto"|"en"|"zh_CN"|"zh_TW"|"es"）、narrowFallback（缺省 true）、cycleExclude（不参与轮换的引擎 id 数组）；自定义引擎可带 leftDiscouraged
+│   ├── chrome/config-store.js    storage.sync 读写封装；顶层键 uiLocale（"auto"|"en"|"zh_CN"|"zh_TW"|"es"）、narrowFallback（缺省 true）、cycleExclude（不参与轮换的引擎 id 数组）、lookupEngine（查词引擎 id，缺省跟随默认组合右侧，不写默认值）、imageEngine（所选以图搜图引擎 id，缺省 lens）、imageEngines（自定义以图搜图引擎 { id, name, url }[]）；自定义引擎可带 leftDiscouraged
 │   ├── chrome/split-actions.js   分屏动作执行（tabs / windows 薄封装，记录经 split-state.js）
 │   ├── chrome/split-state.js     记录读写与 inspectTab（对侧已关闭、storage 抛错都按“无记录”处理）
-│   └── chrome/right-switch.js    换右侧：弹窗与快捷键共用
-└── test/                         node --test（每个 lib 一个文件，另有 manifest、config-store、split-actions、options-edits、options-ui；i18n.test.js、chrome-i18n.test.js、i18n-catalog.test.js（4 种语言 key 对齐与 fetch 守门、带引擎名的 aria 文案含可见文字）、popup-css.test.js（弹窗颜色变量与设置页一致）、errors.test.js、i18n-pak.test.js（Chrome 术语表脚本）、store-i18n.test.js（宣传图文案键对齐）；go-wiring.test.js（静态检查 go.js 的判定经 decideFor、读窗口带 populate）；e2e-*.test.js 测 e2e 脚本，其中 e2e-i18n.test.js 测 I18N 步骤；pack.test.js 测发布打包）
+│   ├── chrome/right-switch.js    换右侧：弹窗与快捷键共用（查询对换的是 lookup 一侧）
+│   ├── chrome/menus.js           右键菜单注册：removeAll 后重建两项，标题经 t()
+│   ├── chrome/lookup-actions.js  右键查询执行（② ⑧）：按 lookup-decision 建对、复用或开普通标签，记录经 split-state.js
+│   └── chrome/complete-actions.js  ⑦ 补成分屏执行：重新读标签、识别、判定后 openRight
+└── test/                         node --test（每个 lib 一个文件，另有 manifest、config-store、split-actions、options-edits、options-ui；i18n.test.js、chrome-i18n.test.js、i18n-catalog.test.js（4 种语言 key 对齐与 fetch 守门、带引擎名的 aria 文案含可见文字）、popup-css.test.js（弹窗颜色变量与设置页一致）、errors.test.js、i18n-pak.test.js（Chrome 术语表脚本）、store-i18n.test.js（宣传图文案键对齐）；go-wiring.test.js（静态检查 go.js 的判定经 decideFor、读窗口带 populate）；v0.4 的 menus、lookup-actions、complete-actions（chrome 替身）与 image-edits；e2e-*.test.js 测 e2e 脚本，其中 e2e-i18n.test.js 测 I18N 步骤，e2e-v04.test.js 测 v0.4 的模拟 host、弹窗状态读取、MENU_INDEX 与页面标记核对；pack.test.js 测发布打包）
 ```
 
 纯逻辑放 `src/lib/`（不碰 `chrome.*`），`src/chrome/` 是对 `chrome.*` 的薄封装，页面脚本只负责编排。
@@ -143,11 +175,12 @@ split-search/
 - `web_accessible_resources: [{ "resources": ["go.html"], "matches": ["<all_urls>"], "use_dynamic_url": true }]`。
 - manifest 里固定 `key`（公钥），不得修改：扩展 ID 只由它决定，改了 ID 就变，已有授权和 `storage.sync` 数据都会对不上。不保留私钥：私钥只在自签 `.crx` 时才用得上，本项目走“加载未打包的扩展程序”和 CWS 上传，都不需要。发布包里的 `key` 由 `npm run pack` 处理（去掉或换成商店公钥，见“命令”），源码里的不动。
 - 无构建工具、无运行时依赖。`src/lib/` 不得引用 `chrome`。JS 单文件不超过 300 行（`test/` 下的测试文件不受此限）。
-- 标记参数名为 `_ss`，值为 `<左id>,<右id>`，要兼容 `%2C`。引擎 id 必须匹配 `/^[a-z0-9-]{1,20}$/`，创建后不可修改。
+- 标记参数名为 `_ss`，值为 `<左id>,<右id>`，要兼容 `%2C`。引擎 id 必须匹配 `/^[a-z0-9-]{1,20}$/`，创建后不可修改；文字引擎与以图搜图引擎共用一个 id 命名空间。
 - DNR 规则 id 固定为 `1`。`regexSubstitution` 写死为 `chrome-extension://<chrome.runtime.id>/go.html?u=\0`，不得使用 `runtime.getURL()`。
 - 预置引擎（只写在代码里）：`google` Google `https://www.google.com/search?q=%s`；`bing` Bing `https://www.bing.com/search?q=%s`；`ddg` DuckDuckGo `https://duckduckgo.com/?q=%s`；`perplexity` Perplexity `https://www.perplexity.ai/search?q=%s`；`kagi` Kagi `https://kagi.com/search?q=%s`。默认组合为 `["google", "bing"]`。Perplexity 预置带 `leftDiscouraged: true`：它的 Service Worker（Workbox）接管所有 document 导航，DNR 的 main_frame 规则看不到，作左侧时退化为普通搜索（G5）；设置页的引擎列表、默认组合卡片和组合生成器都提示“建议只作右侧”。
-- 用户界面文案一律写在 `src/_locales/<语言>/messages.json`（首期 `en`、`zh_CN`、`zh_TW`、`es`），代码和 HTML 里不得出现界面文字。页面经 `src/chrome/i18n.js` 的 `t()` 取文案（按设置页所选语言，默认跟随浏览器）；`chrome.i18n.getMessage` 只用于 manifest 的 `__MSG_…__`。`zh_CN` 是源文案，`default_locale` 是 `en`。新增或修改文案时 4 种语言的 key 必须同时补齐（`test/i18n-catalog.test.js` 检查）。唯一允许的 `fetch` 是读取扩展包内的 `_locales`。文案的术语、润色与翻译流程见“## 文案”。
-- 不使用 iframe，不修改响应头。只有经过用户确认的“本扩展分屏”才允许被覆盖。
+- 以图搜图预置（只写在代码里，不能删除）：`lens` Google Lens `https://lens.google.com/uploadbyurl?url=%s`，缺省选用。以图搜图引擎不经过 DNR、不申请任何 host 权限，设置页不显示授权按钮。
+- 用户界面文案一律写在 `src/_locales/<语言>/messages.json`（首期 `en`、`zh_CN`、`zh_TW`、`es`），代码和 HTML 里不得出现界面文字。页面经 `src/chrome/i18n.js` 的 `t()` 取文案（按设置页所选语言，默认跟随浏览器），SW 里的右键菜单标题同样经 `t()`；`chrome.i18n.getMessage` 只用于 manifest 的 `__MSG_…__`。`zh_CN` 是源文案，`default_locale` 是 `en`。新增或修改文案时 4 种语言的 key 必须同时补齐（`test/i18n-catalog.test.js` 检查）。唯一允许的 `fetch` 是读取扩展包内的 `_locales`。文案的术语、润色与翻译流程见“## 文案”。
+- 不使用 iframe，不修改响应头。只有经过用户确认的“本扩展分屏”才允许被覆盖，而且只改写记录确认属于本扩展的那一侧（查询对只改写 `lookup` 一侧；兜底判出的 `fallback-own` 不允许任何调用方改写标签）。调分屏 API 前窗口必须经 `splitWindowType` 判为 `normal`（读窗口带 `populate: true`）。
 - 开发镜像目录：`/mnt/d/APP/Chrome-Extensions/split-search`。之后只用“重新加载”，不要移除后重装。
 
 ## 命令
@@ -158,7 +191,7 @@ split-search/
 - `bash scripts/gen-key.sh`：打印扩展 ID（`alngkkgnobglnfbhcplhpaflcgfiajnj`）。只有 manifest 里没有 `key` 时才会生成一把一次性密钥并写入公钥；已有 `key` 时绝不改动。源码始终保留这把开发公钥（开发 ID）。上架 CWS 的 ID 分层：首次上传用不带 key 的包（`npm run pack`），商店分配 ID；上传后在 CWS 后台“软件包 → 公钥”复制商店公钥，存到 git 以外的本地文件；之后的版本都用 `npm run pack -- --store-key <文件>` 打包，商店 ID 保持不变，开发版与商店版可并存。
 - `npm run pack`：发布打包，生成 `dist/split-search-<版本>.zip`（`dist/` 不进 git），打印大小、sha256 和 key 情况；同一份源码打出的 ZIP 逐字节相同（时间戳取最近一次改动 `src/` 的提交）。不改动 `src/`：复制到临时目录，manifest 默认去掉 `key`；`--store-key <文件>` 改写成商店公钥（相对路径按执行命令的目录解析；PEM 或 base64，校验是 DER 编码的 RSA 公钥，打印对应扩展 ID；给的是开发公钥会中止）。发布前检查（不过即中止）：manifest 与 `package.json` 版本一致；硬约束里的 manifest 字段（版本、无痕、权限、可选 host 权限、`web_accessible_resources`）与上文一致，且没有 `host_permissions`；每种语言的 `messages.json` 能解析、有 manifest 引用的全部 `__MSG_…__`，`name` ≤75、`description` ≤132 字符；manifest 引用的图标、SW、设置页、go.html 存在；`src/` 里只有运行时文件（没有点文件、测试、`.DS_Store` 之类）；`src/` 在 git 里没有未提交改动（`--allow-dirty` 改为警告）。
 - 商店信息（2026-10-25 首次提交 v0.2.0）：商店 ID `ebefmgpipceocigodihbbbhdiagmjdak`；商店公钥存在 `~/.config/split-search/cws-public-key.pem`（不进 git，丢了从 CWS 后台“软件包”页重新复制）。首次上传的包不带 key；之后每个版本都用 `npm run pack -- --store-key ~/.config/split-search/cws-public-key.pem --smoke`。
-- `npm run pack -- --smoke`：打包后把 ZIP 解压到临时目录，在一次性 Chrome 配置（无头、`--disable-sync`、no-first-run、管道 CDP，参数与字体配置同 e2e 的 `launch()`）里用 `Extensions.loadUnpacked` 装上，核对：没有 manifest 错误、安装警告和运行时错误（chrome://extensions 的 `developerPrivate.getExtensionInfo`）、SW 起得来、设置页以英文渲染且没有显示成 key 的文字、DNR 动态规则 1 的 `regexSubstitution` 指向本次装出的 ID、全程没有 `[split-search]` 控制台错误、go.html 收到格式不对的 `_ss` 显示出错页；带 `--store-key` 时核对装出的 ID 等于商店 ID，不带时核对它不是开发 ID（key 确实去掉了）。临时配置和解压目录用完即删（SIGINT/SIGTERM/SIGHUP 同样清理；被强杀留下的 `split-search-smoke-*`，下次冒烟开头在 Chrome 已退出且超过 10 分钟时删掉），只关自己起的浏览器，不碰 e2e 测试配置或真实配置。
+- `npm run pack -- --smoke`：打包后把 ZIP 解压到临时目录，在一次性 Chrome 配置（无头、`--disable-sync`、no-first-run、管道 CDP，参数与字体配置同 e2e 的 `launch()`）里用 `Extensions.loadUnpacked` 装上，核对：没有 manifest 错误、安装警告和运行时错误（chrome://extensions 的 `developerPrivate.getExtensionInfo`）、权限警告与 v0.3 相同（只有 DNR 一条 `Block content on any page`，`activeTab`、`contextMenus` 不带来新警告）、SW 起得来、SW 里菜单文案加载正常（切 `uiLocale` 让 SW 重建菜单后没有 `[split-search]` 错误）、设置页以英文渲染且没有显示成 key 的文字、DNR 动态规则 1 的 `regexSubstitution` 指向本次装出的 ID、全程没有 `[split-search]` 控制台错误、go.html 收到格式不对的 `_ss` 显示出错页；带 `--store-key` 时核对装出的 ID 等于商店 ID，不带时核对它不是开发 ID（key 确实去掉了）。临时配置和解压目录用完即删（SIGINT/SIGTERM/SIGHUP 同样清理；被强杀留下的 `split-search-smoke-*`，下次冒烟开头在 Chrome 已退出且超过 10 分钟时删掉），只关自己起的浏览器，不碰 e2e 测试配置或真实配置。
 
 ## 测试纪律
 
@@ -196,6 +229,13 @@ split-search/
 - v0.3 步骤（`steps/v03-*.mjs`、`xauto-t19.mjs`）：T16 分屏记录绑定 splitViewId（拆开再拼回、对调、清理）；T17 窄窗口降级；T18 工具栏弹窗；T19 快捷键换右侧（xauto 真实按键，judge 回退）；B16 引擎库；B17 快捷键区与 `cycleExclude`；B2 改为点工具栏图标出现弹窗。模拟服务器多了 `/about`。
   - e2e 的 storage 基线含 `narrowFallback: false`（测试窗口宽度不总受控，关掉窄窗口降级现有分屏步骤才不受影响）；T17 自己删掉它并用 `guarded` 写回。
   - 快捷键绑定的快照与恢复：`ext-shortcuts.mjs` 改动前记到 `.e2e/shortcut-snapshot.json`，结束（含中断）按它改回并删文件，遗留快照下次启动先恢复。
+- v0.4 步骤（`steps/v04-*.mjs`，设计见 v0.4 spec 3.14，验收表 `docs/acceptance-v0.4.md`）：T20 补成分屏（auto，经 CDP `Extensions.triggerAction` 作用于标签目标打开弹窗，和真点图标一样授予 activeTab）；T21 边读边查、T22 以图搜图（xauto，assist 回退）；T23 不覆盖用户页面的 go.html 与弹窗路径（auto，查询对由脚本直接构造）；T24 不覆盖用户页面的右键路径（xauto，judge 回退；可选 (d') 快捷键、(i) 无痕菜单项数）；B18 设置页“右键查询”卡片（auto）；I18N、B14 扩充到弹窗“补成分屏”区和新卡片。
+  - 不授权的模拟 host（`config.mjs` 的 `UNGRANTED_HOSTS`：`engine-u.localhost` 模拟引擎 U、`page-u.localhost` 普通文章页（两段文字、一张 http 图片、一张 `data:` 图片）、`engine-i.localhost` 模拟以图搜图引擎，回显收到的 `url`）：不进 `HOSTS`，所以不进 `GRANT_ORIGINS`，已有测试配置不用重新授权。扩展读不到这些标签的网址，步骤一律从 CDP 读、按标签 id 认。判“没被重定向”不能只看导航历史里有没有 `go.html`（go.js 的 `location.replace` 会换掉那一项），要看主框架跳转链或断言网址仍带 `_ss`。G5 降级网址必须开在从没触发过 action 的新标签里（S9）。
+  - 页面没被导航的证据：给不该被动的标签写随机页面标记（`window` 上的变量），结束时按 CDP 网址和标记核对（`guardProblems`）；网址相同但页面重载过，标记就没了。
+  - 右键菜单按文字行定位、悬停确认高亮后点击，不向菜单发任何按键（F20：首字母助记键与 Chrome 自带项冲突）。行号 `MENU_INDEX = { text: -2, image: -2 }`（`v04-lib.mjs`）从末尾数：本扩展项总在倒数第二行，紧挨“检查”；`MENU_MIN_ITEMS = { text: 7, image: 7 }`。依据是 S11 加 e2e 测试配置实测（测试配置界面英文、默认引擎 Kagi/sse2e，没有“翻译所选内容”和 Lens 两项，两种菜单都是 7 行；一次性配置默认引擎 Google 时是 8 行）。使用方把 `MENU_INDEX` 原样传给 `contextMenuPick`，不换算成正数；对不对以效果判定，detail 写当次菜单的实际行数。图片上右键前先清掉页面选区（选区和图片同时命中时 Chrome 把本扩展两项收进子菜单）。关菜单点在菜单矩形以外（`dismissMenu`），不沿用 `(at.x, at.y + 400)`：那个点落在菜单里。T24(i) 只比两次 `contextMenuCount` 的差（无痕少 1）。
+  - 日志分级：预期的拒绝和忽略（右键 `ignore` 的各个 reason、`not_results_page`、`message_rejected`、`window_unsupported`）只记 `console.info`，B15 只收 `error` 级，所以 T20、T23、T24 有意走的拒绝路径不会让它判失败。
+  - 存储基线不加 `lookupEngine`、`imageEngine`、`imageEngines`，用到它们的步骤自己用 `guarded` 写、写回。
+  - T5 的重启子项（`flow-restart.mjs`）从 v0.4 起期望不覆盖：恢复出来的本扩展分屏两侧都没有记录，兜底判出的 `fallback-own` 按 `foreign` 处理，在旁边新开一对，原来两侧都不动。
 - I18N（`steps/i18n.mjs`，auto，`--auto-only` 会跑）：en、zh_CN、zh_TW、es 逐一打开设置页和 go.html 出错页，核对 `lang`、没有显示成 key 的文字、没有横向和按钮内容溢出；再测页内切换（不刷新、2 秒内）、连切 en → zh_TW 停在最后一次、第二个设置页跟随，以及 `uiLocale = "auto"` 时 `t()` 与 `chrome.i18n.getMessage` 逐 key 相同。它会改写 `storage.sync` 的 `uiLocale`，用 `guarded` 写回步骤前的值（中断时由 storage 快照兜底）。截图存 `.e2e/i18n/<locale>-options.png`、`<locale>-go-error.png`。
 - 测试窗口尺寸：第一次改尺寸（`fixWindow`、T17 的 `sizeTo`）前记到 `.e2e/window-snapshot.json`（`window-snap.mjs`），收尾改回，强制退出留下的快照下次启动先改回。快捷键：测试配置里原有绑定是脚本录不回去的（`parseKeys` 不认，如媒体键）时不改动它，B17(a)(b)/T19 记跳过。
 - 运行前快照 `chrome.storage.sync` 到 `.e2e/storage-snapshot.json`，结束（含中断）后恢复；遗留快照下次启动先恢复。报告在 `.e2e/report-*.md|json`，网址里的 token/session/sid/auth/key/code、access_token 等 `*_token`、session_id/sessionid、`google_abuse` 等 `*_abuse` 与含 exemption 的参数值（含一次、两次百分号编码嵌套在 next=、r=、continue= 里的），以及单独出现的 `…ABUSE_EXEMPTION=…`（含用户 IP）、Google 人机验证页 `/sorry/…` 的 `q`（编码了访问者 IP 的令牌）脱敏为 `***`，终端与向导页同样。失败诊断除扩展读到的标签外，还列出 CDP 页面目标网址（扩展读不到的标签按窗口与网址对应）和步骤页面的主框架跳转链（控制台收集器在页面会话上 Network.enable 记录，没有时用 Page.getNavigationHistory）。左侧 Google 停在人机验证页（/sorry，`continue` 解码后是期望的搜索）算分屏已建成（`steps/captcha.mjs`）；脚本自己准备现场的等待，“重试”都会重新准备并重新记下判定用的 id。B4、T8 之后脚本自动核对扩展已启用、授权齐全（扩展不可用先经 chrome://extensions 详情页自动启用，缺授权自动重新申请），恢复不了就跳过剩余步骤（`--auto-only` 不请用户启用扩展）。Kagi 登录检查打开 `https://kagi.com/settings`，只有最终停在 kagi.com/settings 才算已登录；用户登录期间只读现有标签的网址、不再发起导航（未登录时那条跳转链会重写会话 cookie，可能打断登录），用户点“我已完成”后再探测一次。
@@ -243,3 +283,17 @@ split-search/
 - Document Picture-in-Picture 窗口（Chrome 156.0.8078.47 实测，spike S5）：报 `type: "normal"`、`alwaysOnTop: true`，有自己的标签；PiP 获得焦点时 `windows.getLastFocused({ windowTypes: ["normal"] })` 返回的就是它；按 `createPaired` 的参数调 `tabs.create({ windowId: <PiP>, splitWithTabId: <PiP 的标签> })` 会让 Chrome 崩溃（SIGTRAP），先用 `tabs.query` 确认找得到这个标签也没用。所以能否分屏按 `lib/window-kind.js` 的 `splitWindowType`/`canSplitIn` 判定；挑窗口经 `lastSplitWindow()`（`chrome/split-actions.js`），不直接用 `getLastFocused` 的结果。go.js 的判定经 `decideFor`（`test/go-wiring.test.js` 静态守着这条接线，改判定时不得删）。
 - 窗口管理器“置顶”的普通窗口（Linux X11 的 `_NET_WM_STATE_ABOVE`，Chrome 156.0.8078.47 在 Xvfb 上实测）同样报 `alwaysOnTop: true`，去掉置顶后变回 false。和 PiP 靠标签数区分：PiP 只有一个标签，`tabs.create({ windowId: <PiP> })` 会落到打开者的窗口，加不进去；PiP 标签带 `openerTabId`（打开它的标签）。所以 `type === "normal" && alwaysOnTop === true` 且标签不多于一个（或没有标签列表）才算 PiP；读窗口一律带 `populate: true`（不需要 `tabs` 权限，标签带 `lastAccessed`，没有 `url`）。代价：置顶且只有一个标签的普通窗口按 PiP 处理，在里面搜索会到别的窗口分屏。PiP 获得焦点时 `lastSplitWindow()` 依次取 focused 的、打开 PiP 的、没最小化且最近用过的窗口；快捷键（`lastSplitWindow({ fallback: false })`）则什么都不做。
 - v0.3 实测（Chrome 156.0.8078.47）：`tabs.move` 对调分屏两侧后两个标签 `splitViewId` 不变；`tabs.unsplit` 或关掉一侧后，留下的标签 `splitViewId` 为 -1；`tabs.createSplit` 总是分配新的 `splitViewId`（拆开再拼回后与旧 id 不同，所以记录要绑 id）；`tabs.onUpdated` 没有过滤，不监听；没有 `tabs` 权限也能用 `windows.get` 读 `width`；CDP `Extensions.triggerAction` 作用于 TAB 目标时，弹窗以 `type:"page"` 的 CDP 目标出现（约 250ms），传页面 targetId 会报错。
+- v0.4 核查（附录 A，Chromium M155 源码与 Chrome 156.0.8078.47 原型）：
+  - activeTab：点工具栏图标打开 `default_popup` 时就授予（F1，CDP `Extensions.triggerAction` 作用于 tab 目标同样授予，它只接受 `type: "tab"` 的目标）；`action.openPopup()` 不授予（F2）；点右键菜单项在派发 `onClicked` 前授予，直接调处理函数的对照组读不到网址（F3）；`commands.onCommand` 派发前也给活动标签授予（媒体键除外，未实测，F4）。授予的是当前已提交 origin 的标签专属 host 权限和 `url/title/favIconUrl`，声明了 DNR 时附带 `declarativeNetRequestFeedback`，opaque origin 不加 host 权限（F5）；只作用于这个标签，弹窗关掉后还在，同 origin、同文档导航后还在，跨 origin 导航提交或标签销毁后撤销（F6）。
+  - `tabs.create({ splitWithTabId })`、`tabs.createSplit` 不检查 host 权限和 activeTab，`createSplit` 返回新 `splitViewId`（F7）；对本扩展分屏右侧 `tabs.update` 原地换页、分屏不拆，对未授权的左侧 `tabs.update` 同样成功（F8）。分屏 API 在 155–157 签名不变；M155/M156 在 Document PiP 窗口上会 CHECK，M157 返回错误（F17）。
+  - 右键菜单：标题里 `%s` 替换后按词边界截到 75 字符，只截标题（F10）；SW 扩展的菜单项存进 state store、重启后读回，卸载、重新加载、更新时清掉，MV3 必须用 `onClicked`、`id` 必填（F13）；CDP 右键能弹原生菜单但点不了菜单项，首字母助记键与 Chrome 自带项冲突（`y` 撞 “Cop&y image”，F20）。
+  - S2：真点固定在工具栏上的图标会授予 activeTab，弹窗和 SW（`tabs.get(tabId).url`）都读得到网址，弹窗关掉后 SW 仍读得到，跨 origin 导航后读不到；`sender.url` 是弹窗页本身的网址（本仓库按 `chrome.runtime.getURL("popup/popup.html")` 比对，带不带查询串都算）。S1：弹窗里建成分屏（`active: false`）后弹窗没有被关掉（只在 Xvfb 上测过）。
+  - S3：Chrome 不截断 `selectionText`（测到 500 万字符）；每个 `\n`、`\t` 各换成一个空格、不合并；NBSP、U+2003、U+3000 原样保留；隐藏文字不在里面。所以查询词上限就是 500 码点，规范化前先粗截 10000 码点。
+  - S6：`documentUrlPatterns` 按选区所在 frame 的网址匹配（`srcdoc`、`about:blank` iframe 里不出现，跨 origin 和 sandbox 的 http(s) iframe 里出现，`tab` 是顶层标签）；可编辑区域里菜单项会出现、`info.editable === true`（所以 `editable` 规则是必需的）；密码框的 `selectionText` 是掩码圆点；拆分视图右侧窗格里 `tab` 就是右侧标签；无痕窗口、chrome:// 里不出现；PDF 查看器里会出现选区项（② 可用）。应用店页面没测。
+  - S7：`targetUrlPatterns` 只放行 http(s) 时，菜单项在 `data:`、`blob:` 图片上不出现；`srcUrl` 等于图片的 `currentSrc`（srcset、`<picture>` 实际选中的候选），过滤也按 `currentSrc` 匹配；JS 懒加载换成真实地址前不出现。
+  - S8：用户在 Windows Chrome（住宅 IP）手测，TinEye、SauceNAO、Yandex 都直接出结果，Yandex 未被地区封锁；Lens 对 404 图显示“出了点问题 / 该网址中没有图片”，不需特别处理。
+  - S9：activeTab 会让 DNR 规则在那个标签里生效一次：未授权引擎的结果页标签触发 action 后，同一标签同 origin 导航到带 `_ss` 的网址会被重定向并分屏；经 go.html 往返后 activeTab 失效。从没触发过 action 的标签不重定向。
+  - S10：扩展用 `tabs.create`/`tabs.update` 发起的导航不带页面 `Referer`（`Sec-Fetch-Site` 分别是 `none`、`cross-site`），所以隐私说明可以写“页面网址不发”。对照：页面里点链接跨 origin 打开带 `Referer`。
+  - S11：本扩展菜单项排在 Chrome 自带项之后、“检查”之前（倒数第二行），zh_CN 与 en 相同；选区落在别处时在图片上右键只有图片项；只有图片在选区里时本扩展两项收进标题为 `Split Search` 的子菜单。引擎名 `A&B %s` 经转义显示为 `A&B % s`，默认标题没有字符被当成助记键。
+  - S12：e2e 测试配置里 `engine-u`、`page-u`、`engine-i` 三个 origin 都没有 host 权限；引擎 U 作左侧会进 DNR 的 `requestDomains`，但带 `_ss` 的网址不重定向。
+  - S14：“继续浏览上次打开的网页”会恢复拆分视图，`splitViewId` 与重启前相同，标签 id 全变；`storage.session` 清空，恢复的分屏两侧都没有记录。所以兜底判出的 `fallback-own` 按 `foreign` 处理确有必要。
