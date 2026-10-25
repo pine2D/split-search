@@ -1,4 +1,4 @@
-// I18N 多语言冒烟（auto）：4 种语言逐一打开设置页和 go.html 出错页，核对 lang、原样 key、溢出并截图；
+// I18N 多语言冒烟（auto）：4 种语言逐一打开设置页（含引擎库对话框）、工具栏弹窗（本扩展的一对）和 go.html 出错页，核对 lang、原样 key、溢出并截图；
 // 页内切换、连切、两个设置页跟随；uiLocale = "auto" 时 t() 与 chrome.i18n.getMessage 的替换结果逐 key 相同。
 // uiLocale 由 guarded 写回步骤前的值（基线 zh_CN），中断时由快照恢复兜底。截图存 .e2e/i18n/。
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -9,6 +9,8 @@ import { catalog, msgIn, sel } from "../i18n.mjs";
 import { openOptions, guarded, sleep } from "./optpage.mjs";
 import { activate } from "./guided.mjs";
 import { summarize } from "./util.mjs";
+import { pairOn } from "./v03-lib.mjs";
+import { POPUP_URL, popupPage } from "./v03-popup.mjs";
 
 const LOCALES = ["en", "zh_CN", "zh_TW", "es"];
 const SHOT_DIR = join(OUT_DIR, "i18n");
@@ -56,10 +58,10 @@ async function waitPage(page, expr, what, timeoutMs = 10000) {
   }
 }
 
-async function shoot(ctx, page, file, { full = false } = {}) {
+async function shoot(ctx, page, file, { full = false, clip = null } = {}) {
   const { client } = ctx.browser;
   await activate(ctx, page.targetId);
-  const params = { format: "png" };
+  const params = { format: "png", ...(clip ? { clip } : {}) };
   if (full) {
     const { cssContentSize: s } = await client.send("Page.getLayoutMetrics", {}, page.sid);
     Object.assign(params, { captureBeyondViewport: true, clip: { x: 0, y: 0, width: Math.ceil(s.width), height: Math.ceil(s.height), scale: 1 } });
@@ -88,7 +90,32 @@ async function openGo(ctx, locale) {
   return page;
 }
 
-async function perLocale(ctx, locale) {
+// 弹窗页（本扩展的一对，popup.html?tabId=左侧）：等它按 locale 渲染出“关键词”标签，返回页面对象。截图只截 body（弹窗本身的大小）
+async function openPopup(ctx, locale, tabId) {
+  const p = await popupPage(ctx, { url: `${POPUP_URL}?tabId=${tabId}` });
+  try {
+    await waitPage(p, `document.documentElement.lang === ${J(htmlLang(locale))} && !document.getElementById("pair").hidden
+      && document.querySelector(${J(sel("popup_query_label"))}).textContent === ${J(msgIn(locale, "popup_query_label"))}`,
+    `弹窗显示本扩展的一对（lang ${htmlLang(locale)}）`);
+  } catch (e) { await p.close(); throw e; }
+  return p;
+}
+const bodyClip = page => page.ev(`(() => { const r = document.body.getBoundingClientRect(); return { x: 0, y: 0, width: Math.ceil(r.width), height: Math.ceil(r.height), scale: 1 }; })()`);
+
+// 引擎库对话框：在已打开的设置页里打开，自查对话框里的文字与溢出、截图，再关掉
+const CATALOG_AUDIT = AUDIT.replace(`document.querySelectorAll("[data-i18n]")`, `document.querySelectorAll("#catalog-dialog [data-i18n]")`)
+  .replace(`document.querySelectorAll("button, label")`, `document.querySelectorAll("#catalog-dialog button, #catalog-dialog label")`);
+async function catalogDialog(ctx, opt, locale) {
+  await waitPage(opt, `(() => { document.getElementById("catalog-open").click(); const d = document.getElementById("catalog-dialog");
+    return d.open && d.querySelectorAll(".catalog-row").length > 0
+      && document.getElementById("catalog-title").textContent === ${J(msgIn(locale, "catalog_title"))}; })()`, "引擎库对话框按该语言打开");
+  const problems = auditProblems(locale, await opt.ev(CATALOG_AUDIT)).map(p => `引擎库对话框：${p}`);
+  const shot = await shoot(ctx, opt, join(SHOT_DIR, `${locale}-catalog.png`));
+  await opt.ev(`document.getElementById("catalog-close").click(); true`);
+  return { problems, shot };
+}
+
+async function perLocale(ctx, locale, pairTab) {
   const n0 = ctx.consoleCollector?.errors?.length ?? 0;
   await setPref(ctx, locale);
   const problems = [], shots = [];
@@ -97,7 +124,17 @@ async function perLocale(ctx, locale) {
     await waitPage(opt, showsLocale(locale), `设置页显示为 ${locale}`).catch(e => problems.push(`设置页：${e.message}`));
     problems.push(...auditProblems(locale, await opt.ev(AUDIT)).map(p => `设置页：${p}`));
     shots.push(await shoot(ctx, opt, join(SHOT_DIR, `${locale}-options.png`), { full: true }));
+    const cat = await catalogDialog(ctx, opt, locale).catch(e => ({ problems: [`引擎库对话框：${e.message}`], shot: null }));
+    problems.push(...cat.problems);
+    if (cat.shot) shots.push(cat.shot);
   } finally { await opt.close(); }
+  let pop = null;
+  try {
+    pop = await openPopup(ctx, locale, pairTab);
+    problems.push(...auditProblems(locale, await pop.ev(AUDIT)).map(p => `弹窗：${p}`));
+    shots.push(await shoot(ctx, pop, join(SHOT_DIR, `${locale}-popup.png`), { clip: await bodyClip(pop) }));
+  } catch (e) { problems.push(`弹窗：${e.message}`); }
+  finally { await pop?.close(); }
   let go = null;
   try {
     go = await openGo(ctx, locale);
@@ -181,10 +218,12 @@ async function sameAsChrome(ctx, opt) {
 }
 
 export const I18N = {
-  id: "I18N", title: "多语言：4 种语言的设置页与出错页、页内切换、连切、多页跟随、与 chrome.i18n 一致（自动判定）", kind: "auto", needs: [],
+  id: "I18N", title: "多语言：4 种语言的设置页（含引擎库对话框）、弹窗与出错页、页内切换、连切、多页跟随、与 chrome.i18n 一致（自动判定）", kind: "auto", needs: [],
   run: ctx => guarded(ctx, ["uiLocale"], async () => {
     const items = [];
-    for (const l of LOCALES) items.push(await item(l, () => perLocale(ctx, l)));
+    // 弹窗要有本扩展的一对才显示全部文字：先建一对（模拟引擎 A ｜ B），4 种语言共用它的左侧标签
+    const { pair } = await pairOn(ctx, "i18n+popup");
+    for (const l of LOCALES) items.push(await item(l, () => perLocale(ctx, l, pair[0].id)));
     await setPref(ctx, "zh_CN");
     const opt = await openOptions(ctx.browser);
     try {

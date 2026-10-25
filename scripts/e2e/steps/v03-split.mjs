@@ -76,18 +76,33 @@ async function waitRecords(ctx, tabIds, pred, what) {
   return waitState(ctx, async () => { const r = await readRecords(ctx, tabIds); return pred(r) && r; }, what, { timeoutMs: 10000 });
 }
 
-const cleanup = ctx => sub("(d) 关掉一侧清掉两条记录；对侧已重新配对时不误删", async () => {
+// (d) 的两段都先断言两条记录确实在（否则“删掉了”可能只是本来就没写）；“对侧已重新配对”是直接写 storage.session 构造的
+const cleanup = ctx => sub("(d) 关掉一侧清掉两条记录；对侧已重新配对（经 storage.session 构造）时不误删", async () => {
   const p = [];
   const { pair } = await pairOn(ctx, "t16+close");
+  const pre = checkPairRecords(await readRecords(ctx, pair.map(t => t.id)), pair[0], pair[1], splitWant(pair, "t16+close"));
+  if (pre.length) return verdict(pre.map(x => `关标签前：${x}`));
   await ctx.ext.eval(`chrome.tabs.remove(${pair[1].id}).then(() => true)`);
   await waitRecords(ctx, pair.map(t => t.id), r => r[pair[0].id] === undefined && r[pair[1].id] === undefined, `关掉 ${pair[1].id} 后两条记录都被删掉`)
     .catch(e => p.push(e.message));
   // 构造：A ↔ B 是本扩展的一对，之后 B 已和 C 重新配对（B、C 互指），A 的记录还指着 B。关掉 A 时只删 A 的
-  const { pair: [A, B] } = await pairOn(ctx, "t16+repair");
+  const { pair: ab } = await pairOn(ctx, "t16+repair");
+  const [A, B] = ab;
+  const pre2 = checkPairRecords(await readRecords(ctx, [A.id, B.id]), A, B, splitWant(ab, "t16+repair"));
+  if (pre2.length) return verdict([...p, ...pre2.map(x => `重新配对前 A ↔ B：${x}`)]);
   const C = await ctx.ext.eval(`chrome.tabs.create({ windowId: ${B.windowId}, url: ${JSON.stringify(siteX(ctx.port, `/repaired?n=${nonce()}`))}, active: false }).then(t => t.id)`);
   const made = { [`split:${B.id}`]: { peer: C, splitViewId: -1, mode: "adjacent", engine: "eb", query: "t16 repair" },
     [`split:${C}`]: { peer: B.id, splitViewId: -1, mode: "adjacent", engine: "ea", query: "t16 repair" } };
   await ctx.ext.eval(`chrome.storage.session.set(${JSON.stringify(made)}).then(() => true)`);
+  const before = await readRecords(ctx, [A.id, B.id, C]);
+  if (before[A.id]?.peer !== B.id) p.push(`关 A 前 A ${A.id} 的记录应仍指向 B ${B.id}，实际 ${JSON.stringify(before[A.id])}`);
+  if (!isDeepStrictEqual(before[B.id], made[`split:${B.id}`]) || !isDeepStrictEqual(before[C], made[`split:${C}`])) {
+    p.push(`构造的 B ↔ C 记录没写进去：${JSON.stringify([before[B.id], before[C]])}`);
+  }
+  if (p.length) {
+    await ctx.ext.eval(`chrome.storage.session.remove(${JSON.stringify(Object.keys(made))}).then(() => true)`);
+    return verdict(p);
+  }
   await ctx.ext.eval(`chrome.tabs.remove(${A.id}).then(() => true)`);
   const r = await waitRecords(ctx, [A.id, B.id, C], x => x[A.id] === undefined, `关掉 ${A.id} 后它的记录被删掉`)
     .catch(e => { p.push(e.message); return null; });
@@ -96,7 +111,7 @@ const cleanup = ctx => sub("(d) 关掉一侧清掉两条记录；对侧已重新
     if (!isDeepStrictEqual(r[C], made[`split:${C}`])) p.push(`C ${C} 的记录被改动：${JSON.stringify(r[C])}`);
   }
   await ctx.ext.eval(`chrome.storage.session.remove(${JSON.stringify(Object.keys(made))}).then(() => true)`);
-  return verdict(p, `关掉 ${pair[1].id} 后 ${ids(pair)} 的记录都已删除；B ${B.id} 已与 C ${C} 重新配对时，关掉 A ${A.id} 只删了 A 的记录`);
+  return verdict(p, `关前两条记录都在；关掉 ${pair[1].id} 后 ${ids(pair)} 的记录都已删除；B ${B.id} 与 C ${C} 的新配对（经 storage.session 构造）在、A 仍指向 B 时，关掉 A ${A.id} 只删了 A 的记录`);
 });
 
 // 重启后找恢复的一对：左侧是 left、右侧是 right（网址），两侧加载完成

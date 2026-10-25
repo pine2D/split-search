@@ -80,6 +80,22 @@ export async function restoreSettingsStep(rt, s, d) {
   }
 }
 
+// 快捷键（B17、T19 经 chrome://extensions/shortcuts 改过）：有快照就按它改回运行前的绑定，成功才删快照；
+// 浏览器不在了或改回失败保留快照，下次启动先改回。d: { shortcut: { restore(browser), SHORTCUT_FILE }, exists, log, warn }
+export async function restoreShortcutStep(rt, s, d) {
+  const { log = noop, warn = noop } = d;
+  if (!d.shortcut || !d.exists(d.shortcut.SHORTCUT_FILE)) return;
+  const keep = `快照保留在 ${d.shortcut.SHORTCUT_FILE}，下次启动会自动改回`;
+  if (browserGone(rt)) { rt.notes.push(`${goneWhy(rt)}，无法改回快捷键；${keep}`); warn(rt.notes.at(-1)); return; }
+  try {
+    const r = await d.shortcut.restore(rt.browser);
+    log(`快捷键已改回运行前的绑定（${r?.command ?? "?"}：${r?.before ? r.before : "未绑定"}）`);
+  } catch (e) {
+    rt.notes.push(`改回快捷键失败：${e.message}；${keep}`);
+    warn(rt.notes.at(-1));
+  }
+}
+
 // 测试配置里的扩展改回运行前装自的目录（别的检出的 src/，见 ext-source.mjs 的 restoreHome）：恢复 storage 和网站搜索之后、关浏览器之前。
 // d: { sourceHome() → 运行前的目录 | null, restoreSource(browser) → { restored, home?, missing? }, log, warn }
 export async function restoreSourceStep(rt, s, d) {
@@ -208,6 +224,7 @@ export async function teardown(rt, s, d) {
   await reenableStep(rt, s, d);
   await restoreStorageStep(rt, s, d);
   await restoreSettingsStep(rt, s, d);
+  await restoreShortcutStep(rt, s, d);
   await restoreSourceStep(rt, s, d);
   cleanupStep(rt, s, d);
   await closeStep(rt, s, d);

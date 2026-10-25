@@ -26,8 +26,9 @@ export const engineA = (port, q) => `http://${HOSTS.a}:${port}/search?q=${q}`;
 export const engineB = (port, q) => `http://${HOSTS.b}:${port}/search?q=${q}`;
 export const trigger = (port, q, ss = "ea,eb") => `${engineA(port, q)}&_ss=${ss}`;
 export const siteX = (port, path) => `http://${HOSTS.site}:${port}${path}`;
-// 期望的一对：左侧去掉 _ss 原样保留（+ 不变），右侧用 encodeURIComponent（空格为 %20）
-export const expectPair = (port, q) => [engineA(port, q), engineB(port, encodeURIComponent(q.replace(/\+/g, " ")))];
+// 期望的一对：左侧去掉 _ss 原样保留（+ 不变），右侧是关键词原文的 encodeURIComponent（空格为 %20）。
+// q 可以带百分号编码（T18 的特殊字符关键词），先还原成原文再编码，不能二次编码
+export const expectPair = (port, q) => [engineA(port, q), engineB(port, encodeURIComponent(decodeURIComponent(q.replace(/\+/g, " "))))];
 export const isPair = (pair, port, q) => {
   const [l, r] = expectPair(port, q);
   return !!pair && pair[0].url === l && pair[1].url === r && pair[0].status === "complete" && pair[1].status === "complete";

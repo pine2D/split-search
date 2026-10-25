@@ -19,14 +19,14 @@ const POPUP_STATE = `(() => {
     error: $("error").hidden ? "" : $("error").textContent };
 })()`;
 
-// 打开（或接管已有的）弹窗页，返回 { targetId, sid, read(), click(id), close() }
+// 打开（或接管已有的）弹窗页，返回 { targetId, sid, ev(expr), read(), until(pred), click(id), close() }
 export async function popupPage(ctx, { url, targetId } = {}) {
   const { client } = ctx.browser;
   if (!targetId) ({ targetId } = await client.send("Target.createTarget", { url, background: true }));
   const sid = await ctx.browser.attach(targetId);
   const ev = expr => ctx.browser.evaluate(sid, expr, { timeoutMs: 5000 });
   const page = {
-    targetId,
+    targetId, sid, ev,
     read: () => ctx.browser.waitFor(() => ev(POPUP_STATE), { timeoutMs: 10000, intervalMs: 150 }),
     // 等到 pred(state) 为真（换右侧后弹窗会重绘）
     until: (pred, what) => ctx.browser.waitFor(async () => { const s = await ev(POPUP_STATE); return s && !s.busy && pred(s) && s; }, { timeoutMs: 10000, intervalMs: 150 })
@@ -43,7 +43,7 @@ export async function popupPage(ctx, { url, targetId } = {}) {
 const engineName = (port, id) => mockEngines(port).find(e => e.id === id)?.name;
 
 const NAME_A = "(a) 本扩展分屏：显示关键词与左右引擎（与记录一致）";
-const NAME_B = "(b) 点一个引擎：右侧换成它的展开网址，记录与弹窗随之更新";
+const NAME_B = "(b) 点一个引擎：右侧换成它的展开网址（特殊字符关键词逐字相同），右侧记录更新、左侧记录不变，弹窗随之更新";
 
 // (a) 显示：返回问题列表
 async function checkShown(ctx, page, L, R, query) {
@@ -67,20 +67,28 @@ async function checkSwitch(ctx, page, L, R, query) {
   const p = [];
   const st = await waitState(ctx, x => x.tabs.some(t => t.id === R.id && t.url === url && t.status === "complete") && x, `右侧 ${R.id} 打开 ${url}`)
     .catch(async e => { p.push(e.message); return ctx.ext.state(); });
-  const rec = (await readRecords(ctx, [R.id]))[R.id];
+  const recs = await readRecords(ctx, [L.id, R.id]);
+  const rec = recs[R.id], left = recs[L.id];
   if (rec?.engine !== "ec") p.push(`右侧记录的 engine 应为 ec，实际 ${rec?.engine}`);
+  if (rec?.query !== query) p.push(`右侧记录的 query 应保持 ${JSON.stringify(query)}，实际 ${JSON.stringify(rec?.query)}`);
+  if (left?.engine !== "ea" || left?.query !== query) p.push(`左侧记录应保持 engine ea、query ${JSON.stringify(query)}，实际 ${JSON.stringify(left)}`);
   if (tabUrl(st, L.id) !== L.url) p.push(`左侧应保持 ${L.url}，实际 ${tabUrl(st, L.id)}`);
   if (st.tabs.find(t => t.id === R.id)?.splitViewId !== L.splitViewId) p.push("换右侧后分屏被拆开了");
   const s2 = await page.until(x => x.right === ec.name, `右侧显示“${ec.name}”`).catch(e => { p.push(e.message); return null; });
   if (s2 && (s2.choices.includes("ec") || !s2.choices.includes("eb"))) p.push(`换完后可换的引擎应不含 ec、含 eb，实际 ${s2.choices.join(",")}`);
   if (s2?.error) p.push(`弹窗显示错误：${s2.error}`);
-  return { problems: p, detail: `点 ${ec.name} 后右侧 ${R.id} 打开 ${url}，记录 engine 为 ec，弹窗右侧显示 ${ec.name}` };
+  return { problems: p, detail: `关键词 ${JSON.stringify(query)}：点 ${ec.name} 后右侧 ${R.id} 打开 ${url}（与 expandTemplate 逐字相同），右侧记录 engine 为 ec，左侧记录仍是 ea、关键词不变，弹窗右侧显示 ${ec.name}` };
 }
 
 // (a)(b) 共用一个本扩展分屏和一个弹窗页；(a) 不过时 (b) 记跳过
+// 特殊字符关键词（& # + 空格 中文）：换右侧后的网址必须与 go.html 首次打开时的 expandTemplate 结果逐字相同
+export const T18_QUERY = "a&b #c+d 中文";
+// 触发网址里 q 的写法：Chrome 网站搜索在 query 里把空格编成 +，其余照 encodeURIComponent
+export const encodeQ = query => encodeURIComponent(query).replace(/%20/g, "+");
+
 async function ownPair(ctx) {
-  const q = "t18+pop";
-  const query = queryOf(q);
+  const query = T18_QUERY;
+  const q = encodeQ(query);
   let page = null;
   try {
     const { pair: [L, R] } = await pairOn(ctx, q);
