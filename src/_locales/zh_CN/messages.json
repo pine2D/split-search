@@ -822,12 +822,12 @@
     "description": "Native name of Spanish in the language drop-down (本名，不要翻译): identical in every locale, do not translate."
   },
   "options_narrow_label": {
-    "message": "窗口较窄时，右侧改在后台标签打开",
+    "message": "窗口较窄时，右侧改在后台标签页打开",
     "description": "Checkbox label in the default pair card. Narrow means the window is under 960 px wide."
   },
   "options_narrow_hint": {
-    "message": "窗口宽度低于 960 像素时，分屏会太挤：左侧搜索在当前标签打开，右侧搜索在旁边的标签打开。",
-    "description": "Hint under the narrow-window checkbox. Split view is Chrome's feature name; keep the Chrome term."
+    "message": "窗口宽度不到 960 像素时，拆分视图会太挤。勾选后，左侧结果留在你搜索的标签页，右侧结果在它旁边的标签页打开。",
+    "description": "Hint under the narrow-window checkbox on the settings page, describing what happens when it is checked. Split view is Chrome's feature name; keep the Chrome term. Do not say \"this tab\": the reader is on the settings page."
   },
   "notice_narrow_saved": {
     "message": "已保存窄窗口设置。",
@@ -862,11 +862,11 @@
     "description": "Category heading in the engine catalog dialog: Shopping."
   },
   "catalog_cat_chinese": {
-    "message": "中文",
-    "description": "Category heading in the engine catalog dialog: Chinese web."
+    "message": "中文网站",
+    "description": "Category heading in the engine catalog dialog: Chinese-language sites (Baidu)."
   },
   "err_catalog_already_added": {
-    "message": "“$NAME$”已经在你的引擎里了。",
+    "message": "你的引擎列表里已经有“$NAME$”了。",
     "description": "Error when adding a catalog engine that already exists. $NAME$ is the engine name.",
     "placeholders": {
       "NAME": {
@@ -884,7 +884,7 @@
     "description": "Title of the engine catalog dialog."
   },
   "catalog_hint": {
-    "message": "这些网站适合放在分屏右侧。添加后就是普通的自定义引擎，可以修改或删除。",
+    "message": "这些网站适合放在拆分视图右侧。添加后和其他自定义引擎一样，可以修改或删除。",
     "description": "Short intro in the engine catalog dialog. Custom engine = user-defined search engine entry."
   },
   "catalog_add": {
@@ -914,7 +914,7 @@
     "description": "Heading of the keyboard shortcut card on the settings page."
   },
   "options_shortcut_hint": {
-    "message": "在 Split Search 打开的拆分视图里按这个快捷键，右侧会换成下一个勾选了“参与快捷键轮换”的引擎。快捷键默认未设置，可以在 Chrome 的“键盘快捷键”页面里设置。",
+    "message": "在 Split Search 打开的拆分视图里按快捷键，右侧会换成下一个勾选了“参与快捷键轮换”的引擎。快捷键默认未设置，点“设置快捷键”到 Chrome 的“键盘快捷键”页面设置。",
     "description": "Hint in the keyboard shortcut card. The quoted checkbox label must match engine_cycle_label; the page name must match Chrome's own title of chrome://extensions/shortcuts (Keyboard shortcuts)."
   },
   "options_shortcut_label": {
@@ -934,8 +934,8 @@
     "description": "Checkbox label on an engine row. Checked means the keyboard shortcut may switch the right side to this engine."
   },
   "engine_cycle_aria": {
-    "message": "$NAME$ 参与快捷键轮换",
-    "description": "Accessible label of the rotation checkbox on an engine row. The placeholder is the engine name.",
+    "message": "$NAME$：参与快捷键轮换",
+    "description": "Accessible label of the rotation checkbox on an engine row. The placeholder is the engine name. Must contain the visible label text of engine_cycle_label word for word (WCAG 2.5.3 label in name).",
     "placeholders": {
       "NAME": {
         "content": "$1",
@@ -976,11 +976,11 @@
     "description": "Toolbar popup: shown instead of the engine list when there is no other engine to switch to."
   },
   "popup_switch_failed": {
-    "message": "没能换掉右侧，请再试一次。",
+    "message": "右侧没有换成，请再试一次。",
     "description": "Toolbar popup: error shown when loading the chosen engine on the right side failed (for example the tab was just closed)."
   },
   "popup_open_options": {
-    "message": "打开设置",
+    "message": "打开设置页",
     "description": "Toolbar popup: button that opens the extension's settings page."
   }
 }

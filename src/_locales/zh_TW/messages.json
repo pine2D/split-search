@@ -826,8 +826,8 @@
     "description": "Checkbox label in the default pair card. Narrow means the window is under 960 px wide."
   },
   "options_narrow_hint": {
-    "message": "視窗寬度低於 960 像素時，分割畫面會太擠：左側搜尋在目前分頁開啟，右側搜尋在旁邊的分頁開啟。",
-    "description": "Hint under the narrow-window checkbox. Split view is Chrome's feature name; keep the Chrome term."
+    "message": "視窗寬度不到 960 像素時，分割畫面會太擠。勾選後，左側結果會留在你搜尋的分頁，右側結果則在旁邊的分頁開啟。",
+    "description": "Hint under the narrow-window checkbox on the settings page, describing what happens when it is checked. Split view is Chrome's feature name; keep the Chrome term. Do not say \"this tab\": the reader is on the settings page."
   },
   "notice_narrow_saved": {
     "message": "已儲存窄視窗設定。",
@@ -862,11 +862,11 @@
     "description": "Category heading in the engine catalog dialog: Shopping."
   },
   "catalog_cat_chinese": {
-    "message": "中文",
-    "description": "Category heading in the engine catalog dialog: Chinese web."
+    "message": "中文網站",
+    "description": "Category heading in the engine catalog dialog: Chinese-language sites (Baidu)."
   },
   "err_catalog_already_added": {
-    "message": "「$NAME$」已經在你的引擎裡了。",
+    "message": "你的引擎清單裡已經有「$NAME$」了。",
     "description": "Error when adding a catalog engine that already exists. $NAME$ is the engine name.",
     "placeholders": {
       "NAME": {
@@ -884,7 +884,7 @@
     "description": "Title of the engine catalog dialog."
   },
   "catalog_hint": {
-    "message": "這些網站適合放在分割畫面的右側。新增後就是一般的自訂引擎，可以修改或刪除。",
+    "message": "這些網站適合放在分割畫面的右側。新增後和其他自訂引擎一樣，可以修改或刪除。",
     "description": "Short intro in the engine catalog dialog. Custom engine = user-defined search engine entry."
   },
   "catalog_add": {
@@ -914,7 +914,7 @@
     "description": "Heading of the keyboard shortcut card on the settings page."
   },
   "options_shortcut_hint": {
-    "message": "在 Split Search 開啟的分割畫面中按下這個快速鍵，右側會換成下一個勾選「加入快速鍵輪替」的引擎。快速鍵預設為尚未設定，可以到 Chrome 的「鍵盤快速鍵」頁面設定。",
+    "message": "在 Split Search 開啟的分割畫面中按下快速鍵，右側會換成下一個勾選「加入快速鍵輪替」的引擎。預設沒有設定快速鍵，請點選「設定快速鍵」，到 Chrome 的「鍵盤快速鍵」頁面設定。",
     "description": "Hint in the keyboard shortcut card. The quoted checkbox label must match engine_cycle_label; the page name must match Chrome's own title of chrome://extensions/shortcuts (Keyboard shortcuts)."
   },
   "options_shortcut_label": {
@@ -934,8 +934,8 @@
     "description": "Checkbox label on an engine row. Checked means the keyboard shortcut may switch the right side to this engine."
   },
   "engine_cycle_aria": {
-    "message": "$NAME$ 加入快速鍵輪替",
-    "description": "Accessible label of the rotation checkbox on an engine row. The placeholder is the engine name.",
+    "message": "$NAME$：加入快速鍵輪替",
+    "description": "Accessible label of the rotation checkbox on an engine row. The placeholder is the engine name. Must contain the visible label text of engine_cycle_label word for word (WCAG 2.5.3 label in name).",
     "placeholders": {
       "NAME": {
         "content": "$1",
@@ -972,7 +972,7 @@
     "description": "Toolbar popup: heading above the list of engines; clicking one loads it on the right side."
   },
   "popup_no_choices": {
-    "message": "沒有其他可切換的引擎。",
+    "message": "沒有其他可換的引擎。",
     "description": "Toolbar popup: shown instead of the engine list when there is no other engine to switch to."
   },
   "popup_switch_failed": {
@@ -980,7 +980,7 @@
     "description": "Toolbar popup: error shown when loading the chosen engine on the right side failed (for example the tab was just closed)."
   },
   "popup_open_options": {
-    "message": "開啟設定",
+    "message": "開啟設定頁",
     "description": "Toolbar popup: button that opens the extension's settings page."
   }
 }
