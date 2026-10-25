@@ -5,11 +5,13 @@ title: Split Search
 
 # Split Search
 
-A Chrome extension that opens one search in two engines side by side, using Chrome's split view.
+A Chrome extension that opens search results side by side in Chrome's split view: one search in two engines, or a lookup next to the page you're reading.
 
 - Search from the address bar, or drag text onto the tab strip, and get two result pages at once.
 - Pick your own engines and pairs; each pair gets its own keyword through Chrome's site search.
-- Switch the right side to another engine from the toolbar popup, or with a keyboard shortcut you set yourself.
-- Your data stays on your device: no servers, no analytics. Search terms are sent only to the search engines you pick, and kept in browser memory only until you close the browser.
+- On a results page from one of your engines, open another engine's results next to it from the toolbar popup.
+- Right-click selected text or an image to look it up or search it next to the page you're reading.
+- Switch engines from the toolbar popup, or switch the right side with a keyboard shortcut you set yourself.
+- Nothing goes to the developer or other third parties: no servers, no analytics. What you look up is sent only to the engines you pick, and kept in browser memory only until you close the browser.
 
 [Privacy Policy](privacy)
