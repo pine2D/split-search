@@ -36,6 +36,8 @@
 
 ## 3. 文件清单（已生成）
 
+> 2026-10-25：`en` 的 7 张商店图改用第二版模板 `assets/templates-v2/`（大字 + 放大的局部截图；截图 5 改为隐私），见该目录的 README；下表“内容”一栏描述的是第一版（其他语言仍用它）。README 图不变。
+
 全部图片由 `assets/templates/*.html` 经 `node scripts/store/render-assets.mjs` 渲染，画面里的浏览器和网页都是 `assets/raw/` 中的真实截图（见 `assets/raw/captions.md`），模板只做裁切、缩放、外框和标注。`en` 用 `assets/raw/en/` 的英文截图（英文 Chrome、英文扩展界面、右侧 Bing），其他语言用 `assets/raw/` 根下共用的中文截图。输出是不带透明通道的 PNG。
 
 图标默认用选定的 c6（见第 1 节）。要试别的图标时：

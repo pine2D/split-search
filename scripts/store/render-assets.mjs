@@ -8,7 +8,8 @@
 //                 与 src/icons/ 同源）；试别的图标时传它的 icon.svg 或 .png
 //   --no-tile     图标自带底板（如方案 6）时用：去掉模板里的白色圆角底板，避免“板中板”
 //   --only a,b    只渲染这些模板（文件名去掉 .html）
-//   --templates <dir>  模板目录（默认 assets/templates）；可放一套备选模板，不动现有的
+//   --templates <dir>  模板目录（默认 assets/templates）；可放一套备选模板，不动现有的。
+//                 不传时，在 assets/templates-v2/i18n/ 有文案的语言（目前只有 en）商店图改用 v2 模板，见 template-sets.mjs
 //   --out <dir>   所有输出平铺到这一个目录，用模板声明的文件名（不含子目录；多个语言时再分 <dir>/<l>/）；省略时写到 assets/store、assets/readme（见 --locale）
 //   --tmp <dir>   放临时 Chrome 配置的目录（默认系统临时目录），结束后删除
 //   --list        只列出模板与目标尺寸，不渲染
@@ -29,9 +30,11 @@ import { join, resolve, dirname, basename, extname, relative } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { inflateSync, deflateSync, crc32 } from "node:zlib";
 import { createClient } from "../e2e/cdp.mjs";
+import { overlayTemplates, filterOnly } from "./template-sets.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const TEMPLATES = join(ROOT, "assets/templates");
+const TEMPLATES_V2 = join(ROOT, "assets/templates-v2"); // 商店图第二版，见 template-sets.mjs
 const DEFAULT_ICON = join(ROOT, "assets/icon-proposals/v3-colors/c6-pine-fog/icon.svg"); // 选定图标（c6）；src/icons/icon-48|128.png 由它导出，16/32 来自同目录按像素对齐的 icon-16.svg / icon-32.svg
 const CHROME = "/opt/google/chrome/google-chrome";
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -254,33 +257,31 @@ async function renderOne(client, t, icon, noTile, L) {
 
 async function main() {
   const o = parseArgs(process.argv.slice(2));
-  if (o.help) { console.log(readFileSync(fileURLToPath(import.meta.url), "utf8").split("\n").slice(1, 21).join("\n")); return; }
-  let list = readTemplates(o.templates);
-  if (o.only) {
-    const miss = o.only.filter(n => !list.some(t => t.name === n));
-    if (miss.length) throw new Error(`没有这些模板：${miss.join("，")}`);
-    list = list.filter(t => o.only.includes(t.name));
-  }
+  if (o.help) { console.log(readFileSync(fileURLToPath(import.meta.url), "utf8").split("\n").slice(1, 22).join("\n")); return; }
   const locales = resolveLocales(o.locale, o.templates);
   if (!locales.length) throw new Error(`${join(o.templates, "i18n")} 里没有文案文件`);
+  const base = readTemplates(o.templates);
+  const v2 = o.templates === TEMPLATES && existsSync(TEMPLATES_V2) ? { dir: TEMPLATES_V2, list: readTemplates(TEMPLATES_V2) } : null;
+  const lists = filterOnly(Object.fromEntries(locales.map(l => [l, overlayTemplates(base, v2, l)])), o.only);
   const show = f => f.startsWith(ROOT + "/") ? relative(ROOT, f) : f;
   const dest = (t, l) => o.out ? join(o.out, locales.length > 1 ? l : "", basename(t.out)) : join(ROOT, "assets", localizedOut(t.out, l));
-  if (o.list) { for (const l of locales) for (const t of list) console.log(`${l}\t${t.name}\t${t.width * t.scale}x${t.height * t.scale}\t${show(dest(t, l))}`); return; }
+  if (o.list) { for (const l of locales) for (const t of lists[l]) console.log(`${l}\t${t.name}\t${t.width * t.scale}x${t.height * t.scale}\t${show(dest(t, l))}`); return; }
   const strings = Object.fromEntries(locales.map(l => [l, loadStrings(o.templates, l)]));
   const source = Object.keys(strings[SOURCE_LOCALE] ?? loadStrings(o.templates, SOURCE_LOCALE));
-  for (const l of locales) { // 缺键不退回源语言，直接报错
+  for (const l of locales) { // 缺键不退回源语言，直接报错（v2 只有 en，缺键在渲染时报错）
     const miss = source.filter(k => !(k in strings[l]));
     if (miss.length) throw new Error(`i18n/${l}.json 缺少 ${miss.length} 个键：${miss.join("，")}`);
   }
+  const localeFor = (dir, l) => ({ lang: LOCALES[l], css: existsSync(join(dir, "i18n", `${l}.css`)) ? `i18n/${l}.css` : null,
+    strings: dir === o.templates ? strings[l] : loadStrings(dir, l), raw: rawSet(dir, l) });
   const icon = iconDataUrl(o.icon);
   const b = await launch(o.tmp);
   let failed = 0;
   try {
     for (const l of locales) {
-      const css = existsSync(join(o.templates, "i18n", `${l}.css`)) ? `i18n/${l}.css` : null;
-      for (const t of list) {
+      for (const t of lists[l]) {
         try {
-          const png = await renderOne(b.client, t, icon, o.noTile, { lang: LOCALES[l], css, strings: strings[l], raw: rawSet(o.templates, l) });
+          const png = await renderOne(b.client, t, icon, o.noTile, localeFor(dirname(t.file), l));
           const info = pngInfo(png), W = Math.round(t.width * t.scale), H = Math.round(t.height * t.scale);
           if (info.width !== W || info.height !== H) throw new Error(`输出 ${info.width}x${info.height}，应为 ${W}x${H}`);
           const file = dest(t, l);

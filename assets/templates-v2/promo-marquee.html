@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="asset-size" content="1400x560">
+<meta name="asset-out" content="store/marquee-1400x560.png">
+<link rel="stylesheet" href="v2.css">
+<script src="../templates/fonts.js"></script>
+<style>
+  /* 以字为主：左栏眉题 + 大标题 + 一行说明讲“分屏”这件事，再用一行小字带出标签栏拖拽；
+     右栏两张等宽（576）、左右缘对齐的真实截图卡片，整组垂直居中：01 地址栏下拉框（0.95）、02 设置页里的默认左右两个引擎（0.85）。
+     标签栏拖拽没有能放大到看清的小裁切（拖拽影像只是一个灰色字块），交给左栏那行字。 */
+  .copy { left: 88px; width: 620px; }
+  h1 { font-size: 96px; line-height: 96px; letter-spacing: -.04em; }
+  .more { margin-top: 28px; font-size: 22px; line-height: 28px; font-weight: 600; color: var(--pine-ink); }
+  .shots { position: absolute; left: 760px; width: 576px; top: 50%; transform: translateY(-50%); }
+  .cap { display: flex; gap: 14px; align-items: baseline; margin: 0 0 10px 2px; font-size: 20px; line-height: 24px; font-weight: 700;
+    letter-spacing: .12em; text-transform: uppercase; color: var(--ink-2); white-space: nowrap; }
+  .cap b { color: var(--pine-ink); letter-spacing: .04em; }
+  .shots .win { position: relative; width: 576px; }
+  .shots .win + .cap { margin-top: 28px; }
+  .shots .crop { width: 576px; }
+  .win.a { --win-p: 0 0 12px; }   /* 0.95；02 是 0.85，行内自带下边距 */
+</style></head>
+<body>
+  <div class="copy">
+    <div class="eyebrow"><div class="icon"><img data-icon alt=""></div>Split Search</div>
+    <h1 data-t="marquee.title" data-lines="2"></h1>
+    <p class="sub" data-t="marquee.sub" data-lines="1"></p>
+    <p class="more" data-t="marquee.more" data-lines="1"></p>
+  </div>
+  <div class="shots">
+    <div class="cap"><b>01</b><span data-t="marquee.cap1"></span></div>
+    <!-- 真实截图：地址栏下拉框（输入 rust ownership，建议“DuckDuckGo | Bing Search”），左缘是下拉框左边，下沿切在建议行灰底之下 -->
+    <div class="win a"><div class="crop" data-crop="226,62,606,126"><img src="../raw/omnibox-suggest.png" data-iw="2400" alt=""></div></div>
+    <div class="cap"><b>02</b><span data-t="marquee.cap2"></span></div>
+    <!-- 真实截图：设置页引擎列表的前两行，DuckDuckGo 标着 Default left、Bing 标着 Default right；左缘是蓝色指示条 -->
+    <div class="win b"><div class="crop" data-crop="658,646,678,240"><img src="../raw/options-engines.png" data-iw="2400" alt=""></div></div>
+  </div>
+  <script src="../templates/crop.js"></script>
+</body></html>

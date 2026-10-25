@@ -1,0 +1,21 @@
+{
+  "s1.title": "One search. Two engines.",
+  "s1.sub": "Results open side by side in Chrome’s split view.",
+  "s2.title": "Type in the\naddress bar.",
+  "s2.sub": "Make your engine pair Chrome’s default search, then press Enter.",
+  "s3.title": "Drag text to the tab strip.",
+  "s3.sub": "Select text on any page, drop it, and both engines open.",
+  "s4.title": "Pick any\ntwo engines.",
+  "s4.sub": "Five are built in, and you can add your own.",
+  "s5.title": "No data collected.",
+  "s5.sub": "Everything happens in your browser. Nothing is sent to us.",
+  "s5.fact1": "No servers, analytics or ads",
+  "s5.fact2": "Searches go only to your two engines",
+  "s5.fact3": "Never reads history or page content",
+  "small.tag": "Search two engines",
+  "marquee.title": "One search.\nTwo engines.",
+  "marquee.sub": "Side by side in Chrome’s split view.",
+  "marquee.cap1": "Address bar",
+  "marquee.cap2": "Your engines",
+  "marquee.more": "Also works when you drag text to the tab strip."
+}

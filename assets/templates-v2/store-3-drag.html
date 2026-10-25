@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="asset-size" content="1280x800">
+<meta name="asset-out" content="store/screenshot-3.png">
+<link rel="stylesheet" href="v2.css">
+<script src="../templates/fonts.js"></script>
+<style>
+  /* 上字下图，一行标题（同截图 1、5，卡片从 y 284 起）。拖拽中、还没松手：标签“Rust (programming language)”和“+”、地址栏、正文里选中的“Graydon Hoare”、
+     标签栏上的拖拽影像都在同一张图里。
+     正文里的选区不加框（选区左右离相邻字母只有 4–5px，框线会压字），保留原生蓝色高亮，虚线从选区右上角外的实心圆点起；标签栏上的拖拽影像加框。
+     虚线箭头只走空白：沿两段正文之间的空行（y 567）向右，再沿正文和信息框之间的缝（x 1333）向上，不压字。缩放 0.68，正文约 16px；画布内可见原图 x 0–1776，卡片向右、向下出血（画布内高 516 = 原图约 759，裁 790）。
+     裁切从原图 y=-14 起：卡片顶上 10px 用标签栏同色 #D3E3FD 补齐，让拖拽影像外的框不贴着卡片上沿。
+     第一个标签旁 Xvfb 的黑底插入箭头（397,61）用修补图盖掉，见 assets/raw/captions.md“修补”。 */
+  .crop { width: 1224px; background: #d3e3fd; }
+</style></head>
+<body class="top one">
+  <div class="copy">
+    <div class="eyebrow"><div class="icon"><img data-icon alt=""></div>Split Search</div>
+    <h1 data-t="s3.title" data-lines="1"></h1>
+    <p class="sub" data-t="s3.sub" data-lines="1"></p>
+  </div>
+  <!-- 真实截图：英文维基百科正文里选中 Graydon Hoare，拖到标签栏空白处；框和虚线箭头是标注 -->
+  <div class="crop" data-crop="0,-14,1800,790"><img src="../raw/drag-to-tabstrip.png" data-iw="2400" alt="">
+    <img class="patch" src="../raw/en/patches/drag-to-tabstrip-397-61.png" data-box="397,61,31,31" alt="">
+    <i class="mark" data-box="1377,12,165,38"></i>
+    <svg class="ann">
+      <defs><marker id="h" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse">
+        <path d="M1 1L9 5L1 9" fill="none" stroke="#507665" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+      <circle cx="782" cy="567" r="7" fill="#507665"/>
+      <path d="M800 567 L 1300 567 Q 1333 567, 1333 534 L 1333 210 Q 1333 150, 1400 128 Q 1459 108, 1459 84" fill="none" stroke="#507665" stroke-width="6" stroke-dasharray="2 14"
+        stroke-linecap="round" marker-end="url(#h)"/>
+    </svg>
+  </div>
+  <script src="../templates/crop.js"></script>
+</body></html>

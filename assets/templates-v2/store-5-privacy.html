@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="asset-size" content="1280x800">
+<meta name="asset-out" content="store/screenshot-5.png">
+<link rel="stylesheet" href="v2.css">
+<script src="../templates/fonts.js"></script>
+<style>
+  /* 上字下图，一行标题（同截图 1、3，卡片从 y 284 起）。隐私没有可以裁的界面，只用字：一张白卡分三栏，三条事实与 docs/store/listing.en.md 的 PRIVACY 段一致。
+     卡片高 340（284–624），对勾 + 两行字在卡片里垂直居中。 */
+  .facts { position: absolute; left: 72px; right: 72px; top: 284px; height: 340px; display: grid; grid-template-columns: repeat(3, 1fr);
+    background: #fff; border-radius: 18px; box-shadow: var(--card); }
+  .facts li { list-style: none; padding: 0 36px; display: flex; flex-direction: column; justify-content: center; }
+  .facts li + li { border-left: 1px solid var(--rule); }
+  .facts svg { display: block; flex: none; width: 48px; height: 48px; margin-bottom: 28px; }
+  .facts span { display: block; font-size: 32px; line-height: 42px; font-weight: 600; letter-spacing: -.012em; color: var(--ink); }
+</style></head>
+<body class="top one">
+  <div class="copy">
+    <div class="eyebrow"><div class="icon"><img data-icon alt=""></div>Split Search</div>
+    <h1 data-t="s5.title" data-lines="1"></h1>
+    <p class="sub" data-t="s5.sub" data-lines="1"></p>
+  </div>
+  <svg width="0" height="0" style="position:absolute"><symbol id="ok" viewBox="0 0 48 48">
+    <circle cx="24" cy="24" r="24" fill="#507665" fill-opacity=".14"/>
+    <path d="M15 24.5l6 6 12-13" fill="none" stroke="#3e5d50" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></symbol></svg>
+  <ul class="facts">
+    <li><svg><use href="#ok"/></svg><span data-t="s5.fact1" data-lines="2"></span></li>
+    <li><svg><use href="#ok"/></svg><span data-t="s5.fact2" data-lines="2"></span></li>
+    <li><svg><use href="#ok"/></svg><span data-t="s5.fact3" data-lines="2"></span></li>
+  </ul>
+</body></html>

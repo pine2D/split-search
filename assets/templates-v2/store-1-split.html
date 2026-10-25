@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="asset-size" content="1280x800">
+<meta name="asset-out" content="store/screenshot-1.png">
+<link rel="stylesheet" href="v2.css">
+<script src="../templates/fonts.js"></script>
+<style>
+  /* 上字下图，一行标题（body.top.one，卡片从 y 284 起）。只取拆分视图的上半部分：标签栏、地址栏、两个窗格的引擎标志和搜索框、各自第一屏的开头。
+     缩放 0.69：两边搜索框里的“rust programming”约 17px；画布内可见原图 x 0–1751，Bing 搜索框里的查询词止于 1718（再放大查询词就出画布）。
+     卡片向右（约 34px）、向下出血：画布内高 516 = 原图约 748，裁 760。DuckDuckGo 结果列右边那条被挤窄的侧栏是真实界面，保留。 */
+  .crop { width: 1242px; }
+</style></head>
+<body class="top one">
+  <div class="copy">
+    <div class="eyebrow"><div class="icon"><img data-icon alt=""></div>Split Search</div>
+    <h1 data-t="s1.title" data-lines="1"></h1>
+    <p class="sub" data-t="s1.sub" data-lines="1"></p>
+  </div>
+  <!-- 真实截图：触发网址建成的拆分视图，左 DuckDuckGo、右 Bing，查询词 rust programming；从窗口左上角起 -->
+  <div class="crop" data-crop="0,0,1800,760"><img src="../raw/split-ddg-bing-rust.png" data-iw="2400" alt=""></div>
+  <script src="../templates/crop.js"></script>
+</body></html>

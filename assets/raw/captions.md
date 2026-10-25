@@ -37,6 +37,7 @@
 | 修补图 | 盖在哪里 | 做法 |
 |---|---|---|
 | `patches/drag-to-tabstrip-397-61.png`（32×31） | `drag-to-tabstrip.png` 的 (397,61) 处，由 `store-3-drag.html` 以 `<img class="patch">` 叠加 | 去掉黑底“↑”方块：上半填标签白、下半填地址栏底色 `#EDF2FA`；被挡住的“/”上半截取自同一斜杠下段（下移 8 行、右移 2 列），“wi”上半截取自同一张图里“zh.wikipedia”的“wi”（x 减 142，同一基线）。原图不动。 |
+| `en/patches/drag-to-tabstrip-397-61.png`（31×31） | `en/drag-to-tabstrip.png` 的 (397,61) 处，由 `assets/templates-v2/store-3-drag.html` 以 `<img class="patch">` 叠加 | 英文版的同一个黑底“↑”方块（位置相同）：上 8 行填工具栏白、其余填地址栏底色 `#EDF2FA`，再按“取较暗像素”叠回被挡住的字：“wi”上半取自同一行“wikipedia”的“wi”（x 减 141），“/”上半取自同一斜杠下段（下移 8 行、右移 2 列），“g”顶端取自“(programming”里的“g”（x 加 148）。原图不动。 |
 
 重做命令（在 `assets/raw/` 下）：
 
@@ -75,7 +76,7 @@ convert drag-to-tabstrip.png \
 | `en/options-engines.png` | 设置页滚动到“Search engines”卡片，卡片上缘与中文版同高（左右比中文版偏左 11px，模板用 `data-crop-en`） |
 | `en/options-fullpage.png` | 设置页整页（CDP `Page.captureScreenshot`），2376×3312 |
 | `en/split-ddg-bing-rust.png` | 新标签打开触发网址 `https://duckduckgo.com/?q=rust+programming&_ss=ddg,bing`，扩展建成 DuckDuckGo ｜ Bing 拆分视图；标签栏里是“Split Search settings”和两个分屏标签 |
-| `en/drag-to-tabstrip.png` | 英文维基百科“Rust (programming language)”，在正文“Software developer Graydon Hoare created Rust…”里选中“Graydon Hoare”（不是链接），用 xdotool 真实按下拖到标签栏空白处（落点 1460,30），没松手时截图。第一个标签旁同样有 Xvfb 下的黑底插入箭头（x≈411），不在任何裁切范围里 |
+| `en/drag-to-tabstrip.png` | 英文维基百科“Rust (programming language)”，在正文“Software developer Graydon Hoare created Rust…”里选中“Graydon Hoare”（不是链接），用 xdotool 真实按下拖到标签栏空白处（落点 1460,30），没松手时截图。第一个标签旁同样有 Xvfb 下的黑底插入箭头（397,61），商店截图 3（v2）的裁切包含它，用 `en/patches/` 的修补图盖掉（见“修补”） |
 | `en/drag-result-split.png` | 松手后：默认搜索引擎（触发网址）打开新标签，扩展建成 DuckDuckGo ｜ Bing 拆分视图，查询词“Graydon Hoare” |
 | `en/omnibox-suggest.png` | 在上一张的左侧地址栏输入“rust ownership”，下拉建议“rust ownership - DuckDuckGo \| Bing Search”（行的位置与中文版相同） |
 | `en/omnibox-result-split.png` | 回车后扩展在原分屏里更新两侧，查询词“rust ownership” |

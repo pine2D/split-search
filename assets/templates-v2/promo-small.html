@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="asset-size" content="440x280">
+<meta name="asset-out" content="store/small-promo-440x280.png">
+<link rel="stylesheet" href="v2.css">
+<script src="../templates/fonts.js"></script>
+<style>
+  /* 缩到 220×140 仍要认得出：图标、产品名、一句标签，没有截图。图标直接放在纸底上（母版四周有透明边）。
+     图标 124px，标签 29px（220 宽下约 15px）一行放下，与产品名相距 22px；可见内容左右边距都 ≥24px。 */
+  .icon { position: absolute; left: 10px; top: 50%; width: 124px; height: 124px; transform: translateY(-50%); }
+  .t { position: absolute; left: 140px; right: 24px; top: 0; bottom: 0; display: flex; flex-direction: column; justify-content: center; }
+  .name { font-size: 60px; line-height: 56px; font-weight: 700; letter-spacing: -.04em; }
+  .tag { margin-top: 22px; font-size: 29px; line-height: 34px; font-weight: 600; color: var(--pine-ink); letter-spacing: -.015em; }
+</style></head>
+<body>
+  <div class="icon"><img data-icon alt=""></div>
+  <div class="t"><div class="name">Split<br>Search</div><div class="tag" data-t="small.tag" data-lines="1"></div></div>
+</body></html>
