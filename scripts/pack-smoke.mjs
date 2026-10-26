@@ -1,6 +1,6 @@
 // 发布包安装冒烟：把 ZIP 解压到临时目录，在一次性 Chrome 配置（无头、--disable-sync、no-first-run、管道 CDP）里
 // 用 Extensions.loadUnpacked 装上，核对：没有 manifest 错误和安装警告、SW 起得来、设置页按英文渲染且没有 [split-search]
-// 控制台错误、DNR 规则指向本次装出的 ID、切换 uiLocale 后 SW 重建右键菜单没有错误、工具栏弹窗按英文渲染、
+// 控制台错误、DNR 规则指向本次装出的 ID、切换 uiLocale 后 SW 重建右键菜单没有错误、工具栏弹窗按英文渲染（全新安装是 setup 档）、
 // go.html 收到格式不对的 _ss 时显示出错页。临时配置和解压目录用完即删
 // （SIGINT/SIGTERM/SIGHUP 也删；被 SIGKILL 留下的，下次开头清掉）；只关自己起的浏览器，
 // 绝不碰 ~/.cache/split-search-e2e/profile 或真实配置。
@@ -174,17 +174,22 @@ export async function smoke(zipPath, { expectId = null, log = console.log } = {}
       } catch (e) { record("切换 uiLocale 后 SW 重建菜单无错误", false, e.message); }
     } finally { await opt.close(); }
 
-    // 工具栏弹窗页直接当标签打开：活动标签就是它自己，不是本扩展的拆分视图，显示说明文字
+    // 工具栏弹窗页直接当标签打开：活动标签就是它自己，不是本扩展的拆分视图。全新安装还没授权默认组合左侧，
+    // 分屏外是 setup 档（src/lib/popup-view.js 的 idleView）：只显示“还没设置好”和“完成设置”
     const pop = await openPage(b, `chrome-extension://${id}/popup/popup.html`);
     try {
-      const want = en("popup_not_ours");
+      const want = [en("popup_setup_needed"), en("popup_setup_button")];
       await waitTrue(b, pop, `document.documentElement.lang === "en" && !document.documentElement.classList.contains("i18n-pending")
         && !document.querySelector("main").classList.contains("loading")`, "弹窗按英文渲染");
       const raw = await rawKeys(pop);
-      const text = await pop.ev(`document.getElementById("not-ours").hidden ? null : document.getElementById("not-ours").textContent`);
-      const ok = !raw.length && text === want;
-      record("弹窗英文渲染", ok, ok ? `lang en，“${want}”`
-        : [raw.length ? `显示成 key：${raw.join("、")}` : "", text !== want ? `说明文字应为“${want}”，实际 ${J(text)}` : ""].filter(Boolean).join("；"));
+      const got = await pop.ev(`(() => { const $ = id => document.getElementById(id);
+        return { tier: $("idle").hidden ? null : $("idle").dataset.tier ?? null, notOurs: !$("not-ours").hidden,
+          text: [$("idle-setup").querySelector("p")?.textContent ?? null, $("idle-setup-open")?.textContent ?? null] }; })()`);
+      const ok = !raw.length && got.tier === "setup" && !got.notOurs && J(got.text) === J(want);
+      record("弹窗英文渲染", ok, ok ? `lang en，setup 档：“${want[0]}”“${want[1]}”`
+        : [raw.length ? `显示成 key：${raw.join("、")}` : "",
+          got.tier !== "setup" || got.notOurs ? `全新安装应是 setup 档、不显示说明文字，实际 ${J({ tier: got.tier, notOurs: got.notOurs })}` : "",
+          J(got.text) !== J(want) ? `文字应为 ${J(want)}，实际 ${J(got.text)}` : ""].filter(Boolean).join("；"));
     } catch (e) { record("弹窗英文渲染", false, e.message); }
     finally { await pop.close(); }
 
