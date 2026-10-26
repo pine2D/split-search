@@ -115,19 +115,31 @@ const catalog = (ctx, page) => sub("(c) 从以图搜图引擎库添加 Bing Visu
 const remove = (ctx, page) => sub("(d) 选用 Bing Visual Search 后删除它：imageEngine 键随之删除，回到 Lens", async () => {
   const id = (await readKeys(ctx.ext, KEYS)).imageEngines?.find(e => e.url === BING.url)?.id;
   if (!id) return { status: "skip", detail: "(c) 没有加上 Bing Visual Search" };
+  const btnId = J(`remove-image-${id}`);
+  // 选用会写 storage.sync，设置页随 onChanged 重渲染、按钮换成新建的（确认状态随之复原）。
+  // 先给旧按钮打记号，等重渲染出新按钮、再稳住 500 ms，才开始两步删除，免得第一下点在要被换掉的按钮上
+  await page.run(`const b = document.getElementById(${btnId}); if (b) b.__b18old = true; return true;`);
   await setSelect(page, "image-engine", id);
   await storageUntil(ctx, s => s.imageEngine === id, `imageEngine 为 ${id}`);
-  await page.until(`return (() => { ${CARD} })()?.imageValue === ${J(id)}`);
-  // 两步删除：点一次只变成“确认删除？”，再点才删
+  await page.until(`const b = document.getElementById(${btnId}); return (() => { ${CARD} })()?.imageValue === ${J(id)} && b && !b.__b18old;`)
+    .catch(() => { throw new Error(`选用 ${id} 后设置页没有重渲染出新的“删除”按钮`); });
+  await page.run(`
+    for (let b = document.getElementById(${btnId}), i = 0; b && i < 20; i++) {
+      await sleep(500);
+      const now = document.getElementById(${btnId}); if (now === b) return true; b = now;
+    }
+    return false;`);
+  // 两步删除：点一次只变成“确认删除？”，再点才删（两下点同一个按钮；中途重渲染时如实报出）
   const once = await page.run(`
-    const entry = [...document.querySelectorAll("#lookup-body .engine-row")].find(r => r.dataset.id === ${J(id)});
-    const b = entry?.querySelector(${J(`[data-i18n="engine_delete"]`)}); if (!b) return null; b.click(); await sleep(300);
-    return { text: b.textContent, still: !!document.getElementById(${J(`remove-image-${id}`)}) };`);
+    const b = document.getElementById(${btnId}); if (!b) return null; b.click(); await sleep(300);
+    const now = document.getElementById(${btnId});
+    return { text: b.textContent, still: !!now, same: now === b };`);
   if (!once) return { status: "fail", detail: `列表里 ${id} 的“删除”按钮找不到` };
   const early = [];
   if (once.text !== msg("engine_delete_confirm")) early.push(`点一次后按钮应为“${msg("engine_delete_confirm")}”，实际“${once.text}”`);
   if (!once.still) early.push("只点一次就删掉了");
-  await page.run(`document.getElementById(${J(`remove-image-${id}`)})?.click(); return true;`);
+  else if (!once.same) early.push("点一次后设置页重渲染了，“删除”按钮被换成新的（确认状态丢失）");
+  await page.run(`document.getElementById(${btnId})?.click(); return true;`);
   const got = await storageUntil(ctx, s => !s.imageEngines?.some(e => e.id === id) && !("imageEngine" in s), `删掉 ${id} 和 imageEngine`);
   const c = await page.until(`const c = (() => { ${CARD} })(); return c && !c.rows.includes(${J(id)}) && c;`);
   const p = [...early];
