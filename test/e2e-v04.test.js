@@ -225,3 +225,16 @@ test("guardTabs：标记读回失败（或对不上）判 env，不留下 mark �
     e => e.kind === "env" && /标签 6/.test(e.message));
 });
 
+
+test("popupStateOf：分屏外的 #idle 与默认组合、底部快捷键；旧快照没有这些字段时给空值", () => {
+  const s = popupStateOf(snap({ notOurs: { hidden: false, text: "不是" }, idle: { hidden: false, text: "试试" },
+    idlePair: ["模拟引擎 A", "模拟引擎 B"], shortcut: { key: "Alt+Shift+Period", setButton: false } }));
+  assert.equal(s.idle, true);
+  assert.equal(s.idleText, "试试");
+  assert.deepEqual(s.idlePair, ["模拟引擎 A", "模拟引擎 B"]);
+  assert.deepEqual(s.shortcut, { key: "Alt+Shift+Period", setButton: false });
+  const old = popupStateOf(snap({ notOurs: { hidden: false, text: "不是" } }));
+  assert.equal(old.idle, false);
+  assert.deepEqual(old.idlePair, []);
+  assert.deepEqual(old.shortcut, { key: "", setButton: false });
+});

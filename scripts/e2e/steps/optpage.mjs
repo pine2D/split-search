@@ -1,4 +1,4 @@
-// 设置页自动化的公共工具：打开/关闭额外的设置页、页内脚本、confirm 对话框处理、临时引擎。
+// 设置页自动化的公共工具：打开/关闭额外的设置页、页内脚本、JS 对话框记录（设置页不该再弹 confirm）、临时引擎。
 import { EXT_ID } from "../config.mjs";
 import { sel } from "../i18n.mjs";
 
@@ -72,14 +72,16 @@ export async function withOptions(browser, fn) {
   try { return await fn(page); } finally { await page.close(); }
 }
 
-// 填写并提交新增/编辑对话框里的表单（url 需触发 input 事件刷新提示）
+// 填写并提交新增/编辑对话框里的表单。按对话框的字段顺序（名称 → 网址 → “高级”里的 id）填，每格都派发 input 事件：
+// 网址要刷新提示，名称和网址要让 id 自动跟随；给了 id 就像用户改过 id 一样不再跟随。不给 id 时用自动生成的
 export const fillDialog = (page, { id, name, url }) => page.run(`
-  const set = (n, v) => { const el = document.getElementById("dlg-" + n); el.value = v; if (n === "url") el.dispatchEvent(new Event("input")); };
-  ${id !== undefined ? `set("id", ${JSON.stringify(id)});` : ""}
+  const set = (n, v) => { const el = document.getElementById("dlg-" + n); el.value = v; el.dispatchEvent(new Event("input")); };
   ${name !== undefined ? `set("name", ${JSON.stringify(name)});` : ""}
   ${url !== undefined ? `set("url", ${JSON.stringify(url)});` : ""}
+  ${id !== undefined ? `set("id", ${JSON.stringify(id)});` : ""}
   document.getElementById("dlg-save").click();
   return true;`);
+
 
 // 只看引擎对话框里的错误提示（v0.4 的以图搜图对话框 #image-dialog 也有同名的 .field-error，排在它前面）
 export const dialogState = page => page.run(`

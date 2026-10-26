@@ -155,9 +155,9 @@ const field = (labelKey, box) => h("div", { class: "setup-field" }, ht("span", {
 function addBody({ left, url }) {
   return [
     ht("p", { class: "hint" }, "setup_add_text"),
-    url ? field("setup_trigger_label", urlBox(url)) : ht("p", { class: "hint hint-error" }, "guide_no_trigger"),
+    url ? field("setup_trigger_label", urlBox(url, undefined, "guide_copy_default_aria")) : ht("p", { class: "hint hint-error" }, "guide_no_trigger"),
     url && left.leftDiscouraged && leftWarn(left),
-    field("setup_settings_label", urlBox(SETTINGS_URL, ["guide_copy_settings_url"])),
+    field("setup_settings_label", urlBox(SETTINGS_URL, ["guide_copy_settings_url"], "guide_copy_settings_aria")),
     ht("a", { href: "#guide", class: "step-link" }, "setup_details_link"),
   ];
 }

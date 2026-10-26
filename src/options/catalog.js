@@ -1,6 +1,6 @@
 // 引擎库对话框：按分类列出条目，每条“名称 + 添加/已添加”。添加后的引擎与目录脱钩，是普通自定义引擎。
-import { CATALOG, CATEGORIES, isAdded } from "../lib/engine-catalog.js";
-import { h, ht, focusedRow, restoreRowFocus } from "./ui.js";
+import { CATALOG, CATEGORIES, isAdded, catalogUrl } from "../lib/engine-catalog.js";
+import { h, ht, focusedRow, restoreRowFocus, catalogLabel, showDialog } from "./ui.js";
 import { currentLocale, t } from "../chrome/i18n.js";
 
 let actionsRef = null;
@@ -28,7 +28,7 @@ function entryRow(entry, cfg) {
       "catalog_add");
   if (!added) button.addEventListener("click", () => add(entry, button));
   return h("li", { class: "catalog-row", tabindex: "-1", "data-entry": entry.id },
-    h("strong", { class: "catalog-name" }, entry.name),
+    catalogLabel(entry.name, catalogUrl(entry, currentLocale())),
     button);
 }
 
@@ -45,13 +45,14 @@ function renderBody(cfg) {
 
 export function setupCatalogDialog(actions) {
   actionsRef = actions;
-  document.getElementById("catalog-open").addEventListener("click", () => { if (lastCfg) openCatalogDialog(lastCfg); });
+  // detail 为 0：用键盘（Enter / 空格）按的按钮
+  document.getElementById("catalog-open").addEventListener("click", (ev) => { if (lastCfg) openCatalogDialog(lastCfg, ev.detail === 0); });
   document.getElementById("catalog-close").addEventListener("click", () => dialog().close());
 }
 
-export function openCatalogDialog(cfg) {
+export function openCatalogDialog(cfg, viaKeyboard = true) {
   renderBody(cfg);
-  if (!dialog().open) dialog().showModal();
+  if (!dialog().open) showDialog(dialog(), viaKeyboard);
 }
 
 // 每次渲染后调用：对话框开着就按最新配置刷新“添加/已添加”

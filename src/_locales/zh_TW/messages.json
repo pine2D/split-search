@@ -31,10 +31,6 @@
     "message": "只開啟左側搜尋",
     "description": "Button on the trigger page error screen: open only the left engine's search (a normal search, no split view)."
   },
-  "go_btn_open_options": {
-    "message": "開啟設定",
-    "description": "Button in the trigger page error box that opens the extension's settings page."
-  },
   "go_err_no_trigger": {
     "message": "沒有收到觸發網址。請在網址列搜尋，或把文字拖曳到分頁列，不要直接開啟這個頁面。",
     "description": "Error on the trigger page when it was opened without a trigger URL (e.g. typed directly); the user should start a search from the address bar or by drag-and-drop instead."
@@ -247,6 +243,18 @@
     "message": "複製網址",
     "description": "Button next to chrome://settings/searchEngines in setup step 1: copies that address."
   },
+  "guide_copy_default_aria": {
+    "message": "複製預設組合的觸發網址",
+    "description": "Accessible name of the Copy button next to the default pair's trigger URL. Must start with the visible Copy text (common_copy)."
+  },
+  "guide_copy_gen_aria": {
+    "message": "複製所選組合的觸發網址",
+    "description": "Accessible name of the Copy button next to the trigger URL of the pair picked under “Other pairs”. Must start with the visible Copy text (common_copy)."
+  },
+  "guide_copy_settings_aria": {
+    "message": "複製網址：Chrome 搜尋引擎設定",
+    "description": "Accessible name of the button that copies chrome://settings/searchEngines. Must start with the visible text (guide_copy_settings_url)."
+  },
   "guide_step_add": {
     "message": "在「網站搜尋」區塊點選「新增」。",
     "description": "Setup step 2. \"Site search\" and \"Add\" must match Chrome's own labels on chrome://settings/searchEngines in this language."
@@ -299,7 +307,7 @@
   },
   "guide_caveat_remove": {
     "message": "刪除或隱藏引擎前，請先刪除 Chrome 中用到它的網站搜尋：放在左側的會變成一般搜尋，放在右側的會停在「未知引擎」錯誤頁。",
-    "description": "Caveat: delete Chrome site searches that use an engine before deleting or hiding it. \"Unknown engine\" refers to err_unknown_engine. Same text as the second paragraph of engine_confirm_hide / engine_confirm_delete."
+    "description": "Caveat: delete Chrome site searches that use an engine before deleting or hiding it. \"Unknown engine\" refers to err_unknown_engine."
   },
   "options_engines_title": {
     "message": "搜尋引擎",
@@ -337,13 +345,27 @@
       }
     }
   },
-  "options_dlg_id_hint_add": {
-    "message": "小寫字母、數字和 -，1–20 個字元。建立後無法修改，會寫進觸發網址。",
-    "description": "Hint under the id field when adding an engine: allowed characters and length; the id cannot be changed later because it is written into the trigger URL."
+  "options_dlg_advanced": {
+    "message": "進階",
+    "description": "Summary of the collapsed “Advanced” section in the add-engine dialog; it holds the engine id field."
   },
-  "options_dlg_id_hint_edit": {
-    "message": "id 建立後無法修改（已儲存的網站搜尋網址中含有它）。",
-    "description": "Hint under the read-only id field when editing an engine. Keep \"id\" as is."
+  "options_dlg_id_label": {
+    "message": "id",
+    "description": "Label of the engine id field in the add-engine dialog."
+  },
+  "options_dlg_id_hint_add": {
+    "message": "依名稱自動產生，也可以自行修改。只能使用小寫字母、數字和 -，1–20 個字元；建立後無法修改，會寫進觸發網址。",
+    "description": "Hint under the id field when adding an engine: the id is filled in from the name and can be edited; allowed characters and length; it cannot be changed later because it is written into the trigger URL."
+  },
+  "options_dlg_id_readonly": {
+    "message": "id：$ID$。建立後無法修改（已儲存的網站搜尋網址中含有它）。",
+    "description": "Read-only line in the edit-engine dialog showing the engine id. $ID$ is the id.",
+    "placeholders": {
+      "ID": {
+        "content": "$1",
+        "example": "baidu"
+      }
+    }
   },
   "options_dlg_id_placeholder": {
     "message": "例如 yahoo",
@@ -410,6 +432,14 @@
   "common_right": {
     "message": "右側",
     "description": "Small heading of the right pane (the right engine picker in settings)."
+  },
+  "common_open_options": {
+    "message": "開啟設定",
+    "description": "Button that opens the Split Search settings page (go.html error page and the toolbar popup)."
+  },
+  "common_undo": {
+    "message": "復原",
+    "description": "Button inside a notice that undoes the action just taken (e.g. hiding an engine)."
   },
   "notice_copy_failed": {
     "message": "複製失敗，請手動選取文字複製（$DETAIL$）",
@@ -481,10 +511,6 @@
       }
     }
   },
-  "engine_in_pair_title": {
-    "message": "預設組合正在使用這個引擎",
-    "description": "Tooltip of the disabled Hide/Delete button: the default pair uses this engine."
-  },
   "engine_hide": {
     "message": "隱藏",
     "description": "Button on a preset engine row that hides it."
@@ -492,6 +518,18 @@
   "engine_delete": {
     "message": "刪除",
     "description": "Button on a custom engine row that deletes it."
+  },
+  "engine_delete_confirm": {
+    "message": "確認刪除？",
+    "description": "Delete button text after the first click; clicking again within 3 seconds deletes the engine."
+  },
+  "engine_in_pair_hide": {
+    "message": "預設組合正在使用，無法隱藏",
+    "description": "Small inline text under a disabled Hide button: the default pair uses this built-in engine."
+  },
+  "engine_in_pair_delete": {
+    "message": "預設組合正在使用，無法刪除",
+    "description": "Small inline text under a disabled Delete button: the default pair uses this custom engine."
   },
   "engine_edit": {
     "message": "編輯",
@@ -536,26 +574,6 @@
   "engine_hidden_empty": {
     "message": "沒有已隱藏的內建引擎。",
     "description": "Shown when no preset engine is hidden."
-  },
-  "engine_confirm_hide": {
-    "message": "要隱藏「$NAME$」嗎？\n\n刪除或隱藏引擎前，請先刪除 Chrome 中用到它的網站搜尋：放在左側的會變成一般搜尋，放在右側的會停在「未知引擎」錯誤頁。",
-    "description": "Confirmation dialog before hiding a preset engine. Keep the blank line (\\n\\n). The second paragraph is the same text as guide_caveat_remove.",
-    "placeholders": {
-      "NAME": {
-        "content": "$1",
-        "example": "Bing"
-      }
-    }
-  },
-  "engine_confirm_delete": {
-    "message": "要刪除「$NAME$」嗎？\n\n刪除或隱藏引擎前，請先刪除 Chrome 中用到它的網站搜尋：放在左側的會變成一般搜尋，放在右側的會停在「未知引擎」錯誤頁。",
-    "description": "Confirmation dialog before deleting a custom engine. Keep the blank line (\\n\\n). The second paragraph is the same text as guide_caveat_remove.",
-    "placeholders": {
-      "NAME": {
-        "content": "$1",
-        "example": "Baidu"
-      }
-    }
   },
   "engine_left_discouraged_suffix": {
     "message": "$NAME$（建議放右側）",
@@ -1139,6 +1157,14 @@
     "message": "目前分頁不在 Split Search 開啟的分割畫面中。",
     "description": "Explains that the toolbar popup has nothing to switch: the current tab is not in a split view that Split Search opened. \"Split view\" must match Chrome's term. Keep Split Search untranslated."
   },
+  "popup_idle_hint": {
+    "message": "試著在網址列搜尋，或把文字拖曳到分頁列。",
+    "description": "Popup, under popup_not_ours: what to try to open a split view."
+  },
+  "popup_shortcut_label": {
+    "message": "快速鍵換右側",
+    "description": "Popup footer, before the key combination of the shortcut that switches the right side to the next engine."
+  },
   "popup_query_label": {
     "message": "關鍵字",
     "description": "Toolbar popup: label in front of the search terms of the current split view."
@@ -1200,10 +1226,6 @@
   "popup_switch_failed": {
     "message": "無法切換引擎，請再試一次。",
     "description": "Toolbar popup: shown when switching to the clicked engine failed (the split view was closed or split up, or loading the engine failed). Doesn't say \"right side\": in a lookup pair the switched side may be on the left."
-  },
-  "popup_open_options": {
-    "message": "開啟設定頁",
-    "description": "Toolbar popup: button that opens the extension's settings page."
   },
   "popup_complete_detected": {
     "message": "偵測到 $ENGINE$ 搜尋：$QUERY$",
@@ -1298,16 +1320,6 @@
   "catalog_image_hint": {
     "message": "新增後就是一般的自訂以圖搜圖引擎，可以選用，也可以刪除。",
     "description": "Short intro in the image search catalog dialog."
-  },
-  "engine_confirm_delete_image": {
-    "message": "刪除「$NAME$」？",
-    "description": "Confirmation before deleting a custom image search engine. $NAME$ is its name.",
-    "placeholders": {
-      "NAME": {
-        "content": "$1",
-        "example": "Bing Visual Search"
-      }
-    }
   },
   "options_image_dlg_title": {
     "message": "新增以圖搜圖引擎",

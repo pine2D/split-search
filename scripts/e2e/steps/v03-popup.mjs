@@ -18,7 +18,9 @@ const POPUP_SNAPSHOT = `(() => {
   return { loading: main.classList.contains("loading"), pair: box("pair"), notOurs: box("not-ours"), complete: box("complete"),
     query: $("query").textContent, left: $("left-engine").textContent, right: $("right-engine").textContent,
     choices: buttons("choices"), detected: $("complete-detected")?.textContent ?? "", completeChoices: buttons("complete-choices"),
-    note: box("complete-note"), error: box("error") };
+    note: box("complete-note"), error: box("error"),
+    idle: box("idle"), idlePair: $("idle-pair")?.hidden === false ? [...document.querySelectorAll("#idle-panes dd")].map(d => d.textContent) : [],
+    shortcut: { key: document.querySelector("#shortcut kbd")?.textContent ?? "", setButton: !!$("shortcut-open") } };
 })()`;
 
 // 纯函数：弹窗渲染完成（去掉 loading，显示了本扩展的一对、补成分屏区或说明文字）后的内容；还没渲染完返回 null
@@ -32,7 +34,10 @@ export function popupStateOf(snap) {
     detected: snap.detected, completeChoices: snap.completeChoices.map(b => b.engine),
     suggested: snap.completeChoices.find(b => b.suggested)?.engine ?? null,
     busy: shown.some(b => b.disabled),
-    note: snap.note.hidden ? "" : snap.note.text, error: snap.error.hidden ? "" : snap.error.text };
+    note: snap.note.hidden ? "" : snap.note.text, error: snap.error.hidden ? "" : snap.error.text,
+    // 分屏外：#idle 的一句“怎么试”与默认组合左右两个引擎名；底部快捷键（组合键，或“设置快捷键”按钮）
+    idle: snap.idle ? !snap.idle.hidden : false, idleText: snap.idle && !snap.idle.hidden ? snap.idle.text : "",
+    idlePair: snap.idlePair ?? [], shortcut: snap.shortcut ?? { key: "", setButton: false } };
 }
 
 // 打开（或接管已有的）弹窗页，返回 { targetId, sid, ev(expr), read(), until(pred), click(id), close() }
@@ -73,7 +78,10 @@ async function checkShown(ctx, page, L, R, query) {
   const want = { query, left: engineName(port, recs[L.id]?.engine), right: engineName(port, recs[R.id]?.engine) };
   for (const [k, v] of Object.entries(want)) if (s[k] !== v) p.push(`弹窗的 ${k} 应为“${v}”（与记录一致），实际“${s[k]}”`);
   if (recs[L.id]?.engine !== "ea" || recs[R.id]?.engine !== "eb") p.push(`记录的引擎应为 ea / eb，实际 ${recs[L.id]?.engine} / ${recs[R.id]?.engine}`);
-  if (s.choices.includes("eb") || !s.choices.includes("ec")) p.push(`可换的引擎应不含当前右侧 eb、含 ec，实际 ${s.choices.join(",")}`);
+  if (s.choices.includes("eb") || s.choices.includes("ea") || !s.choices.includes("ec")) {
+    p.push(`可换的引擎应不含当前右侧 eb 和左侧 ea、含 ec，实际 ${s.choices.join(",")}`);
+  }
+  if (s.idle) p.push("本扩展的一对不该显示分屏外的说明");
   return p;
 }
 
@@ -93,7 +101,9 @@ async function checkSwitch(ctx, page, L, R, query) {
   if (tabUrl(st, L.id) !== L.url) p.push(`左侧应保持 ${L.url}，实际 ${tabUrl(st, L.id)}`);
   if (st.tabs.find(t => t.id === R.id)?.splitViewId !== L.splitViewId) p.push("换右侧后分屏被拆开了");
   const s2 = await page.until(x => x.right === ec.name, `右侧显示“${ec.name}”`).catch(e => { p.push(e.message); return null; });
-  if (s2 && (s2.choices.includes("ec") || !s2.choices.includes("eb"))) p.push(`换完后可换的引擎应不含 ec、含 eb，实际 ${s2.choices.join(",")}`);
+  if (s2 && (s2.choices.includes("ec") || s2.choices.includes("ea") || !s2.choices.includes("eb"))) {
+    p.push(`换完后可换的引擎应不含 ec 和左侧 ea、含 eb，实际 ${s2.choices.join(",")}`);
+  }
   if (s2?.error) p.push(`弹窗显示错误：${s2.error}`);
   return { problems: p, detail: `关键词 ${JSON.stringify(query)}：点 ${ec.name} 后右侧 ${R.id} 打开 ${url}（与 expandTemplate 逐字相同），右侧记录 engine 为 ec，左侧记录仍是 ea、关键词不变，弹窗右侧显示 ${ec.name}` };
 }
@@ -121,7 +131,7 @@ async function ownPair(ctx) {
   } finally { await page?.close(); }
 }
 
-const foreignPair = ctx => sub("(c) 不是本扩展的分屏：显示说明文字", async () => {
+const foreignPair = ctx => sub("(c) 不是本扩展的分屏：显示说明文字、怎么试和当前默认组合；底部快捷键状态与 chrome.commands 一致", async () => {
   const base = await resetTabs(ctx);
   const n = nonce();
   const made = await ctx.ext.eval(`(async () => {
@@ -138,12 +148,21 @@ const foreignPair = ctx => sub("(c) 不是本扩展的分屏：显示说明文�
     const p = [];
     if (s.ours || !s.notOurs) p.push("弹窗应只显示说明文字，实际显示了一对");
     if (s.notOursText !== want) p.push(`说明文字应为“${want}”，实际“${s.notOursText}”`);
-    return verdict(p, `用户分屏 ${made.a}｜${made.b}：弹窗显示“${s.notOursText}”`);
+    if (!s.idle || !s.idleText.includes(msg("popup_idle_hint"))) p.push(`说明下面应有“${msg("popup_idle_hint")}”`);
+    const pair = await ctx.ext.eval(`chrome.storage.sync.get("defaultPair").then(r => r.defaultPair ?? null)`);
+    const names = (pair ?? []).map(id => engineName(ctx.port, id));
+    if (!names.length || names.some(n => !n)) p.push(`默认组合应是模拟引擎（基线），实际 ${JSON.stringify(pair)}`);
+    else if (s.idlePair.join("|") !== names.join("|")) p.push(`默认组合应显示 ${names.join(" ｜ ")}，实际 ${s.idlePair.join(" ｜ ") || "(没有)"}`);
+    const key = await ctx.ext.eval(`chrome.commands.getAll().then(cs => cs.find(c => c.name === "cycle-right")?.shortcut || "")`);
+    if (key ? s.shortcut.key !== key : !s.shortcut.setButton) {
+      p.push(`底部快捷键应${key ? `显示 ${key}` : "显示“设置快捷键”按钮"}，实际 ${JSON.stringify(s.shortcut)}`);
+    }
+    return verdict(p, `用户分屏 ${made.a}｜${made.b}：弹窗显示“${s.notOursText}”与默认组合 ${s.idlePair.join(" ｜ ")}；底部快捷键 ${key || "未绑定（显示“设置快捷键”）"}`);
   } finally { await page.close(); }
 });
 
 const T18 = {
-  id: "T18", title: "工具栏弹窗：显示本扩展分屏的关键词与左右引擎、点引擎换右侧；不是本扩展的分屏显示说明（自动判定）", kind: "auto", needs: [],
+  id: "T18", title: "工具栏弹窗：显示本扩展分屏的关键词与左右引擎、点引擎换右侧（候选不含左右两侧）；不是本扩展的分屏显示说明与默认组合（自动判定）", kind: "auto", needs: [],
   async run(ctx) {
     return summarize([...(await ownPair(ctx)), await foreignPair(ctx)]);
   },

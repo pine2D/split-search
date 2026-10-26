@@ -1,7 +1,8 @@
 // 引擎列表、已隐藏的预置引擎、新增 / 编辑对话框。
-import { h, ht, authButton, clearFieldErrors, showFieldErrors } from "./ui.js";
+import { h, ht, authButton, clearFieldErrors, showFieldErrors, confirmStep } from "./ui.js";
 import { canBeLeft, describeTemplate, isPresetId } from "./edits.js";
 import { PRESETS } from "../lib/engines.js";
+import { suggestId, takenIn } from "../lib/engine-id.js";
 import { t, setI18nText } from "../chrome/i18n.js";
 import { icon } from "../ui/icons.js";
 
@@ -22,6 +23,8 @@ function engineRow(e, index, total, ctx) {
   const isGranted = granted.get(e.id) === true;
   const inPair = e.id === leftId || e.id === rightId;
   const preset = isPresetId(e.id);
+  // 预置引擎的网址是已知的默认值，不显示；用户改过（与预置模板不同）就显示出来
+  const showUrl = !preset || PRESETS.find(p => p.id === e.id).url !== e.url;
 
   const tags = [
     !left && ht("span", { class: "tag" }, "engine_tag_right_only"),
@@ -39,12 +42,16 @@ function engineRow(e, index, total, ctx) {
     onDone: ctx.refresh,
   });
 
-  const blockTitle = inPair ? t("engine_in_pair_title") : null;
+  // 组合在用的引擎不能隐藏 / 删除：原因写成行内小字（按钮禁用后拿不到焦点，悬停提示也不是人人看得到）。
+  // id 让重渲染后焦点能回到这个按钮（撤销隐藏后，options.js 的 render）
+  const reason = inPair ? ht("p", { class: "hint row-reason", id: `reason-${e.id}` },
+    preset ? "engine_in_pair_hide" : "engine_in_pair_delete") : null;
+  const removeProps = { type: "button", id: `remove-${e.id}`, disabled: inPair, "aria-describedby": reason ? `reason-${e.id}` : null };
+  // 隐藏随时能恢复，不确认（提示里带“撤销”）；删除要点两次（ui.js 的 confirmStep）
   const removeBtn = preset
-    ? ht("button", { type: "button", class: "btn btn-small", disabled: inPair, title: blockTitle,
-        onclick: () => actions.hide(e) }, "engine_hide")
-    : ht("button", { type: "button", class: "btn btn-small btn-danger", disabled: inPair, title: blockTitle,
-        onclick: () => actions.remove(e) }, "engine_delete");
+    ? ht("button", { ...removeProps, class: "btn btn-small", onclick: () => actions.hide(e) }, "engine_hide")
+    : confirmStep(ht("button", { ...removeProps, class: "btn btn-small btn-danger" }, "engine_delete"),
+      "engine_delete", "engine_delete_confirm", () => actions.remove(e));
 
   // id 让重渲染后焦点能回到这个开关（options.js 的 render）
   const cycle = h("input", { type: "checkbox", id: `cycle-${e.id}`, "aria-label": t("engine_cycle_aria", e.name) });
@@ -56,7 +63,7 @@ function engineRow(e, index, total, ctx) {
       h("div", { class: "engine-title" },
         h("strong", { class: "engine-name" }, e.name),
         tags),
-      !preset && h("div", { class: "engine-url mono" }, e.url),
+      showUrl && h("div", { class: "engine-url mono" }, e.url),
       e.leftDiscouraged && ht("div", { class: "hint hint-warn" }, "engine_left_discouraged_hint"),
       h("label", { class: "check-row cycle-row" }, cycle, ht("span", null, "engine_cycle_label"))),
     h("div", { class: "engine-side" },
@@ -70,7 +77,8 @@ function engineRow(e, index, total, ctx) {
           onclick: () => actions.move(e.id, 1) }, icon("arrow-down")),
         ht("button", { type: "button", class: "btn btn-small", onclick: () => openEngineDialog("edit", e) },
           "engine_edit"),
-        removeBtn)));
+        removeBtn),
+      reason));
 }
 
 export function renderHiddenList(ctx) {
@@ -82,20 +90,34 @@ export function renderHiddenList(ctx) {
       ht("button", { type: "button", class: "btn btn-small", onclick: () => actions.restore(e) }, "engine_restore"))));
 }
 
-// key: "engine_confirm_hide" | "engine_confirm_delete"，都是带引擎名和网站搜索提示的完整句子
-export function confirmRemoval(key, e) {
-  return confirm(t(key, e.name));
-}
-
 // ---- 新增 / 编辑对话框（静态 DOM，不随列表重渲染，编辑中的内容不会丢） ----
+// 字段顺序：名称 → 网址 → “高级”里的 id。新增时 id 按名称自动生成（lib/engine-id.js，名称生成不出就用网址的 host），
+// 用户改过 id 之后不再跟随；清空 id 又恢复跟随。编辑时 id 只读显示，不能改。
 
-let dialogState = null; // { mode, id }
+let dialogState = null; // { mode, id, idEdited }
+let currentCfg = () => null;
 const field = (name) => document.getElementById(`dlg-${name}`);
 
-export function setupEngineDialog(actions) {
+function followName() {
+  if (dialogState?.mode !== "add" || dialogState.idEdited) return;
+  const name = field("name").value.trim();
+  const url = field("url").value.trim();
+  const cfg = currentCfg();
+  field("id").value = (name || url) && cfg ? suggestId(name, url, takenIn(cfg)) : "";
+}
+
+// getCfg：设置页最近一次渲染用的配置（算 id 是否已被占用）
+export function setupEngineDialog(actions, getCfg) {
+  currentCfg = getCfg;
   const dlg = document.getElementById("engine-dialog");
   const form = document.getElementById("engine-form");
-  field("url").addEventListener("input", () => showTemplateHint(field("url").value));
+  field("name").addEventListener("input", followName);
+  field("url").addEventListener("input", () => { showTemplateHint(field("url").value); followName(); });
+  field("id").addEventListener("input", () => {
+    if (!dialogState) return;
+    dialogState.idEdited = field("id").value.trim() !== "";
+    if (!dialogState.idEdited) followName();
+  });
   document.getElementById("dlg-cancel").addEventListener("click", () => dlg.close());
   document.getElementById("add-engine").addEventListener("click", () => openEngineDialog("add", null));
   form.addEventListener("submit", async (ev) => {
@@ -114,7 +136,11 @@ export function setupEngineDialog(actions) {
         ? await actions.add(input)
         : await actions.edit(dialogState.id, input);
       if (result.ok) dlg.close();
-      else showFieldErrors(form, result.errors, field);
+      else {
+        // id 的错误在收起的“高级”里：先展开，错误看得见、输入框也能拿到焦点
+        if (result.errors?.id) document.getElementById("dlg-advanced").open = true;
+        showFieldErrors(form, result.errors, field);
+      }
     } catch (err) {
       showFieldErrors(form, { form: err }, field);
     } finally {
@@ -126,17 +152,22 @@ export function setupEngineDialog(actions) {
 export function openEngineDialog(mode, engine) {
   const dlg = document.getElementById("engine-dialog");
   const form = document.getElementById("engine-form");
-  dialogState = { mode, id: engine?.id ?? null };
+  dialogState = { mode, id: engine?.id ?? null, idEdited: false };
   clearFieldErrors(form);
   const isEdit = mode === "edit";
   // 按模式写不同 key：切换语言时 applyI18n 按当前 key 和参数重写，不会改回“新增”或丢引擎名
   if (isEdit) setI18nText(document.getElementById("dlg-title"), "options_dlg_title_edit", engine.name);
   else setI18nText(document.getElementById("dlg-title"), "options_dlg_title_add");
   field("id").value = isEdit ? engine.id : "";
-  field("id").readOnly = isEdit;
   field("name").value = isEdit ? engine.name : "";
   field("url").value = isEdit ? engine.url : "";
-  setI18nText(document.getElementById("dlg-id-hint"), isEdit ? "options_dlg_id_hint_edit" : "options_dlg_id_hint_add");
+  const advanced = document.getElementById("dlg-advanced");
+  advanced.hidden = isEdit;
+  advanced.open = false;
+  const readonly = document.getElementById("dlg-id-readonly");
+  readonly.hidden = !isEdit;
+  if (isEdit) setI18nText(readonly, "options_dlg_id_readonly", engine.id);
+  else clearI18nText(readonly);
   const preset = isEdit ? PRESETS.find(p => p.id === engine.id) : null;
   const presetHint = document.getElementById("dlg-preset-hint");
   presetHint.hidden = !preset;
@@ -145,7 +176,7 @@ export function openEngineDialog(mode, engine) {
   document.getElementById("dlg-edit-hint").hidden = !isEdit;
   showTemplateHint(field("url").value);
   dlg.showModal();
-  field(isEdit ? "name" : "id").focus();
+  field("name").focus();
 }
 
 function showTemplateHint(url) {

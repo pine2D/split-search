@@ -1,6 +1,7 @@
 // 设置页“右键查询”卡片：查词引擎、以图搜图引擎的选择与列表，以及以图搜图的引擎库 / 新增对话框。
 // 没有授权按钮，也没有轮换开关（以图搜图引擎不经过 DNR，不进快捷键轮换）。
-import { h, ht, option, disclosure, clearFieldErrors, showFieldErrors, focusedRow, restoreRowFocus } from "./ui.js";
+import { h, ht, option, disclosure, clearFieldErrors, showFieldErrors, focusedRow, restoreRowFocus, confirmStep,
+  catalogLabel, showDialog } from "./ui.js";
 import { IMAGE_PRESET, IMAGE_CATALOG } from "../lib/image-engines.js";
 import { engineById, engineOrigin } from "../lib/engines.js";
 import { t } from "../chrome/i18n.js";
@@ -29,14 +30,16 @@ function imageSelect(cfg, actions) {
   return select;
 }
 
+// 与引擎列表一致：不显示 id；内置的 Google Lens 不显示网址，自定义的显示 origin 便于辨认。删除要点两次（confirmStep）
 function imageRow(e, actions) {
   const builtin = e.id === IMAGE_PRESET.id;
-  return h("li", { class: "engine-row" },
+  return h("li", { class: "engine-row", "data-id": e.id },
     h("div", { class: "engine-main" },
-      h("div", { class: "engine-title" }, h("strong", { class: "engine-name" }, e.name), h("code", { class: "engine-id" }, e.id)),
-      h("div", { class: "engine-url mono" }, originOf(e))),
+      h("div", { class: "engine-title" }, h("strong", { class: "engine-name" }, e.name)),
+      !builtin && h("div", { class: "engine-url mono" }, originOf(e))),
     !builtin && h("div", { class: "engine-side" },
-      ht("button", { type: "button", class: "btn btn-small btn-danger", onclick: () => actions.deleteImageEngine(e) }, "engine_delete")));
+      confirmStep(ht("button", { type: "button", id: `remove-image-${e.id}`, class: "btn btn-small btn-danger" }, "engine_delete"),
+        "engine_delete", "engine_delete_confirm", () => actions.deleteImageEngine(e))));
 }
 
 export function renderLookupCard(cfg, actions) {
@@ -75,7 +78,7 @@ function catalogRow(entry, cfg, actions) {
     Promise.resolve(actions.addImageFromCatalog(entry)).finally(() => pending.delete(entry.id));
   });
   return h("li", { class: "catalog-row", tabindex: "-1", "data-entry": entry.id },
-    h("strong", { class: "catalog-name" }, entry.name), button);
+    catalogLabel(entry.name, entry.url), button);
 }
 
 let actionsRef = null;
@@ -105,7 +108,7 @@ export function setupLookupDialogs(actions) {
   // 按钮在卡片里，卡片每次渲染都重建：监听挂在不会重建的卡片容器上
   $("lookup-body").addEventListener("click", (ev) => {
     const id = ev.target.closest?.("button")?.id;
-    if (id === "image-catalog-open") { renderCatalogBody(); if (!catalog.open) catalog.showModal(); }
+    if (id === "image-catalog-open") { renderCatalogBody(); if (!catalog.open) showDialog(catalog, ev.detail === 0); }
     else if (id === "image-add-open") { form.reset(); clearFieldErrors(form); dlg.showModal(); form.elements.name.focus(); }
   });
   $("image-catalog-close").addEventListener("click", () => catalog.close());

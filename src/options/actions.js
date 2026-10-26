@@ -7,7 +7,6 @@ import {
   setLookupEngine,
 } from "./edits.js";
 import { addImageEngine, addImageFromCatalog, deleteImageEngine, setImageEngine } from "./image-edits.js";
-import { confirmRemoval } from "./engine-list.js";
 import { currentLocale, t } from "../chrome/i18n.js";
 
 const ORDER_DEBOUNCE_MS = 500;
@@ -16,6 +15,7 @@ export const attention = new Set(); // 保存后尚未授权的引擎：突出�
 let pendingOrder = null;           // 防抖期间的本地排序
 let orderTimer = null;
 let deps = { render() {}, current: () => null };
+let lastRender = Promise.resolve(); // 最近一次 act 触发的渲染：要在重渲染之后挪焦点的调用方等它
 
 export const getPendingOrder = () => pendingOrder;
 export function bindActions(d) { deps = d; }
@@ -70,7 +70,7 @@ export async function act(compute, ok) {
     notify(failText(err), saveFailure(err).level);
     return { ok: false };
   } finally {
-    render();
+    lastRender = Promise.resolve(render()).catch(() => {});
   }
 }
 
@@ -114,12 +114,17 @@ export const actions = {
   edit: (id, input) => saveEngine(raw => editEngine(raw, id, input), "notice_saved"),
   // 引擎库条目按右侧用途处理：不进 attention，不显示“需授权”
   addFromCatalog: (entry) => act(raw => addFromCatalog(raw, entry, currentLocale()), ["notice_catalog_added", entry.name]),
-  hide(e) {
-    if (confirmRemoval("engine_confirm_hide", e)) act(raw => hideEngine(raw, e.id), ["notice_hidden", e.name]);
+  // 隐藏随时能恢复，不确认：提示里带“撤销”。焦点原来在这一行上（刚点了“隐藏”，这一行马上就没了），
+  // 就把焦点交给“撤销”，键盘用户一按就能撤回
+  async hide(e) {
+    const onRow = document.activeElement?.closest?.(".engine-row")?.dataset.id === e.id;
+    const result = await act(raw => hideEngine(raw, e.id), null);
+    if (!result.ok) return;
+    const toast = notify(t("notice_hidden", e.name), "ok", { action: { key: "common_undo", run: () => undoHide(e) } });
+    if (onRow) toast?.querySelector(".notice-action")?.focus();
   },
-  remove(e) {
-    if (confirmRemoval("engine_confirm_delete", e)) act(raw => deleteEngine(raw, e.id), ["notice_deleted", e.name]);
-  },
+  // 删除按钮自己要点两次（engine-list.js），这里不再确认
+  remove: (e) => act(raw => deleteEngine(raw, e.id), ["notice_deleted", e.name]),
   restore: (e) => act(raw => restoreEngine(raw, e.id), ["notice_restored", e.name]),
   // 勾选框本身就是反馈，成功不弹提示；失败照常提示，重渲染后开关退回已保存的状态
   setCycle: (id, included) => act(raw => setCycle(raw, id, included), null),
@@ -128,9 +133,7 @@ export const actions = {
   setImageEngine: (id) => act(raw => setImageEngine(raw, id), ["notice_image_engine_saved"]),
   addImageEngine: (input) => saveImage(raw => addImageEngine(raw, input), "notice_added"),
   addImageFromCatalog: (entry) => act(raw => addImageFromCatalog(raw, entry), ["notice_catalog_added", entry.name]),
-  deleteImageEngine(e) {
-    if (confirm(t("engine_confirm_delete_image", e.name))) act(raw => deleteImageEngine(raw, e.id), ["notice_deleted", e.name]);
-  },
+  deleteImageEngine: (e) => act(raw => deleteImageEngine(raw, e.id), ["notice_deleted", e.name]),
   move(id, delta) {
     const current = deps.current();
     if (!current) return;
@@ -143,6 +146,13 @@ export const actions = {
     orderTimer = setTimeout(flushOrder, ORDER_DEBOUNCE_MS);
   },
 };
+
+// 提示里的“撤销”：恢复显示，等列表重建后把焦点放回这一行的“隐藏”按钮（提示已经关掉，焦点不能留在那里）
+async function undoHide(e) {
+  const result = await actions.restore(e);
+  await lastRender;
+  if (result.ok) document.getElementById(`remove-${e.id}`)?.focus();
+}
 
 export async function flushOrder() {
   const order = pendingOrder;

@@ -27,6 +27,13 @@ p { margin: 0 0 10px; }
 .facts dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
 .facts dd.placeholder, .pane dd.placeholder { color: var(--muted); font-style: italic; }
 .panes { --pane-min: 120px; }
+/* 分屏外的默认组合：同一对窗格的缩小版 */
+.panes-mini { --pane-min: 110px; gap: 4px; }
+.panes-mini .pane { padding: 5px 8px 6px; gap: 2px; border-radius: 6px; }
+.panes-mini .pane-label { font-size: 11.5px; }
+.panes-mini dd { font-size: 13px; }
+#idle > p { margin: 0 0 10px; }
+#idle h2 { margin-top: 0; }
 /* 很长的关键词最多显示 3 行，完整内容在 title 里 */
 #query { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; }
 
@@ -66,6 +73,22 @@ p { margin: 0 0 10px; }
   background: var(--danger-soft); color: var(--danger);
 }
 
-footer { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; }
+footer {
+  margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+}
+footer .btn { margin-inline-start: auto; }
+/* 快捷键状态：组合键或“设置快捷键”文字按钮 */
+.shortcut { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 6px; font-size: 12.5px; min-width: 0; }
+.shortcut-key {
+  font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 4px; padding: 0 5px;
+}
+.link-btn {
+  font: inherit; color: var(--accent); background: none; border: 0; padding: 2px 0; cursor: pointer;
+  text-decoration: underline; text-underline-offset: 2px; border-radius: 3px;
+}
+.link-btn:hover { color: var(--text); }
+.link-btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 
 [hidden] { display: none !important; }

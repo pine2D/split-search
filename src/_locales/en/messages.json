@@ -31,10 +31,6 @@
     "message": "Search with the left engine only",
     "description": "Button on the trigger page error screen: open only the left engine's search (a normal search, no split view)."
   },
-  "go_btn_open_options": {
-    "message": "Open settings",
-    "description": "Button in the trigger page error box that opens the extension's settings page."
-  },
   "go_err_no_trigger": {
     "message": "No trigger URL was received. Search from the address bar, or drag text onto the tab strip. Don’t open this page directly.",
     "description": "Error on the trigger page when it was opened without a trigger URL (e.g. typed directly); the user should start a search from the address bar or by drag-and-drop instead."
@@ -247,6 +243,18 @@
     "message": "Copy address",
     "description": "Button next to chrome://settings/searchEngines in setup step 1: copies that address."
   },
+  "guide_copy_default_aria": {
+    "message": "Copy the default pair’s trigger URL",
+    "description": "Accessible name of the Copy button next to the default pair's trigger URL. Must start with the visible Copy text (common_copy)."
+  },
+  "guide_copy_gen_aria": {
+    "message": "Copy the selected pair’s trigger URL",
+    "description": "Accessible name of the Copy button next to the trigger URL of the pair picked under “Other pairs”. Must start with the visible Copy text (common_copy)."
+  },
+  "guide_copy_settings_aria": {
+    "message": "Copy address: Chrome search engine settings",
+    "description": "Accessible name of the button that copies chrome://settings/searchEngines. Must start with the visible text (guide_copy_settings_url)."
+  },
   "guide_step_add": {
     "message": "Under “Site search”, click “Add”.",
     "description": "Setup step 2. \"Site search\" and \"Add\" must match Chrome's own labels on chrome://settings/searchEngines in this language."
@@ -299,7 +307,7 @@
   },
   "guide_caveat_remove": {
     "message": "Before you delete or hide an engine, delete the Chrome site searches that use it. Otherwise, the ones with it on the left fall back to a normal search, and the ones with it on the right stop at an “Unknown engine” error page.",
-    "description": "Caveat: delete Chrome site searches that use an engine before deleting or hiding it. \"Unknown engine\" refers to err_unknown_engine. Same text as the second paragraph of engine_confirm_hide / engine_confirm_delete."
+    "description": "Caveat: delete Chrome site searches that use an engine before deleting or hiding it. \"Unknown engine\" refers to err_unknown_engine."
   },
   "options_engines_title": {
     "message": "Search engines",
@@ -337,13 +345,27 @@
       }
     }
   },
-  "options_dlg_id_hint_add": {
-    "message": "Lowercase letters, digits and -, 1 to 20 characters. It goes into the trigger URL, so you can’t change it later.",
-    "description": "Hint under the id field when adding an engine: allowed characters and length; the id cannot be changed later because it is written into the trigger URL."
+  "options_dlg_advanced": {
+    "message": "Advanced",
+    "description": "Summary of the collapsed “Advanced” section in the add-engine dialog; it holds the engine id field."
   },
-  "options_dlg_id_hint_edit": {
-    "message": "The id can’t be changed after the engine is created (it’s part of the site search URLs you saved).",
-    "description": "Hint under the read-only id field when editing an engine. Keep \"id\" as is."
+  "options_dlg_id_label": {
+    "message": "id",
+    "description": "Label of the engine id field in the add-engine dialog."
+  },
+  "options_dlg_id_hint_add": {
+    "message": "Filled in from the name; you can change it. Lowercase letters, digits and -, 1 to 20 characters. It goes into the trigger URL, so you can’t change it later.",
+    "description": "Hint under the id field when adding an engine: the id is filled in from the name and can be edited; allowed characters and length; it cannot be changed later because it is written into the trigger URL."
+  },
+  "options_dlg_id_readonly": {
+    "message": "id: $ID$. It can’t be changed after the engine is created (it’s part of the site search URLs you saved).",
+    "description": "Read-only line in the edit-engine dialog showing the engine id. $ID$ is the id.",
+    "placeholders": {
+      "ID": {
+        "content": "$1",
+        "example": "baidu"
+      }
+    }
   },
   "options_dlg_id_placeholder": {
     "message": "e.g. ecosia",
@@ -410,6 +432,14 @@
   "common_right": {
     "message": "Right",
     "description": "Small heading of the right pane (the right engine picker in settings)."
+  },
+  "common_open_options": {
+    "message": "Open settings",
+    "description": "Button that opens the Split Search settings page (go.html error page and the toolbar popup)."
+  },
+  "common_undo": {
+    "message": "Undo",
+    "description": "Button inside a notice that undoes the action just taken (e.g. hiding an engine)."
   },
   "notice_copy_failed": {
     "message": "Couldn’t copy. Select the text and copy it yourself ($DETAIL$)",
@@ -481,10 +511,6 @@
       }
     }
   },
-  "engine_in_pair_title": {
-    "message": "The default pair uses this engine",
-    "description": "Tooltip of the disabled Hide/Delete button: the default pair uses this engine."
-  },
   "engine_hide": {
     "message": "Hide",
     "description": "Button on a preset engine row that hides it."
@@ -492,6 +518,18 @@
   "engine_delete": {
     "message": "Delete",
     "description": "Button on a custom engine row that deletes it."
+  },
+  "engine_delete_confirm": {
+    "message": "Confirm delete?",
+    "description": "Delete button text after the first click; clicking again within 3 seconds deletes the engine."
+  },
+  "engine_in_pair_hide": {
+    "message": "Used by the default pair, so it can’t be hidden",
+    "description": "Small inline text under a disabled Hide button: the default pair uses this built-in engine."
+  },
+  "engine_in_pair_delete": {
+    "message": "Used by the default pair, so it can’t be deleted",
+    "description": "Small inline text under a disabled Delete button: the default pair uses this custom engine."
   },
   "engine_edit": {
     "message": "Edit",
@@ -536,26 +574,6 @@
   "engine_hidden_empty": {
     "message": "No built-in engines are hidden.",
     "description": "Shown when no preset engine is hidden."
-  },
-  "engine_confirm_hide": {
-    "message": "Hide “$NAME$”?\n\nBefore you delete or hide an engine, delete the Chrome site searches that use it. Otherwise, the ones with it on the left fall back to a normal search, and the ones with it on the right stop at an “Unknown engine” error page.",
-    "description": "Confirmation dialog before hiding a preset engine. Keep the blank line (\\n\\n). The second paragraph is the same text as guide_caveat_remove.",
-    "placeholders": {
-      "NAME": {
-        "content": "$1",
-        "example": "Bing"
-      }
-    }
-  },
-  "engine_confirm_delete": {
-    "message": "Delete “$NAME$”?\n\nBefore you delete or hide an engine, delete the Chrome site searches that use it. Otherwise, the ones with it on the left fall back to a normal search, and the ones with it on the right stop at an “Unknown engine” error page.",
-    "description": "Confirmation dialog before deleting a custom engine. Keep the blank line (\\n\\n). The second paragraph is the same text as guide_caveat_remove.",
-    "placeholders": {
-      "NAME": {
-        "content": "$1",
-        "example": "Baidu"
-      }
-    }
   },
   "engine_left_discouraged_suffix": {
     "message": "$NAME$ (better on the right)",
@@ -1139,6 +1157,14 @@
     "message": "This tab isn’t in a split view opened by Split Search.",
     "description": "Explains that the toolbar popup has nothing to switch: the current tab is not in a split view that Split Search opened. \"Split view\" must match Chrome's term. Keep Split Search untranslated."
   },
+  "popup_idle_hint": {
+    "message": "Try searching from the address bar, or drag text to the tab strip.",
+    "description": "Popup, under popup_not_ours: what to try to open a split view."
+  },
+  "popup_shortcut_label": {
+    "message": "Next right engine",
+    "description": "Popup footer, before the key combination of the shortcut that switches the right side to the next engine."
+  },
   "popup_query_label": {
     "message": "Search terms",
     "description": "Toolbar popup: label in front of the search terms of the current split view."
@@ -1200,10 +1226,6 @@
   "popup_switch_failed": {
     "message": "Couldn’t switch engines. Try again.",
     "description": "Toolbar popup: shown when switching to the clicked engine failed (the split view was closed or split up, or loading the engine failed). Doesn't say \"right side\": in a lookup pair the switched side may be on the left."
-  },
-  "popup_open_options": {
-    "message": "Open settings",
-    "description": "Toolbar popup: button that opens the extension's settings page."
   },
   "popup_complete_detected": {
     "message": "$ENGINE$ search: $QUERY$",
@@ -1298,16 +1320,6 @@
   "catalog_image_hint": {
     "message": "Once added, they work like any custom image search engine: you can pick or delete them.",
     "description": "Short intro in the image search catalog dialog."
-  },
-  "engine_confirm_delete_image": {
-    "message": "Delete “$NAME$”?",
-    "description": "Confirmation before deleting a custom image search engine. $NAME$ is its name.",
-    "placeholders": {
-      "NAME": {
-        "content": "$1",
-        "example": "Bing Visual Search"
-      }
-    }
   },
   "options_image_dlg_title": {
     "message": "Add image search engine",

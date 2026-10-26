@@ -167,7 +167,7 @@ function pairSection(cfg, byId, granted, setupShown) {
 
 // 对话框和“复制地址”按钮要用 t()，等目录加载完再建；下面的监听只调 render()，render 自己 await i18nReady
 i18nReady.then(() => {
-  setupEngineDialog(actions);
+  setupEngineDialog(actions, () => current);
   setupCatalogDialog(actions);
   setupLookupDialogs(actions);
   setupGuide();

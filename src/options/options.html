@@ -90,7 +90,7 @@
 
   <div id="notices" class="notices" aria-live="polite"></div>
 
-  <dialog id="catalog-dialog" aria-labelledby="catalog-title">
+  <dialog id="catalog-dialog" aria-labelledby="catalog-title" tabindex="-1">
     <h2 id="catalog-title" data-i18n="catalog_title"></h2>
     <p class="hint" data-i18n="catalog_hint"></p>
     <div id="catalog-body"></div>
@@ -99,7 +99,7 @@
     </div>
   </dialog>
 
-  <dialog id="image-catalog-dialog" aria-labelledby="image-catalog-title">
+  <dialog id="image-catalog-dialog" aria-labelledby="image-catalog-title" tabindex="-1">
     <h2 id="image-catalog-title" data-i18n="catalog_image_title"></h2>
     <p class="hint" data-i18n="catalog_image_hint"></p>
     <div id="image-catalog-body"></div>
@@ -135,13 +135,6 @@
     <form id="engine-form" novalidate>
       <h2 id="dlg-title"></h2>
       <div class="field">
-        <label for="dlg-id">id</label>
-        <input id="dlg-id" name="id" autocomplete="off" spellcheck="false" maxlength="20"
-               data-i18n-attr="placeholder:options_dlg_id_placeholder">
-        <p id="dlg-id-hint" class="hint"></p>
-        <p class="field-error" data-for="id" hidden></p>
-      </div>
-      <div class="field">
         <label for="dlg-name" data-i18n="options_dlg_name_label"></label>
         <input id="dlg-name" name="name" autocomplete="off" maxlength="40"
                data-i18n-attr="placeholder:options_dlg_name_placeholder">
@@ -156,6 +149,18 @@
         <p id="dlg-edit-hint" class="hint" hidden data-i18n="options_dlg_edit_hint"></p>
         <p class="field-error" data-for="url" hidden></p>
       </div>
+      <!-- 新增时 id 按名称自动生成，收在“高级”里；编辑时不能改，只读显示在下面一行 -->
+      <details id="dlg-advanced" class="disclosure dlg-advanced">
+        <summary><span data-i18n="options_dlg_advanced"></span></summary>
+        <div class="field">
+          <label for="dlg-id" data-i18n="options_dlg_id_label"></label>
+          <input id="dlg-id" name="id" class="mono" autocomplete="off" spellcheck="false" maxlength="20"
+                 aria-describedby="dlg-id-hint" data-i18n-attr="placeholder:options_dlg_id_placeholder">
+          <p id="dlg-id-hint" class="hint" data-i18n="options_dlg_id_hint_add"></p>
+          <p class="field-error" data-for="id" hidden></p>
+        </div>
+      </details>
+      <p id="dlg-id-readonly" class="hint" hidden></p>
       <p class="field-error" data-for="form" hidden></p>
       <div class="dialog-actions">
         <button type="button" id="dlg-cancel" class="btn" data-i18n="common_cancel"></button>

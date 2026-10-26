@@ -193,3 +193,20 @@ test("带引擎名的 aria 文案包含可见文字，且有 $NAME$ 占位符", 
     }
   }
 });
+
+// 同一页上有好几个“复制”：无障碍名称带上复制的对象，开头逐字是按钮上看得见的文字（WCAG 2.5.3）
+test("复制按钮的 aria 文案以可见文字开头", () => {
+  const pairs = [["guide_copy_default_aria", "common_copy"], ["guide_copy_gen_aria", "common_copy"],
+    ["guide_copy_settings_aria", "guide_copy_settings_url"]];
+  for (const l of langs) {
+    const names = new Set();
+    for (const [aria, visible] of pairs) {
+      const a = catalogs[l][aria]?.message;
+      assert.ok(a, `${l}/${aria} 缺失`);
+      assert.ok(a.startsWith(catalogs[l][visible].message), `${l}/${aria} 应以 “${catalogs[l][visible].message}” 开头`);
+      assert.notEqual(a, catalogs[l][visible].message, `${l}/${aria} 要比可见文字多出复制的对象`);
+      names.add(a);
+    }
+    assert.equal(names.size, pairs.length, `${l}：三个复制按钮的无障碍名称应各不相同`);
+  }
+});

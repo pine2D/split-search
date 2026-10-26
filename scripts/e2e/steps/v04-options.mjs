@@ -26,7 +26,9 @@ const CARD = `
   return { notes, intro: card.querySelector(".hint")?.textContent ?? "", raw,
     lookup: opts("lookup-engine"), lookupValue: document.getElementById("lookup-engine").value,
     image: opts("image-engine"), imageValue: document.getElementById("image-engine").value,
-    rows: [...card.querySelectorAll(".engine-row .engine-id")].map(e => e.textContent),
+    rows: [...card.querySelectorAll(".engine-row")].map(r => r.dataset.id),
+    urls: Object.fromEntries([...card.querySelectorAll(".engine-row")].map(r => [r.dataset.id, r.querySelector(".engine-url")?.textContent ?? null])),
+    idTags: card.querySelectorAll(".engine-row .engine-id").length,
     grant: card.querySelectorAll(".perm, [data-i18n^='engine_grant'], [data-i18n^='engine_not_granted']").length };`;
 const card = page => page.until(`return (() => { ${CARD} })()`, 8000);
 
@@ -94,7 +96,12 @@ const catalog = (ctx, page) => sub("(c) 从以图搜图引擎库添加 Bing Visu
   if (!added) p.push(`引擎库里 ${BING.name} 没有变成“${msg("catalog_added")}”`);
   if (!c.rows.includes(id)) p.push(`以图搜图引擎列表里没有 ${id}`);
   if (c.grant) p.push(`卡片里有 ${c.grant} 个授权相关元素`);
-  return verdict(p, `添加后存储有 ${id}，下拉框 ${c.image.map(o => o.value).join(",")}，列表 ${c.rows.join(",")}，没有授权按钮`);
+  // 行与引擎列表一致：不显示 id；内置 Lens 不显示网址，自定义的显示 origin
+  if (c.idTags) p.push(`以图搜图引擎行不该显示 id，实际有 ${c.idTags} 个`);
+  if (c.urls[IMAGE_PRESET.id] !== null) p.push(`内置 ${IMAGE_PRESET.id} 不该显示网址，实际“${c.urls[IMAGE_PRESET.id]}”`);
+  const origin = new URL(BING.url.replace("%s", "x")).origin;
+  if (c.urls[id] !== origin) p.push(`${id} 应显示 origin ${origin}，实际“${c.urls[id]}”`);
+  return verdict(p, `添加后存储有 ${id}，下拉框 ${c.image.map(o => o.value).join(",")}，列表 ${c.rows.join(",")}（没有 id 标签，Lens 不显示网址，${id} 显示 ${origin}），没有授权按钮`);
 });
 
 const remove = (ctx, page) => sub("(d) 选用 Bing Visual Search 后删除它：imageEngine 键随之删除，回到 Lens", async () => {
@@ -103,14 +110,21 @@ const remove = (ctx, page) => sub("(d) 选用 Bing Visual Search 后删除它：
   await setSelect(page, "image-engine", id);
   await storageUntil(ctx, s => s.imageEngine === id, `imageEngine 为 ${id}`);
   await page.until(`return (() => { ${CARD} })()?.imageValue === ${J(id)}`);
-  const clicked = await page.run(`
-    const entry = [...document.querySelectorAll("#lookup-body .engine-row")].find(r => r.querySelector(".engine-id").textContent === ${J(id)});
-    const b = entry?.querySelector(${J(`[data-i18n="engine_delete"]`)}); if (!b) return false; b.click(); return true;`);
-  if (!clicked) return { status: "fail", detail: `列表里 ${id} 的“删除”按钮找不到` };
+  // 两步删除：点一次只变成“确认删除？”，再点才删
+  const once = await page.run(`
+    const entry = [...document.querySelectorAll("#lookup-body .engine-row")].find(r => r.dataset.id === ${J(id)});
+    const b = entry?.querySelector(${J(`[data-i18n="engine_delete"]`)}); if (!b) return null; b.click(); await sleep(300);
+    return { text: b.textContent, still: !!document.getElementById(${J(`remove-image-${id}`)}) };`);
+  if (!once) return { status: "fail", detail: `列表里 ${id} 的“删除”按钮找不到` };
+  const early = [];
+  if (once.text !== msg("engine_delete_confirm")) early.push(`点一次后按钮应为“${msg("engine_delete_confirm")}”，实际“${once.text}”`);
+  if (!once.still) early.push("只点一次就删掉了");
+  await page.run(`document.getElementById(${J(`remove-image-${id}`)})?.click(); return true;`);
   const got = await storageUntil(ctx, s => !s.imageEngines?.some(e => e.id === id) && !("imageEngine" in s), `删掉 ${id} 和 imageEngine`);
   const c = await page.until(`const c = (() => { ${CARD} })(); return c && !c.rows.includes(${J(id)}) && c;`);
-  const p = [];
+  const p = [...early];
   if (c.imageValue !== IMAGE_PRESET.id) p.push(`下拉框应回到 ${IMAGE_PRESET.id}，实际 ${c.imageValue}`);
+  if (page.dialogs.length) p.push(`不该弹 JS 对话框，实际弹了 ${page.dialogs.length} 个`);
   return verdict(p, `选用 ${id} 后删除：存储 imageEngines ${J(got.imageEngines ?? [])}、没有 imageEngine 键，下拉框回到 ${c.imageValue}`);
 });
 

@@ -13,7 +13,7 @@ const popupTargets = async browser => (await pageTargets(browser)).filter(t => t
 
 const OPTIONS_PREFIX = `chrome-extension://${EXT_ID}/options/`;
 
-// 弹窗里的“打开设置页”：openOptionsPage 在已有设置页时只把它切到前台、不新开。所以先让设置页标签都退到后台
+// 弹窗里的“打开设置”：openOptionsPage 在已有设置页时只把它切到前台、不新开。所以先让设置页标签都退到后台
 // （在它所在的窗口里新开一个 site-x 标签），再点按钮：出现新的设置页目标，或某个设置页标签回到前台，都算打开了。
 // 返回 { problems, how }（how："new" 新开了设置页 | "activated" 已有的设置页回到前台）。made 收集新开的 site-x 标签 id，由 B2 收尾关掉
 async function openOptionsFromPopup(ctx, page, made) {
@@ -29,19 +29,19 @@ async function openOptionsFromPopup(ctx, page, made) {
   const optionTargets = async () => (await pageTargets(ctx.browser)).filter(t => t.url.startsWith(OPTIONS_PREFIX));
   const before = new Set((await optionTargets()).map(t => t.targetId));
   const activeOptions = `chrome.tabs.query({ active: true }).then(ts => ts.some(t => t.url?.startsWith(${J(OPTIONS_PREFIX)})))`;
-  if (await ctx.ext.eval(activeOptions)) return { problems: ["没能先把设置页标签切到后台，无法判断“打开设置页”是否生效"] };
+  if (await ctx.ext.eval(activeOptions)) return { problems: ["没能先把设置页标签切到后台，无法判断“打开设置”是否生效"] };
   if (!(await page.ev(`(() => { const b = document.getElementById("open-options"); if (!b) return false; b.click(); return true; })()`))) {
-    return { problems: ["弹窗里找不到“打开设置页”按钮"] };
+    return { problems: ["弹窗里找不到“打开设置”按钮"] };
   }
   const how = await ctx.browser.waitFor(async () => {
     if ((await optionTargets()).some(t => !before.has(t.targetId))) return "new";
     return (await ctx.ext.eval(activeOptions)) && "activated";
   }, { timeoutMs: 10000, intervalMs: 200 }).catch(() => null);
-  return { how, problems: how ? [] : ["点弹窗的“打开设置页”后 10 秒内既没有新的设置页，也没有设置页回到前台"] };
+  return { how, problems: how ? [] : ["点弹窗的“打开设置”后 10 秒内既没有新的设置页，也没有设置页回到前台"] };
 }
 
 const B2 = {
-  id: "B2", title: "点工具栏图标出现弹窗，弹窗里的“打开设置页”能打开设置页", kind: "auto", needs: [],
+  id: "B2", title: "点工具栏图标出现弹窗，弹窗里的“打开设置”能打开设置页", kind: "auto", needs: [],
   async run(ctx) {
     const { browser } = ctx;
     // triggerAction 只接受 tab 目标：取一个非扩展页的 tab（没有就新建 about:blank）
@@ -61,7 +61,7 @@ const B2 = {
   },
 };
 
-// B2 主体：触发图标动作 → 弹窗渲染 → 点“打开设置页”
+// B2 主体：触发图标动作 → 弹窗渲染 → 点“打开设置”
 async function popupFlow(ctx, host) {
   const { browser } = ctx;
   for (const t of await popupTargets(browser)) await browser.client.send("Target.closeTarget", { targetId: t.targetId }).catch(() => {});
@@ -78,7 +78,7 @@ async function popupFlow(ctx, host) {
     if (s.err) return { status: "fail", detail: `出现了弹窗页 ${t.url}，但 10 秒内没有渲染完（${s.err}）` };
     const { problems: p, how } = await openOptionsFromPopup(ctx, page, made);
     if (p.length) return { status: "fail", detail: `弹窗已渲染，但${p.join("；")}` };
-    return { status: "pass", detail: `触发图标动作后出现弹窗页 ${t.url}，已渲染（${s.ours ? `本扩展的一对：${s.left} ｜ ${s.right}` : `说明文字“${s.notOursText}”`}）；点“打开设置页”后${how === "new" ? "新开了设置页" : "已有的设置页回到前台"}` };
+    return { status: "pass", detail: `触发图标动作后出现弹窗页 ${t.url}，已渲染（${s.ours ? `本扩展的一对：${s.left} ｜ ${s.right}` : `说明文字“${s.notOursText}”`}）；点“打开设置”后${how === "new" ? "新开了设置页" : "已有的设置页回到前台"}` };
   } finally {
     await page.close();
     // 不留现场：关掉为了把设置页切到后台而新开的 site-x 标签（设置页随之回到前台）
@@ -119,28 +119,42 @@ const B6 = {
 };
 
 const B7 = {
-  id: "B7", title: "新增百度：列表末尾出现且授权按钮高亮", kind: "auto", needs: [],
+  id: "B7", title: "新增百度：id 按网址自动生成、列表末尾出现且授权按钮高亮；删除要点两次", kind: "auto", needs: [],
   async run({ browser, ext }) {
     try {
       return await withOptions(browser, async page => {
         await page.run(`document.getElementById("add-engine").click(); return true;`);
-        await fillDialog(page, BAIDU);
+        // 只填名称和网址：中文名生成不出 id，回退到网址 host 的第一段（去掉 www.）→ baidu
+        await page.run(`
+          const set = (n, v) => { const el = document.getElementById("dlg-" + n); el.value = v; el.dispatchEvent(new Event("input")); };
+          set("name", ${JSON.stringify(BAIDU.name)}); set("url", ${JSON.stringify(BAIDU.url)}); return true;`);
+        const auto = await page.run(`return { id: document.getElementById("dlg-id").value, advancedOpen: document.getElementById("dlg-advanced").open,
+          order: [...document.querySelectorAll("#engine-form input")].map(i => i.id) }`);
+        await fillDialog(page, {});
         await page.until(`return !document.getElementById("engine-dialog").open && !!row("baidu")`);
         const r = await page.run(`
           const last = ids().at(-1), rw = row("baidu"), b = rw.querySelector(${keySel("engine_grant")});
           const notice = [...document.querySelectorAll("#notices .notice-text")].map(n => n.textContent).find(t => t.includes(${JSON.stringify(msg("notice_needs_grant"))}));
           return { last, hasAuth: !!b, attention: !!b && b.classList.contains("btn-attention"), name: rw.querySelector(".engine-name").textContent, notice: notice || "" };`);
         const problems = [];
+        if (auto.id !== "baidu") problems.push(`id 应自动生成为 baidu，实际 ${JSON.stringify(auto.id)}`);
+        if (auto.advancedOpen) problems.push("“高级”应默认收起");
+        if (auto.order.join() !== "dlg-name,dlg-url,dlg-id") problems.push(`字段顺序应为 名称、网址、id，实际 ${auto.order.join(",")}`);
         if (r.last !== "baidu") problems.push(`列表末尾应是 baidu，实际 ${r.last}`);
         if (r.name !== "百度") problems.push(`名称应为百度，实际 ${r.name}`);
         if (!r.hasAuth) problems.push("没有“授权”按钮");
         else if (!r.attention) problems.push("授权按钮没有高亮（btn-attention）");
         if (!r.notice) problems.push("没有“尚未授权”的提示");
-        // 顺带验证 UI 删除：删掉自己新建的引擎
-        await page.run(`row("baidu").querySelector(${keySel("engine_delete")}).click(); return true;`);
+        // 顺带验证两步删除：点一次只变成“确认删除？”、不删；再点一次才删
+        const once = await page.run(`row("baidu").querySelector(${keySel("engine_delete")}).click(); await sleep(300);
+          return { still: !!row("baidu"), text: row("baidu")?.querySelector("#remove-baidu")?.textContent ?? "" };`);
+        if (!once.still) problems.push("只点一次“删除”就删掉了");
+        if (once.text !== msg("engine_delete_confirm")) problems.push(`点一次后按钮应为“${msg("engine_delete_confirm")}”，实际“${once.text}”`);
+        await page.run(`document.getElementById("remove-baidu").click(); return true;`);
         await page.until(`return !row("baidu")`);
+        if (page.dialogs.length) problems.push(`不该弹 JS 对话框，实际弹了 ${page.dialogs.length} 个`);
         if (problems.length) return { status: "fail", detail: problems.join("；") };
-        return { status: "pass", detail: "百度出现在列表末尾，授权按钮高亮，右下角有未授权提示；已通过界面删除" };
+        return { status: "pass", detail: "id 按网址自动生成 baidu（“高级”收起，字段顺序 名称、网址、id）；百度出现在列表末尾，授权按钮高亮，右下角有未授权提示；删除点一次变成“确认删除？”，再点才删，没有弹框" };
       });
     } finally { /* 清理由 guarded 统一恢复 */ }
   },

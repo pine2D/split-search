@@ -2,26 +2,39 @@
 import { openOptions, withOptions, guarded, sleep, keySel } from "./optpage.mjs";
 import { msg } from "../i18n.mjs";
 
+const HIDDEN_ROW = `[...document.querySelectorAll("#hidden-engines .hidden-row")].find(r => r.querySelector(".engine-id").textContent === "ddg")`;
+const UNDO = `[...document.querySelectorAll("#notices .notice")].find(n => n.querySelector(".notice-text").textContent === want)?.querySelector(".notice-action")`;
+
 const B12 = {
-  id: "B12", title: "隐藏/恢复预置引擎（确认框含网站搜索提示）", kind: "auto", needs: [],
-  async run({ browser, ext }) {
-    {
-      return await withOptions(browser, async page => {
-        const name = await page.run(`return row("ddg").querySelector(".engine-name").textContent`);
-        await page.run(`row("ddg").querySelector(${keySel("engine_hide")}).click(); return true;`);
-        await page.until(`return !row("ddg") && [...document.querySelectorAll("#hidden-engines .hidden-row")].some(r => r.querySelector(".engine-id").textContent === "ddg")`);
-        const problems = [];
-        const text = page.dialogs[0] || "";
-        const want = msg("engine_confirm_hide", name);
-        if (text !== want) problems.push(`确认框文字应为 ${JSON.stringify(want)}，实际 ${JSON.stringify(text)}`);
-        await page.run(`
-          const r = [...document.querySelectorAll("#hidden-engines .hidden-row")].find(r => r.querySelector(".engine-id").textContent === "ddg");
-          r.querySelector(${keySel("engine_restore")}).click(); return true;`);
-        await page.until(`return !!row("ddg") && !document.querySelector("#hidden-engines .hidden-row")`);
-        if (problems.length) return { status: "fail", detail: problems.join("；") };
-        return { status: "pass", detail: `确认框（${text.split("\n")[0]}）与 engine_confirm_hide 文案一致；ddg 隐藏后出现在“已隐藏的预置引擎”，点“恢复”后回到列表` };
-      });
-    }
+  id: "B12", title: "隐藏/恢复预置引擎：不弹确认框，提示里的“撤销”可用键盘点、能恢复；“已隐藏”列表里的“恢复”同样可用", kind: "auto", needs: [],
+  async run({ browser }) {
+    return await withOptions(browser, async page => {
+      const name = await page.run(`return row("ddg").querySelector(".engine-name").textContent`);
+      const want = msg("notice_hidden", name);
+      const problems = [];
+      // (1) 点“隐藏”：不弹框，ddg 进“已隐藏”，提示带“撤销”，焦点交给“撤销”（键盘用户回车即可撤回）
+      await page.run(`row("ddg").querySelector(${keySel("engine_hide")}).focus(); row("ddg").querySelector(${keySel("engine_hide")}).click(); return true;`);
+      await page.until(`return !row("ddg") && !!${HIDDEN_ROW}`);
+      const undo = await page.until(`const want = ${JSON.stringify(want)}; const b = ${UNDO};
+        return b ? { text: b.textContent, focused: document.activeElement === b, tag: b.tagName } : false;`);
+      if (page.dialogs.length) problems.push(`不该弹确认框，实际弹了：${JSON.stringify(page.dialogs[0])}`);
+      if (undo.text !== msg("common_undo") || undo.tag !== "BUTTON") problems.push(`提示里应有“${msg("common_undo")}”按钮，实际 ${undo.tag}“${undo.text}”`);
+      if (!undo.focused) problems.push("隐藏后焦点应在“撤销”上");
+      // (2) 点“撤销”：ddg 回到列表，焦点回到它的“隐藏”按钮
+      await page.run(`const want = ${JSON.stringify(want)}; ${UNDO}.click(); return true;`);
+      await page.until(`return !!row("ddg") && !${HIDDEN_ROW}`);
+      const back = await page.until(`return document.activeElement?.id === "remove-ddg" ? true : (await sleep(100), document.activeElement?.id === "remove-ddg") || "no";`)
+        .catch(() => "no");
+      if (back !== true) problems.push("撤销后焦点应回到 ddg 的“隐藏”按钮");
+      // (3) 再隐藏一次，用“已隐藏的预置引擎”里的“恢复”
+      await page.run(`row("ddg").querySelector(${keySel("engine_hide")}).click(); return true;`);
+      await page.until(`return !row("ddg") && !!${HIDDEN_ROW}`);
+      await page.run(`${HIDDEN_ROW}.querySelector(${keySel("engine_restore")}).click(); return true;`);
+      await page.until(`return !!row("ddg") && !document.querySelector("#hidden-engines .hidden-row")`);
+      if (page.dialogs.length) problems.push(`不该弹确认框，共弹了 ${page.dialogs.length} 个`);
+      if (problems.length) return { status: "fail", detail: problems.join("；") };
+      return { status: "pass", detail: `隐藏 ddg 不弹框，提示“${want}”带“${undo.text}”且焦点在它上面，点了后 ddg 回到列表、焦点回到“隐藏”；再隐藏后用“已隐藏”里的“恢复”同样回到列表` };
+    });
   },
 };
 

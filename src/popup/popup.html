@@ -13,8 +13,15 @@
   <main class="loading">
     <h1 class="brand">Split Search</h1>
 
-    <!-- 不是本扩展的分屏，或读取失败 -->
+    <!-- 不是本扩展的分屏，或读取失败；#idle 补一句怎么试和当前默认组合（读不到配置时不显示组合） -->
     <p id="not-ours" class="muted" data-i18n="popup_not_ours" hidden></p>
+    <div id="idle" hidden>
+      <p class="muted" data-i18n="popup_idle_hint"></p>
+      <div id="idle-pair" hidden>
+        <h2 id="idle-pair-title" data-i18n="options_pair_title"></h2>
+        <div id="idle-panes"></div>
+      </div>
+    </div>
 
     <!-- 本扩展的一对 -->
     <section id="pair" hidden>
@@ -22,17 +29,8 @@
         <dt id="query-label" data-i18n="popup_query_label"></dt>
         <dd id="query"></dd>
       </dl>
-      <!-- 左右两格镜像工具栏图标，结构与 ui/panes.js 建的相同；查询对的行标签换成“网页”“查询” -->
-      <div class="panes">
-        <dl class="pane pane-left">
-          <dt id="left-label" class="pane-label" data-i18n="popup_left_label"></dt>
-          <dd id="left-engine"></dd>
-        </dl>
-        <dl class="pane pane-right">
-          <dt id="right-label" class="pane-label" data-i18n="popup_right_label"></dt>
-          <dd id="right-engine"></dd>
-        </dl>
-      </div>
+      <!-- 左右两格镜像工具栏图标，由 ui/panes.js 建（idle.js）；查询对的行标签换成“网页”“查询” -->
+      <div id="pair-panes"></div>
       <h2 id="choices-title" data-i18n="popup_switch_title"></h2>
       <ul id="choices" class="choices" aria-labelledby="choices-title"></ul>
       <p id="no-choices" class="muted" data-i18n="popup_no_choices" hidden></p>
@@ -51,7 +49,9 @@
     <p id="error" class="error" role="alert" hidden></p>
 
     <footer>
-      <button id="open-options" class="btn" type="button" data-i18n="popup_open_options"></button>
+      <!-- 快捷键 cycle-right：已绑定显示组合键，未绑定显示“设置快捷键”（打开 chrome://extensions/shortcuts） -->
+      <div id="shortcut" class="shortcut"></div>
+      <button id="open-options" class="btn" type="button" data-i18n="common_open_options"></button>
     </footer>
   </main>
 </body>

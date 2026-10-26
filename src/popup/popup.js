@@ -7,6 +7,7 @@ import { popupView, targetTabId, popupMode, completeView, switchTarget } from ".
 import { matchResultPage } from "../lib/result-match.js";
 import { splitWindowType } from "../lib/window-kind.js";
 import { showComplete } from "./complete.js";
+import { buildPairPanes, showIdle, hideIdle, renderShortcut } from "./idle.js";
 import { normalizeLocalePref } from "../lib/i18n.js";
 import { initI18n, applyI18n, setLocale, setI18nText } from "../chrome/i18n.js";
 import { safeArgs } from "../lib/safe-error.js";
@@ -27,8 +28,8 @@ async function targetTab() {
   return tab ?? null;
 }
 
-// 返回 { mode, pair, match, cfg, tab }，mode 见 popupMode："pair"（本扩展的一对）、"complete"（补成分屏）；
-// 都不是返回 null（v0.3 的说明）。不是本扩展的一对时才读窗口（带 populate，区分 PiP）和识别结果页：
+// 返回 { mode, pair, match, cfg, tab }，mode 见 popupMode："pair"（本扩展的一对）、"complete"（补成分屏）、
+// "not-ours"（v0.3 的说明，下面再列默认组合）；没有目标标签返回 null。不是本扩展的一对时才读窗口（带 populate，区分 PiP）和识别结果页：
 // tab.url 只在用户点了图标（activeTab）或引擎已授权时读得到，读不到就识别不出。读取失败照常抛出，由调用方记日志。
 async function load() {
   const tab = await targetTab();
@@ -42,7 +43,7 @@ async function load() {
     match = matchResultPage(tab.url, cfg);
   }
   const mode = popupMode({ pair, tab, windowType, match, engines: cfg.engines });
-  return mode === "not-ours" ? null : { mode, pair, match, cfg, tab };
+  return { mode, pair, match, cfg, tab };
 }
 
 // 引擎名是用户数据，直接写 textContent，并去掉 data-i18n，切换语言时不会被改写；
@@ -73,6 +74,8 @@ function show(state) {
   $("not-ours").hidden = mode !== "not-ours";
   $("pair").hidden = mode !== "pair";
   $("complete").hidden = mode !== "complete";
+  if (mode === "not-ours") showIdle(state?.cfg ?? null);
+  else hideIdle();
   if (mode === "complete") {
     // 补成之后重绘：这一对已是本扩展的，换成对视图；焦点给第一个换右侧的按钮
     showComplete(completeView(state.match, state.cfg.engines), state.tab, {
@@ -148,7 +151,7 @@ async function render() {
 
 // 列表重建会丢掉焦点：还给刚点的引擎；它成了当前右侧、不在列表里了，就给第一个按钮
 // （补成分屏没建成对、仍显示“补成分屏”区时，给那一区的第一个按钮）；
-// 列表为空或这一对已经不是本扩展的，给“打开设置页”
+// 列表为空或这一对已经不是本扩展的，给“打开设置”
 function restoreFocus(engineId) {
   const list = !$("pair").hidden ? $("choices") : !$("complete").hidden ? $("complete-choices") : null;
   const buttons = list ? [...list.querySelectorAll("button")] : [];
@@ -195,8 +198,9 @@ chrome.storage.onChanged.addListener((changes, area) => {
 
 try {
   await i18nReady;
+  buildPairPanes();
   applyI18n();
-  await render();
+  await Promise.all([render(), renderShortcut()]);
 } finally {
   document.querySelector("main").classList.remove("loading");
 }

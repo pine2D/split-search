@@ -122,6 +122,7 @@ split-search/
 │   ├── background.js             SW：重建 DNR 规则与右键菜单、tabs.onRemoved 清理记录、onCommand（cycle-right）、contextMenus.onClicked 与 runtime.onMessage（complete-split，二者共用一条串行链）；无 action.onClicked
 │   ├── popup/popup.html|css|js   工具栏弹窗（action.default_popup）：显示关键词与左右引擎（查询对按“网页”“查询”）、换右侧、进入设置页
 │   ├── popup/complete.js         弹窗的“补成分屏”区：显示识别结果与右侧候选，点一个就发 complete-split 给 SW（自己不建标签、不写记录）
+│   ├── popup/idle.js             弹窗的左右窗格（ui/panes.js 建）、分屏外的“怎么试”与默认组合缩小版、底部快捷键状态
 │   ├── go.html / go.js           触发处理页（解析、判定、出错页与“只打开左侧搜索”兜底）
 │   ├── options/options.html|css  设置页静态结构、引导文字与样式
 │   ├── options/options.js        设置页编排：读配置、查授权、渲染、串行写入
@@ -130,7 +131,7 @@ split-search/
 │   ├── options/guide.js          触发网址卡片与组合生成器
 │   ├── options/ui.js             DOM 小工具、提示、复制按钮、host 权限查询与申请
 │   ├── options/catalog.js        右侧引擎库对话框（添加时不申请权限）
-│   ├── options/shortcut.js       快捷键区：显示当前绑定、打开 Chrome 快捷键页
+│   ├── options/shortcut.js       快捷键区：显示当前绑定、打开 Chrome 快捷键页（读取与打开在 chrome/shortcuts.js，弹窗共用）
 │   ├── options/locale-ui.js      设置页与语言相关的界面：带内联元素的句子、语言下拉框
 │   ├── options/actions.js        设置页的写入与动作：串行写入（loadRaw → 改整键 → saveKeys / removeKeys）、提示、各区块的 actions
 │   ├── options/lookup.js         “右键查询”卡片：查词引擎、以图搜图引擎的选择与列表，以图搜图引擎库与新增对话框（没有授权按钮和轮换开关）
@@ -150,7 +151,8 @@ split-search/
 │   ├── lib/lookup-decision.js    右键查询判定表（八行）与普通标签的位置
 │   ├── lib/menu-spec.js          右键菜单两项的属性与标题（引擎名里 & 写成 &&、%s 拆成 % s）
 │   ├── lib/serial.js             串行队列（SW 全局串行链、菜单重建各用一条）
-│   ├── lib/cycle.js              快捷键轮换：下一个参与轮换的引擎
+│   ├── lib/cycle.js              快捷键轮换：下一个参与轮换的引擎（搜索对跳过当前左侧，查询对不受影响；弹窗候选同样不含搜索对的左侧）
+│   ├── lib/engine-id.js          新增引擎时按名称自动生成 id（回退网址 host、再回退 engine，按 -2…-99 去重，两类引擎共用命名空间）
 │   ├── lib/popup-view.js         弹窗视图状态与换右侧的目标（switchTarget：图片查询对只在以图搜图引擎里挑），纯逻辑
 │   ├── lib/safe-error.js         日志里的错误先经 safeError/safeArgs：只留错误名和消息，引号内容与网址样文字换成 …，不带堆栈
 │   ├── lib/i18n.js               语言选择、占位符替换等纯逻辑
@@ -162,6 +164,7 @@ split-search/
 │   ├── chrome/right-switch.js    换右侧：弹窗与快捷键共用（查询对换的是 lookup 一侧）
 │   ├── chrome/menus.js           右键菜单注册：removeAll 后重建两项，标题经 t()
 │   ├── chrome/lookup-actions.js  右键查询执行（② ⑧）：按 lookup-decision 建对、复用或开普通标签，记录经 split-state.js
+│   ├── chrome/shortcuts.js       快捷键 cycle-right 的当前绑定与打开 chrome://extensions/shortcuts（设置页、弹窗共用）
 │   └── chrome/complete-actions.js  ⑦ 补成分屏执行：重新读标签、识别、判定后 openRight
 └── test/                         node --test（每个 lib 一个文件，另有 manifest、config-store、split-actions、options-edits、options-ui；i18n.test.js、chrome-i18n.test.js、i18n-catalog.test.js（4 种语言 key 对齐与 fetch 守门、带引擎名的 aria 文案含可见文字）、popup-css.test.js（弹窗颜色变量与设置页一致）、errors.test.js、i18n-pak.test.js（Chrome 术语表脚本）、store-i18n.test.js（宣传图文案键对齐）；go-wiring.test.js（静态检查 go.js 的判定经 decideFor、读窗口带 populate）；log-wiring.test.js（静态检查打印错误的日志都经 safe-error）；safe-error.test.js；options-actions.test.js（设置页写入：先写后删只成功一半时如实提示）；v0.4 的 menus、lookup-actions、complete-actions（chrome 替身）与 image-edits；e2e-*.test.js 测 e2e 脚本，其中 e2e-i18n.test.js 测 I18N 步骤，e2e-v04.test.js 测 v0.4 的模拟 host、弹窗状态读取、MENU_INDEX 与页面标记核对；pack.test.js 测发布打包）
 ```

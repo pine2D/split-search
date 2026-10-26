@@ -60,18 +60,60 @@ function append(el, children) {
 
 // 页面右下角的提示。sticky 的提示要手动关闭，用于“需要重新复制”这类必须看到的信息。
 // text 由调用方用 t() 算好；提示不带 data-i18n，切换语言时保持原语言。
-// kind 的状态图标在文字之外（不只靠边框颜色区分成功、注意和出错）
+// kind 的状态图标在文字之外（不只靠边框颜色区分成功、注意和出错）。
+// action：{ key, run } 在文字后面加一个按钮（如“撤销”），点了先关掉提示再 run()；带按钮的提示停留更久，
+// 鼠标停在上面或焦点在里面时不自动消失（键盘用户 Tab 过去时它不会先没了）。返回提示元素。
 const NOTICE_ICONS = { ok: "check-circle", warn: "alert-triangle", error: "x-circle" };
-export function notify(text, kind = "ok", { sticky = false } = {}) {
+export function notify(text, kind = "ok", { sticky = false, action = null } = {}) {
   const box = document.getElementById("notices");
-  if (!box) return;
-  const close = () => item.remove();
+  if (!box) return null;
+  let timer = null;
+  const close = () => { clearTimeout(timer); item.remove(); };
+  const actionBtn = action && ht("button", { type: "button", class: "notice-action",
+    onclick: () => { close(); action.run(); } }, action.key);
   const item = h("div", { class: `notice notice-${kind}`, role: kind === "error" ? "alert" : "status" },
     icon(NOTICE_ICONS[kind] ?? NOTICE_ICONS.ok, { cls: "notice-icon" }),
     h("span", { class: "notice-text" }, text),
+    actionBtn,
     h("button", { type: "button", class: "notice-close", "aria-label": t("common_close"), onclick: close }, icon("x")));
   box.append(item);
-  if (!sticky) setTimeout(close, kind === "error" ? 8000 : 3500);
+  if (sticky) return item;
+  const ms = action ? 8000 : kind === "error" ? 8000 : 3500;
+  const arm = () => { clearTimeout(timer); timer = setTimeout(close, ms); };
+  const held = () => item.matches(":hover") || item.contains(document.activeElement);
+  if (action) {
+    item.addEventListener("mouseenter", () => clearTimeout(timer));
+    item.addEventListener("focusin", () => clearTimeout(timer));
+    item.addEventListener("mouseleave", () => { if (!held()) arm(); });
+    item.addEventListener("focusout", (ev) => { if (!item.contains(ev.relatedTarget) && !item.matches(":hover")) arm(); });
+  }
+  arm();
+  return item;
+}
+
+// 两步确认的按钮（删除）：第一次点把文字换成 confirmKey，ms 毫秒内再点才执行 onConfirm；
+// 超时、失焦或按 Esc 复原。按钮文字经 setI18nText 切换，切换语言时照当前状态重写。
+export function confirmStep(btn, labelKey, confirmKey, onConfirm, ms = 3000) {
+  let timer = null;
+  const reset = () => {
+    clearTimeout(timer);
+    timer = null;
+    btn.classList.remove("btn-confirm");
+    setI18nText(btn, labelKey);
+  };
+  btn.addEventListener("click", () => {
+    if (timer === null) {
+      setI18nText(btn, confirmKey);
+      btn.classList.add("btn-confirm");
+      timer = setTimeout(reset, ms);
+      return;
+    }
+    reset();
+    onConfirm();
+  });
+  btn.addEventListener("blur", () => { if (timer !== null) reset(); });
+  btn.addEventListener("keydown", (ev) => { if (ev.key === "Escape" && timer !== null) { ev.preventDefault(); reset(); } });
+  return btn;
 }
 
 // 认得出的错误（错误码、storage.sync 配额常量）按当前语言显示，其余原样显示 message
@@ -80,14 +122,23 @@ export function errorText(err) {
   return key ? t(...key) : (err?.message ?? String(err));
 }
 
-// label 是 LabelSpec：[key, ...subs]
-export function copyButton(getText, label = ["common_copy"]) {
+// label 是 LabelSpec：[key, ...subs]。ariaKey：无障碍名称带上复制的对象（页面上有好几个“复制”），
+// 文案开头逐字包含看得见的文字（WCAG 2.5.3）；显示“已复制”的 1.5 秒里去掉它，读出来的就是“已复制”
+export function copyButton(getText, label = ["common_copy"], ariaKey = null) {
   const btn = ht("button", { type: "button", class: "btn btn-small" }, ...label);
+  const setAria = () => {
+    if (!ariaKey) return;
+    btn.setAttribute("aria-label", t(ariaKey));
+    btn.setAttribute("data-i18n-attr", `aria-label:${ariaKey}`);
+  };
+  setAria();
   btn.addEventListener("click", async () => {
     try {
       await navigator.clipboard.writeText(getText());
+      btn.removeAttribute("aria-label");
+      btn.removeAttribute("data-i18n-attr");
       setI18nText(btn, "common_copied");
-      setTimeout(() => setI18nText(btn, ...label), 1500);
+      setTimeout(() => { setI18nText(btn, ...label); setAria(); }, 1500);
     } catch (err) {
       notify(t("notice_copy_failed", errorText(err)), "error");
     }
@@ -178,6 +229,25 @@ export function showFieldErrors(form, errors, fieldOf = (name) => form.elements?
     }
   }
   first?.focus();
+}
+
+// ---- 引擎库对话框 ----
+
+// 条目的名称 + 网址的 host（让人看出会打开哪个网站）；网址解析不了就只显示名称
+export function catalogLabel(name, url) {
+  let host = "";
+  try { host = new URL(url.replace("%s", "x")).host; } catch { /* 只显示名称 */ }
+  return h("span", { class: "catalog-label" },
+    h("strong", { class: "catalog-name" }, name),
+    host && h("span", { class: "catalog-host mono" }, host));
+}
+
+// 打开模态对话框（对话框带 tabindex="-1"）。用鼠标打开时焦点放在对话框本身（不画焦点框，Tab 从第一项开始）；
+// 用键盘打开时交给第一个能点的按钮，焦点框照常显示（浏览器默认会落到 tabindex=-1 的列表行上）
+export function showDialog(dialog, viaKeyboard) {
+  dialog.showModal();
+  const first = viaKeyboard ? dialog.querySelector("button:not(:disabled)") : null;
+  (first ?? dialog).focus();
 }
 
 // ---- 对话框列表重建会丢掉焦点：每行带 data-entry（行本身 tabindex=-1） ----

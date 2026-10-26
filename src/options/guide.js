@@ -11,7 +11,7 @@ let gen = null; // 生成器当前选择 [leftId, rightId]，跨重渲染保留
 
 export function setupGuide() {
   const slot = document.getElementById("settings-url-copy");
-  slot.replaceChildren(copyButton(() => SETTINGS_URL, ["guide_copy_settings_url"]));
+  slot.replaceChildren(copyButton(() => SETTINGS_URL, ["guide_copy_settings_url"], "guide_copy_settings_aria"));
 }
 
 function triggerOf(left, right) {
@@ -22,11 +22,11 @@ function triggerOf(left, right) {
   }
 }
 
-// label 是复制按钮的 LabelSpec
-export function urlBox(url, label) {
+// label 是复制按钮的 LabelSpec，ariaKey 是它带上复制对象的无障碍名称（见 ui.js 的 copyButton）
+export function urlBox(url, label, ariaKey) {
   return h("div", { class: "url-line" },
     h("code", { class: "url-box mono" }, url),
-    copyButton(() => url, label));
+    copyButton(() => url, label, ariaKey));
 }
 
 // 左右两个下拉框做成镜像图标的两个窗格（默认组合卡与组合生成器共用）：整个窗格是 <label>，点哪里都聚焦下拉框
@@ -51,7 +51,7 @@ export function renderTriggers(ctx) {
     h("div", { class: "trigger-head" },
       ht("span", { class: "tag tag-accent" }, "guide_default_tag"),
       dl && dr ? ht("strong", null, "guide_pair_label", dl.name, dr.name) : ht("strong", null, "guide_pair_invalid")),
-    defUrl ? urlBox(defUrl) : ht("p", { class: "hint hint-error" }, "guide_no_trigger"),
+    defUrl ? urlBox(defUrl, undefined, "guide_copy_default_aria") : ht("p", { class: "hint hint-error" }, "guide_no_trigger"),
     defUrl && dl.leftDiscouraged && leftWarn(dl),
     ht("p", { class: "hint" }, "guide_default_hint")));
 
@@ -89,7 +89,7 @@ function genOutput(left, right, { granted, refresh, setupShown }) {
   if (!left || !right) return [];
   const url = triggerOf(left, right);
   if (!url) return [ht("p", { class: "hint hint-error" }, "guide_not_left", left.name)];
-  const nodes = [urlBox(url)];
+  const nodes = [urlBox(url, undefined, "guide_copy_gen_aria")];
   if (left.leftDiscouraged) nodes.push(leftWarn(left));
   if (!setupShown && granted.get(left.id) !== true) {
     nodes.push(h("div", { class: "callout callout-warn" },

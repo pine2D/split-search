@@ -60,6 +60,8 @@ code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
 .catalog-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 4px; border-radius: 6px; }
 /* 添加后按钮变成禁用的“已添加”，焦点留在这一行（catalog.js） */
 .catalog-row:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+.catalog-label { display: flex; flex-direction: column; min-width: 0; }
+.catalog-host { font-size: 12px; color: var(--muted); overflow-wrap: anywhere; }
 #catalog-dialog { max-height: calc(100vh - 48px); overflow-y: auto; }
 .section-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 
@@ -81,6 +83,9 @@ code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
 .btn-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 600; }
 .btn-primary:hover:not(:disabled) { filter: brightness(1.08); }
 .btn-danger { color: var(--danger); }
+/* 删除的第二步（ui.js 的 confirmStep）：再点一次才删，3 秒后复原 */
+.btn-confirm { background: var(--danger-soft); border-color: var(--danger); color: var(--danger); font-weight: 600; }
+.btn-confirm:hover:not(:disabled) { border-color: var(--danger); }
 .btn-attention {
   background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 600;
   box-shadow: 0 0 0 3px var(--accent-soft);
@@ -196,6 +201,8 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 .perm-ok { color: var(--ok); }
 .perm-missing { color: var(--warn); }
 .btn-icon { display: inline-grid; place-items: center; padding: 4px 7px; }
+/* 组合在用、不能隐藏 / 删除的原因（行内小字） */
+.row-reason { font-size: 12px; margin: 0; text-align: end; max-width: 32ch; }
 
 .tag {
   font-size: 11.5px; line-height: 1.5;
@@ -211,6 +218,7 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 @media (max-width: 560px) {
   .engine-side { align-items: flex-start; }
   .perm-line, .row-actions { justify-content: flex-start; }
+  .row-reason { text-align: start; }
 }
 
 /* ---- 对话框 ---- */
@@ -224,6 +232,11 @@ dialog {
   box-shadow: var(--shadow);
 }
 dialog::backdrop { background: rgb(0 0 0 / 0.4); }
+/* 用鼠标打开引擎库时焦点在对话框本身（ui.js 的 showDialog），它不画焦点框 */
+dialog:focus { outline: none; }
+.dlg-advanced { margin: 12px 0 0; }
+.dlg-advanced .field { margin: 8px 0 0; }
+#dlg-id-readonly { margin: 12px 0 0; }
 .field { margin: 12px 0; }
 .field label { display: block; font-weight: 600; margin-bottom: 4px; }
 .field input { width: 100%; }
@@ -252,6 +265,14 @@ dialog::backdrop { background: rgb(0 0 0 / 0.4); }
 .notice-warn .notice-icon { color: var(--warn); }
 .notice-error .notice-icon { color: var(--danger); }
 .notice-text { flex: 1; }
+/* 提示里的动作按钮（“撤销”）：文字按钮，主色，键盘可达 */
+.notice-action {
+  flex: none; font: inherit; font-weight: 600; color: var(--accent);
+  background: none; border: 0; border-radius: 4px; padding: 0 4px; margin: 0 -2px; cursor: pointer;
+  text-decoration: underline; text-underline-offset: 2px;
+}
+.notice-action:hover { color: var(--text); }
+.notice-action:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
 .notice-close {
   display: grid; place-items: center; flex: none;
   border: 0; border-radius: 4px; background: none; color: var(--muted); cursor: pointer;
