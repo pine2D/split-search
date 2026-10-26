@@ -67,3 +67,21 @@ for (const ui of UIS) {
     }
   });
 }
+
+// 左右窗格的共用样式 styles/panes.css：设置页和弹窗都在 tokens.css 之后、自己的样式表之前引用它；
+// 它只用 tokens.css 里定义的颜色变量（--pane-min 是布局常量，由界面在外层设置）
+test("styles/panes.css：设置页、弹窗都引用，只用 tokens.css 的颜色变量、不写颜色", () => {
+  const PANES = new URL("styles/panes.css", SRC).href;
+  for (const ui of UIS.filter((u) => u.name !== "go.html")) {
+    const sheets = links(read(ui.html), ui.html);
+    const i = sheets.indexOf(PANES);
+    assert.ok(i > sheets.indexOf(TOKENS) && i < sheets.indexOf(ui.css), `${ui.name} 要在 tokens.css 与自己的样式表之间引用 panes.css`);
+  }
+  const css = read(PANES);
+  assert.doesNotMatch(css.replace(/\/\*[\s\S]*?\*\//g, ""), /#[0-9a-f]{3,8}\b|prefers-color-scheme/i);
+  const t = sections(read(TOKENS));
+  for (const k of used(css)) {
+    if (k === "--pane-min") continue;
+    assert.ok(k in t.light && k in t.dark, `panes.css 用到的 ${k} 不在 tokens.css 两段里`);
+  }
+});

@@ -1,0 +1,17 @@
+/* 左右窗格（ui/panes.js 建 DOM）：镜像工具栏图标的两格，左松绿、右暖雾灰，设置页和弹窗共用。
+   只用 tokens.css 的变量。两格放不下时上下堆叠（左在上），靠小标题“左侧”“右侧”区分；
+   需要更窄的窗格时在外面设 --pane-min（默认 180px）。 */
+.panes { display: flex; flex-wrap: wrap; gap: 6px; }
+.pane {
+  flex: 1 1 var(--pane-min, 180px); min-width: 0;
+  display: flex; flex-direction: column; gap: 4px;
+  margin: 0; padding: 8px 10px 10px;
+  border: 1px solid; border-radius: 8px;
+}
+.pane-left { background: var(--pane-left-bg); border-color: var(--pane-left-border); }
+.pane-right { background: var(--pane-right-bg); border-color: var(--pane-right-border); }
+.pane-label { font-size: 12px; font-weight: 600; line-height: 1.4; margin: 0; }
+.pane-left .pane-label { color: var(--pane-left-text); }
+.pane-right .pane-label { color: var(--pane-right-text); }
+.pane > :not(.pane-label) { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.pane select { width: 100%; min-width: 0; }

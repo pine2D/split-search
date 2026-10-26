@@ -3,6 +3,7 @@ import { h, ht, authButton, clearFieldErrors, showFieldErrors } from "./ui.js";
 import { canBeLeft, describeTemplate, isPresetId } from "./edits.js";
 import { PRESETS } from "../lib/engines.js";
 import { t, setI18nText } from "../chrome/i18n.js";
+import { icon } from "../ui/icons.js";
 
 // ctx: { cfg, granted: Map<id, boolean>, attention: Set<id>, actions, refresh }
 export function renderEngineList(ctx) {
@@ -29,9 +30,11 @@ function engineRow(e, index, total, ctx) {
     !preset && ht("span", { class: "tag" }, "engine_tag_custom"),
   ];
 
-  const status = isGranted
-    ? ht("span", { class: "perm perm-ok" }, "engine_granted")
-    : ht("span", { class: "perm perm-missing" }, e.id === leftId ? "engine_not_granted_required" : "engine_not_granted");
+  // 状态图标在文字之外（--ok 与主色同属绿色系，不能只靠颜色区分）；文字在 data-i18n 的 span 里，切换语言时只重写它
+  const status = h("span", { class: "perm " + (isGranted ? "perm-ok" : "perm-missing") },
+    icon(isGranted ? "check-circle" : "alert-circle", { size: 14 }),
+    isGranted ? ht("span", null, "engine_granted")
+      : ht("span", null, e.id === leftId ? "engine_not_granted_required" : "engine_not_granted"));
   const auth = isGranted ? null : authButton([e], ["engine_grant"], {
     cls: "btn btn-small" + (attention.has(e.id) || e.id === leftId ? " btn-attention" : ""),
     onDone: ctx.refresh,
@@ -62,11 +65,11 @@ function engineRow(e, index, total, ctx) {
       h("div", { class: "perm-line" }, status, auth),
       h("div", { class: "row-actions" },
         h("button", { type: "button", class: "btn btn-small btn-icon", disabled: index === 0,
-          title: t("engine_move_up"), "aria-label": t("engine_move_up_label", e.name),
-          onclick: () => actions.move(e.id, -1) }, "↑"),
+          title: t("engine_move_up"), "aria-label": t("engine_move_up_label", e.name), "data-move": "up",
+          onclick: () => actions.move(e.id, -1) }, icon("arrow-up")),
         h("button", { type: "button", class: "btn btn-small btn-icon", disabled: index === total - 1,
-          title: t("engine_move_down"), "aria-label": t("engine_move_down_label", e.name),
-          onclick: () => actions.move(e.id, 1) }, "↓"),
+          title: t("engine_move_down"), "aria-label": t("engine_move_down_label", e.name), "data-move": "down",
+          onclick: () => actions.move(e.id, 1) }, icon("arrow-down")),
         ht("button", { type: "button", class: "btn btn-small", onclick: () => openEngineDialog("edit", e) },
           "engine_edit"),
         removeBtn)));

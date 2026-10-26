@@ -26,6 +26,8 @@
   --pane-left-border: #a3bdb0;
   --pane-right-bg: #f4f3f1;
   --pane-right-border: #c4bfb8;
+  --pane-left-text: #4a6f5f;
+  --pane-right-text: #68625a;
   --shadow: 0 6px 24px rgb(15 20 30 / 0.14);
 }
 
@@ -53,6 +55,8 @@
     --pane-left-border: #41604f;
     --pane-right-bg: #232220;
     --pane-right-border: #57534d;
+    --pane-left-text: #7fae98;
+    --pane-right-text: #b0a99f;
     --shadow: 0 6px 24px rgb(0 0 0 / 0.5);
   }
 }

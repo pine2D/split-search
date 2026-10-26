@@ -105,6 +105,7 @@ function formFakes() {
   const notices = new Box();
   globalThis.document.getElementById = (id) => (id === "notices" ? notices : null);
   globalThis.document.createElement = () => new Box();
+  globalThis.document.createElementNS = () => new Box();
   return notices;
 }
 

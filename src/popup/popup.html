@@ -5,6 +5,7 @@
   <meta name="color-scheme" content="light dark">
   <title>Split Search</title>
   <link rel="stylesheet" href="../styles/tokens.css">
+  <link rel="stylesheet" href="../styles/panes.css">
   <link rel="stylesheet" href="popup.css">
   <script type="module" src="popup.js"></script>
 </head>
@@ -20,11 +21,18 @@
       <dl class="facts">
         <dt id="query-label" data-i18n="popup_query_label"></dt>
         <dd id="query"></dd>
-        <dt id="left-label" data-i18n="popup_left_label"></dt>
-        <dd id="left-engine"></dd>
-        <dt id="right-label" data-i18n="popup_right_label"></dt>
-        <dd id="right-engine"></dd>
       </dl>
+      <!-- 左右两格镜像工具栏图标，结构与 ui/panes.js 建的相同；查询对的行标签换成“网页”“查询” -->
+      <div class="panes">
+        <dl class="pane pane-left">
+          <dt id="left-label" class="pane-label" data-i18n="popup_left_label"></dt>
+          <dd id="left-engine"></dd>
+        </dl>
+        <dl class="pane pane-right">
+          <dt id="right-label" class="pane-label" data-i18n="popup_right_label"></dt>
+          <dd id="right-engine"></dd>
+        </dl>
+      </div>
       <h2 id="choices-title" data-i18n="popup_switch_title"></h2>
       <ul id="choices" class="choices" aria-labelledby="choices-title"></ul>
       <p id="no-choices" class="muted" data-i18n="popup_no_choices" hidden></p>

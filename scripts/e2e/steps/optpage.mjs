@@ -8,10 +8,10 @@ export const sleep = ms => new Promise(r => setTimeout(r, ms));
 // 页内脚本里按 data-i18n 的 key 找元素：返回选择器的 JS 字面量，直接拼进页内脚本，如 rw.querySelector(${keySel("engine_hide")})
 export const keySel = key => JSON.stringify(sel(key));
 
-// 页内脚本的公共前缀：按 id 找引擎行、按文字找按钮（只用于 ↑↓ 这类不随语言变的按钮；带文案的按钮用 keySel）
+// 页内脚本的公共前缀：按 id 找引擎行、按 data-move 找上移/下移按钮（图标按钮，没有文字；带文案的按钮用 keySel）
 const PRELUDE = `
 const row = id => [...document.querySelectorAll("#engines .engine-row")].find(r => r.querySelector(".engine-id").textContent === id);
-const btn = (root, text) => root && [...root.querySelectorAll("button")].find(b => b.textContent === text);
+const moveBtn = (root, dir) => root && root.querySelector('button[data-move="' + dir + '"]');
 const ids = () => [...document.querySelectorAll("#engines .engine-row .engine-id")].map(e => e.textContent);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 `;
@@ -34,7 +34,7 @@ export async function openOptions(browser, { newWindow = false } = {}) {
   };
   client.on("Page.javascriptDialogOpening", onDialog);
   page.ev = (expr, opts) => browser.evaluate(sid, expr, opts);
-  // body 里可用 row / btn / ids / sleep，需要结果时自己 return
+  // body 里可用 row / moveBtn / ids / sleep，需要结果时自己 return
   page.run = (body, opts) => page.ev(`(async () => { ${PRELUDE} ${body} })()`, opts);
   page.until = async (body, timeoutMs = 5000) => {
     const end = Date.now() + timeoutMs;

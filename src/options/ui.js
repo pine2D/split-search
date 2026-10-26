@@ -3,6 +3,7 @@ import { engineOrigin } from "../lib/engines.js";
 import { errorKey } from "../lib/errors.js";
 import { t, setI18nText, currentLocale } from "../chrome/i18n.js";
 import { safeError } from "../lib/safe-error.js";
+import { icon } from "../ui/icons.js";
 
 export function h(tag, props, ...children) {
   const el = document.createElement(tag);
@@ -42,13 +43,16 @@ function append(el, children) {
 
 // 页面右下角的提示。sticky 的提示要手动关闭，用于“需要重新复制”这类必须看到的信息。
 // text 由调用方用 t() 算好；提示不带 data-i18n，切换语言时保持原语言。
+// kind 的状态图标在文字之外（不只靠边框颜色区分成功、注意和出错）
+const NOTICE_ICONS = { ok: "check-circle", warn: "alert-triangle", error: "x-circle" };
 export function notify(text, kind = "ok", { sticky = false } = {}) {
   const box = document.getElementById("notices");
   if (!box) return;
   const close = () => item.remove();
   const item = h("div", { class: `notice notice-${kind}`, role: kind === "error" ? "alert" : "status" },
+    icon(NOTICE_ICONS[kind] ?? NOTICE_ICONS.ok, { cls: "notice-icon" }),
     h("span", { class: "notice-text" }, text),
-    h("button", { type: "button", class: "notice-close", "aria-label": t("common_close"), onclick: close }, "×"));
+    h("button", { type: "button", class: "notice-close", "aria-label": t("common_close"), onclick: close }, icon("x")));
   box.append(item);
   if (!sticky) setTimeout(close, kind === "error" ? 8000 : 3500);
 }

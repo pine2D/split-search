@@ -8,6 +8,7 @@ import { safeArgs } from "../lib/safe-error.js";
 import { h, ht, notify, errorText, authButton } from "./ui.js";
 import { urlBox, leftWarn, SETTINGS_URL } from "./guide.js";
 import { t } from "../chrome/i18n.js";
+import { icon } from "../ui/icons.js";
 
 const log = (...args) => console.error("[split-search]", ...safeArgs(args));
 const DONE_KEY = "setupDone";
@@ -112,17 +113,7 @@ export function initSetup(render) {
 
 // ---- 渲染 ----
 
-const SVG_NS = "http://www.w3.org/2000/svg";
-function checkIcon() {
-  const svg = document.createElementNS(SVG_NS, "svg");
-  const attrs = { viewBox: "0 0 16 16", width: "16", height: "16", fill: "none", stroke: "currentColor",
-    "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round", "aria-hidden": "true", class: "icon" };
-  for (const [k, v] of Object.entries(attrs)) svg.setAttribute(k, v);
-  const path = document.createElementNS(SVG_NS, "path");
-  path.setAttribute("d", "M3.5 8.5l3 3 6-7");
-  svg.append(path);
-  return svg;
-}
+const checkIcon = () => icon("check");
 
 function triggerOf(left, right) {
   try {

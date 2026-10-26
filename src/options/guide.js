@@ -3,6 +3,7 @@ import { buildTriggerTemplate } from "../lib/trigger.js";
 import { h, ht, copyButton, authButton, option } from "./ui.js";
 import { canBeLeft } from "./edits.js";
 import { t } from "../chrome/i18n.js";
+import { pane, panes } from "../ui/panes.js";
 
 export const SETTINGS_URL = "chrome://settings/searchEngines";
 
@@ -26,6 +27,14 @@ export function urlBox(url, label) {
   return h("div", { class: "url-line" },
     h("code", { class: "url-box mono" }, url),
     copyButton(() => url, label));
+}
+
+// 左右两个下拉框做成镜像图标的两个窗格（默认组合卡与组合生成器共用）：整个窗格是 <label>，点哪里都聚焦下拉框
+export function pickerPanes(leftSel, rightSel) {
+  return panes(
+    pane("left", "label", ht("span", null, "common_left"), leftSel),
+    pane("right", "label", ht("span", null, "common_right"), rightSel),
+    "pair-pickers");
 }
 
 // ctx: { cfg, granted, refresh, setupShown }。setupShown：“开始使用”卡显示着，左侧授权的入口只留在卡里
@@ -69,10 +78,7 @@ export function renderTriggers(ctx) {
     h("div", { class: "trigger-head" }, ht("strong", null, "guide_other_pairs_title")),
     ht("p", { class: "hint" }, "guide_pair_shortcut_hint", t("guide_example_shortcut_query")),
     lefts.length
-      ? h("div", { class: "pair-pickers" },
-          h("label", null, ht("span", null, "common_left"), leftSel),
-          ht("span", { class: "pair-sep", "aria-hidden": "true" }, "common_pair_separator"),
-          h("label", null, ht("span", null, "common_right"), rightSel))
+      ? pickerPanes(leftSel, rightSel)
       : ht("p", { class: "hint hint-error" }, "guide_no_left"),
     out));
   if (lefts.length) update();

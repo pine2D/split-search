@@ -26,7 +26,7 @@ const B12 = {
 };
 
 const orderOf = page => page.run(`return ids()`);
-const click = (page, id, label) => page.run(`btn(row(${JSON.stringify(id)}), ${JSON.stringify(label)}).click(); return true;`);
+const click = (page, id, dir) => page.run(`moveBtn(row(${JSON.stringify(id)}), ${JSON.stringify(dir)}).click(); return true;`);
 
 const B13 = {
   id: "B13", title: "排序防抖保存、刷新后保持、另一页自动刷新", kind: "auto", needs: [],
@@ -38,9 +38,9 @@ const B13 = {
       if (start.length < 3) return { status: "fail", detail: `引擎少于 3 个：${start.join(",")}` };
       const x = start[0];
       const want = [...start.slice(1, 3), x, ...start.slice(3)];
-      await click(p1, x, "↓");
+      await click(p1, x, "down");
       await p1.until(`return ids()[1] === ${JSON.stringify(x)}`);
-      await click(p1, x, "↓");
+      await click(p1, x, "down");
       await p1.until(`return ids()[2] === ${JSON.stringify(x)}`);
       await sleep(1200);
       await p1.reload();
@@ -50,7 +50,7 @@ const B13 = {
 
       // 另开一个设置页改动顺序：把 x 上移一位，第一个页面应自动刷新
       p2 = await openOptions(browser);
-      await click(p2, x, "↑");
+      await click(p2, x, "up");
       const t0 = Date.now();
       const want2 = [want[0], x, want[1], ...want.slice(3)];
       let sync = null;
@@ -63,7 +63,7 @@ const B13 = {
       if (sync === null) problems.push("另一页改动顺序后 4 秒内第一个页面没有自动刷新");
       else if (sync > 2500) problems.push(`第一个页面 ${sync} ms 后才刷新（超过 2 秒量级，含 0.5 秒防抖）`);
       if (problems.length) return { status: "fail", detail: problems.join("；") };
-      return { status: "pass", detail: `${x} 连点两次↓ 后顺序 ${want.join(",")} 刷新后保持；另一页上移后第一页 ${sync} ms 内自动刷新（含 0.5 秒防抖）` };
+      return { status: "pass", detail: `${x} 连点两次“下移”后顺序 ${want.join(",")} 刷新后保持；另一页上移后第一页 ${sync} ms 内自动刷新（含 0.5 秒防抖）` };
     } finally {
       await p2?.close();
       await p1?.close();

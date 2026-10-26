@@ -8,7 +8,7 @@ import { renderLookupCard, setupLookupDialogs, refreshImageCatalog } from "./loo
 import { renderEngineList, renderHiddenList, setupEngineDialog } from "./engine-list.js";
 import { setupCatalogDialog, refreshCatalog } from "./catalog.js";
 import { renderShortcut, SHORTCUT_BUTTON_ID } from "./shortcut.js";
-import { renderTriggers, setupGuide } from "./guide.js";
+import { renderTriggers, setupGuide, pickerPanes } from "./guide.js";
 import { renderSetup, loadSetupDone, initSetup } from "./setup.js";
 import { applyRichText, renderLangPicker } from "./locale-ui.js";
 import { initI18n, applyI18n, setLocale, currentPref, currentLocale, t } from "../chrome/i18n.js";
@@ -150,10 +150,7 @@ function pairSection(cfg, byId, granted, setupShown) {
   narrow.checked = cfg.narrowFallback;
   narrow.addEventListener("change", () => act(raw => setNarrowFallback(raw, narrow.checked), ["notice_narrow_saved"]));
 
-  const nodes = [h("div", { class: "pair-pickers" },
-    h("label", null, ht("span", null, "common_left"), leftSel),
-    ht("span", { class: "pair-sep", "aria-hidden": "true" }, "common_pair_separator"),
-    h("label", null, ht("span", null, "common_right"), rightSel)),
+  const nodes = [pickerPanes(leftSel, rightSel),
   h("label", { class: "check-row" }, narrow, ht("span", null, "options_narrow_label")),
   ht("p", { class: "hint" }, "options_narrow_hint")];
   const left = byId.get(l);

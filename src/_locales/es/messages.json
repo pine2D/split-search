@@ -393,7 +393,7 @@
   },
   "common_close": {
     "message": "Cerrar",
-    "description": "Accessible label of the × button that closes a notice."
+    "description": "Accessible label of the close button (X icon) on a notice."
   },
   "common_copy": {
     "message": "Copiar",
@@ -405,15 +405,11 @@
   },
   "common_left": {
     "message": "Izquierda",
-    "description": "Label of the left engine picker."
+    "description": "Small heading of the left pane (the left engine picker in settings)."
   },
   "common_right": {
     "message": "Derecha",
-    "description": "Label of the right engine picker."
-  },
-  "common_pair_separator": {
-    "message": "|",
-    "description": "Decorative separator between the left and right engine pickers; same mark as in guide_pair_label. Hidden from screen readers."
+    "description": "Small heading of the right pane (the right engine picker in settings)."
   },
   "notice_copy_failed": {
     "message": "No se pudo copiar; selecciona el texto y cópialo manualmente ($DETAIL$)",
@@ -519,11 +515,11 @@
   },
   "engine_move_up": {
     "message": "Subir",
-    "description": "Tooltip of the ↑ button that moves an engine up in the list."
+    "description": "Tooltip of the up-arrow icon button that moves an engine up in the list."
   },
   "engine_move_up_label": {
     "message": "Subir $NAME$",
-    "description": "Accessible label of the ↑ button. The placeholder is the engine name.",
+    "description": "Accessible label of the up-arrow icon button. The placeholder is the engine name.",
     "placeholders": {
       "NAME": {
         "content": "$1",
@@ -533,11 +529,11 @@
   },
   "engine_move_down": {
     "message": "Bajar",
-    "description": "Tooltip of the ↓ button that moves an engine down in the list."
+    "description": "Tooltip of the down-arrow icon button that moves an engine down in the list."
   },
   "engine_move_down_label": {
     "message": "Bajar $NAME$",
-    "description": "Accessible label of the ↓ button. The placeholder is the engine name.",
+    "description": "Accessible label of the down-arrow icon button. The placeholder is the engine name.",
     "placeholders": {
       "NAME": {
         "content": "$1",
