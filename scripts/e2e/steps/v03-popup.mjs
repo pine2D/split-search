@@ -20,12 +20,16 @@ const POPUP_SNAPSHOT = `(() => {
     choices: buttons("choices"), detected: $("complete-detected")?.textContent ?? "", completeChoices: buttons("complete-choices"),
     note: box("complete-note"), error: box("error"),
     idle: box("idle"), idlePair: $("idle-pair")?.hidden === false ? [...document.querySelectorAll("#idle-panes dd")].map(d => d.textContent) : [],
+    idleTier: $("idle")?.hidden === false ? $("idle").dataset.tier ?? null : null,
+    idleShown: ["idle-setup", "idle-try", "idle-setup-note"].filter(id => $(id) && !$(id).hidden),
+    footer: !document.querySelector("footer")?.hidden,
     shortcut: { key: document.querySelector("#shortcut kbd")?.textContent ?? "", setButton: !!$("shortcut-open") } };
 })()`;
 
-// 纯函数：弹窗渲染完成（去掉 loading，显示了本扩展的一对、补成分屏区或说明文字）后的内容；还没渲染完返回 null
+// 纯函数：弹窗渲染完成（去掉 loading，显示了本扩展的一对、补成分屏区、说明文字或分屏外的引导）后的内容；还没渲染完返回 null。
+// 分屏外的引导分三档（idleTier：setup | try | ready，见 src/lib/popup-view.js 的 idleView）；setup 档不显示说明文字
 export function popupStateOf(snap) {
-  if (!snap || snap.loading || (snap.pair.hidden && snap.notOurs.hidden && snap.complete.hidden)) return null;
+  if (!snap || snap.loading || (snap.pair.hidden && snap.notOurs.hidden && snap.complete.hidden && snap.idle?.hidden !== false)) return null;
   // 只看显示中的那一块：补成之后 #complete 隐藏了，里面的按钮仍是禁用的
   const shown = [...(snap.pair.hidden ? [] : snap.choices), ...(snap.complete.hidden ? [] : snap.completeChoices)];
   return { ours: !snap.pair.hidden, notOurs: !snap.notOurs.hidden, notOursText: snap.notOurs.text, complete: !snap.complete.hidden,
@@ -37,7 +41,16 @@ export function popupStateOf(snap) {
     note: snap.note.hidden ? "" : snap.note.text, error: snap.error.hidden ? "" : snap.error.text,
     // 分屏外：#idle 的一句“怎么试”与默认组合左右两个引擎名；底部快捷键（组合键，或“设置快捷键”按钮）
     idle: snap.idle ? !snap.idle.hidden : false, idleText: snap.idle && !snap.idle.hidden ? snap.idle.text : "",
-    idlePair: snap.idlePair ?? [], shortcut: snap.shortcut ?? { key: "", setButton: false } };
+    idlePair: snap.idlePair ?? [], shortcut: snap.shortcut ?? { key: "", setButton: false },
+    idleTier: snap.idleTier ?? null, idleShown: snap.idleShown ?? [], footer: snap.footer !== false };
+}
+
+// 一个不在分屏里、也不是结果页的普通标签（模拟网站 X，已授权），给弹窗看分屏外的状态：popup.html?tabId=<它>
+export async function plainTab(ctx, windowId) {
+  const url = siteX(ctx.port, `/idle?n=${nonce()}`);
+  const id = await ctx.ext.eval(`chrome.tabs.create({ ${windowId == null ? "" : `windowId: ${windowId}, `}url: ${JSON.stringify(url)}, active: false }).then(t => t.id)`);
+  await waitState(ctx, st => st.tabs.some(t => t.id === id && t.status === "complete"), "普通标签加载完成");
+  return id;
 }
 
 // 打开（或接管已有的）弹窗页，返回 { targetId, sid, ev(expr), read(), until(pred), click(id), close() }
@@ -148,7 +161,9 @@ const foreignPair = ctx => sub("(c) 不是本扩展的分屏：显示说明文�
     const p = [];
     if (s.ours || !s.notOurs) p.push("弹窗应只显示说明文字，实际显示了一对");
     if (s.notOursText !== want) p.push(`说明文字应为“${want}”，实际“${s.notOursText}”`);
-    if (!s.idle || !s.idleText.includes(msg("popup_idle_hint"))) p.push(`说明下面应有“${msg("popup_idle_hint")}”`);
+    if (!s.idle || !s.idleShown.includes("idle-try")) p.push(`说明下面应有“${msg("popup_idle_hint")}”`);
+    if (!["try", "ready"].includes(s.idleTier)) p.push(`模拟引擎 A 已授权，分屏外应是 try 或 ready 档，实际 ${s.idleTier}`);
+    if (s.idleShown.includes("idle-setup")) p.push("左侧已授权，不该显示“完成设置”");
     const pair = await ctx.ext.eval(`chrome.storage.sync.get("defaultPair").then(r => r.defaultPair ?? null)`);
     const names = (pair ?? []).map(id => engineName(ctx.port, id));
     if (!names.length || names.some(n => !n)) p.push(`默认组合应是模拟引擎（基线），实际 ${JSON.stringify(pair)}`);
@@ -157,7 +172,7 @@ const foreignPair = ctx => sub("(c) 不是本扩展的分屏：显示说明文�
     if (key ? s.shortcut.key !== key : !s.shortcut.setButton) {
       p.push(`底部快捷键应${key ? `显示 ${key}` : "显示“设置快捷键”按钮"}，实际 ${JSON.stringify(s.shortcut)}`);
     }
-    return verdict(p, `用户分屏 ${made.a}｜${made.b}：弹窗显示“${s.notOursText}”与默认组合 ${s.idlePair.join(" ｜ ")}；底部快捷键 ${key || "未绑定（显示“设置快捷键”）"}`);
+    return verdict(p, `用户分屏 ${made.a}｜${made.b}：弹窗显示“${s.notOursText}”（${s.idleTier} 档）与默认组合 ${s.idlePair.join(" ｜ ")}；底部快捷键 ${key || "未绑定（显示“设置快捷键”）"}`);
   } finally { await page.close(); }
 });
 

@@ -238,3 +238,28 @@ test("popupStateOf：分屏外的 #idle 与默认组合、底部快捷键；旧�
   assert.deepEqual(old.idlePair, []);
   assert.deepEqual(old.shortcut, { key: "", setButton: false });
 });
+
+test("popupStateOf：分屏外 setup 档（说明文字隐藏、只显示 #idle）也算渲染完成，带出档位、显示的块与页脚", () => {
+  const s = popupStateOf(snap({ idle: { hidden: false, text: "" }, idleTier: "setup", idleShown: ["idle-setup"], footer: false }));
+  assert.equal(s.notOurs, false);
+  assert.equal(s.idle, true);
+  assert.equal(s.idleTier, "setup");
+  assert.deepEqual(s.idleShown, ["idle-setup"]);
+  assert.equal(s.footer, false);
+  // 没有这些字段的旧快照：档位 null，页脚按显示处理
+  const old = popupStateOf(snap({ notOurs: { hidden: false, text: "x" } }));
+  assert.equal(old.idleTier, null);
+  assert.deepEqual(old.idleShown, []);
+  assert.equal(old.footer, true);
+});
+
+test("B19 substepProblems：第 2 步依次是设置地址、触发网址（各一个复制按钮）、设为默认（没有复制框）", async () => {
+  const { substepProblems } = await import("../scripts/e2e/steps/b19.mjs");
+  const ok = [{ buttons: 1, box: "chrome://settings/searchEngines" }, { buttons: 1, box: "http://engine-a.localhost:8765/search?q=%s&_ss=ea,eb" }, { buttons: 0, box: "" }];
+  assert.deepEqual(substepProblems(ok), []);
+  assert.equal(substepProblems(ok.slice(0, 2)).length, 1);
+  assert.equal(substepProblems(null).length, 1);
+  assert.equal(substepProblems([ok[1], ok[0], ok[2]]).length, 2, "顺序反了（先触发网址）两步都报");
+  assert.equal(substepProblems([ok[0], { ...ok[1], buttons: 2 }, ok[2]]).length, 1);
+  assert.equal(substepProblems([ok[0], ok[1], { buttons: 1, box: "x" }]).length, 1);
+});
