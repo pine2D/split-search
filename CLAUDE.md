@@ -63,7 +63,7 @@ Chrome MV3 扩展：用户在地址栏搜索，或把文字拖到标签栏时，
           │                   → 然后 location.replace(左侧网址)
           ├─ 当前标签在“本扩展的分屏”中（判定见 spec 5.3；当前标签是 page 一侧时整对改写成 search 对）：tabs.update(另一侧, 右侧) → location.replace(左侧)
           └─ 当前标签在其他分屏中（含查询对的 lookup 一侧、兜底判出的 fallback-own）：在该分屏右边新建一对，原分屏两侧不动，见 spec 5.3
-  工具栏弹窗（popup/）与快捷键 cycle-right（默认不绑定，background.js 的 onCommand）：读记录，经 chrome/right-switch.js 把右侧换成指定/下一个引擎，关键词取自记录（只在 storage.session，不进 sync，不外发）。查询对换的永远是 role 为 lookup 的一侧（与标签顺序无关），图片查询对在以图搜图引擎里换、轮换不看 cycleExclude。
+  工具栏弹窗（popup/）与快捷键 cycle-right（默认不绑定，background.js 的 onCommand）：读记录，经 chrome/right-switch.js 把右侧换成指定/下一个引擎，关键词取自记录（只在 storage.session，不进 sync，不外发）。搜索对的候选与轮换都跳过当前左侧引擎（lib/cycle.js、lib/popup-view.js）；不在本扩展分屏里时弹窗显示说明、默认组合缩小版和快捷键状态（popup/idle.js）。查询对换的永远是 role 为 lookup 的一侧（与标签顺序无关），图片查询对在以图搜图引擎里换、轮换不看 cycleExclude。
   补成分屏（⑦，popup/complete.js）：弹窗经 activeTab 读当前标签网址，lib/result-match.js 认出某个文字引擎的结果页和关键词，且标签不在分屏中、不是本扩展的一对、窗口能分屏、还有别的未隐藏文字引擎可放右侧时显示“补成分屏”区（回复 plain 后本次弹窗不再提供补成）
     → 点引擎：runtime.sendMessage({ type: "complete-split", tabId, engineId })（不带网址和关键词）
     → SW 的 runtime.onMessage（return true 后 sendResponse 异步回复）：lib/messages.js 校验发送方是本扩展的 popup/popup.html、字段合法
@@ -92,7 +92,7 @@ split-search/
 ├── .gitignore
 ├── package.json                  "test": "node --test"、"e2e": "node scripts/e2e/run.mjs"、"pack": "node scripts/pack.mjs"
 ├── dist/                         发布 ZIP（npm run pack 生成，不进 git）
-├── docs/acceptance-v0.4.md       v0.4 验收清单（对应 e2e 步骤 T20–T24、B18，以及扩充的 B14、I18N；T5 重启期望的改动）
+├── docs/acceptance-v0.4.md       v0.4 验收清单（对应 e2e 步骤 T20–T24、B18、B19，以及扩充的 B14、I18N；T5 重启期望的改动；界面翻新改写的 B2、B4、B6、B7、B12、T18、T19）
 ├── docs/acceptance-v0.3.md       v0.3 验收清单（对应 e2e 步骤 T16–T19、B16、B17、B2）
 ├── docs/acceptance-v0.1.md       v0.1 验收：跑 e2e（Windows 冒烟 v0.1 不做，2026-10-24 用户决定）；B/T 表注明覆盖方式
 ├── docs/i18n/chrome-terms.md     Chrome 术语表：各语言功能术语以此为准（由 scripts/i18n/chrome-terms.mjs 生成）
@@ -114,7 +114,7 @@ split-search/
 │                                 ext-source.mjs 让测试配置里的扩展装自本检出的 src/、
 │                                 ext-shortcuts.mjs 快捷键（chrome://extensions/shortcuts）快照与恢复，steps/v03-*.mjs、xauto-t19.mjs 是 v0.3 步骤，
 │                                 steps/v04-*.mjs 是 v0.4 步骤（v04-lib 页面标记/CDP 读网址/triggerAction 与 MENU_INDEX，v04-complete(-more) T20，
-│                                 v04-lookup/-lookup-image/-lookup-lib T21、T22，v04-guard T23，v04-guard-x/-guard-more T24，v04-options B18，v04-i18n 供 I18N 与 B14；i18n-audit.mjs 是 i18n 与 v04-i18n 共用的页面核对工具）
+│                                 v04-lookup/-lookup-image/-lookup-lib T21、T22，v04-guard T23，v04-guard-x/-guard-more T24，v04-options B18，v04-i18n 供 I18N 与 B14；b4.mjs、b19.mjs 是设置页“开始使用”卡（B19 的 keepSetupDone 也给 B4 用）；i18n-audit.mjs 是 i18n 与 v04-i18n 共用的页面核对工具）
 ├── src/                          扩展根目录（加载这个目录）
 │   ├── manifest.json
 │   ├── _locales/                 界面文案：en、zh_CN（源文案）、zh_TW、es 各一份 messages.json
@@ -123,8 +123,13 @@ split-search/
 │   ├── popup/popup.html|css|js   工具栏弹窗（action.default_popup）：显示关键词与左右引擎（查询对按“网页”“查询”）、换右侧、进入设置页
 │   ├── popup/complete.js         弹窗的“补成分屏”区：显示识别结果与右侧候选，点一个就发 complete-split 给 SW（自己不建标签、不写记录）
 │   ├── popup/idle.js             弹窗的左右窗格（ui/panes.js 建）、分屏外的“怎么试”与默认组合缩小版、底部快捷键状态
-│   ├── go.html / go.js           触发处理页（解析、判定、出错页与“只打开左侧搜索”兜底）
+│   ├── go.html / go.js / go.css  触发处理页（解析、判定、出错页与“只打开左侧搜索”兜底）；go.css 是出错页样式
+│   ├── styles/tokens.css         全部颜色变量（浅色 :root 与 @media (prefers-color-scheme: dark) 两段），设置页、弹窗、go.html 都 <link> 这一份；各界面样式表不定义颜色、不写 prefers-color-scheme
+│   ├── styles/panes.css          左右窗格样式（左松绿、右暖雾灰，镜像工具栏图标），设置页与弹窗共用
+│   ├── ui/panes.js               左右窗格的 DOM 构造（pane/panes），设置页的组合下拉框与弹窗共用
+│   ├── ui/icons.js               内联 SVG 图标（16×16 viewBox、统一线宽、currentColor、aria-hidden），不用 Unicode 字符当图标
 │   ├── options/options.html|css  设置页静态结构、引导文字与样式
+│   ├── options/setup.js          设置页顶部“开始使用”卡（#setup）：授权 → 在 Chrome 添加网站搜索并设默认 → 试一下，以及完成判定；唯一写 storage.local 的地方（布尔值 setupDone）；“试一下”打开的标签 id 只在内存，经 BroadcastChannel 告诉其他设置页
 │   ├── options/options.js        设置页编排：读配置、查授权、渲染、串行写入
 │   ├── options/edits.js          设置页纯逻辑：表单校验、算出写回存储的补丁
 │   ├── options/engine-list.js    引擎列表（每个引擎的“参与快捷键轮换”开关）、已隐藏列表、新增/编辑对话框
@@ -152,6 +157,7 @@ split-search/
 │   ├── lib/menu-spec.js          右键菜单两项的属性与标题（引擎名里 & 写成 &&、%s 拆成 % s）
 │   ├── lib/serial.js             串行队列（SW 全局串行链、菜单重建各用一条）
 │   ├── lib/cycle.js              快捷键轮换：下一个参与轮换的引擎（搜索对跳过当前左侧，查询对不受影响；弹窗候选同样不含搜索对的左侧）
+│   ├── lib/setup-state.js        “开始使用”卡的纯逻辑：setupView（steps / regrant / done / hidden 与每步状态）、isCompletion（storage.session 一次变化里新写出一对互指的 search 记录才算完成；“试一下”标签保持示例关键词的那一对、关键词没变的改写（换右侧、拼成分屏、标失效）不算；⑦ 补成的一对也算，已知限制）
 │   ├── lib/engine-id.js          新增引擎时按名称自动生成 id（回退网址 host、再回退 engine，按 -2…-99 去重，两类引擎共用命名空间）
 │   ├── lib/popup-view.js         弹窗视图状态与换右侧的目标（switchTarget：图片查询对只在以图搜图引擎里挑），纯逻辑
 │   ├── lib/safe-error.js         日志里的错误先经 safeError/safeArgs：只留错误名和消息，引号内容与网址样文字换成 …，不带堆栈
@@ -166,7 +172,7 @@ split-search/
 │   ├── chrome/lookup-actions.js  右键查询执行（② ⑧）：按 lookup-decision 建对、复用或开普通标签，记录经 split-state.js
 │   ├── chrome/shortcuts.js       快捷键 cycle-right 的当前绑定与打开 chrome://extensions/shortcuts（设置页、弹窗共用）
 │   └── chrome/complete-actions.js  ⑦ 补成分屏执行：重新读标签、识别、判定后 openRight
-└── test/                         node --test（每个 lib 一个文件，另有 manifest、config-store、split-actions、options-edits、options-ui；i18n.test.js、chrome-i18n.test.js、i18n-catalog.test.js（4 种语言 key 对齐与 fetch 守门、带引擎名的 aria 文案含可见文字）、popup-css.test.js（弹窗颜色变量与设置页一致）、errors.test.js、i18n-pak.test.js（Chrome 术语表脚本）、store-i18n.test.js（宣传图文案键对齐）；go-wiring.test.js（静态检查 go.js 的判定经 decideFor、读窗口带 populate）；log-wiring.test.js（静态检查打印错误的日志都经 safe-error）；safe-error.test.js；options-actions.test.js（设置页写入：先写后删只成功一半时如实提示）；v0.4 的 menus、lookup-actions、complete-actions（chrome 替身）与 image-edits；e2e-*.test.js 测 e2e 脚本，其中 e2e-i18n.test.js 测 I18N 步骤，e2e-v04.test.js 测 v0.4 的模拟 host、弹窗状态读取、MENU_INDEX 与页面标记核对；pack.test.js 测发布打包）
+└── test/                         node --test（每个 lib 一个文件，另有 manifest、config-store、split-actions、options-edits、options-ui；i18n.test.js、chrome-i18n.test.js、i18n-catalog.test.js（4 种语言 key 对齐与 fetch 守门、带引擎名的 aria 文案含可见文字）、popup-css.test.js（颜色变量只在 styles/tokens.css 定义，设置页、弹窗、go.html 都引用它，用到的每个变量浅深两段都有）、ui-icons.test.js（SVG 图标统一 viewBox、线宽、aria-hidden，界面源码里没有当图标用的 Unicode 字符）、errors.test.js、i18n-pak.test.js（Chrome 术语表脚本）、store-i18n.test.js（宣传图文案键对齐）；go-wiring.test.js（静态检查 go.js 的判定经 decideFor、读窗口带 populate）；log-wiring.test.js（静态检查打印错误的日志都经 safe-error）；safe-error.test.js；options-actions.test.js（设置页写入：先写后删只成功一半时如实提示）；v0.4 的 menus、lookup-actions、complete-actions（chrome 替身）与 image-edits；e2e-*.test.js 测 e2e 脚本，其中 e2e-i18n.test.js 测 I18N 步骤，e2e-v04.test.js 测 v0.4 的模拟 host、弹窗状态读取、MENU_INDEX 与页面标记核对；pack.test.js 测发布打包）
 ```
 
 纯逻辑放 `src/lib/`（不碰 `chrome.*`），`src/chrome/` 是对 `chrome.*` 的薄封装，页面脚本只负责编排。
@@ -185,6 +191,8 @@ split-search/
 - 以图搜图预置（只写在代码里，不能删除）：`lens` Google Lens `https://lens.google.com/uploadbyurl?url=%s`，缺省选用。以图搜图引擎不经过 DNR、不申请任何 host 权限，设置页不显示授权按钮。
 - 用户界面文案一律写在 `src/_locales/<语言>/messages.json`（首期 `en`、`zh_CN`、`zh_TW`、`es`），代码和 HTML 里不得出现界面文字。页面经 `src/chrome/i18n.js` 的 `t()` 取文案（按设置页所选语言，默认跟随浏览器），SW 里的右键菜单标题同样经 `t()`；`chrome.i18n.getMessage` 只用于 manifest 的 `__MSG_…__`。`zh_CN` 是源文案，`default_locale` 是 `en`。新增或修改文案时 4 种语言的 key 必须同时补齐（`test/i18n-catalog.test.js` 检查）。唯一允许的 `fetch` 是读取扩展包内的 `_locales`。文案的术语、润色与翻译流程见“## 文案”。
 - 日志（`console.info`/`console.error`）不得带标签网址、关键词、选中文字或图片网址；打印错误对象一律经 `lib/safe-error.js`（`test/log-wiring.test.js` 守着），不直接传 Chrome 的错误对象。
+- `storage.local` 只存布尔值 `setupDone`（“开始使用”卡是否完成，只由 `options/setup.js` 写），不放查询词、网址或其他数据。
+- 颜色只在 `src/styles/tokens.css` 定义（浅色、深色两段），各界面样式表只用 `var(--…)`（`test/popup-css.test.js` 守着）；图标用 `ui/icons.js` 的内联 SVG，不用 Unicode 字符或 emoji（`test/ui-icons.test.js` 守着）。
 - 不使用 iframe，不修改响应头。只有经过用户确认的“本扩展分屏”才允许被覆盖，而且只改写记录确认属于本扩展的那一侧（查询对只改写 `lookup` 一侧；兜底判出的 `fallback-own` 不允许任何调用方改写标签）。调分屏 API 前窗口必须经 `splitWindowType` 判为 `normal`（读窗口带 `populate: true`）。
 - 开发镜像目录：`/mnt/d/APP/Chrome-Extensions/split-search`。之后只用“重新加载”，不要移除后重装。
 
@@ -240,6 +248,8 @@ split-search/
   - 右键菜单按文字行定位、悬停确认高亮后点击，不向菜单发任何按键（F20：首字母助记键与 Chrome 自带项冲突）。行号 `MENU_INDEX = { text: -2, image: -2 }`（`v04-lib.mjs`）从末尾数：本扩展项总在倒数第二行，紧挨“检查”；`MENU_MIN_ITEMS = { text: 7, image: 7 }`。依据是 S11 加 e2e 测试配置实测（测试配置界面英文、默认引擎 Kagi/sse2e，没有“翻译所选内容”和 Lens 两项，两种菜单都是 7 行；一次性配置默认引擎 Google 时是 8 行）。使用方把 `MENU_INDEX` 原样传给 `contextMenuPick`，不换算成正数；对不对以效果判定，detail 写当次菜单的实际行数。图片上右键前先清掉页面选区（选区和图片同时命中时 Chrome 把本扩展两项收进子菜单）。关菜单点在菜单矩形以外（`dismissMenu`），不沿用 `(at.x, at.y + 400)`：那个点落在菜单里。T24(i) 只比两次 `contextMenuCount` 的差（无痕少 1）。
   - 日志分级：预期的拒绝和忽略（右键 `ignore` 的各个 reason、`not_results_page`、`message_rejected`、`window_unsupported`）只记 `console.info`，B15 只收 `error` 级，所以 T20、T23、T24 有意走的拒绝路径不会让它判失败。
   - 存储基线不加 `lookupEngine`、`imageEngine`、`imageEngines`，用到它们的步骤自己用 `guarded` 写、写回。
+  - 界面翻新（设计 `docs/superpowers/specs/2026-10-26-v0.4-ui-refresh-design.md`）：B19“开始使用”卡（auto，`b19.mjs`）：清掉 `setupDone` 后卡片显示三步；“试一下”打开的一对不算完成；不经“试一下”在新标签打开触发网址出现一对后 `setupDone` 为 true、卡片换成完成确认，重开后隐藏；撤销左侧授权后卡片重新出现、只有第 1 步，恢复后消失。引擎行按 `data-id` 定位。
+  - `setupDone` 在 `storage.local`，不在 storage 快照里：B4、B19、I18N 用 `keepSetupDone` 或自己写回步骤前的值，但其他步骤建出的一对会让一直开着的设置页判完成并写入 true，所以跑过一次完整 e2e 后测试配置里 `setupDone` 一直是 true（只在测试配置里，不影响判定；要看首次状态的卡片，删掉这个键再开设置页）。
   - T5 的重启子项（`flow-restart.mjs`）从 v0.4 起期望不覆盖：恢复出来的本扩展分屏两侧都没有记录，兜底判出的 `fallback-own` 按 `foreign` 处理，在旁边新开一对，原来两侧都不动。
 - I18N（`steps/i18n.mjs`，auto，`--auto-only` 会跑）：en、zh_CN、zh_TW、es 逐一打开设置页和 go.html 出错页，核对 `lang`、没有显示成 key 的文字、没有横向和按钮内容溢出；再测页内切换（不刷新、2 秒内）、连切 en → zh_TW 停在最后一次、第二个设置页跟随，以及 `uiLocale = "auto"` 时 `t()` 与 `chrome.i18n.getMessage` 逐 key 相同。它会改写 `storage.sync` 的 `uiLocale`，用 `guarded` 写回步骤前的值（中断时由 storage 快照兜底）。截图存 `.e2e/i18n/<locale>-options.png`、`<locale>-go-error.png`。
 - 测试窗口尺寸：第一次改尺寸（`fixWindow`、T17 的 `sizeTo`）前记到 `.e2e/window-snapshot.json`（`window-snap.mjs`），收尾改回，强制退出留下的快照下次启动先改回。快捷键：测试配置里原有绑定是脚本录不回去的（`parseKeys` 不认，如媒体键）时不改动它，B17(a)(b)/T19 记跳过。
@@ -247,7 +257,7 @@ split-search/
 - 授权框与扩展管理页（2026-10-24 在 Xvfb 上实测）：
   - `chrome.permissions.remove` 撤销的可选 host 权限只是从“生效中”拿掉，仍留在配置的“已授予”记录里；再 `permissions.request` 同样的 origin，Chrome 直接批准、不弹框（实测 12 ms）。一次性授权检查保证这些 origin 运行前都生效，所以 B4、T8(c)(e) 的恢复、步骤后的恢复检查都不需要点授权框。`requestGrant`（guided.mjs）只申请一次，从独占一个新窗口的设置页发起；15 秒内没批准才说明弹了原生框：`--auto-only` 关掉这个窗口（对话框随之关闭）、返回 false；引导式运行换成“请点允许”的说明，继续等同一个对话框（不关掉重弹，开头的说明也已写明“万一弹框请点允许”），中断时同样关掉窗口。
   - 真正弹框时（从没授予过的 origin），授权框画在浏览器窗口内部，不是单独的 X 窗口，CDP 也看不到；初始焦点在“拒绝”，Tab 一次到“允许”，Escape = 拒绝。内容读不到、焦点位置是实现细节，**不做原生对话框点击器**。授权框挂在浏览器窗口上、不是标签上：只关掉发起申请的设置页标签，对话框还留在那个窗口里（请求也不结算）；关掉它所在的窗口，对话框才随之消失。所以 `requestGrant` 和 B4 的设置页都开在单独的新窗口里（`openOptions(browser, { newWindow: true })`）。
-  - B4（`steps/b4.mjs`）：在设置页里包一层 `chrome.permissions.request` 记录调用，用 CDP `Input.dispatchMouseEvent`（可信事件，带用户激活，headless 也可用）点横幅按钮，断言恰好一次申请且同时含 www.google.com 与 www.bing.com、授权生效、横幅消失。
+  - B4（`steps/b4.mjs`）：在设置页里包一层 `chrome.permissions.request` 记录调用，清掉 `setupDone`、撤销两者授权后，用 CDP `Input.dispatchMouseEvent`（可信事件，带用户激活，headless 也可用）点“开始使用”卡（`#setup`）第 1 步的授权按钮，断言恰好一次申请且同时含 www.google.com 与 www.bing.com、授权生效、第 1 步变为已授权；`setupDone` 由 `keepSetupDone` 写回步骤前的值。
   - chrome://extensions 详情页（`ext-webui.mjs`）：后台新窗口打开 `chrome://extensions/?id=<扩展>`，shadow DOM 里 `extensions-detail-view` 的 `#enableToggle` 点一下即停用/启用，读回 `data.state`（`DISABLED`/`ENABLED`）；重新启用点开关不生效时用页面里的 `chrome.management.setEnabled` 兜底。T8(b) 在 finally 里一定重新启用，再等扩展页能执行脚本。停用期间只读 CDP 目标（扩展的页面和 SW 目标应随停用消失），不新开扩展页（停用时新开的扩展页要等满 10 秒才知道不可用），整段可被中断：中断后立刻进 finally 重新启用、不再等扩展页，停用窗口约 5 秒，落在运行器的收尾期限（15 秒）以内。兜底还有两道：收尾（`teardown.mjs` 的 `reenableStep`，开始过 B4/T8 且扩展不可用时，先经详情页启用再恢复 storage）和下次启动（`ext.ensureExtensionUp`：扩展已登记但设置页打不开，稍等重试仍不行就经详情页启用；第二次 Ctrl+C 强制退出留下的停用状态靠它）。“已登记”按扩展 id 读测试配置的 Preferences，不论装自哪个目录（启动时可能还登记在别的检出的 `src/`，随后才改装本检出，见上文“测的是哪份代码”）。T8(a) 先读详情页的 `data.incognitoAccess`：“在无痕模式下启用”打开了就判失败（测的不是用户看到的行为），读不到只在说明里注明。本扩展只有可选 host 权限，“有权访问的网站”渲染成逐站开关列表（`extensions-host-permissions-toggle-list`），没有带“点击时”的下拉（`extensions-runtime-host-permissions`），T8(d) 据此自动记“不适用”（跳过）。
   - T8(a)：`Target.createBrowserContext` 建的是 off-the-record（无痕）上下文，扩展（`incognito: "not_allowed"`）不在里面运行；在新窗口里打开模拟触发网址，断言网址原样（带 `_ss`）、`Page.getNavigationHistory` 里没有 go.html、没有右侧引擎页面，最后 `disposeBrowserContext`。
   - B14（`steps/b14.mjs`）：`Emulation.setEmulatedMedia` 依次模拟 dark、light，期望值从页面样式表源码里读（body 引用的颜色变量在 `:root` 与 `@media (prefers-color-scheme: dark)` 里的取值），经探针元素换算成计算值后与 body 的背景色、文字色比较；深色截图存 `.e2e/b14-options-dark.png`、`b14-guide-dark.png`。`--auto-only` 不打开向导页，B14 自己开一个、用完关掉（`focusGuide` 在 auto-only 下不新开向导页）。

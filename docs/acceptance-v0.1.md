@@ -56,15 +56,15 @@ WSL 覆盖不到 Windows 环境本身，以及从 Windows 应用拖入。在 Win
 | B1 | 首次加载 | 自动打开设置页，扩展 ID 正确（之前已加载过、这次只是重新启用的，记“跳过”） | e2e assist（安装引导） |
 | B2 | 点工具栏图标 | 打开设置页 | e2e auto |
 | B3 | 扩展详情页 | 没有“在无痕模式下启用”开关（`incognito: not_allowed`） | e2e auto |
-| B4 | 撤销 Google、Bing 授权后点横幅“授权” | 弹一次权限框，同时列出 www.google.com 和 www.bing.com；允许后横幅消失，两者显示“已授权” | e2e auto（CDP 可信点击横幅；断言恰好一次 `permissions.request` 且同时含两个网站、授权生效、横幅消失。测试配置里这两个网站之前授权过，Chrome 直接批准不弹框，所以框里列出的文字本身不在 e2e 里看；真弹框时引导式运行请你点“允许”，`--auto-only` 记跳过） |
+| B4 | 撤销 Google、Bing 授权后点横幅“授权”（v0.4 界面翻新起横幅换成“开始使用”卡第 1 步，期望见 `docs/acceptance-v0.4.md`） | 弹一次权限框，同时列出 www.google.com 和 www.bing.com；允许后横幅消失，两者显示“已授权” | e2e auto（CDP 可信点击横幅；断言恰好一次 `permissions.request` 且同时含两个网站、授权生效、横幅消失。测试配置里这两个网站之前授权过，Chrome 直接批准不弹框，所以框里列出的文字本身不在 e2e 里看；真弹框时引导式运行请你点“允许”，`--auto-only` 记跳过） |
 | B5 | `chrome.declarativeNetRequest.getDynamicRules()` | 恰好 1 条规则；requestDomains 含 www.google.com、www.bing.com、duckduckgo.com、www.perplexity.ai、kagi.com；ID 为静态扩展 ID；无 `rebuildRules failed` | e2e auto |
 | B6 | 新增引擎：id 填 `Baidu`，点“保存” | id 旁提示格式错误，对话框不关闭 | e2e auto |
-| B7 | 新增 id `baidu`、名称 百度、网址 `https://www.baidu.com/s?wd=%s` | 保存成功，末尾出现百度，授权按钮高亮，右下角提示未授权 | e2e auto |
+| B7 | 新增 id `baidu`、名称 百度、网址 `https://www.baidu.com/s?wd=%s` | 保存成功，末尾出现百度，授权按钮高亮，右下角提示未授权（v0.4 界面翻新起 id 不用手填，按名称或网址自动生成，见 `docs/acceptance-v0.4.md`） | e2e auto |
 | B8 | “其他组合”左百度、右 Google | 网址为 `https://www.baidu.com/s?wd=%s&_ss=baidu,google`，“复制”变“已复制” | e2e auto |
 | B9 | 把 B8 网址加为快捷字词 `bk`，地址栏输 `bk 测试` | 百度 ｜ Google 分屏 | 未覆盖（地址栏快捷字词机制由 T1 覆盖） |
 | B10 | Google、Bing 行的“隐藏” | 按钮禁用（被默认组合引用） | e2e auto |
 | B11 | 编辑默认组合左侧的引擎，网址改为路径型（如 `https://www.google.com/search/%s`） | 表单内拒绝并说明原因 | e2e auto |
-| B12 | 隐藏一个预置引擎，然后在“已隐藏的预置引擎”里点“恢复” | 弹确认框（含网站搜索提示）；隐藏后出现在“已隐藏”中，恢复后回到列表 | e2e auto |
+| B12 | 隐藏一个预置引擎，然后在“已隐藏的预置引擎”里点“恢复” | 不弹确认框：隐藏后出现在“已隐藏”中，提示里有“撤销”（可用键盘点）能立刻恢复；“已隐藏”里点“恢复”后回到列表。（v0.4 界面翻新起；之前是弹确认框、含网站搜索提示。删除自定义引擎同样不弹框，改为行内按钮点两次） | e2e auto |
 | B13 | 连点 ↑/↓，至少等 1 秒再刷新；另开一个设置页改动 | 顺序保持；另一页自动刷新 | e2e auto |
 | B14 | 深色模式 | 设置页（和向导页）配色跟随 | e2e auto（CDP 模拟深色/浅色，body 背景色与文字色要等于样式表里深色/浅色变量的值；深色截图存 `.e2e/b14-*-dark.png`） |
 | B15 | 整次运行中的 `[split-search]` 报错 | 除预期降级外无 `[split-search]` 报错 | e2e auto |
