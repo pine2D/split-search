@@ -22,8 +22,13 @@ addChevrons();
 const i18nReady = initI18n().catch(log);
 bindActions({ render: () => render(), current: () => current });
 
-// 重建后焦点原来的元素没了（授权成功后授权按钮消失）：焦点交给这一步的状态行
+// 重建后焦点原来的元素没了（授权成功后授权按钮消失）：焦点交给这一步的状态行；
+// 卡片整个不见了（重新授权成功后隐藏）就交给默认组合的左侧下拉框
 const FOCUS_FALLBACK = { "setup-grant": "setup-grant-status", "setup-grant-right": "setup-grant-status" };
+function focusAfterRender(id) {
+  const el = $(id) ?? $(FOCUS_FALLBACK[id]) ?? (id.startsWith("setup-") ? $("pair-left") : null);
+  el?.focus();
+}
 
 let renderSeq = 0;
 let current = null;          // 最近一次渲染用的 cfg
@@ -114,7 +119,7 @@ async function render() {
   $("triggers").replaceChildren(renderTriggers(ctx));
   $("engines").replaceChildren(renderEngineList(ctx));
   $("hidden-engines").replaceChildren(renderHiddenList(ctx));
-  if (focusedId && document.activeElement === document.body) ($(focusedId) ?? $(FOCUS_FALLBACK[focusedId]))?.focus();
+  if (focusedId && document.activeElement === document.body) focusAfterRender(focusedId);
   refreshShortcut();
   document.body.classList.remove("loading");
 }

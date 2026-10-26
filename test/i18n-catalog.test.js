@@ -210,3 +210,13 @@ test("复制按钮的 aria 文案以可见文字开头", () => {
     assert.equal(names.size, pairs.length, `${l}：三个复制按钮的无障碍名称应各不相同`);
   }
 });
+
+// 三个入口页的静态 lang 与 default_locale 一致（en）；运行时由 chrome/i18n.js 的 setLocale 改写
+test("设置页、弹窗、go.html 的静态 lang 都是 en", () => {
+  assert.equal(manifest.default_locale, "en");
+  for (const page of ["options/options.html", "popup/popup.html", "go.html"]) {
+    const m = /<html\b[^>]*\blang="([^"]*)"/.exec(readFileSync(join(SRC, page), "utf8"));
+    assert.ok(m, `${page} 的 <html> 没有 lang`);
+    assert.equal(m[1], "en", page);
+  }
+});
