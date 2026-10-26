@@ -8,6 +8,7 @@ import { rebuildMenus } from "./chrome/menus.js";
 import { handleMenuClick } from "./chrome/lookup-actions.js";
 import { handleCompleteMessage } from "./chrome/complete-actions.js";
 import { serialQueue } from "./lib/serial.js";
+import { isRevealSetup } from "./lib/messages.js";
 import { safeArgs } from "./lib/safe-error.js";
 
 const log = (...args) => console.error("[split-search]", ...safeArgs(args));
@@ -84,8 +85,9 @@ chrome.contextMenus.onClicked.addListener((info, tab) =>
   swQueue(() => handleMenuClick(info, tab)).catch(err => log("lookup failed", err)));
 // ⑦ 补成分屏（弹窗发来 complete-split）：同样经 swQueue 串行。return true 后用 sendResponse 异步回复，
 // 不依赖“监听器返回 Promise”。只有本扩展自己的页面能发进来（没有 onMessageExternal、没有 externally_connectable），
-// 发送方和字段在 handleCompleteMessage 里校验。
+// 发送方和字段在 handleCompleteMessage 里校验。弹窗发给设置页的 reveal-setup 也会送到这里：不回复、不处理，由设置页回复。
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  if (isRevealSetup(msg)) return undefined;
   swQueue(() => handleCompleteMessage(msg, sender)).then(sendResponse, (err) => {
     log("complete-split failed", err);
     sendResponse({ ok: false, code: "split_failed" });

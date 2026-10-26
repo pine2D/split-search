@@ -329,3 +329,16 @@ test("complete-split：处理抛错时回 split_failed，并记 [split-search] �
   assert.equal(console.error.mock.callCount(), 1);
   assert.equal(console.error.mock.calls[0].arguments[0], "[split-search]");
 });
+
+test("reveal-setup：SW 不回复、不处理、不记日志（由设置页回复）", async (t) => {
+  t.mock.method(console, "info", () => {});
+  let replied = false;
+  const returned = listeners["runtime.onMessage"][0]({ type: "reveal-setup", tabId: 5 },
+    { id: "x", url: "chrome-extension://x/popup/popup.html" }, () => { replied = true; });
+  assert.notEqual(returned, true);
+  await new Promise(r => setTimeout(r, 20));
+  assert.equal(replied, false);
+  assert.equal(console.error.mock.callCount(), 0);
+  assert.equal(console.info.mock.callCount(), 0);
+  assert.deepEqual(state.calls, []);
+});
