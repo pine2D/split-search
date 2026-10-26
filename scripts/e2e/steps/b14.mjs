@@ -1,4 +1,4 @@
-// B14 深色模式（auto）：经 CDP Emulation.setEmulatedMedia 把设置页、向导页和工具栏弹窗页（说明文字，以及 v0.4 的“补成分屏”区）切到 prefers-color-scheme: dark，
+// B14 深色模式（auto）：经 CDP Emulation.setEmulatedMedia 把设置页、向导页、工具栏弹窗页（说明文字，以及 v0.4 的“补成分屏”区）和 go.html 出错页切到 prefers-color-scheme: dark，
 // 断言 body 的背景色、文字色变成样式表里深色 :root 定义的值，再切到 light 断言回到浅色值，最后清除模拟。
 // 期望值从页面实际加载的样式表源码里读（schemeTokens，含 <link> 与 @import 进来的共享变量表 styles/tokens.css），不写死颜色；深色截图存到 .e2e/ 供报告引用（设置页截整页，含“右键查询”卡片）。
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -9,7 +9,7 @@ import { openOptions } from "./optpage.mjs";
 import { activate, focusGuide, guideUrl } from "./guided.mjs";
 import { POPUP_URL, popupPage } from "./v03-popup.mjs";
 import { openResultTab, openCompletePopup } from "./v04-i18n.mjs";
-import { mockEngines } from "../config.mjs";
+import { mockEngines, EXT_ID } from "../config.mjs";
 import { E2E_LOCALE } from "../i18n.mjs";
 
 const stripComments = css => String(css).replace(/\/\*[\s\S]*?\*\//g, "");
@@ -104,6 +104,24 @@ export function schemeVerdict(name, scheme, c) {
   return problems.length ? `${name}（${scheme}）：${problems.join("，")}` : null;
 }
 
+// go.html 出错页：_ss 只有一个引擎（格式不对，marker_format），go.js 直接显示出错页、不导航。
+// u= 后面照 DNR 重定向的样子放未编码的原始网址（go.js 不解码，编码过的会变成 bad_url 出错页）
+export const GO_ERROR_URL = `chrome-extension://${EXT_ID}/go.html?u=https://www.google.com/search?q=x&_ss=google`;
+
+async function openGoError(ctx) {
+  const { client } = ctx.browser;
+  const { targetId } = await client.send("Target.createTarget", { url: GO_ERROR_URL });
+  const sid = await ctx.browser.attach(targetId);
+  const close = async () => {
+    await client.send("Target.detachFromTarget", { sessionId: sid }).catch(() => {});
+    await client.send("Target.closeTarget", { targetId }).catch(() => {});
+  };
+  try {
+    await ctx.browser.waitFor(() => ctx.browser.evaluate(sid, `document.readyState === "complete" && !!document.getElementById("error") && !document.getElementById("error").hidden`, { timeoutMs: 3000 }), { timeoutMs: 10000 });
+  } catch (e) { await close(); throw new Error(`go.html 出错页没有显示出来：${e.message}`); }
+  return { targetId, sid, close };
+}
+
 const media = scheme => ({ media: "", features: scheme ? [{ name: "prefers-color-scheme", value: scheme }] : [] });
 
 // full：截整页（captureBeyondViewport），设置页的卡片多半在首屏以外
@@ -138,10 +156,10 @@ async function checkPage(ctx, { name, targetId, sid, file, full = false }) {
 }
 
 export const B14 = {
-  id: "B14", title: "深色模式：设置页、向导页与弹窗配色跟随（CDP 模拟，自动判定）", kind: "auto", needs: [],
+  id: "B14", title: "深色模式：设置页、向导页、弹窗与 go.html 出错页配色跟随（CDP 模拟，自动判定）", kind: "auto", needs: [],
   async run(ctx) {
     const page = await openOptions(ctx.browser);
-    let gsid = null, gTarget = null, made = false, popup = null, result = null, complete = null;
+    let gsid = null, gTarget = null, made = false, popup = null, result = null, complete = null, go = null;
     try {
       gTarget = (await pageTargets(ctx.browser)).find(t => t.url.startsWith(guideUrl(ctx.port)))?.targetId;
       if (!gTarget) { // --auto-only 不打开向导页：自己开一个，用完关掉
@@ -160,17 +178,20 @@ export const B14 = {
       result = await openResultTab(ctx);
       complete = await openCompletePopup(ctx, result, { locale: E2E_LOCALE, engine: mockEngines(ctx.port).find(e => e.id === "ea").name });
       const pc = await checkPage(ctx, { name: "弹窗“补成分屏”区", targetId: complete.targetId, sid: complete.sid, file: join(OUT_DIR, "b14-popup-complete-dark.png") });
-      const problems = [...opt.problems, ...gd.problems, ...pp.problems, ...pc.problems];
-      const shots = [opt.shot, gd.shot, pp.shot, pc.shot].filter(Boolean);
-      const tail = `设置页 ${opt.tokens}；向导页 ${gd.tokens}；弹窗 ${pp.tokens}；“补成分屏”区 ${pc.tokens}${shots.length ? `；深色截图：${shots.join("、")}` : "；截图没有保存成功"}`;
+      go = await openGoError(ctx);
+      const ge = await checkPage(ctx, { name: "go.html 出错页", targetId: go.targetId, sid: go.sid, file: join(OUT_DIR, "b14-go-dark.png") });
+      const problems = [...opt.problems, ...gd.problems, ...pp.problems, ...pc.problems, ...ge.problems];
+      const shots = [opt.shot, gd.shot, pp.shot, pc.shot, ge.shot].filter(Boolean);
+      const tail = `设置页 ${opt.tokens}；向导页 ${gd.tokens}；弹窗 ${pp.tokens}；“补成分屏”区 ${pc.tokens}；go.html 出错页 ${ge.tokens}${shots.length ? `；深色截图：${shots.join("、")}` : "；截图没有保存成功"}`;
       return problems.length ? { status: "fail", detail: `${problems.join("；")}\n${tail}` }
-        : { status: "pass", detail: `设置页、向导页与弹窗在深色/浅色下 body 背景色与文字色都等于样式表里的变量值。${tail}` };
+        : { status: "pass", detail: `设置页、向导页、弹窗与 go.html 出错页在深色/浅色下 body 背景色与文字色都等于样式表里的变量值。${tail}` };
     } finally {
       if (gsid) await ctx.browser.client.send("Target.detachFromTarget", { sessionId: gsid }).catch(() => {});
       if (made) await ctx.browser.client.send("Target.closeTarget", { targetId: gTarget }).catch(() => {});
       await popup?.close();
       await complete?.close();
       await result?.close();
+      await go?.close();
       await page.close();
       if (!made) await focusGuide(ctx).catch(() => {});
     }

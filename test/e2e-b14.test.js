@@ -1,7 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { schemeTokens, schemeVerdict, topRules } from "../scripts/e2e/steps/b14.mjs";
+import { schemeTokens, schemeVerdict, topRules, GO_ERROR_URL } from "../scripts/e2e/steps/b14.mjs";
+import { extractOriginalUrl, parseTrigger } from "../src/lib/trigger.js";
+import { mergeConfig } from "../src/lib/engines.js";
 
 const read = p => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
 
@@ -47,4 +49,12 @@ test("schemeVerdict: 颜色与 matchMedia 都对才通过，否则逐项说明",
   const bad = schemeVerdict("向导页", "dark", { ...ok, bg: "rgb(9, 9, 9)" });
   assert.match(bad, /背景色 rgb\(9, 9, 9\)，应为 rgb\(0, 0, 0\)/);
   assert.doesNotMatch(bad, /文字色/);
+});
+
+test("GO_ERROR_URL：go.html 读到的原始网址是 _ss 格式不对的触发网址（显示出错页，不分屏）", () => {
+  const original = extractOriginalUrl(new URL(GO_ERROR_URL).search);
+  assert.equal(original, "https://www.google.com/search?q=x&_ss=google");
+  const r = parseTrigger(original, mergeConfig({}).engines);
+  assert.equal(r.ok, false);
+  assert.equal(r.error.code, "marker_format");
 });
