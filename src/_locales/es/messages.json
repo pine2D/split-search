@@ -493,9 +493,9 @@
     "message": "Sin acceso (necesario)",
     "description": "Status on the default left engine's row when its site is not granted; access is required."
   },
-  "engine_not_granted": {
-    "message": "Sin acceso",
-    "description": "Status on an engine row when its site is not granted."
+  "engine_not_granted_optional": {
+    "message": "Sin acceso (opcional)",
+    "description": "Status on a non-default engine row when its site is not granted; access is only needed if the engine is used on the left."
   },
   "engine_grant": {
     "message": "Dar acceso",

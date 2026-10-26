@@ -33,10 +33,11 @@ function engineRow(e, index, total, ctx) {
   ];
 
   // 状态图标在文字之外（--ok 与主色同属绿色系，不能只靠颜色区分）；文字在 data-i18n 的 span 里，切换语言时只重写它
-  const status = h("span", { class: "perm " + (isGranted ? "perm-ok" : "perm-missing") },
-    icon(isGranted ? "check-circle" : "alert-circle", { size: 14 }),
-    isGranted ? ht("span", null, "engine_granted")
-      : ht("span", null, e.id === leftId ? "engine_not_granted_required" : "engine_not_granted"));
+  // 只有默认组合的左侧必须授权：警示样式；其余没授权的引擎用中性样式（空心圆 + 灰字），不抢眼
+  const required = e.id === leftId;
+  const status = h("span", { class: "perm " + (isGranted ? "perm-ok" : required ? "perm-missing" : "perm-optional") },
+    icon(isGranted ? "check-circle" : required ? "alert-circle" : "circle", { size: 14 }),
+    ht("span", null, isGranted ? "engine_granted" : required ? "engine_not_granted_required" : "engine_not_granted_optional"));
   const auth = isGranted ? null : authButton([e], ["engine_grant"], {
     cls: "btn btn-small" + (attention.has(e.id) || e.id === leftId ? " btn-attention" : ""),
     onDone: ctx.refresh,

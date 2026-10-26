@@ -209,6 +209,7 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 .perm { display: inline-flex; align-items: center; gap: 4px; font-size: 12.5px; }
 .perm-ok { color: var(--ok); }
 .perm-missing { color: var(--warn); }
+.perm-optional { color: var(--muted); }
 .btn-icon { display: inline-grid; place-items: center; padding: 4px 7px; }
 /* 组合在用、不能隐藏 / 删除的原因（行内小字）；宽度按 es 最长的一句一行放下 */
 .row-reason { font-size: 12px; margin: 0; text-align: end; max-width: 56ch; }

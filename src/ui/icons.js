@@ -8,6 +8,7 @@ const CIRCLE = "M14.25 8a6.25 6.25 0 1 1-12.5 0a6.25 6.25 0 1 1 12.5 0";
 export const ICON_PATHS = {
   check: "M3.5 8.5l3 3 6-7",
   "check-circle": `${CIRCLE}M5.25 8.25l1.85 1.85 3.65-4.1`,
+  circle: CIRCLE,
   "alert-circle": `${CIRCLE}M8 4.9v3.6M8 11.1v.01`,
   "alert-triangle": "M8 2.25l6.25 11H1.75zM8 6.4v3.1M8 11.4v.01",
   "x-circle": `${CIRCLE}M5.75 5.75l4.5 4.5M10.25 5.75l-4.5 4.5`,
