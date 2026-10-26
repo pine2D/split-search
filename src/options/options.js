@@ -88,6 +88,7 @@ async function render() {
     applyStatic();
     notify(t("notice_load_failed", errorText(err)), "error");
     document.body.classList.remove("loading");
+    revealSetup(); // 卡片没渲染出来（隐藏）：只是清掉 #setup 的待办，免得之后哪次渲染成功时突然滚动、抢焦点
     return;
   }
   const pendingOrder = getPendingOrder();
