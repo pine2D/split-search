@@ -6,3 +6,4 @@ node_modules/
 .codegraph/
 .e2e/
 dist/
+.impeccable/
