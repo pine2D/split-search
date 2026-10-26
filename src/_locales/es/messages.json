@@ -36,7 +36,7 @@
     "description": "Error on the trigger page when it was opened without a trigger URL (e.g. typed directly); the user should start a search from the address bar or by drag-and-drop instead."
   },
   "go_err_config_unreadable": {
-    "message": "No se pudo leer la configuración y tampoco se reconoce la URL de activación, así que no hay ninguna búsqueda que abrir. Vuelve a cargar Split Search en la página Extensiones (chrome://extensions) y busca de nuevo.",
+    "message": "No se pudo leer la configuración y tampoco se reconoce la URL de activación, así que no hay ninguna búsqueda que abrir. Desactiva y vuelve a activar Split Search en la página Extensiones (chrome://extensions), o reinicia Chrome. Después, busca de nuevo.",
     "description": "Error on the trigger page: the settings could not be read and the trigger URL is not a usable http(s) URL, so not even the left search can be opened."
   },
   "go_err_bad_template": {
@@ -104,7 +104,7 @@
     "description": "Error page after a search: the _ss marker parameter in the trigger URL is malformed."
   },
   "err_unknown_engine": {
-    "message": "No se encuentra el buscador «$ENGINE_ID$» al que apunta esta búsqueda en el sitio. Puede que se haya eliminado u ocultado, o que se haya editado la URL de la búsqueda. En la configuración de buscadores de Chrome, elimina o corrige esa búsqueda en el sitio, o vuelve a añadir el buscador en la configuración de Split Search.",
+    "message": "No se encuentra el buscador «$ENGINE_ID$» al que apunta esta búsqueda en el sitio. Puede que se haya eliminado u ocultado, o que se haya editado la URL de esa búsqueda en el sitio. En la configuración de buscadores de Chrome, elimínala o corrígela, o vuelve a añadir el buscador en la configuración de Split Search.",
     "description": "Error page after a search: the trigger URL names an engine id that does not exist (the engine was deleted or hidden, or the site search URL was edited).",
     "placeholders": {
       "ENGINE_ID": {
@@ -124,7 +124,7 @@
     }
   },
   "err_template_mismatch": {
-    "message": "La URL de activación no coincide con la plantilla actual del buscador de la izquierda; puede que se haya editado la URL del buscador. Vuelve a copiar la URL de activación desde la configuración y actualiza con ella la búsqueda en el sitio.",
+    "message": "La URL de activación no coincide con la plantilla actual del buscador de la izquierda; puede que se haya editado la URL del buscador. Vuelve a copiar la URL de activación desde la configuración de Split Search y actualiza con ella la búsqueda en el sitio.",
     "description": "Error page after a search: the trigger URL no longer matches the left engine's current template; the user must copy the trigger URL again from the settings page."
   },
   "err_config_too_large": {
@@ -166,7 +166,7 @@
     }
   },
   "err_id_exhausted": {
-    "message": "El ID «$ID$» y los numerados del $ID$-2 al $ID$-99 ya están en uso; elimina algunos buscadores y vuelve a intentarlo",
+    "message": "El ID «$ID$» y sus variantes de $ID$-2 a $ID$-99 ya están en uso; elimina algunos buscadores y vuelve a intentarlo",
     "description": "Error when adding from the engine catalog: the catalog id and every numbered variant (id-2 … id-99) are already used by other engines.",
     "placeholders": {
       "ID": {

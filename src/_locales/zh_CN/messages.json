@@ -36,7 +36,7 @@
     "description": "Error on the trigger page when it was opened without a trigger URL (e.g. typed directly); the user should start a search from the address bar or by drag-and-drop instead."
   },
   "go_err_config_unreadable": {
-    "message": "读取设置失败，触发网址也无法识别，没有可打开的搜索。请在扩展程序页面（chrome://extensions）重新加载 Split Search，然后再搜索一次。",
+    "message": "读取设置失败，触发网址也无法识别，没有可打开的搜索。请在扩展程序页面（chrome://extensions）把 Split Search 关闭后再开启，或重新启动 Chrome，然后再搜索一次。",
     "description": "Error on the trigger page: the settings could not be read and the trigger URL is not a usable http(s) URL, so not even the left search can be opened."
   },
   "go_err_bad_template": {
@@ -260,7 +260,7 @@
     "description": "Setup step 2. \"Site search\" and \"Add\" must match Chrome's own labels on chrome://settings/searchEngines in this language."
   },
   "guide_step_fields": {
-    "message": "名称随意（例如“Google ｜ Bing”）；快捷字词自定（例如 $KEYWORD$）；网址格式一栏粘贴上面复制的触发网址。保存。",
+    "message": "名称随意（例如“Google ｜ Bing”）；快捷字词自定（例如 $KEYWORD$）；在“网址格式”里粘贴上面复制的触发网址。最后点“添加”。",
     "description": "Setup step 3: what to type into Chrome's site search dialog. \"Shortcut\" must match Chrome's label. The placeholder becomes the example shortcut (guide_example_keyword) shown as code.",
     "placeholders": {
       "KEYWORD": {
@@ -870,7 +870,7 @@
     "description": "Get started step 2 heading. \"Site search\" and \"Make default\" are Chrome's terms (see docs/i18n/chrome-terms.md)."
   },
   "setup_add_text": {
-    "message": "把下面的设置地址复制到地址栏打开，在“网站搜索”一栏点“添加”：名称随意，快捷字词自定，在“网址格式”一栏粘贴触发网址，再点“添加”。然后在这一条的 ⋮ 菜单里选“设为默认选项”。",
+    "message": "把下面的设置地址复制到地址栏打开，在“网站搜索”旁点“添加”：名称随意，快捷字词自定，在“网址格式”里粘贴触发网址，再点“添加”。然后在这一条的 ⋮ 菜单里选“设为默认选项”。",
     "description": "Get started step 2 in one sentence: open Chrome's search engine settings (address below), add a site search, fill in its three fields, save, and make it default. Field and menu names must match Chrome's labels; ⋮ is the More actions menu icon."
   },
   "setup_trigger_label": {

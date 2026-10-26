@@ -36,7 +36,7 @@
     "description": "Error on the trigger page when it was opened without a trigger URL (e.g. typed directly); the user should start a search from the address bar or by drag-and-drop instead."
   },
   "go_err_config_unreadable": {
-    "message": "讀取設定失敗，也無法辨識觸發網址，沒有可開啟的搜尋。請在擴充功能頁面（chrome://extensions）重新載入 Split Search，然後再搜尋一次。",
+    "message": "讀取設定失敗，也無法辨識觸發網址，沒有可開啟的搜尋。請在擴充功能頁面（chrome://extensions）將 Split Search 關閉後再開啟，或重新啟動 Chrome，然後再搜尋一次。",
     "description": "Error on the trigger page: the settings could not be read and the trigger URL is not a usable http(s) URL, so not even the left search can be opened."
   },
   "go_err_bad_template": {

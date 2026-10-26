@@ -36,7 +36,7 @@
     "description": "Error on the trigger page when it was opened without a trigger URL (e.g. typed directly); the user should start a search from the address bar or by drag-and-drop instead."
   },
   "go_err_config_unreadable": {
-    "message": "The settings couldn’t be read and the trigger URL isn’t recognized, so there’s no search to open. Reload Split Search on the Extensions page (chrome://extensions), then search again.",
+    "message": "The settings couldn’t be read and the trigger URL isn’t recognized, so there’s no search to open. Turn Split Search off and on again on the Extensions page (chrome://extensions), or restart Chrome, then search again.",
     "description": "Error on the trigger page: the settings could not be read and the trigger URL is not a usable http(s) URL, so not even the left search can be opened."
   },
   "go_err_bad_template": {
@@ -260,7 +260,7 @@
     "description": "Setup step 2. \"Site search\" and \"Add\" must match Chrome's own labels on chrome://settings/searchEngines in this language."
   },
   "guide_step_fields": {
-    "message": "Enter any name (e.g. “Google | Bing”) and a shortcut of your choice (e.g. $KEYWORD$). In “URL with %s in place of query”, paste the trigger URL you copied above. Then save.",
+    "message": "Enter any name (e.g. “Google | Bing”) and a shortcut of your choice (e.g. $KEYWORD$). In “URL with %s in place of query”, paste the trigger URL you copied above. Then click “Add”.",
     "description": "Setup step 3: what to type into Chrome's site search dialog. \"Shortcut\" must match Chrome's label. The placeholder becomes the example shortcut (guide_example_keyword) shown as code.",
     "placeholders": {
       "KEYWORD": {
