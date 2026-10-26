@@ -123,12 +123,15 @@ const remove = (ctx, page) => sub("(d) 选用 Bing Visual Search 后删除它：
   await storageUntil(ctx, s => s.imageEngine === id, `imageEngine 为 ${id}`);
   await page.until(`const b = document.getElementById(${btnId}); return (() => { ${CARD} })()?.imageValue === ${J(id)} && b && !b.__b18old;`)
     .catch(() => { throw new Error(`选用 ${id} 后设置页没有重渲染出新的“删除”按钮`); });
-  await page.run(`
-    for (let b = document.getElementById(${btnId}), i = 0; b && i < 20; i++) {
+  const settled = await page.run(`
+    for (let b = document.getElementById(${btnId}), i = 0; i < 20; i++) {
+      if (!b) return "gone";
       await sleep(500);
-      const now = document.getElementById(${btnId}); if (now === b) return true; b = now;
+      const now = document.getElementById(${btnId}); if (now === b) return "stable"; b = now;
     }
-    return false;`);
+    return "busy";`);
+  if (settled === "gone") return { status: "fail", detail: `选用 ${id} 后列表里 ${id} 的“删除”按钮不见了` };
+  if (settled !== "stable") return { status: "fail", detail: `选用 ${id} 后设置页 10 秒内一直在重渲染，“删除”按钮没有稳定下来` };
   // 两步删除：点一次只变成“确认删除？”，再点才删（两下点同一个按钮；中途重渲染时如实报出）
   const once = await page.run(`
     const b = document.getElementById(${btnId}); if (!b) return null; b.click(); await sleep(300);
