@@ -36,7 +36,7 @@
     "description": "Error on the trigger page when it was opened without a trigger URL (e.g. typed directly); the user should start a search from the address bar or by drag-and-drop instead."
   },
   "go_err_config_unreadable": {
-    "message": "No se pudo leer la configuración ni se reconoce la URL de activación, así que no hay ninguna búsqueda que abrir. Recarga la extensión y busca de nuevo.",
+    "message": "No se pudo leer la configuración y tampoco se reconoce la URL de activación, así que no hay ninguna búsqueda que abrir. Vuelve a cargar Split Search en la página Extensiones (chrome://extensions) y busca de nuevo.",
     "description": "Error on the trigger page: the settings could not be read and the trigger URL is not a usable http(s) URL, so not even the left search can be opened."
   },
   "go_err_bad_template": {
@@ -104,8 +104,8 @@
     "description": "Error page after a search: the _ss marker parameter in the trigger URL is malformed."
   },
   "err_unknown_engine": {
-    "message": "Esta búsqueda en sitio apunta al buscador «$ENGINE_ID$», que se eliminó, ocultó o cambió de nombre. En los ajustes de buscadores de Chrome, elimina o corrige esa búsqueda en sitio, o vuelve a añadir el buscador en la configuración.",
-    "description": "Error page after a search: the trigger URL names an engine id that does not exist (deleted or hidden).",
+    "message": "No se encuentra el buscador «$ENGINE_ID$» al que apunta esta búsqueda en el sitio. Puede que se haya eliminado u ocultado, o que se haya editado la URL de la búsqueda. En la configuración de buscadores de Chrome, elimina o corrige esa búsqueda en el sitio, o vuelve a añadir el buscador en la configuración de Split Search.",
+    "description": "Error page after a search: the trigger URL names an engine id that does not exist (the engine was deleted or hidden, or the site search URL was edited).",
     "placeholders": {
       "ENGINE_ID": {
         "content": "$1",
@@ -124,7 +124,7 @@
     }
   },
   "err_template_mismatch": {
-    "message": "La URL de activación no coincide con la plantilla actual del buscador de la izquierda; puede que se haya editado. Vuelve a copiar la URL desde la configuración y actualiza la búsqueda en sitio.",
+    "message": "La URL de activación no coincide con la plantilla actual del buscador de la izquierda; puede que se haya editado la URL del buscador. Vuelve a copiar la URL de activación desde la configuración y actualiza con ella la búsqueda en el sitio.",
     "description": "Error page after a search: the trigger URL no longer matches the left engine's current template; the user must copy the trigger URL again from the settings page."
   },
   "err_config_too_large": {
@@ -152,11 +152,11 @@
     }
   },
   "err_id_format": {
-    "message": "El id solo puede tener letras minúsculas, números y guiones (-), y debe tener entre 1 y 20 caracteres",
+    "message": "El ID solo puede tener letras minúsculas, números y guiones (-), y debe tener entre 1 y 20 caracteres",
     "description": "Error in the engine dialog: the engine id has invalid characters or length."
   },
   "err_id_taken": {
-    "message": "El id «$ID$» ya está en uso; elige otro",
+    "message": "El ID «$ID$» ya está en uso; elige otro",
     "description": "Error in the engine dialog: another engine already uses this id.",
     "placeholders": {
       "ID": {
@@ -166,7 +166,7 @@
     }
   },
   "err_id_exhausted": {
-    "message": "El id «$ID$» y los numerados del $ID$-2 al $ID$-99 ya están en uso; elimina algunos buscadores y vuelve a intentarlo",
+    "message": "El ID «$ID$» y los numerados del $ID$-2 al $ID$-99 ya están en uso; elimina algunos buscadores y vuelve a intentarlo",
     "description": "Error when adding from the engine catalog: the catalog id and every numbered variant (id-2 … id-99) are already used by other engines.",
     "placeholders": {
       "ID": {
@@ -350,15 +350,15 @@
     "description": "Summary of the collapsed “Advanced” section in the add-engine dialog; it holds the engine id field."
   },
   "options_dlg_id_label": {
-    "message": "id",
+    "message": "ID",
     "description": "Label of the engine id field in the add-engine dialog."
   },
   "options_dlg_id_hint_add": {
-    "message": "Se genera a partir del nombre y puedes cambiarlo. Letras minúsculas, números y guiones (-), de 1 a 20 caracteres. No se puede cambiar después porque forma parte de la URL de activación.",
+    "message": "Se rellena a partir del nombre y puedes cambiarlo ahora. Letras minúsculas, números y guiones (-), de 1 a 20 caracteres. Después no se podrá cambiar, porque forma parte de la URL de activación.",
     "description": "Hint under the id field when adding an engine: the id is filled in from the name and can be edited; allowed characters and length; it cannot be changed later because it is written into the trigger URL."
   },
   "options_dlg_id_readonly": {
-    "message": "id: $ID$. No se puede cambiar después de crearlo (figura en las URL de búsqueda en el sitio ya guardadas).",
+    "message": "ID: $ID$. No se puede cambiar porque forma parte de las URL de las búsquedas en el sitio ya guardadas.",
     "description": "Read-only line in the edit-engine dialog showing the engine id. $ID$ is the id.",
     "placeholders": {
       "ID": {
@@ -866,11 +866,11 @@
     }
   },
   "setup_add_title": {
-    "message": "Añade una búsqueda en el sitio en Chrome y ponla como predeterminada",
+    "message": "Añade a Chrome una búsqueda en el sitio y elígela como predeterminada",
     "description": "Get started step 2 heading. \"Site search\" and \"Make default\" are Chrome's terms (see docs/i18n/chrome-terms.md)."
   },
   "setup_add_text": {
-    "message": "Pega en la barra de direcciones la dirección de configuración de abajo. En «Búsquedas en el sitio», haz clic en «Añadir», pon cualquier nombre y el atajo que quieras, y pega la URL de activación en «URL con %s en el lugar de la consulta». Guarda y, en el menú ⋮ de la entrada, elige «Elegir como predeterminado».",
+    "message": "Pega en la barra de direcciones la dirección de configuración de abajo. En «Búsquedas en el sitio», haz clic en «Añadir»: pon cualquier nombre y el atajo que quieras, pega la URL de activación en «URL con %s en el lugar de la consulta» y haz clic en «Añadir». Después, en el menú ⋮ de esa entrada, selecciona «Elegir como predeterminado».",
     "description": "Get started step 2 in one sentence: open Chrome's search engine settings (address below), add a site search, fill in its three fields, save, and make it default. Field and menu names must match Chrome's labels; ⋮ is the More actions menu icon."
   },
   "setup_trigger_label": {
@@ -894,7 +894,7 @@
     "description": "Get started step 3 button: opens a sample search with the default pair in a new tab."
   },
   "setup_try_hint": {
-    "message": "Busca «$QUERY$» con tu combinación predeterminada. Después, busca lo que quieras desde la barra de direcciones: si se abre la vista dividida, ya está todo listo.",
+    "message": "Se buscará «$QUERY$» con tu combinación predeterminada. Después, busca lo que quieras desde la barra de direcciones: si se abre la vista dividida, ya está todo listo.",
     "description": "Under the Try it button: what it opens, and how to finish setup (a real search from the address bar). The placeholder is setup_sample_query.",
     "placeholders": {
       "QUERY": {
@@ -928,7 +928,7 @@
     "description": "Get started card heading when setup was done before but the left engine's site is not granted now."
   },
   "setup_regrant_text": {
-    "message": "Split Search no tiene acceso a $LEFT$, el buscador de la izquierda. Por ahora, tus búsquedas abren una búsqueda normal en $LEFT$.",
+    "message": "Split Search no tiene acceso a $LEFT$, el buscador de la izquierda. Por ahora, al buscar solo se abre una búsqueda normal en $LEFT$.",
     "description": "Get started card when setup was done before but the left engine's site is not granted now: searches fall back to a plain search.",
     "placeholders": {
       "LEFT": {
@@ -938,7 +938,7 @@
     }
   },
   "setup_revoked_notice": {
-    "message": "Se quitó el acceso a $LEFT$, el buscador de la izquierda. Ahora tus búsquedas abren una búsqueda normal en $LEFT$.",
+    "message": "Se quitó el acceso a $LEFT$, el buscador de la izquierda. Ahora, al buscar solo se abre una búsqueda normal en $LEFT$.",
     "description": "Notice when access to the default left engine's site is removed while the settings page is open.",
     "placeholders": {
       "LEFT": {
@@ -1124,7 +1124,7 @@
     "description": "Heading of the keyboard shortcut card on the settings page."
   },
   "options_shortcut_hint": {
-    "message": "En una vista dividida abierta por Split Search, pulsa el acceso directo para cambiar el lado derecho al siguiente buscador que tenga marcada la opción «Incluir en la rotación del acceso directo». De forma predeterminada no hay ninguno configurado. Haz clic en «Configurar acceso directo» para elegirlo en la página Accesos directos de Chrome.",
+    "message": "En una vista dividida abierta por Split Search, pulsa el acceso directo para cambiar el lado derecho al siguiente buscador que tenga marcada la opción «Incluir en la rotación del acceso directo». De forma predeterminada no hay ninguno configurado. Haz clic en «Asignar acceso directo» para elegirlo en la página Accesos directos de Chrome.",
     "description": "Hint in the keyboard shortcut card. The quoted checkbox label must match engine_cycle_label; the page name must match Chrome's own title of chrome://extensions/shortcuts (Keyboard shortcuts)."
   },
   "options_shortcut_label": {
@@ -1136,7 +1136,7 @@
     "description": "Shown instead of a key combination when the user has not bound the command. Use Chrome's own wording for an unbound shortcut (Not set)."
   },
   "options_shortcut_open": {
-    "message": "Configurar acceso directo",
+    "message": "Asignar acceso directo",
     "description": "Button that opens chrome://extensions/shortcuts, where the user binds the key combination."
   },
   "engine_cycle_label": {
@@ -1158,11 +1158,11 @@
     "description": "Explains that the toolbar popup has nothing to switch: the current tab is not in a split view that Split Search opened. \"Split view\" must match Chrome's term. Keep Split Search untranslated."
   },
   "popup_idle_hint": {
-    "message": "Prueba a buscar en la barra de direcciones o arrastra texto a la barra de pestañas.",
+    "message": "Busca desde la barra de direcciones o arrastra texto a la barra de pestañas.",
     "description": "Popup, under popup_not_ours: what to try to open a split view."
   },
   "popup_shortcut_label": {
-    "message": "Siguiente a la derecha",
+    "message": "Siguiente buscador a la derecha",
     "description": "Popup footer, before the key combination of the shortcut that switches the right side to the next engine."
   },
   "popup_query_label": {
@@ -1310,7 +1310,7 @@
     "description": "Privacy note: what is sent to the chosen engine."
   },
   "options_lookup_notes_title": {
-    "message": "Notas y límites",
+    "message": "Notas y limitaciones",
     "description": "Summary of the collapsed notes block in the right-click lookup card (privacy note and image limitations)."
   },
   "catalog_image_title": {

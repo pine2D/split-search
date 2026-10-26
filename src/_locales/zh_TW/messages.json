@@ -36,7 +36,7 @@
     "description": "Error on the trigger page when it was opened without a trigger URL (e.g. typed directly); the user should start a search from the address bar or by drag-and-drop instead."
   },
   "go_err_config_unreadable": {
-    "message": "讀取設定失敗，也無法辨識觸發網址，沒有可開啟的搜尋。請重新載入擴充功能後再搜尋一次。",
+    "message": "讀取設定失敗，也無法辨識觸發網址，沒有可開啟的搜尋。請在擴充功能頁面（chrome://extensions）重新載入 Split Search，然後再搜尋一次。",
     "description": "Error on the trigger page: the settings could not be read and the trigger URL is not a usable http(s) URL, so not even the left search can be opened."
   },
   "go_err_bad_template": {
@@ -104,8 +104,8 @@
     "description": "Error page after a search: the _ss marker parameter in the trigger URL is malformed."
   },
   "err_unknown_engine": {
-    "message": "這個網站搜尋指向的引擎「$ENGINE_ID$」已被刪除、隱藏或改名。請到 Chrome 搜尋引擎設定刪除或修正這個網站搜尋，或在設定頁重新新增這個引擎。",
-    "description": "Error page after a search: the trigger URL names an engine id that does not exist (deleted or hidden).",
+    "message": "找不到這筆網站搜尋指向的引擎「$ENGINE_ID$」。這個引擎可能已被刪除或隱藏，也可能是這筆網站搜尋的網址被修改過。請到 Chrome 搜尋引擎設定刪除或修正這筆網站搜尋，或在設定頁重新新增這個引擎。",
+    "description": "Error page after a search: the trigger URL names an engine id that does not exist (the engine was deleted or hidden, or the site search URL was edited).",
     "placeholders": {
       "ENGINE_ID": {
         "content": "$1",
@@ -124,7 +124,7 @@
     }
   },
   "err_template_mismatch": {
-    "message": "觸發網址與左側引擎目前的網址範本不一致，可能是引擎被修改過。請到設定頁重新複製觸發網址，並更新網站搜尋。",
+    "message": "觸發網址與左側引擎目前的網址範本不一致，可能是這個引擎的網址被修改過。請到設定頁重新複製觸發網址，再用它更新這筆網站搜尋。",
     "description": "Error page after a search: the trigger URL no longer matches the left engine's current template; the user must copy the trigger URL again from the settings page."
   },
   "err_config_too_large": {
@@ -152,11 +152,11 @@
     }
   },
   "err_id_format": {
-    "message": "id 只能包含小寫字母、數字和 -，長度 1–20",
+    "message": "ID 只能包含小寫字母、數字和 -，長度 1–20",
     "description": "Error in the engine dialog: the engine id has invalid characters or length."
   },
   "err_id_taken": {
-    "message": "id「$ID$」已被使用，請換一個",
+    "message": "ID「$ID$」已被使用，請換一個",
     "description": "Error in the engine dialog: another engine already uses this id.",
     "placeholders": {
       "ID": {
@@ -166,7 +166,7 @@
     }
   },
   "err_id_exhausted": {
-    "message": "id「$ID$」和 $ID$-2 至 $ID$-99 都已被使用，請先刪除一些引擎再新增",
+    "message": "ID「$ID$」和 $ID$-2 至 $ID$-99 都已被使用，請先刪除一些引擎再新增",
     "description": "Error when adding from the engine catalog: the catalog id and every numbered variant (id-2 … id-99) are already used by other engines.",
     "placeholders": {
       "ID": {
@@ -350,15 +350,15 @@
     "description": "Summary of the collapsed “Advanced” section in the add-engine dialog; it holds the engine id field."
   },
   "options_dlg_id_label": {
-    "message": "id",
+    "message": "ID",
     "description": "Label of the engine id field in the add-engine dialog."
   },
   "options_dlg_id_hint_add": {
-    "message": "依名稱自動產生，也可以自行修改。只能使用小寫字母、數字和 -，1–20 個字元；建立後無法修改，會寫進觸發網址。",
+    "message": "依名稱自動產生，也可以自行修改。只能使用小寫字母、數字和 -，1–20 個字元。它會寫進觸發網址，建立後就無法修改。",
     "description": "Hint under the id field when adding an engine: the id is filled in from the name and can be edited; allowed characters and length; it cannot be changed later because it is written into the trigger URL."
   },
   "options_dlg_id_readonly": {
-    "message": "id：$ID$。建立後無法修改（已儲存的網站搜尋網址中含有它）。",
+    "message": "ID：$ID$。已儲存的網站搜尋網址中含有它，建立後無法修改。",
     "description": "Read-only line in the edit-engine dialog showing the engine id. $ID$ is the id.",
     "placeholders": {
       "ID": {
@@ -788,7 +788,7 @@
     "description": "Get started step 1 heading: grant access to the default pair's engine sites."
   },
   "setup_grant_text": {
-    "message": "Split Search 要在左側 $LEFT$ 的網站上把搜尋轉成分割畫面，所以必須授權這個網站。再授權右側的 $RIGHT$，之後再次搜尋時就能直接更新已開啟的分割畫面。授權只限這兩個網站。",
+    "message": "Split Search 要在左側 $LEFT$ 的網站上把搜尋轉成分割畫面，所以必須授權這個網站。如果也授權右側的 $RIGHT$，再次搜尋時就會直接更新已開啟的分割畫面。授權只限這兩個網站。",
     "description": "Get started step 1: why access to the left (required) and right (recommended) engine sites is needed. Plain words, no talk of intercepting requests.",
     "placeholders": {
       "LEFT": {
@@ -856,7 +856,7 @@
     }
   },
   "setup_right_hint": {
-    "message": "也建議授權右側的 $RIGHT$：再次搜尋時就能直接更新已開啟的分割畫面。",
+    "message": "也建議授權右側的 $RIGHT$：再次搜尋時就會直接更新已開啟的分割畫面。",
     "description": "Get started step 1, after the left engine is granted: why the right engine's site is still worth granting.",
     "placeholders": {
       "RIGHT": {
@@ -870,7 +870,7 @@
     "description": "Get started step 2 heading. \"Site search\" and \"Make default\" are Chrome's terms (see docs/i18n/chrome-terms.md)."
   },
   "setup_add_text": {
-    "message": "把下方的設定網址複製到網址列開啟，在「網站搜尋」區塊點選「新增」：「姓名」隨意填，「搜尋捷徑」自訂，「以 %s 取代查詢的網址」貼上觸發網址；新增後在這個項目的 ⋮ 選單中選「設為預設」。",
+    "message": "把下方的設定網址複製到網址列開啟，在「網站搜尋」區塊點選「新增」：「姓名」隨意填，「搜尋捷徑」自訂，「以 %s 取代查詢的網址」貼上觸發網址，再點選「新增」。最後在這個項目的 ⋮ 選單中選「設為預設」。",
     "description": "Get started step 2 in one sentence: open Chrome's search engine settings (address below), add a site search, fill in its three fields, save, and make it default. Field and menu names must match Chrome's labels; ⋮ is the More actions menu icon."
   },
   "setup_trigger_label": {
@@ -894,7 +894,7 @@
     "description": "Get started step 3 button: opens a sample search with the default pair in a new tab."
   },
   "setup_try_hint": {
-    "message": "會用預設組合搜尋「$QUERY$」。接著到網址列搜尋任何內容，只要開啟了分割畫面，就代表設定完成。",
+    "message": "點一下會用預設組合搜尋「$QUERY$」。接著在網址列隨意搜尋，只要開啟了分割畫面，就代表設定完成。",
     "description": "Under the Try it button: what it opens, and how to finish setup (a real search from the address bar). The placeholder is setup_sample_query.",
     "placeholders": {
       "QUERY": {

@@ -36,7 +36,7 @@
     "description": "Error on the trigger page when it was opened without a trigger URL (e.g. typed directly); the user should start a search from the address bar or by drag-and-drop instead."
   },
   "go_err_config_unreadable": {
-    "message": "读取设置失败，触发网址也无法识别，没有可打开的搜索。请重新加载扩展后再搜索一次。",
+    "message": "读取设置失败，触发网址也无法识别，没有可打开的搜索。请在扩展程序页面（chrome://extensions）重新加载 Split Search，然后再搜索一次。",
     "description": "Error on the trigger page: the settings could not be read and the trigger URL is not a usable http(s) URL, so not even the left search can be opened."
   },
   "go_err_bad_template": {
@@ -104,8 +104,8 @@
     "description": "Error page after a search: the _ss marker parameter in the trigger URL is malformed."
   },
   "err_unknown_engine": {
-    "message": "这条网站搜索指向的引擎“$ENGINE_ID$”已被删除、隐藏或改名。请到 Chrome 搜索引擎设置里删掉或改正这条网站搜索，或在设置页重新添加这个引擎。",
-    "description": "Error page after a search: the trigger URL names an engine id that does not exist (deleted or hidden).",
+    "message": "找不到这条网站搜索指向的引擎“$ENGINE_ID$”。它可能已被删除或隐藏，也可能是这条网站搜索的网址被改过。请到 Chrome 搜索引擎设置里删掉或改正这条网站搜索，或在设置页重新添加这个引擎。",
+    "description": "Error page after a search: the trigger URL names an engine id that does not exist (the engine was deleted or hidden, or the site search URL was edited).",
     "placeholders": {
       "ENGINE_ID": {
         "content": "$1",
@@ -124,7 +124,7 @@
     }
   },
   "err_template_mismatch": {
-    "message": "触发网址与左侧引擎当前的网址模板不一致，可能是引擎改过。请到设置页重新复制触发网址，并更新网站搜索。",
+    "message": "触发网址与左侧引擎当前的网址模板不一致，可能是这个引擎的网址改过。请到设置页重新复制触发网址，再用它更新这条网站搜索。",
     "description": "Error page after a search: the trigger URL no longer matches the left engine's current template; the user must copy the trigger URL again from the settings page."
   },
   "err_config_too_large": {
@@ -152,11 +152,11 @@
     }
   },
   "err_id_format": {
-    "message": "id 只能由小写字母、数字和 - 组成，长度 1–20",
+    "message": "ID 只能由小写字母、数字和 - 组成，长度 1–20",
     "description": "Error in the engine dialog: the engine id has invalid characters or length."
   },
   "err_id_taken": {
-    "message": "id “$ID$” 已被占用，请换一个",
+    "message": "ID “$ID$” 已被占用，请换一个",
     "description": "Error in the engine dialog: another engine already uses this id.",
     "placeholders": {
       "ID": {
@@ -166,7 +166,7 @@
     }
   },
   "err_id_exhausted": {
-    "message": "id “$ID$” 和 $ID$-2 至 $ID$-99 都已被占用，请先删除一些引擎再添加",
+    "message": "ID “$ID$” 和 $ID$-2 至 $ID$-99 都已被占用，请先删除一些引擎再添加",
     "description": "Error when adding from the engine catalog: the catalog id and every numbered variant (id-2 … id-99) are already used by other engines.",
     "placeholders": {
       "ID": {
@@ -350,15 +350,15 @@
     "description": "Summary of the collapsed “Advanced” section in the add-engine dialog; it holds the engine id field."
   },
   "options_dlg_id_label": {
-    "message": "id",
+    "message": "ID",
     "description": "Label of the engine id field in the add-engine dialog."
   },
   "options_dlg_id_hint_add": {
-    "message": "按名称自动生成，也可以自己改。只能用小写字母、数字和 -，1–20 个字符；创建后不能修改，会写进触发网址。",
+    "message": "按名称自动生成，也可以自己改。只能用小写字母、数字和 -，1–20 个字符。它会写进触发网址，创建后不能再改。",
     "description": "Hint under the id field when adding an engine: the id is filled in from the name and can be edited; allowed characters and length; it cannot be changed later because it is written into the trigger URL."
   },
   "options_dlg_id_readonly": {
-    "message": "id：$ID$。创建后不能修改（它写在已保存的网站搜索网址里）。",
+    "message": "ID：$ID$。它写在已保存的网站搜索网址里，创建后不能修改。",
     "description": "Read-only line in the edit-engine dialog showing the engine id. $ID$ is the id.",
     "placeholders": {
       "ID": {
@@ -788,7 +788,7 @@
     "description": "Get started step 1 heading: grant access to the default pair's engine sites."
   },
   "setup_grant_text": {
-    "message": "Split Search 要在左侧 $LEFT$ 的网站上把搜索转成拆分视图，所以必须授权这个网站。也授权右侧 $RIGHT$ 的话，下次搜索会直接更新已打开的拆分视图。只授权这两个网站。",
+    "message": "Split Search 要在左侧 $LEFT$ 的网站上把搜索转成拆分视图，所以必须授权这个网站。如果也授权右侧 $RIGHT$，再次搜索时会直接更新已打开的拆分视图。授权范围只有这两个网站。",
     "description": "Get started step 1: why access to the left (required) and right (recommended) engine sites is needed. Plain words, no talk of intercepting requests.",
     "placeholders": {
       "LEFT": {
@@ -802,7 +802,7 @@
     }
   },
   "setup_grant_text_left": {
-    "message": "Split Search 要在左侧 $LEFT$ 的网站上把搜索转成拆分视图，所以必须授权这个网站。只授权这一个网站。",
+    "message": "Split Search 要在左侧 $LEFT$ 的网站上把搜索转成拆分视图，所以必须授权这个网站。授权范围只有这一个网站。",
     "description": "Get started step 1 when only the left engine needs access (the right one is the same engine or already granted).",
     "placeholders": {
       "LEFT": {
@@ -856,7 +856,7 @@
     }
   },
   "setup_right_hint": {
-    "message": "也建议授权右侧 $RIGHT$：下次搜索会直接更新已打开的拆分视图。",
+    "message": "也建议授权右侧 $RIGHT$：再次搜索时会直接更新已打开的拆分视图。",
     "description": "Get started step 1, after the left engine is granted: why the right engine's site is still worth granting.",
     "placeholders": {
       "RIGHT": {
@@ -870,7 +870,7 @@
     "description": "Get started step 2 heading. \"Site search\" and \"Make default\" are Chrome's terms (see docs/i18n/chrome-terms.md)."
   },
   "setup_add_text": {
-    "message": "把下面的设置地址复制到地址栏打开，在“网站搜索”一栏点“添加”：名称随意，快捷字词自定，网址格式粘贴触发网址；保存后在这一条的 ⋮ 菜单里选“设为默认选项”。",
+    "message": "把下面的设置地址复制到地址栏打开，在“网站搜索”一栏点“添加”：名称随意，快捷字词自定，在“网址格式”一栏粘贴触发网址，再点“添加”。然后在这一条的 ⋮ 菜单里选“设为默认选项”。",
     "description": "Get started step 2 in one sentence: open Chrome's search engine settings (address below), add a site search, fill in its three fields, save, and make it default. Field and menu names must match Chrome's labels; ⋮ is the More actions menu icon."
   },
   "setup_trigger_label": {
@@ -894,7 +894,7 @@
     "description": "Get started step 3 button: opens a sample search with the default pair in a new tab."
   },
   "setup_try_hint": {
-    "message": "会用默认组合搜索“$QUERY$”。再到地址栏搜点什么，拆分视图打开了，就说明设置完成。",
+    "message": "点一下会用默认组合搜索“$QUERY$”。之后在地址栏随便搜点什么，能打开拆分视图，就说明设置完成。",
     "description": "Under the Try it button: what it opens, and how to finish setup (a real search from the address bar). The placeholder is setup_sample_query.",
     "placeholders": {
       "QUERY": {
@@ -928,7 +928,7 @@
     "description": "Get started card heading when setup was done before but the left engine's site is not granted now."
   },
   "setup_regrant_text": {
-    "message": "左侧 $LEFT$ 没有授权，现在搜索只会打开普通的 $LEFT$ 搜索。",
+    "message": "左侧 $LEFT$ 目前没有授权，搜索只会打开普通的 $LEFT$ 搜索。",
     "description": "Get started card when setup was done before but the left engine's site is not granted now: searches fall back to a plain search.",
     "placeholders": {
       "LEFT": {

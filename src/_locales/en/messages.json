@@ -32,11 +32,11 @@
     "description": "Button on the trigger page error screen: open only the left engine's search (a normal search, no split view)."
   },
   "go_err_no_trigger": {
-    "message": "No trigger URL was received. Search from the address bar, or drag text onto the tab strip. Don’t open this page directly.",
+    "message": "This page didn’t receive a trigger URL. Search from the address bar or drag text onto the tab strip instead of opening this page directly.",
     "description": "Error on the trigger page when it was opened without a trigger URL (e.g. typed directly); the user should start a search from the address bar or by drag-and-drop instead."
   },
   "go_err_config_unreadable": {
-    "message": "The settings couldn’t be read and the trigger URL isn’t recognized, so there is no search to open. Reload the extension and search again.",
+    "message": "The settings couldn’t be read and the trigger URL isn’t recognized, so there’s no search to open. Reload Split Search on the Extensions page (chrome://extensions), then search again.",
     "description": "Error on the trigger page: the settings could not be read and the trigger URL is not a usable http(s) URL, so not even the left search can be opened."
   },
   "go_err_bad_template": {
@@ -50,11 +50,11 @@
     }
   },
   "go_err_bad_url": {
-    "message": "The trigger URL isn’t recognized. It may have been cut off or changed. Search again, or copy the trigger URL again from the settings page.",
+    "message": "The trigger URL isn’t recognized. It may have been cut off or changed. Search again, or copy a fresh trigger URL from the settings page.",
     "description": "Error on the trigger page: the trigger URL cannot be parsed; the user should search again or copy the trigger URL again from the settings page."
   },
   "go_err_not_left": {
-    "message": "The URL of $ENGINE$ can’t be used for the left engine. Check its URL on the settings page, or pick another left engine.",
+    "message": "$ENGINE$’s URL can’t be used on the left. Check its URL on the settings page, or pick a different left engine.",
     "description": "Error on the trigger page: the left engine's URL template cannot be used as the left side of a split view. The placeholder is the engine name (not translated).",
     "placeholders": {
       "ENGINE": {
@@ -104,8 +104,8 @@
     "description": "Error page after a search: the _ss marker parameter in the trigger URL is malformed."
   },
   "err_unknown_engine": {
-    "message": "This site search points to the engine “$ENGINE_ID$”, which was deleted, hidden or renamed. In Chrome’s search engine settings, delete or fix the site search, or add the engine again on the settings page.",
-    "description": "Error page after a search: the trigger URL names an engine id that does not exist (deleted or hidden).",
+    "message": "Split Search can’t find the engine “$ENGINE_ID$” that this site search points to. It may have been deleted or hidden, or the site search’s URL may have been edited. Delete or fix the site search in Chrome’s search engine settings, or add the engine again on the settings page.",
+    "description": "Error page after a search: the trigger URL names an engine id that does not exist (the engine was deleted or hidden, or the site search URL was edited).",
     "placeholders": {
       "ENGINE_ID": {
         "content": "$1",
@@ -124,7 +124,7 @@
     }
   },
   "err_template_mismatch": {
-    "message": "The trigger URL doesn’t match the left engine’s current URL template. The engine may have been edited. Copy the trigger URL again from the settings page and update the site search.",
+    "message": "The trigger URL doesn’t match the left engine’s current URL template, possibly because the engine’s URL was edited. Copy the trigger URL again from the settings page and update the site search with it.",
     "description": "Error page after a search: the trigger URL no longer matches the left engine's current template; the user must copy the trigger URL again from the settings page."
   },
   "err_config_too_large": {
@@ -152,11 +152,11 @@
     }
   },
   "err_id_format": {
-    "message": "The id must be 1 to 20 characters: lowercase letters, digits or -",
+    "message": "The ID must be 1 to 20 characters: lowercase letters, digits or -",
     "description": "Error in the engine dialog: the engine id has invalid characters or length."
   },
   "err_id_taken": {
-    "message": "The id “$ID$” is already taken. Choose another one.",
+    "message": "The ID “$ID$” is already taken. Choose another one.",
     "description": "Error in the engine dialog: another engine already uses this id.",
     "placeholders": {
       "ID": {
@@ -166,7 +166,7 @@
     }
   },
   "err_id_exhausted": {
-    "message": "The id “$ID$” and $ID$-2 through $ID$-99 are all taken. Delete some engines, then try again.",
+    "message": "The ID “$ID$” and $ID$-2 through $ID$-99 are all taken. Delete some engines, then try again.",
     "description": "Error when adding from the engine catalog: the catalog id and every numbered variant (id-2 … id-99) are already used by other engines.",
     "placeholders": {
       "ID": {
@@ -350,15 +350,15 @@
     "description": "Summary of the collapsed “Advanced” section in the add-engine dialog; it holds the engine id field."
   },
   "options_dlg_id_label": {
-    "message": "id",
+    "message": "ID",
     "description": "Label of the engine id field in the add-engine dialog."
   },
   "options_dlg_id_hint_add": {
-    "message": "Filled in from the name; you can change it. Lowercase letters, digits and -, 1 to 20 characters. It goes into the trigger URL, so you can’t change it later.",
+    "message": "Filled in from the name; you can change it now. Lowercase letters, digits and -, 1 to 20 characters. It goes into the trigger URL, so it can’t be changed later.",
     "description": "Hint under the id field when adding an engine: the id is filled in from the name and can be edited; allowed characters and length; it cannot be changed later because it is written into the trigger URL."
   },
   "options_dlg_id_readonly": {
-    "message": "id: $ID$. It can’t be changed after the engine is created (it’s part of the site search URLs you saved).",
+    "message": "ID: $ID$. It can’t be changed because it’s part of the site search URLs you saved.",
     "description": "Read-only line in the edit-engine dialog showing the engine id. $ID$ is the id.",
     "placeholders": {
       "ID": {
@@ -788,7 +788,7 @@
     "description": "Get started step 1 heading: grant access to the default pair's engine sites."
   },
   "setup_grant_text": {
-    "message": "Split Search turns searches on the left engine’s site, $LEFT$, into a split view, so it needs access to that site. Allow the right engine, $RIGHT$, too, and searching again updates the split view that’s already open. Access covers only these two sites.",
+    "message": "Split Search turns searches on the left engine’s site, $LEFT$, into a split view, so it needs access to that site. If you also allow the right engine, $RIGHT$, a new search updates the split view that’s already open. Access covers only these two sites.",
     "description": "Get started step 1: why access to the left (required) and right (recommended) engine sites is needed. Plain words, no talk of intercepting requests.",
     "placeholders": {
       "LEFT": {
@@ -870,7 +870,7 @@
     "description": "Get started step 2 heading. \"Site search\" and \"Make default\" are Chrome's terms (see docs/i18n/chrome-terms.md)."
   },
   "setup_add_text": {
-    "message": "Paste the settings address below into the address bar. Under “Site search”, click “Add”, enter any name and a shortcut of your choice, and paste the trigger URL into “URL with %s in place of query”. Save, then choose “Make default” from the entry’s ⋮ menu.",
+    "message": "Paste the settings address below into the address bar. Under “Site search”, click “Add”. Enter any name and a shortcut of your choice, paste the trigger URL into “URL with %s in place of query”, and click “Add”. Then choose “Make default” from the new entry’s ⋮ menu.",
     "description": "Get started step 2 in one sentence: open Chrome's search engine settings (address below), add a site search, fill in its three fields, save, and make it default. Field and menu names must match Chrome's labels; ⋮ is the More actions menu icon."
   },
   "setup_trigger_label": {
