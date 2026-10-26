@@ -1,6 +1,6 @@
 # 隐私做法与隐私政策
 
-> 状态：v0.2.0 已于 2026-10-25 提交；本文件已按 v0.4 代码改写（2026-10-25），下次上传时照此更新控制台的“隐私做法”。公开版本在 `docs/privacy.md`、`docs/privacy.zh-CN.md`（GitHub Pages）。全文只写当前版本的完整做法，版本间的差别写在 `CHANGELOG.md`。
+> 状态：v0.2.0 已于 2026-10-25 提交；本文件已按 v0.4 代码改写（2026-10-25；2026-10-26 界面翻新补了 `storage.local` 的 `setupDone`），下次上传时照此更新控制台的“隐私做法”。公开版本在 `docs/privacy.md`、`docs/privacy.zh-CN.md`（GitHub Pages）。全文只写当前版本的完整做法，版本间的差别写在 `CHANGELOG.md`。
 > 前半部分是控制台“隐私做法”标签页各栏的填写建议。审核员读英文，所以可粘贴的文字用英文，说明用中文。后半部分 (f) 是隐私政策全文（中英两版），需要托管在公开网址上。
 > 依据：`src/manifest.json`、`src/background.js`、`src/go.js`、`src/popup/popup.js`、`src/popup/complete.js`、`src/lib/rules.js`、`src/lib/engines.js`、`src/lib/image-engines.js`、`src/lib/split-owner.js`、`src/lib/split-decision.js`、`src/lib/lookup-input.js`、`src/lib/menu-spec.js`、`src/lib/result-match.js`、`src/lib/messages.js`、`src/chrome/config-store.js`、`src/chrome/split-state.js`、`src/chrome/split-actions.js`、`src/chrome/right-switch.js`、`src/chrome/menus.js`、`src/chrome/lookup-actions.js`、`src/chrome/complete-actions.js`、`src/chrome/i18n.js`、`src/options/ui.js`、`src/options/shortcut.js`、`src/options/lookup.js`、`src/options/setup.js`（核对日期 2026-10-25，对应 v0.4；2026-10-26 界面翻新补核 `storage.local`）。
 
@@ -71,10 +71,10 @@ Used for exactly one dynamic redirect rule. It matches only top-level (main_fram
 ### storage
 
 ```text
-chrome.storage.sync stores only the user’s settings: custom search engines (id, name, URL template, and whether an engine is recommended for the right side only), renamed or hidden built-in engines, engine order, the default engine pair, the interface language, how narrow windows open the right side, which engines the keyboard shortcut skips, the right-click lookup engines, and custom image search engines (name and URL template). Chrome syncs it only if Chrome sync is on; it never contains search terms, selected text or image addresses. chrome.storage.session keeps, in memory only, a record for each pair of tabs the extension opened: the other tab’s ID, the split view ID, each tab’s role, its engine, and what was searched (search terms, selected text or an image address). The popup and keyboard shortcut use it to show the current search and switch engines. It is not synced and is cleared when the tab or browser closes. chrome.storage.local holds a single true/false value that records whether the user finished the setup steps on the settings page; it contains nothing else.
+chrome.storage.sync holds only settings: custom engines (id, name, URL template, right-only flag), renamed or hidden built-in engines, engine order, the default pair, the interface language, how narrow windows open the right side, which engines the shortcut skips, the right-click lookup engines, and custom image search engines (name, URL template). Chrome syncs it only if Chrome sync is on; it never contains search terms, selected text or image addresses. chrome.storage.session keeps, in memory only, a record for each pair of tabs the extension opened: the other tab’s ID, the split view ID, each tab’s role and engine, and what was searched (search terms, selected text or an image address). The popup and shortcut use it to show the current search and switch engines. It is not synced and is cleared when the tab or browser closes. chrome.storage.local holds one true/false setup flag.
 ```
 
-字数：932
+字数：893
 
 ### Host permissions（optional_host_permissions）
 
