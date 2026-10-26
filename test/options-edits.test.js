@@ -245,3 +245,11 @@ test("生成器：用户改过的选择仍然有效就保留，失效才重新�
   // 右侧引擎不在列表里
   assert.deepEqual(generatorPick(PRESETS, ["google", "bing"], ["kagi", "gone"]), ["google", "ddg"]);
 });
+test("生成器：没改过的初值跟着默认组合变，不会停在新的默认组合上", () => {
+  // 设置页只把用户在下拉框里改过的选择作 prev 传入；初值不传，重渲染时按新的默认组合重新算
+  const first = generatorPick(PRESETS, ["google", "bing"]);
+  assert.deepEqual(first, ["google", "ddg"]);
+  const next = generatorPick(PRESETS, ["google", "ddg"]);
+  assert.deepEqual(next, ["google", "bing"]);
+  assert.notDeepEqual(next, ["google", "ddg"]);
+});

@@ -6,7 +6,9 @@ import { t } from "../chrome/i18n.js";
 
 export const SETTINGS_URL = "chrome://settings/searchEngines";
 
-let gen = null; // 生成器当前选择 [leftId, rightId]，跨重渲染保留（仍有效时，见 generatorPick）
+// 用户在生成器里亲手选过的 [leftId, rightId]，跨重渲染保留（仍有效时，见 generatorPick）。
+// 只在下拉框的 change 里记下；没改过时每次渲染都按当前默认组合重新取初值，默认组合改了初值跟着变
+let userGen = null;
 
 export function setupGuide() {
   const slot = document.getElementById("settings-url-copy");
@@ -51,17 +53,19 @@ export function renderTriggers(ctx) {
 
   // 其他组合：普通的左右两个下拉框（不用默认组合卡的窗格，免得看起来像在改默认组合），整段默认收起
   const lefts = cfg.engines.filter(canBeLeft);
-  gen = generatorPick(cfg.engines, cfg.defaultPair, gen);
+  const gen = generatorPick(cfg.engines, cfg.defaultPair, userGen);
+  if (userGen && (gen[0] !== userGen[0] || gen[1] !== userGen[1])) userGen = null; // 用户的选择已失效
   const out = h("div", { class: "gen-output" });
   const leftSel = h("select", { id: "gen-left" },
     lefts.map(e => option(e.id, e.leftDiscouraged ? t("engine_left_discouraged_suffix", e.name) : e.name, e.id === gen[0])));
   const rightSel = h("select", { id: "gen-right" }, cfg.engines.map(e => option(e.id, e.name, e.id === gen[1])));
-  const update = () => {
-    gen = [leftSel.value, rightSel.value];
-    out.replaceChildren(...genOutput(byId.get(gen[0]), byId.get(gen[1]), ctx));
+  const update = () => out.replaceChildren(...genOutput(byId.get(leftSel.value), byId.get(rightSel.value), ctx));
+  const pick = () => {
+    userGen = [leftSel.value, rightSel.value];
+    update();
   };
-  leftSel.addEventListener("change", update);
-  rightSel.addEventListener("change", update);
+  leftSel.addEventListener("change", pick);
+  rightSel.addEventListener("change", pick);
 
   frag.append(h("div", { class: "trigger-card" },
     disclosure("guide-other", "guide_other_pairs_title",
