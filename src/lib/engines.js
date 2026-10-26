@@ -156,3 +156,14 @@ export function isIdTaken(id, stored = {}) {
 export function engineOrigin(engine) {
   return new URL(engine.url.replace("%s", "x")).origin;
 }
+
+// 申请与查询 host 权限用的模式：只给精确 origin（<origin>/*）；含 * 的模式等于宽泛权限、网址解析不了，都返回 null。
+// 设置页（options/ui.js）与弹窗（popup/idle.js）共用
+export function originPattern(engine) {
+  try {
+    const origin = engineOrigin(engine);
+    return origin.includes("*") ? null : origin + "/*";
+  } catch {
+    return null;
+  }
+}

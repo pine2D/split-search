@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { PRESETS, DEFAULT_PAIR, ID_PATTERN, validateTemplate, mergeConfig, isIdTaken, engineOrigin,
+import { PRESETS, DEFAULT_PAIR, ID_PATTERN, validateTemplate, mergeConfig, isIdTaken, engineOrigin, originPattern,
   enginesFor, engineById, cleanImageEngines } from "../src/lib/engines.js";
 import { IMAGE_CATALOG } from "../src/lib/image-engines.js";
 
@@ -247,4 +247,14 @@ test("isIdTaken 同时查两套引擎", () => {
   assert.equal(isIdTaken("lens", {}), true);
   assert.equal(isIdTaken("bing-img", { imageEngines: [IMAGE_CATALOG[0]] }), true);
   assert.equal(isIdTaken("bing-img", {}), false);
+});
+
+test("originPattern（设置页与弹窗共用）：精确 origin + /*", () => {
+  assert.equal(originPattern({ url: "https://kagi.com/search?q=%s" }), "https://kagi.com/*");
+  assert.equal(originPattern({ url: "http://127.0.0.1:8080/?q=%s" }), "http://127.0.0.1:8080/*");
+});
+test("originPattern：含 * 或无法解析时不生成（不会申请宽泛权限）", () => {
+  assert.equal(originPattern({ url: "https://*/?q=%s" }), null);
+  assert.equal(originPattern({ url: "https://*.example.com/?q=%s" }), null);
+  assert.equal(originPattern({ url: "not a url" }), null);
 });

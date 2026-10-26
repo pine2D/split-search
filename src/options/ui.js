@@ -1,5 +1,5 @@
 // 设置页的 DOM 小工具。所有文字都用 textContent / 文本节点写入，不用 innerHTML。
-import { engineOrigin } from "../lib/engines.js";
+import { originPattern } from "../lib/engines.js";
 import { errorKey } from "../lib/errors.js";
 import { t, setI18nText, currentLocale } from "../chrome/i18n.js";
 import { safeError } from "../lib/safe-error.js";
@@ -150,16 +150,7 @@ export function copyButton(getText, label = ["common_copy"], ariaKey = null) {
 
 // ---- host 权限 ----
 
-// 只为精确 origin 申请；含 * 的模式等于宽泛权限，一律不生成
-export function originPattern(engine) {
-  try {
-    const origin = engineOrigin(engine);
-    return origin.includes("*") ? null : origin + "/*";
-  } catch {
-    return null;
-  }
-}
-
+// 只为精确 origin 申请（originPattern 见 lib/engines.js，含 * 的模式一律不生成）
 // 每次渲染实时查询，不缓存
 export async function isGranted(engine) {
   const pattern = originPattern(engine);
