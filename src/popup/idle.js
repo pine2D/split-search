@@ -4,6 +4,7 @@
 import { pane, panes } from "../ui/panes.js";
 import { engineById, originPattern } from "../lib/engines.js";
 import { idleView } from "../lib/popup-view.js";
+import { REVEAL_SETUP, pickOptionsTab } from "../lib/messages.js";
 import { safeArgs } from "../lib/safe-error.js";
 import { t, setI18nText } from "../chrome/i18n.js";
 import { currentShortcut, openShortcutsPage } from "../chrome/shortcuts.js";
@@ -12,7 +13,7 @@ import { readSetupDone } from "../chrome/setup-store.js";
 const $ = (id) => document.getElementById(id);
 const log = (...args) => console.error("[split-search]", ...safeArgs(args));
 const info = (...args) => console.info("[split-search]", ...safeArgs(args));
-// 设置页的“开始使用”卡；设置页按 #setup 滚到卡片并把焦点给它（卡片不显示时什么都不做）
+// 设置页的“开始使用”卡；新开的设置页按 #setup 滚到卡片并把焦点给它（卡片不显示时什么都不做）
 const SETUP_PAGE = "options/options.html#setup";
 
 function el(tag, props = {}, key = null) {
@@ -52,15 +53,49 @@ export async function readSetupState(cfg) {
   return { leftGranted: granted, setupDone };
 }
 
-function openSetup() {
-  Promise.resolve().then(() => chrome.tabs.create({ url: chrome.runtime.getURL(SETUP_PAGE) }))
+function createSetup() {
+  return Promise.resolve().then(() => chrome.tabs.create({ url: chrome.runtime.getURL(SETUP_PAGE) }))
     .catch((err) => log("popup: opening Get started failed", err));
+}
+
+// 已开的设置页（runtime.getContexts 不需要 tabs 权限）：优先弹窗所在窗口里的，其次第一个；没有返回 null
+async function findOptionsTab() {
+  const [contexts, win] = await Promise.all([chrome.runtime.getContexts({ contextTypes: ["TAB"] }), chrome.windows.getCurrent()]);
+  return pickOptionsTab(contexts, { optionsUrl: chrome.runtime.getURL("options/options.html"), windowId: win?.id });
+}
+
+// 有已开的设置页就切过去，再让它自己滚到卡片、焦点给标题（reveal-setup，设置页回复，SW 不回复）；
+// 没有、或切换失败，退回新开 options.html#setup。三个调用同步发出、之后才等结果：
+// 弹窗所在窗口换了活动标签时 Chrome 会立刻关掉弹窗（实测），逐个 await 的话后面的调用发不出去。
+// 不等设置页回复；没有接收者等拒绝只记 info
+async function openSetup() {
+  let found = null;
+  try {
+    found = await findOptionsTab();
+  } catch (err) {
+    info("popup: looking for an open settings page failed", err);
+  }
+  if (!found) return createSetup();
+  const switched = Promise.all([
+    chrome.tabs.update(found.tabId, { active: true }),
+    chrome.windows.update(found.windowId, { focused: true }),
+  ]);
+  chrome.runtime.sendMessage({ type: REVEAL_SETUP, tabId: found.tabId })
+    .catch((err) => info("popup: asking the settings page to show Get started failed", err));
+  try {
+    await switched;
+  } catch (err) {
+    info("popup: switching to the open settings page failed", err);
+    return createSetup();
+  }
+  return undefined;
 }
 
 // “完成设置”（setup 档的主按钮）与 try 档“去第 2 步”的入口都打开设置页的“开始使用”卡。只绑一次
 export function bindIdle() {
-  $("idle-setup-open").addEventListener("click", openSetup);
-  $("idle-setup-link").addEventListener("click", openSetup);
+  const open = () => { openSetup().catch((err) => log("popup: opening Get started failed", err)); };
+  $("idle-setup-open").addEventListener("click", open);
+  $("idle-setup-link").addEventListener("click", open);
 }
 
 // 分屏外：按 idleView 的档位显示引导，再列当前默认组合（缩小的窗格）。cfg 为 null（读配置失败）时不显示组合；

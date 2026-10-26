@@ -5,6 +5,7 @@
 import { buildTriggerTemplate, expandTemplate } from "../lib/trigger.js";
 import { setupView } from "../lib/setup-state.js";
 import { safeArgs } from "../lib/safe-error.js";
+import { acceptRevealSetup } from "../lib/messages.js";
 import { DONE_KEY, readSetupDone, rememberTryTab } from "../chrome/setup-store.js";
 import { h, ht, notify, errorText, authButton } from "./ui.js";
 import { urlBox, leftWarn, SETTINGS_URL } from "./guide.js";
@@ -12,12 +13,14 @@ import { t } from "../chrome/i18n.js";
 import { icon } from "../ui/icons.js";
 
 const log = (...args) => console.error("[split-search]", ...safeArgs(args));
+const info = (...args) => console.info("[split-search]", ...safeArgs(args));
 
 let setupDone = false;
 let doneVersion = 0;        // onChanged 改过 setupDone 就加一：读存储的结果比它旧时不覆盖
 let justCompleted = false;  // 本页看到 setupDone 变成 true：卡片换成一句完成确认，重新打开设置页才消失
 let lastLeft = null;        // 上次渲染时的 { id, granted }，用来播报“左侧授权被取消”
 let rerender = () => {};
+let selfTabId = null;       // 本页所在标签：弹窗的 reveal-setup 只给它选中的那个设置页
 
 // ---- 状态 ----
 
@@ -58,10 +61,21 @@ export function initSetup(render) {
     if (area === "local") onLocal(changes);
   });
   window.addEventListener("hashchange", () => {
-    if (location.hash !== "#setup") return;
-    revealPending = true;
-    revealSetup();
+    if (location.hash === "#setup") requestReveal();
   });
+  chrome.tabs.getCurrent().then(tab => { selfTabId = tab?.id ?? null; })
+    .catch(err => info("options: reading the current tab failed", err));
+  chrome.runtime.onMessage.addListener(onRevealMessage);
+}
+
+// 弹窗的“完成设置”“去第 2 步”找到已开的设置页时发 reveal-setup（同一 hash 再导航一次不会触发 hashchange）：
+// 与 #setup 一样滚到卡片、焦点给标题，卡片不显示时什么都不做。别的消息（complete-split 等）不回复，留给 SW
+function onRevealMessage(msg, sender, sendResponse) {
+  const ctx = { extId: chrome.runtime.id, popupUrl: chrome.runtime.getURL("popup/popup.html"), tabId: selfTabId };
+  if (!acceptRevealSetup(msg, sender, ctx)) return undefined;
+  requestReveal();
+  sendResponse({ ok: true });
+  return undefined;
 }
 
 // ---- 渲染 ----
@@ -155,9 +169,13 @@ const title = (key, props = {}, ...children) => children.length
   ? h("h2", { id: "setup-title", tabindex: "-1", ...props }, ...children)
   : ht("h2", { id: "setup-title", tabindex: "-1", ...props }, key);
 
-// 网址带 #setup（弹窗的“完成设置”“去第 2 步”）：页面第一次显示出来后滚到卡片、焦点给标题；卡片不显示时什么都不做。
-// 只做一次，之后 hash 再变成 #setup 才再做
+// 网址带 #setup（弹窗的“完成设置”“去第 2 步”新开的设置页）：页面第一次显示出来后滚到卡片、焦点给标题；卡片不显示时什么都不做。
+// 只做一次，之后 hash 再变成 #setup 或收到弹窗的 reveal-setup 才再做
 let revealPending = location.hash === "#setup";
+function requestReveal() {
+  revealPending = true;
+  revealSetup();
+}
 export function revealSetup() {
   if (!revealPending) return;
   revealPending = false;
