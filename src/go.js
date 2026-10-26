@@ -9,6 +9,8 @@ import { errorKey } from "./lib/errors.js";
 import { safeArgs } from "./lib/safe-error.js";
 
 const log = (...args) => console.error("[split-search]", ...safeArgs(args));
+// 这两个错误码设置页也用，措辞面向设置页；出错页另有带“怎么办”的文案
+const GO_KEYS = { bad_url: "go_err_bad_url", not_left: "go_err_not_left" };
 const $ = (id) => document.getElementById(id);
 
 // 文案并行加载，不 await：分屏路径（解析、读配置、分屏、跳转）不等它。
@@ -26,6 +28,7 @@ async function showError(key, ...subs) {
   setI18nText($("status"), "go_status_failed");
   setI18nText($("error-message"), key, ...subs);
   $("error").hidden = false;
+  $("open-options").hidden = false;
 }
 
 // “只打开左侧搜索”按钮：去掉 _ss 后的原始网址就是一次普通的左侧搜索；网址不可用时不显示
@@ -72,6 +75,7 @@ async function split(engines, narrowEnabled, { left, right, query }, leftUrl, ri
 
 async function main() {
   $("error").hidden = true;
+  $("open-options").hidden = true;
   $("left-only").hidden = true;
   setStatus("go_status_opening").catch(log);
 
@@ -95,7 +99,8 @@ async function main() {
 
   const parsed = parseTrigger(original, engines);
   if (!parsed.ok) {
-    showError(...(errorKey(parsed.error) ?? ["go_status_failed"])).catch(log);
+    const [key, ...subs] = errorKey(parsed.error) ?? ["go_status_failed"];
+    showError(GO_KEYS[parsed.error.code] ?? key, ...subs).catch(log);
     offerLeftOnly(original).catch(log);
     return;
   }

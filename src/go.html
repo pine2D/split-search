@@ -11,14 +11,15 @@
 </head>
 <body>
   <main>
-    <p id="status" data-i18n="go_status_opening"></p>
+    <img class="logo" src="icons/icon-48.png" alt="" width="40" height="40">
+    <p id="status" role="status" data-i18n="go_status_opening"></p>
     <div id="error" role="alert" hidden>
       <p id="error-message"></p>
-      <button id="open-options" type="button" data-i18n="go_btn_open_options"></button>
     </div>
     <div class="actions">
-      <button id="rerun" type="button" data-i18n="go_btn_rerun" hidden></button>
-      <button id="left-only" type="button" data-i18n="go_btn_left_only" hidden></button>
+      <button id="rerun" class="primary" type="button" data-i18n="go_btn_rerun" hidden></button>
+      <button id="left-only" class="primary" type="button" data-i18n="go_btn_left_only" hidden></button>
+      <button id="open-options" type="button" data-i18n="go_btn_open_options" hidden></button>
     </div>
   </main>
 </body>

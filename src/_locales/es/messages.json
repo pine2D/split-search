@@ -36,20 +36,34 @@
     "description": "Button in the trigger page error box that opens the extension's settings page."
   },
   "go_err_no_trigger": {
-    "message": "No se recibió ninguna URL de activación. Empieza la búsqueda desde la barra de direcciones o arrastrando texto; no abras esta página directamente.",
+    "message": "No se recibió ninguna URL de activación. Busca desde la barra de direcciones o arrastra texto a la barra de pestañas; no abras esta página directamente.",
     "description": "Error on the trigger page when it was opened without a trigger URL (e.g. typed directly); the user should start a search from the address bar or by drag-and-drop instead."
   },
   "go_err_config_unreadable": {
-    "message": "No se pudo leer la configuración y no se reconoce la URL de activación.",
+    "message": "No se pudo leer la configuración ni se reconoce la URL de activación, así que no hay ninguna búsqueda que abrir. Recarga la extensión y busca de nuevo.",
     "description": "Error on the trigger page: the settings could not be read and the trigger URL is not a usable http(s) URL, so not even the left search can be opened."
   },
   "go_err_bad_template": {
-    "message": "La plantilla de URL de $ENGINE$ no es válida. Revísala en la configuración.",
+    "message": "La plantilla de URL de $ENGINE$ no es válida, así que no puede ser el buscador de la izquierda. Revisa su URL en la configuración.",
     "description": "Error on the trigger page: the left engine's URL template is invalid; the user should check it on the settings page. The placeholder is the engine name (not translated).",
     "placeholders": {
       "ENGINE": {
         "content": "$1",
         "example": "Google"
+      }
+    }
+  },
+  "go_err_bad_url": {
+    "message": "No se reconoce la URL de activación; puede que esté cortada o modificada. Busca de nuevo o vuelve a copiarla desde la configuración.",
+    "description": "Error on the trigger page: the trigger URL cannot be parsed; the user should search again or copy the trigger URL again from the settings page."
+  },
+  "go_err_not_left": {
+    "message": "La URL de $ENGINE$ no se puede usar como buscador de la izquierda. Revisa su URL en la configuración o elige otro buscador para la izquierda.",
+    "description": "Error on the trigger page: the left engine's URL template cannot be used as the left side of a split view. The placeholder is the engine name (not translated).",
+    "placeholders": {
+      "ENGINE": {
+        "content": "$1",
+        "example": "Wikipedia"
       }
     }
   },
@@ -90,11 +104,11 @@
     "description": "Error in the URL template field: the template contains the reserved _ss parameter. Do not translate _ss."
   },
   "err_marker_format": {
-    "message": "El parámetro indicador no tiene un formato válido",
+    "message": "El parámetro indicador (_ss) de la URL de activación no tiene un formato válido; debe ser «buscador izquierdo,buscador derecho». Vuelve a copiar la URL desde la configuración.",
     "description": "Error page after a search: the _ss marker parameter in the trigger URL is malformed."
   },
   "err_unknown_engine": {
-    "message": "Buscador desconocido: $ENGINE_ID$",
+    "message": "Esta búsqueda en sitio apunta al buscador «$ENGINE_ID$», que se eliminó, ocultó o cambió de nombre. En los ajustes de buscadores de Chrome, elimina o corrige esa búsqueda en sitio, o vuelve a añadir el buscador en la configuración.",
     "description": "Error page after a search: the trigger URL names an engine id that does not exist (deleted or hidden).",
     "placeholders": {
       "ENGINE_ID": {
@@ -114,7 +128,7 @@
     }
   },
   "err_template_mismatch": {
-    "message": "La URL de activación no coincide con la plantilla actual; vuelve a copiarla desde la configuración",
+    "message": "La URL de activación no coincide con la plantilla actual del buscador de la izquierda; puede que se haya editado. Vuelve a copiar la URL desde la configuración y actualiza la búsqueda en sitio.",
     "description": "Error page after a search: the trigger URL no longer matches the left engine's current template; the user must copy the trigger URL again from the settings page."
   },
   "err_config_too_large": {

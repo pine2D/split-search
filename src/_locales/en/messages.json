@@ -36,20 +36,34 @@
     "description": "Button in the trigger page error box that opens the extension's settings page."
   },
   "go_err_no_trigger": {
-    "message": "No trigger URL was received. Start a search from the address bar or by dragging text. Don’t open this page directly.",
+    "message": "No trigger URL was received. Search from the address bar, or drag text onto the tab strip. Don’t open this page directly.",
     "description": "Error on the trigger page when it was opened without a trigger URL (e.g. typed directly); the user should start a search from the address bar or by drag-and-drop instead."
   },
   "go_err_config_unreadable": {
-    "message": "Couldn’t read the settings, and the trigger URL isn’t recognized.",
+    "message": "The settings couldn’t be read and the trigger URL isn’t recognized, so there is no search to open. Reload the extension and search again.",
     "description": "Error on the trigger page: the settings could not be read and the trigger URL is not a usable http(s) URL, so not even the left search can be opened."
   },
   "go_err_bad_template": {
-    "message": "The URL template for $ENGINE$ is invalid. Check it on the settings page.",
+    "message": "The URL template for $ENGINE$ is invalid, so it can’t be the left engine. Check its URL on the settings page.",
     "description": "Error on the trigger page: the left engine's URL template is invalid; the user should check it on the settings page. The placeholder is the engine name (not translated).",
     "placeholders": {
       "ENGINE": {
         "content": "$1",
         "example": "Google"
+      }
+    }
+  },
+  "go_err_bad_url": {
+    "message": "The trigger URL isn’t recognized. It may have been cut off or changed. Search again, or copy the trigger URL again from the settings page.",
+    "description": "Error on the trigger page: the trigger URL cannot be parsed; the user should search again or copy the trigger URL again from the settings page."
+  },
+  "go_err_not_left": {
+    "message": "The URL of $ENGINE$ can’t be used for the left engine. Check its URL on the settings page, or pick another left engine.",
+    "description": "Error on the trigger page: the left engine's URL template cannot be used as the left side of a split view. The placeholder is the engine name (not translated).",
+    "placeholders": {
+      "ENGINE": {
+        "content": "$1",
+        "example": "Wikipedia"
       }
     }
   },
@@ -90,11 +104,11 @@
     "description": "Error in the URL template field: the template contains the reserved _ss parameter. Do not translate _ss."
   },
   "err_marker_format": {
-    "message": "The marker parameter is malformed",
+    "message": "The marker parameter (_ss) in the trigger URL is malformed. It should be “left engine,right engine”. Copy the trigger URL again from the settings page.",
     "description": "Error page after a search: the _ss marker parameter in the trigger URL is malformed."
   },
   "err_unknown_engine": {
-    "message": "Unknown engine: $ENGINE_ID$",
+    "message": "This site search points to the engine “$ENGINE_ID$”, which was deleted, hidden or renamed. In Chrome’s search engine settings, delete or fix the site search, or add the engine again on the settings page.",
     "description": "Error page after a search: the trigger URL names an engine id that does not exist (deleted or hidden).",
     "placeholders": {
       "ENGINE_ID": {
@@ -114,7 +128,7 @@
     }
   },
   "err_template_mismatch": {
-    "message": "The trigger URL doesn’t match the current template. Copy it again from the settings page.",
+    "message": "The trigger URL doesn’t match the left engine’s current URL template. The engine may have been edited. Copy the trigger URL again from the settings page and update the site search.",
     "description": "Error page after a search: the trigger URL no longer matches the left engine's current template; the user must copy the trigger URL again from the settings page."
   },
   "err_config_too_large": {

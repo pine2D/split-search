@@ -36,20 +36,34 @@
     "description": "Button in the trigger page error box that opens the extension's settings page."
   },
   "go_err_no_trigger": {
-    "message": "没有收到触发网址。请从地址栏或拖拽搜索进入，不要直接打开本页。",
+    "message": "没有收到触发网址。请在地址栏搜索，或把文字拖到标签栏，不要直接打开本页。",
     "description": "Error on the trigger page when it was opened without a trigger URL (e.g. typed directly); the user should start a search from the address bar or by drag-and-drop instead."
   },
   "go_err_config_unreadable": {
-    "message": "读取配置失败，且触发网址无法识别。",
+    "message": "读取设置失败，触发网址也无法识别，没有可打开的搜索。请重新加载扩展后再搜索一次。",
     "description": "Error on the trigger page: the settings could not be read and the trigger URL is not a usable http(s) URL, so not even the left search can be opened."
   },
   "go_err_bad_template": {
-    "message": "$ENGINE$ 的网址模板无效，请到设置页检查。",
+    "message": "$ENGINE$ 的网址模板无效，不能作左侧引擎。请到设置页检查它的网址。",
     "description": "Error on the trigger page: the left engine's URL template is invalid; the user should check it on the settings page. The placeholder is the engine name (not translated).",
     "placeholders": {
       "ENGINE": {
         "content": "$1",
         "example": "Google"
+      }
+    }
+  },
+  "go_err_bad_url": {
+    "message": "触发网址无法识别，可能被截断或改动过。请重新搜索，或到设置页重新复制触发网址。",
+    "description": "Error on the trigger page: the trigger URL cannot be parsed; the user should search again or copy the trigger URL again from the settings page."
+  },
+  "go_err_not_left": {
+    "message": "$ENGINE$ 的网址不能作左侧引擎。请到设置页检查它的网址，或改用别的引擎作左侧。",
+    "description": "Error on the trigger page: the left engine's URL template cannot be used as the left side of a split view. The placeholder is the engine name (not translated).",
+    "placeholders": {
+      "ENGINE": {
+        "content": "$1",
+        "example": "Wikipedia"
       }
     }
   },
@@ -90,11 +104,11 @@
     "description": "Error in the URL template field: the template contains the reserved _ss parameter. Do not translate _ss."
   },
   "err_marker_format": {
-    "message": "标记参数格式不对",
+    "message": "触发网址里的标记参数（_ss）格式不对，应为“左引擎,右引擎”。请到设置页重新复制触发网址。",
     "description": "Error page after a search: the _ss marker parameter in the trigger URL is malformed."
   },
   "err_unknown_engine": {
-    "message": "未知引擎：$ENGINE_ID$",
+    "message": "这条网站搜索指向的引擎“$ENGINE_ID$”已被删除、隐藏或改名。请到 Chrome 搜索引擎设置里删掉或改正这条网站搜索，或在设置页重新添加这个引擎。",
     "description": "Error page after a search: the trigger URL names an engine id that does not exist (deleted or hidden).",
     "placeholders": {
       "ENGINE_ID": {
@@ -114,7 +128,7 @@
     }
   },
   "err_template_mismatch": {
-    "message": "触发网址与当前模板不一致，请到设置页重新复制",
+    "message": "触发网址与左侧引擎当前的网址模板不一致，可能是引擎改过。请到设置页重新复制触发网址，并更新网站搜索。",
     "description": "Error page after a search: the trigger URL no longer matches the left engine's current template; the user must copy the trigger URL again from the settings page."
   },
   "err_config_too_large": {
