@@ -21,11 +21,27 @@ test("cycleCandidates：image 取以图搜图引擎（lens 在前），不看 cy
   assert.deepEqual(exclude, []);
   assert.equal(engines[0].id, "lens");
 });
-test("cycleCandidates：text、search 取文字引擎和 cycleExclude", () => {
+test("cycleCandidates：text 取文字引擎和 cycleExclude，不排除左侧（查询对的左侧是网页）", () => {
   const cfg = mergeConfig({ cycleExclude: ["ddg"] });
-  for (const kind of ["text", "search"]) {
-    const { engines, exclude } = cycleCandidates(cfg, kind);
-    assert.deepEqual(exclude, ["ddg"]);
-    assert.equal(engines, cfg.engines);
-  }
+  const { engines, exclude } = cycleCandidates(cfg, "text", "google");
+  assert.deepEqual(exclude, ["ddg"]);
+  assert.equal(engines, cfg.engines);
+});
+test("cycleCandidates：search 取文字引擎，cycleExclude 之外再排除当前左侧", () => {
+  const cfg = mergeConfig({ cycleExclude: ["ddg"] });
+  const { engines, exclude } = cycleCandidates(cfg, "search", "google");
+  assert.deepEqual(exclude, ["ddg", "google"]);
+  assert.equal(engines, cfg.engines);
+  // 不改 cfg.cycleExclude 本身
+  assert.deepEqual(cfg.cycleExclude, ["ddg"]);
+  // 没给左侧 id 时只用 cycleExclude
+  assert.deepEqual(cycleCandidates(cfg, "search").exclude, ["ddg"]);
+});
+test("搜索对轮换跳过左侧：google ｜ bing 按一次到 ddg，ddg 之后绕回时跳过 google", () => {
+  const cfg = mergeConfig({ cycleExclude: ["perplexity", "kagi"] });
+  const { engines, exclude } = cycleCandidates(cfg, "search", "google");
+  assert.equal(nextRightEngine(engines, "bing", exclude).id, "ddg");
+  assert.equal(nextRightEngine(engines, "ddg", exclude).id, "bing");
+  // 只剩左右两个引擎可轮换：没有候选
+  assert.equal(nextRightEngine(engines, "bing", [...exclude, "ddg"]), null);
 });

@@ -19,19 +19,19 @@ test("targetTabId：只认 ?tabId=<非负整数>，其余返回 null（改用活
   }
 });
 
-test("popupView：关键词原样、左右引擎按 id 查名字，按钮是显示顺序里除当前右侧外的全部引擎", () => {
+test("popupView：关键词原样、左右引擎按 id 查名字，按钮是显示顺序里除当前左右两侧外的全部引擎", () => {
   const cfg = mergeConfig({});
   const v = popupView(pair("google", "bing"), cfg);
   assert.equal(v.query, QUERY);
   assert.equal(v.left.name, "Google");
   assert.equal(v.right.name, "Bing");
-  assert.deepEqual(v.choices.map(e => e.id), ["google", "ddg", "perplexity", "kagi"]);
+  assert.deepEqual(v.choices.map(e => e.id), ["ddg", "perplexity", "kagi"]);
 });
 
-test("popupView：按钮不看 cycleExclude（每次都是用户亲手点选），可以与左侧相同", () => {
+test("popupView：按钮不看 cycleExclude（每次都是用户亲手点选），搜索对不含当前左侧", () => {
   const cfg = mergeConfig({ cycleExclude: ["ddg", "perplexity", "kagi"], order: ["kagi", "bing", "google"] });
-  const v = popupView(pair("google", "bing"), cfg);
-  assert.deepEqual(v.choices.map(e => e.id), ["kagi", "google", "ddg", "perplexity"]);
+  const v = popupView({ ...pair("google", "bing"), kind: "search" }, cfg);
+  assert.deepEqual(v.choices.map(e => e.id), ["kagi", "ddg", "perplexity"]);
 });
 
 test("popupView：记录里的引擎已被删除时显示为 null，按钮列出全部引擎，照常可换", () => {
@@ -46,7 +46,7 @@ test("popupView：被隐藏的引擎仍显示名字，但不出现在按钮里",
   const cfg = mergeConfig({ presetOverrides: { bing: { hidden: true }, ddg: { hidden: true } } });
   const v = popupView(pair("google", "bing"), cfg);
   assert.equal(v.right.name, "Bing");
-  assert.deepEqual(v.choices.map(e => e.id), ["google", "perplexity", "kagi"]);
+  assert.deepEqual(v.choices.map(e => e.id), ["perplexity", "kagi"]);
 });
 
 test("popupView：空关键词原样给出（页面显示“空关键词”文案）；只有一个引擎且它就在右侧时没有按钮", () => {
@@ -54,6 +54,9 @@ test("popupView：空关键词原样给出（页面显示“空关键词”文�
   const v = popupView(pair("solo", "solo", ""), cfg);
   assert.equal(v.query, "");
   assert.deepEqual(v.choices, []);
+  // 只有左右两个引擎时也没有按钮
+  const two = { engines: [...cfg.engines, { id: "duo", name: "Duo", url: "https://d.example/?q=%s" }], hidden: [] };
+  assert.deepEqual(popupView(pair("solo", "duo"), two).choices, []);
   // 没有 hidden 字段也不出错
   assert.equal(popupView(pair("x", "solo"), { engines: cfg.engines }).right.name, "Solo");
 });
@@ -127,4 +130,16 @@ test("completeView：建议的引擎不在列表里时其余照显示顺序", ()
   const { engines } = mergeConfig({});
   const v = completeView({ engine: engines[1], query: "x", suggestedId: "gone" }, engines);
   assert.deepEqual(v.choices.map(e => e.id), ["google", "ddg", "perplexity", "kagi"]);
+});
+
+test("switchTarget：搜索对点了当前左侧引擎（弹窗没显示它，旧页面或连点）返回 null，不把右侧换成和左侧一样", async () => {
+  const { switchTarget } = await import("../src/lib/popup-view.js");
+  const cfg = mergeConfig({});
+  const search = { kind: "search", query: "q", left: { engineId: "google" }, right: { engineId: "bing" } };
+  assert.equal(switchTarget(search, cfg, "google"), null);
+  assert.equal(switchTarget(search, cfg, "ddg").id, "ddg");
+  // 查询对的左侧是网页：哪个文字引擎都能选
+  const lookup = { kind: "text", query: "q", left: { engineId: "" }, right: { engineId: "bing" } };
+  assert.equal(switchTarget(lookup, cfg, "google").id, "google");
+  assert.equal(switchTarget(null, cfg, "ddg"), null);
 });

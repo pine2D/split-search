@@ -13,7 +13,8 @@ export function targetTabId(search) {
 // 引擎按 kind 查：图片查询对在以图搜图引擎里查，其余在已配置和已隐藏的文字引擎里查；
 // 查不到（已删除）为 null，页面显示“已删除的引擎”。查询对的左侧是用户的网页（engine 为 ""），
 // left 总是 null，页面按 leftIsPage 显示“原网页”。
-// 按钮是同一类引擎里除当前右侧外的全部引擎：不看 cycleExclude，每一次都是用户亲手点选。
+// 按钮是同一类引擎里除当前右侧外的全部引擎：不看 cycleExclude，每一次都是用户亲手点选；
+// 搜索对再去掉当前左侧（左右同一个引擎没有意义），查询对的左侧是网页，不受影响。
 // imageHost 只给图片查询对：弹窗只显示图片网址的 host，不加载图片（不向图片的服务器发请求）。
 export function popupView(pair, cfg) {
   const c = { ...cfg, hidden: cfg.hidden ?? [] };
@@ -24,15 +25,19 @@ export function popupView(pair, cfg) {
     imageHost: kind === "image" ? hostOf(pair.query) : null,
     left: engineById(c, kind, pair.left.engineId),
     right: engineById(c, kind, pair.right.engineId),
-    leftIsPage: kind === "text" || kind === "image",
-    choices: enginesFor(c, kind).filter(e => e.id !== pair.right.engineId),
+    leftIsPage: isQueryPair(pair),
+    choices: enginesFor(c, kind).filter(e => e.id !== pair.right.engineId && !isSearchLeft(pair, e.id)),
   };
 }
 
+// 没有 kind 的旧调用按搜索对处理（查询对总带 kind "text" | "image"）
+const isQueryPair = (pair) => pair.kind === "text" || pair.kind === "image";
+const isSearchLeft = (pair, id) => !isQueryPair(pair) && id === pair.left?.engineId;
+
 // 弹窗点了某个引擎按钮：按这一对的 kind 在同一类引擎里找它（图片查询对只认以图搜图引擎，其余只认未隐藏的文字引擎）。
-// 这一对已经不是本扩展的、或这个引擎已经不在同一类里时返回 null，弹窗什么都不换
+// 这一对已经不是本扩展的、这个引擎已经不在同一类里、或它就是搜索对当前的左侧时返回 null，弹窗什么都不换
 export function switchTarget(pair, cfg, engineId) {
-  if (!pair || !cfg) return null;
+  if (!pair || !cfg || isSearchLeft(pair, engineId)) return null;
   return enginesFor(cfg, pair.kind).find(e => e.id === engineId) ?? null;
 }
 

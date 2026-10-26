@@ -132,10 +132,17 @@ test("cycle-right：在本扩展分屏里把右侧换成下一个引擎（Bing �
   assert.equal(state.session.get("split:10").engine, "google");
 });
 
-test("cycle-right：跳过 cycleExclude 里的引擎；可以与左侧相同", async () => {
+test("cycle-right：跳过 cycleExclude 里的引擎和当前左侧", async () => {
+  state.sync = { cycleExclude: ["ddg", "perplexity"] };
+  await press();
+  assert.equal(updates()[0][2].url, "https://kagi.com/search?q=" + encodeURIComponent(QUERY));
+});
+
+test("cycle-right：除了右侧只剩当前左侧可轮换时什么都不做（不把右侧换成和左侧一样）", async () => {
   state.sync = { cycleExclude: ["ddg", "perplexity", "kagi"] };
   await press();
-  assert.equal(updates()[0][2].url, "https://www.google.com/search?q=" + encodeURIComponent(QUERY));
+  assert.deepEqual(updates(), []);
+  assert.equal(console.error.mock.callCount(), 0);
 });
 
 test("cycle-right：全部被排除时什么都不做，不报错", async () => {

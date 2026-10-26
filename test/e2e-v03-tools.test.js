@@ -11,7 +11,7 @@ import { restoreShortcutStep } from "../scripts/e2e/teardown.mjs";
 import { STEPS, selectSteps } from "../scripts/e2e/steps/index.mjs";
 import { mockBaseline } from "../scripts/e2e/ext.mjs";
 import { mergeConfig } from "../src/lib/engines.js";
-import { nextRightEngine } from "../src/lib/cycle.js";
+import { nextRightEngine, cycleCandidates } from "../src/lib/cycle.js";
 import { CATALOG, CATEGORIES } from "../src/lib/engine-catalog.js";
 
 test("parseKeys: Chrome 写法的组合键 → 修饰键位掩码与主键", () => {
@@ -77,14 +77,16 @@ test("catalogProblems: 与引擎库数据一致时无问题；缺分类、标题
   assert.match(p, /key 样的文字/);
 });
 
-test("T19：基线引擎按 CYCLE_EXCLUDE 轮换，依次换成 T19_PRESSES（跳过 ec 与预置引擎）", () => {
-  const { engines } = mergeConfig(mockBaseline(8765));
+test("T19：基线引擎（搜索对 ea ｜ eb）按 CYCLE_EXCLUDE 轮换，依次换成 T19_PRESSES（跳过预置引擎和左侧 ea）", () => {
+  const cfg = mergeConfig({ ...mockBaseline(8765), cycleExclude: CYCLE_EXCLUDE });
+  const { engines, exclude } = cycleCandidates(cfg, "search", "ea");
   let right = "eb";
   for (const want of T19_PRESSES) {
-    right = nextRightEngine(engines, right, CYCLE_EXCLUDE).id;
+    right = nextRightEngine(engines, right, exclude).id;
     assert.equal(right, want);
   }
-  assert.ok(CYCLE_EXCLUDE.includes("ec") && CYCLE_EXCLUDE.includes("google"));
+  assert.ok(!T19_PRESSES.includes("ea"), "搜索对的右侧不会换成左侧 ea");
+  assert.ok(CYCLE_EXCLUDE.includes("google") && !CYCLE_EXCLUDE.includes("ec"));
   assert.ok(T19_WORDS.every(w => /^[\x20-\x7e]+$/.test(w)));
 });
 

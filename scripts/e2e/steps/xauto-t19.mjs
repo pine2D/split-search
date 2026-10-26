@@ -1,7 +1,7 @@
 // xauto T19（spec 3.8 V5）：经 chrome://extensions/shortcuts 给 cycle-right 绑测试用快捷键（ext-shortcuts.mjs 的 TEST_KEYS），
 // 在本扩展分屏所在的前台窗口里按真实快捷键（XTEST），断言右侧换成显示顺序里下一个参与轮换的引擎、被排除的被跳过。
-// 轮换候选：cycleExclude 排除全部预置引擎（右侧不去真实网站）和 ec，只剩模拟引擎 A、B。显示顺序是预置、ea、eb、ec：
-//   第 1 次按：当前右侧 eb，之后的 ec 被排除，回到开头跳过预置 → ea（可以与左侧相同）；第 2 次按：ea 之后 → eb。
+// 轮换候选：cycleExclude 排除全部预置引擎（右侧不去真实网站），搜索对还跳过当前左侧 ea，只剩模拟引擎 B、C。
+// 显示顺序是预置、ea、eb、ec：第 1 次按：当前右侧 eb 之后 → ec；第 2 次按：ec 在末尾，回到开头跳过预置和左侧 ea → eb。
 // 收尾：finally 里按快照改回运行前的绑定（restoreShortcut；中断时收尾与下次启动再兜一次），cycleExclude 由 guarded 写回。
 // 快捷键页结构认不出（infra）：--auto-only 判跳过，引导式运行回退到人工版本（judge：用户按快捷键并确认，脚本再读记录核对）。
 import { mockEngines } from "../config.mjs";
@@ -17,8 +17,8 @@ import { guarded } from "./optpage.mjs";
 import { judge, focusGuide } from "./guided.mjs";
 import { COMMAND, TEST_KEYS, SHORTCUTS_URL, bindShortcut, restoreShortcut, xdoCombo, remember } from "../ext-shortcuts.mjs";
 
-export const CYCLE_EXCLUDE = [...PRESETS.map(p => p.id), "ec"];
-export const T19_PRESSES = ["ea", "eb"]; // 每按一次，右侧应换成的引擎
+export const CYCLE_EXCLUDE = PRESETS.map(p => p.id);
+export const T19_PRESSES = ["ec", "eb"]; // 每按一次，右侧应换成的引擎
 export const T19_WORDS = ["xcycle"];
 const KEY_LABEL = "Alt+Shift+.（句点）";
 
@@ -65,7 +65,7 @@ async function attempt(ctx) {
     if (p.length) return { status: "fail", detail: `第 ${done.length + 1} 次按 ${TEST_KEYS}：${p.join("；")}${done.length ? `（之前：${done.join("；")}）` : ""}` };
     done.push(`第 ${done.length + 1} 次 → ${want}`);
   }
-  return { status: "pass", detail: `分屏 ${L.id}｜${R.id}（关键词“${text}”）：按 ${TEST_KEYS} ${done.join("，")}（ec 与预置引擎被排除、跳过），右侧网址都是 expandTemplate 的结果，左侧不动` };
+  return { status: "pass", detail: `分屏 ${L.id}｜${R.id}（关键词“${text}”）：按 ${TEST_KEYS} ${done.join("，")}（预置引擎被排除、左侧 ea 被跳过），右侧网址都是 expandTemplate 的结果，左侧不动` };
 }
 
 // 纯逻辑：自动绑定快捷键的结果 → 下一步。bindError 为 null 表示绑好了。
@@ -91,7 +91,7 @@ export async function manualSnapshot(ctx, { save = remember } = {}) {
 // ---- 人工版本（judge）：快捷键能自动绑就自动绑，绑不了请用户在快捷键页自己绑、用完清除 ----
 const MANUAL_Q = "t19+manual";
 const fallback = {
-  id: "T19", title: "快捷键换右侧：跳过被排除的引擎（人工按键，脚本核对记录）", kind: "judge", needs: [], timeoutFactor: 4,
+  id: "T19", title: "快捷键换右侧：跳过被排除的引擎和左侧（人工按键，脚本核对记录）", kind: "judge", needs: [], timeoutFactor: 4,
   run: ctx => guarded(ctx, ["cycleExclude"], async () => {
     await setExclude(ctx);
     let manualBind = null;
@@ -112,13 +112,14 @@ const fallback = {
       const r = await judge(ctx, {
         title: "T19 快捷键换右侧", timeoutMs: ctx.timeoutMs * 3,
         instruction: `${bindStep}1. 切到分屏所在的标签（左侧模拟引擎 A、右侧模拟引擎 B，关键词“${text}”），让它所在的窗口在前台；\n`
-          + `2. 按一次 ${KEY_LABEL}。\n期望：右侧换成模拟引擎 A 的搜索（模拟引擎 C 被排除、跳过）。看到了点“通过”。`
+          + `2. 按一次 ${KEY_LABEL}。\n期望：右侧换成模拟引擎 C 的搜索（预置引擎被排除，左侧的模拟引擎 A 也不会出现在右侧）。看到了点“通过”。`
           + (manualBind ? `\n做完后回到 ${SHORTCUTS_URL} 清除这个快捷键。` : ""),
       });
       if (r.status !== "pass") return r;
-      const p = await afterPress(ctx, L, R, "ea", text);
+      const want = T19_PRESSES[0];
+      const p = await afterPress(ctx, L, R, want, text);
       return p.length ? { status: "fail", detail: `用户判通过，但脚本核对不符：${p.join("；")}` }
-        : { status: "pass", detail: `用户按 ${KEY_LABEL} 后右侧 ${R.id} 换成模拟引擎 A（${engineUrl(ctx, "ea", text)}），记录一致` };
+        : { status: "pass", detail: `用户按 ${KEY_LABEL} 后右侧 ${R.id} 换成 ${want}（${engineUrl(ctx, want, text)}），记录一致` };
     } finally {
       // 人工路径也有快照（未绑定）：快捷键页还是认不出时改回会失败，收尾与下次启动再试并报警告
       await restoreShortcut(ctx.browser).catch(e => ctx.log?.(`  改回快捷键失败（收尾会再试）：${e.message}`));
@@ -127,7 +128,7 @@ const fallback = {
 };
 
 export const T19 = xauto({
-  id: "T19", title: "快捷键换右侧：真实按键后右侧换成下一个参与轮换的引擎、跳过被排除的（真实键盘）",
+  id: "T19", title: "快捷键换右侧：真实按键后右侧换成下一个参与轮换的引擎、跳过被排除的和左侧（真实键盘）",
   run: ctx => guarded(ctx, ["cycleExclude"], async () => {
     await setExclude(ctx);
     try {

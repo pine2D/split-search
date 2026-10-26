@@ -40,7 +40,7 @@ async function cycleRight() {
   const cfg = await loadConfig();
   const pair = await ownedPair(tab, cfg.engines);
   if (!pair) return;
-  const { engines, exclude } = cycleCandidates(cfg, pair.kind);
+  const { engines, exclude } = cycleCandidates(cfg, pair.kind, pair.left.engineId);
   const next = nextRightEngine(engines, pair.right.engineId, exclude);
   if (!next) return;
   await switchRight(pair, next);
