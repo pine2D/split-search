@@ -898,7 +898,7 @@
     "description": "Get started step 2, second sub-step: add a site search and paste the trigger URL (shown below with its own Copy button). Field and button names must match Chrome's labels (docs/i18n/chrome-terms.md, Chrome's .pak)."
   },
   "setup_add_default": {
-    "message": "開啟剛新增這個項目的 ⋮ 選單，選擇「設為預設」。",
+    "message": "點選剛新增這個項目右側的 ⋮，選擇「設為預設」。",
     "description": "Get started step 2, third sub-step: make the new site search the default. “Make default” must match Chrome's label; ⋮ is the More actions menu icon."
   },
   "setup_details_link": {

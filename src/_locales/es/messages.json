@@ -1186,7 +1186,7 @@
     "description": "Toolbar popup, outside a Split Search split view, when the default pair's left engine is not granted: searching only does a plain search. Shown with the popup_setup_button primary button."
   },
   "popup_setup_button": {
-    "message": "Terminar configuración",
+    "message": "Terminar la configuración",
     "description": "Toolbar popup primary button: opens the settings page at the Get started card."
   },
   "popup_setup_try_note": {
