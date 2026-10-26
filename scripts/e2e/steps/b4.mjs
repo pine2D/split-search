@@ -9,6 +9,7 @@ import { guarded, openOptions } from "./optpage.mjs";
 import { assist, activate, contains, AUTO_GRANT_MS, GRANT_TIMEOUT_MS } from "./guided.mjs";
 import { L } from "./labels.mjs";
 import { keepSetupDone, setDone } from "./b19.mjs";
+import { msg } from "../i18n.mjs";
 
 export const GB_ORIGINS = ["https://www.google.com/*", "https://www.bing.com/*"];
 
@@ -60,6 +61,15 @@ export const B4 = {
         if (!label) return { status: "fail", detail: "清掉 setupDone、撤销 Google、Bing 授权后，设置页的“开始使用”卡没有显示第 1 步的授权按钮" };
         const problems = [];
         if (!label.includes("Google") || !label.includes("Bing")) problems.push(`授权按钮应同时提到 Google 和 Bing，实际“${label}”`);
+        // 引擎列表：只有默认左侧（Google）是警示样式，没授权的右侧（Bing）是中性样式
+        const rows = await page.until(`const r = id => { const p = document.querySelector('.engine-row[data-id="' + id + '"] .perm');
+          return p && { cls: p.className, text: p.textContent.trim() }; };
+          const g = r("google"), b = r("bing"); return g && b ? { g, b } : false`, 5000).catch(() => null);
+        if (!rows) problems.push("引擎列表里找不到 Google、Bing 的授权状态行");
+        else {
+          if (!rows.g.cls.includes("perm-missing") || rows.g.text !== msg("engine_not_granted_required")) problems.push(`默认左侧应是 perm-missing“${msg("engine_not_granted_required")}”，实际 ${rows.g.cls}“${rows.g.text}”`);
+          if (!rows.b.cls.includes("perm-optional") || rows.b.text !== msg("engine_not_granted_optional")) problems.push(`没授权的右侧应是 perm-optional“${msg("engine_not_granted_optional")}”，实际 ${rows.b.cls}“${rows.b.text}”`);
+        }
         if (!(await page.ev(RECORD))) return { status: "fail", detail: "装不上 chrome.permissions.request 的记录器" };
         await activate(ctx, page.targetId); // 万一弹框，它挂在设置页所在的标签上
         const at = await page.ev(BUTTON_CENTER);
