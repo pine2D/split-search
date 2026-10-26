@@ -64,6 +64,29 @@ test("auditProblems: 给了 box 时横向溢出按那个元素报（scrollWidth 
   assert.deepEqual(auditProblems("en", { lang: "en", box: "body", scrollWidth: 340, innerWidth: 340, raw: [], tight: [] }), []);
 });
 
+test("lineProblems: 要求单行的元素换了行或找不到时逐条报出；都只有一行返回空", async () => {
+  const { lineProblems } = await import("../scripts/e2e/steps/i18n-audit.mjs");
+  assert.deepEqual(lineProblems([{ sel: "#a", lines: 1 }, { sel: "#b", lines: 1 }]), []);
+  const out = lineProblems([{ sel: "#a", lines: 2 }, { sel: "#b", lines: 0 }, { sel: "#c", lines: 1 }]);
+  assert.equal(out.length, 2);
+  assert.match(out[0], /#a 文字换成了 2 行/);
+  assert.match(out[1], /#b 找不到或没有文字/);
+});
+
+test("lineCount: 按文字行框的不同 top 计行数（Range.getClientRects），只认给定的选择器", async () => {
+  const { lineCount } = await import("../scripts/e2e/steps/i18n-audit.mjs");
+  const expr = lineCount(["#image-catalog-open", "#image-add-open"]);
+  assert.match(expr, /getClientRects/);
+  assert.match(expr, /#image-catalog-open/);
+  assert.match(expr, /#image-add-open/);
+});
+
+test("“右键查询”卡片的 I18N 检查要求两个以图搜图按钮单行（lineCount + lineProblems）", () => {
+  const src = readFileSync(new URL("../scripts/e2e/steps/v04-i18n.mjs", import.meta.url), "utf8");
+  assert.match(src, /lineCount\(\[[^\]]*#image-catalog-open[^\]]*#image-add-open/);
+  assert.match(src, /lineProblems\(/);
+});
+
 test("i18n.mjs 与 v04-i18n.mjs 不互相 import（共用工具在 i18n-audit.mjs）", () => {
   const src = f => readFileSync(new URL(`../scripts/e2e/steps/${f}`, import.meta.url), "utf8");
   assert.doesNotMatch(src("v04-i18n.mjs"), /from "\.\/i18n\.mjs"/);

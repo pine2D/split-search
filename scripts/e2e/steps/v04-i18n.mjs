@@ -1,5 +1,5 @@
 // I18N 步骤（i18n.mjs）在每种语言下调用的 v0.4 检查：工具栏弹窗的“补成分屏”区（#complete）与设置页“右键查询”卡片。
-// 沿用 i18n-audit.mjs 的自查（lang、原样 key、溢出）与截图；截图存 .e2e/i18n/<语言>-popup-complete.png、<语言>-options-lookup.png。
+// 沿用 i18n-audit.mjs 的自查（lang、原样 key、溢出、以图搜图两个按钮单行）与截图；截图存 .e2e/i18n/<语言>-popup-complete.png、<语言>-options-lookup.png。
 // openResultTab 也给 B14 用（深色模式下的 #complete）。
 import { join } from "node:path";
 import { waitState, engineA, nonce } from "./util.mjs";
@@ -7,7 +7,7 @@ import { openOptions } from "./optpage.mjs";
 import { POPUP_URL, popupPage } from "./v03-popup.mjs";
 import { mockEngines } from "../config.mjs";
 import { msgIn, sel } from "../i18n.mjs";
-import { audit, auditProblems, waitPage, shoot, bodyClip, htmlLang, SHOT_DIR } from "./i18n-audit.mjs";
+import { audit, auditProblems, lineCount, lineProblems, waitPage, shoot, bodyClip, htmlLang, SHOT_DIR } from "./i18n-audit.mjs";
 
 const J = JSON.stringify;
 const CARD = `[aria-labelledby="lookup-title"]`;
@@ -61,7 +61,9 @@ async function lookupCard(ctx, locale) {
       && !!document.querySelector("#lookup-body .lookup-card #lookup-engine")`, `“右键查询”卡片按 ${locale} 渲染`);
     await opt.ev(`document.querySelectorAll(${J(`${CARD} details.disclosure`)}).forEach(d => { d.open = true; })`); // 说明展开后核对
     const a = await opt.ev(audit({ scope: `${CARD} `, items: "button, label, select, .engine-row", box: CARD }));
-    const problems = auditProblems(locale, a).map(p => `“右键查询”卡片：${p}`);
+    // 两个以图搜图按钮的文字较长（es 最长），设计稿要求不换行：溢出检查看不出换行，单独数行
+    const lines = await opt.ev(lineCount(["#image-catalog-open", "#image-add-open"]));
+    const problems = [...auditProblems(locale, a), ...lineProblems(lines)].map(p => `“右键查询”卡片：${p}`);
     const shot = await shoot(ctx, opt, join(SHOT_DIR, `${locale}-options-lookup.png`), { clip: await cardClip(opt) });
     return { problems, shots: [shot] };
   } finally { await opt.close(); }

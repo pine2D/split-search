@@ -40,6 +40,30 @@ export function auditProblems(locale, a) {
   return out;
 }
 
+// 要求单行的元素（如按钮）实际排成几行：取元素内容的 Range.getClientRects，按 top（差 2px 以内算同一行）计不同的行框。
+// .btn 允许 overflow-wrap 换行，换行只会让按钮变高、scrollWidth 不变，上面的溢出检查看不出来，所以单独数行。
+// 返回 [{ sel, lines }]，找不到元素或没有文字时 lines 为 0
+export const lineCount = sels => `(${J(sels)}).map(sel => {
+  const el = document.querySelector(sel);
+  if (!el) return { sel, lines: 0 };
+  const r = document.createRange(); r.selectNodeContents(el);
+  const tops = [];
+  for (const rc of r.getClientRects()) {
+    if (rc.width > 0 && rc.height > 0 && !tops.some(t => Math.abs(t - rc.top) <= 2)) tops.push(rc.top);
+  }
+  return { sel, lines: tops.length };
+})`;
+
+// 纯逻辑：rows = lineCount 的结果，返回问题列表（空 = 都是一行）
+export function lineProblems(rows) {
+  const out = [];
+  for (const { sel, lines } of rows) {
+    if (lines === 0) out.push(`${sel} 找不到或没有文字`);
+    else if (lines > 1) out.push(`${sel} 文字换成了 ${lines} 行（应为一行）`);
+  }
+  return out;
+}
+
 export async function waitPage(page, expr, what, timeoutMs = 10000) {
   const end = Date.now() + timeoutMs;
   for (;;) {
