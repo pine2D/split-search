@@ -19,7 +19,6 @@
       </div>
       <div class="lang-box">
         <div id="lang-picker"></div>
-        <p class="hint" data-i18n="lang_note"></p>
       </div>
     </header>
 
@@ -47,7 +46,8 @@
         <li data-i18n="guide_step_grant"></li>
       </ol>
 
-      <h3 data-i18n="guide_caveats_title"></h3>
+      <details class="disclosure">
+        <summary><span data-i18n="guide_caveats_title"></span></summary>
       <ul class="caveats">
         <li data-i18n="guide_caveat_degrade"></li>
         <li data-i18n="guide_caveat_no_suggest"></li>
@@ -56,6 +56,7 @@
         <li data-i18n="guide_caveat_template_change"></li>
         <li data-i18n="guide_caveat_remove"></li>
       </ul>
+      </details>
     </section>
 
     <section class="card" aria-labelledby="lookup-title">
@@ -82,6 +83,9 @@
       <p class="hint" data-i18n="options_shortcut_hint"></p>
       <div id="shortcut"></div>
     </section>
+    <footer class="page-foot">
+      <p class="hint" data-i18n="lang_note"></p>
+    </footer>
   </main>
 
   <div id="notices" class="notices" aria-live="polite"></div>

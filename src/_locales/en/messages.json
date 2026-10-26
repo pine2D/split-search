@@ -228,8 +228,8 @@
     "description": "Heading of the settings card where the user picks the default engine pair (left and right engine)."
   },
   "options_pair_hint": {
-    "message": "Only engines tagged “Left or right” can go on the left. After you change the default pair, add the new trigger URL to Chrome and make it default. Until you do, Chrome keeps using the old one.",
-    "description": "Hint in the default pair card. \"Can be left\" refers to the engine tag engine_tag_left_ok; keep the same wording."
+    "message": "Engines tagged “Right only” can’t go on the left. After you change the default pair, add the new trigger URL to Chrome and make it default. Until you do, Chrome keeps using the old one.",
+    "description": "Hint in the default pair card. \"Right only\" refers to the engine tag engine_tag_right_only; keep the same wording."
   },
   "options_guide_title": {
     "message": "Add to Chrome",
@@ -443,10 +443,6 @@
     "message": "No engines available",
     "description": "Shown in place of the engine list when it is empty."
   },
-  "engine_tag_left_ok": {
-    "message": "Left or right",
-    "description": "Tag on an engine row: the engine can be used on the left side."
-  },
   "engine_tag_right_only": {
     "message": "Right only",
     "description": "Tag on an engine row: the engine can only be used on the right side."
@@ -458,10 +454,6 @@
   "engine_tag_default_right": {
     "message": "Default right",
     "description": "Tag on the engine row that is the right side of the default pair."
-  },
-  "engine_tag_custom": {
-    "message": "Custom",
-    "description": "Tag on a user-added (custom) engine row."
   },
   "engine_granted": {
     "message": "Access granted",
@@ -1294,6 +1286,10 @@
   "options_lookup_privacy": {
     "message": "Selected text and image addresses go only to the engines you choose here. Some image addresses include access credentials, so the engine can open that image too. An image address may also show which site it came from.",
     "description": "Privacy note: what is sent to the chosen engine."
+  },
+  "options_lookup_notes_title": {
+    "message": "Notes and limits",
+    "description": "Summary of the collapsed notes block in the right-click lookup card (privacy note and image limitations)."
   },
   "catalog_image_title": {
     "message": "Image search engine catalog",

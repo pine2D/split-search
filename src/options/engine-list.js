@@ -24,10 +24,9 @@ function engineRow(e, index, total, ctx) {
   const preset = isPresetId(e.id);
 
   const tags = [
-    left ? ht("span", { class: "tag tag-ok" }, "engine_tag_left_ok") : ht("span", { class: "tag" }, "engine_tag_right_only"),
+    !left && ht("span", { class: "tag" }, "engine_tag_right_only"),
     e.id === leftId && ht("span", { class: "tag tag-accent" }, "engine_tag_default_left"),
     e.id === rightId && ht("span", { class: "tag tag-accent" }, "engine_tag_default_right"),
-    !preset && ht("span", { class: "tag" }, "engine_tag_custom"),
   ];
 
   // 状态图标在文字之外（--ok 与主色同属绿色系，不能只靠颜色区分）；文字在 data-i18n 的 span 里，切换语言时只重写它
@@ -52,13 +51,12 @@ function engineRow(e, index, total, ctx) {
   cycle.checked = !cfg.cycleExclude.includes(e.id);
   cycle.addEventListener("change", () => actions.setCycle(e.id, cycle.checked));
 
-  return h("li", { class: "engine-row" + (inPair ? " in-pair" : "") },
+  return h("li", { class: "engine-row" + (inPair ? " in-pair" : ""), "data-id": e.id },
     h("div", { class: "engine-main" },
       h("div", { class: "engine-title" },
         h("strong", { class: "engine-name" }, e.name),
-        h("code", { class: "engine-id" }, e.id),
         tags),
-      h("div", { class: "engine-url mono" }, e.url),
+      !preset && h("div", { class: "engine-url mono" }, e.url),
       e.leftDiscouraged && ht("div", { class: "hint hint-warn" }, "engine_left_discouraged_hint"),
       h("label", { class: "check-row cycle-row" }, cycle, ht("span", null, "engine_cycle_label"))),
     h("div", { class: "engine-side" },

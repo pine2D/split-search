@@ -21,7 +21,9 @@ const CARD = `
   const opts = id => [...document.querySelectorAll("#" + id + " option")].map(o => ({ value: o.value, text: o.textContent, selected: o.selected }));
   const raw = [...card.querySelectorAll("[data-i18n], option")].map(el => el.textContent.trim())
     .filter(x => keyLike.test(x));
-  return { intro: card.querySelector(".hint")?.textContent ?? "", raw,
+  const d = card.querySelector("details.disclosure");
+  const notes = d && { open: d.open, items: d.querySelectorAll("li").length, title: d.querySelector("summary").textContent.trim() };
+  return { notes, intro: card.querySelector(".hint")?.textContent ?? "", raw,
     lookup: opts("lookup-engine"), lookupValue: document.getElementById("lookup-engine").value,
     image: opts("image-engine"), imageValue: document.getElementById("image-engine").value,
     rows: [...card.querySelectorAll(".engine-row .engine-id")].map(e => e.textContent),
@@ -47,6 +49,12 @@ const render = (ctx, page) => sub("(a) 渲染：说明、跟随默认组合右�
   const rightName = mockEngines(ctx.port).find(e => e.id === "eb").name;
   const p = [];
   if (c.intro !== msg("options_lookup_intro")) p.push(`说明应为“${msg("options_lookup_intro")}”，实际“${c.intro}”`);
+  if (!c.notes) p.push("卡片里没有收起的说明（details）");
+  else {
+    if (c.notes.open) p.push("说明应默认收起，实际是展开的");
+    if (c.notes.items !== 3) p.push(`说明应有 3 条（两条图片限制加隐私说明），实际 ${c.notes.items} 条`);
+    if (c.notes.title !== msg("options_lookup_notes_title")) p.push(`说明标题应为“${msg("options_lookup_notes_title")}”，实际“${c.notes.title}”`);
+  }
   if (c.raw.length) p.push(`显示成 key 的文字：${c.raw.join("、")}`);
   const follow = c.lookup[0];
   if (follow?.value !== "" || follow.text !== msg("options_lookup_follow", rightName) || c.lookupValue !== "") {

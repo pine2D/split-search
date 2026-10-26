@@ -228,8 +228,8 @@
     "description": "Heading of the settings card where the user picks the default engine pair (left and right engine)."
   },
   "options_pair_hint": {
-    "message": "A la izquierda solo puedes elegir buscadores marcados como «Apto para la izquierda». Si cambias la combinación predeterminada, añade la nueva URL de activación a Chrome y elígela como predeterminada; solo así se reemplaza la anterior.",
-    "description": "Hint in the default pair card. \"Can be left\" refers to the engine tag engine_tag_left_ok; keep the same wording."
+    "message": "Los buscadores marcados como «Solo derecha» no pueden ir a la izquierda. Si cambias la combinación predeterminada, añade la nueva URL de activación a Chrome y elígela como predeterminada; solo así se reemplaza la anterior.",
+    "description": "Hint in the default pair card. \"Right only\" refers to the engine tag engine_tag_right_only; keep the same wording."
   },
   "options_guide_title": {
     "message": "Añadir a Chrome",
@@ -443,12 +443,8 @@
     "message": "No hay buscadores disponibles",
     "description": "Shown in place of the engine list when it is empty."
   },
-  "engine_tag_left_ok": {
-    "message": "Apto para la izquierda",
-    "description": "Tag on an engine row: the engine can be used on the left side."
-  },
   "engine_tag_right_only": {
-    "message": "Solo para la derecha",
+    "message": "Solo derecha",
     "description": "Tag on an engine row: the engine can only be used on the right side."
   },
   "engine_tag_default_left": {
@@ -458,10 +454,6 @@
   "engine_tag_default_right": {
     "message": "Derecha predeterminada",
     "description": "Tag on the engine row that is the right side of the default pair."
-  },
-  "engine_tag_custom": {
-    "message": "Personalizado",
-    "description": "Tag on a user-added (custom) engine row."
   },
   "engine_granted": {
     "message": "Con acceso",
@@ -1294,6 +1286,10 @@
   "options_lookup_privacy": {
     "message": "El texto seleccionado y las direcciones de imagen solo se envían a los buscadores que elijas aquí. Algunas direcciones de imagen incluyen credenciales de acceso, así que el buscador también puede abrir esa imagen. Una dirección de imagen también puede revelar de qué sitio viene.",
     "description": "Privacy note: what is sent to the chosen engine."
+  },
+  "options_lookup_notes_title": {
+    "message": "Notas y límites",
+    "description": "Summary of the collapsed notes block in the right-click lookup card (privacy note and image limitations)."
   },
   "catalog_image_title": {
     "message": "Catálogo de buscadores de imágenes",

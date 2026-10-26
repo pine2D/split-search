@@ -1,6 +1,6 @@
 // 设置页“右键查询”卡片：查词引擎、以图搜图引擎的选择与列表，以及以图搜图的引擎库 / 新增对话框。
 // 没有授权按钮，也没有轮换开关（以图搜图引擎不经过 DNR，不进快捷键轮换）。
-import { h, ht, option, clearFieldErrors, showFieldErrors, focusedRow, restoreRowFocus } from "./ui.js";
+import { h, ht, option, disclosure, clearFieldErrors, showFieldErrors, focusedRow, restoreRowFocus } from "./ui.js";
 import { IMAGE_PRESET, IMAGE_CATALOG } from "../lib/image-engines.js";
 import { engineById, engineOrigin } from "../lib/engines.js";
 import { t } from "../chrome/i18n.js";
@@ -49,10 +49,11 @@ export function renderLookupCard(cfg, actions) {
     h("div", { class: "section-actions lookup-actions" },
       ht("button", { type: "button", id: "image-catalog-open", class: "btn btn-small" }, "options_image_add_catalog"),
       ht("button", { type: "button", id: "image-add-open", class: "btn btn-small" }, "options_image_add_custom")),
-    h("ul", { class: "caveats" },
-      ht("li", null, "options_image_note_embedded"),
-      ht("li", null, "options_image_note_login"),
-      ht("li", null, "options_lookup_privacy")));
+    disclosure("lookup-notes", "options_lookup_notes_title",
+      h("ul", { class: "caveats" },
+        ht("li", null, "options_image_note_embedded"),
+        ht("li", null, "options_image_note_login"),
+        ht("li", null, "options_lookup_privacy"))));
 }
 
 // ---- 以图搜图引擎库对话框 ----

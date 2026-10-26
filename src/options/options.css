@@ -30,7 +30,10 @@ body.loading main { visibility: hidden; }
 /* ---- 语言 ---- */
 .lang-box { flex: 0 1 300px; }
 .lang-picker { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
-.lang-box .hint { font-size: 12px; margin: 6px 0 0; }
+
+/* ---- 页脚 ---- */
+.page-foot { margin-top: 24px; }
+.page-foot .hint { font-size: 12px; margin: 0; max-width: 65ch; }
 
 h2 { font-size: 16px; margin: 0 0 6px; }
 h3 { font-size: 14px; margin: 20px 0 6px; }
@@ -158,6 +161,19 @@ input[aria-invalid="true"] { border-color: var(--danger); }
   user-select: all;
 }
 
+/* ---- 可收起的说明 ---- */
+.disclosure { margin: 16px 0 4px; }
+.disclosure > summary {
+  display: flex; align-items: center; gap: 6px; width: fit-content;
+  padding: 4px 6px 4px 0; border-radius: 4px;
+  font-size: 14px; font-weight: 600; cursor: pointer; list-style: none;
+}
+.disclosure > summary::-webkit-details-marker { display: none; }
+.disclosure > summary:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.disclosure .chev { flex: none; color: var(--muted); transition: transform 150ms cubic-bezier(0.22, 1, 0.36, 1); }
+.disclosure[open] > summary .chev { transform: rotate(90deg); }
+@media (prefers-reduced-motion: reduce) { .disclosure .chev { transition: none; } }
+
 .steps, .caveats { padding-left: 22px; margin: 4px 0; }
 .steps li, .caveats li { margin: 6px 0; }
 
@@ -170,6 +186,7 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 }
 .engine-main { flex: 1 1 300px; min-width: 0; }
 .engine-title { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.tag { white-space: nowrap; }
 .engine-name { font-size: 15px; }
 .engine-id { color: var(--muted); }
 .engine-url { color: var(--muted); overflow-wrap: anywhere; margin-top: 2px; }
@@ -185,7 +202,6 @@ input[aria-invalid="true"] { border-color: var(--danger); }
   padding: 0 7px; border-radius: 999px;
   border: 1px solid var(--border); color: var(--muted);
 }
-.tag-ok { color: var(--ok); background: var(--ok-soft); border-color: transparent; }
 .tag-accent { color: var(--accent); background: var(--accent-soft); border-color: transparent; }
 
 .hidden-list { list-style: none; margin: 0; padding: 0; }

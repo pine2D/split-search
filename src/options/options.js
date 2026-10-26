@@ -1,7 +1,7 @@
 // 设置页编排：读配置 → 实时查授权 → 渲染各区块；所有写入串行执行“loadRaw → 改整键 → saveKeys”。
 import { loadRaw } from "../chrome/config-store.js";
 import { mergeConfig } from "../lib/engines.js";
-import { h, ht, notify, errorText, authButton, option, isGranted } from "./ui.js";
+import { h, ht, notify, errorText, authButton, option, isGranted, addChevrons } from "./ui.js";
 import { setDefaultPair, canBeLeft, setNarrowFallback } from "./edits.js";
 import { write, act, actions, attention, bindActions, getPendingOrder } from "./actions.js";
 import { renderLookupCard, setupLookupDialogs, refreshImageCatalog } from "./lookup.js";
@@ -18,6 +18,7 @@ const $ = (id) => document.getElementById(id);
 const log = (...args) => console.error("[split-search]", ...safeArgs(args));
 
 // 目录加载前不得调用 t / ht / tNodes：凡是要用它们的路径都先 await i18nReady
+addChevrons();
 const i18nReady = initI18n().catch(log);
 bindActions({ render: () => render(), current: () => current });
 

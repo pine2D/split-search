@@ -59,6 +59,7 @@ async function lookupCard(ctx, locale) {
     await waitPage(opt, `document.documentElement.lang === ${J(htmlLang(locale))}
       && document.querySelector(${J(`${CARD} ${sel("options_lookup_title")}`)})?.textContent === ${J(msgIn(locale, "options_lookup_title"))}
       && !!document.querySelector("#lookup-body .lookup-card #lookup-engine")`, `“右键查询”卡片按 ${locale} 渲染`);
+    await opt.ev(`document.querySelectorAll(${J(`${CARD} details.disclosure`)}).forEach(d => { d.open = true; })`); // 说明展开后核对
     const a = await opt.ev(audit({ scope: `${CARD} `, items: "button, label, select, .engine-row", box: CARD }));
     const problems = auditProblems(locale, a).map(p => `“右键查询”卡片：${p}`);
     const shot = await shoot(ctx, opt, join(SHOT_DIR, `${locale}-options-lookup.png`), { clip: await cardClip(opt) });

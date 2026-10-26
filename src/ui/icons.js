@@ -12,6 +12,7 @@ export const ICON_PATHS = {
   "alert-triangle": "M8 2.25l6.25 11H1.75zM8 6.4v3.1M8 11.4v.01",
   "x-circle": `${CIRCLE}M5.75 5.75l4.5 4.5M10.25 5.75l-4.5 4.5`,
   x: "M4 4l8 8M12 4l-8 8",
+  "chevron-right": "M6 3.5l4.5 4.5L6 12.5",
   "arrow-up": "M8 13V3.5M4.25 7.25L8 3.5l3.75 3.75",
   "arrow-down": "M8 3v9.5M4.25 8.75L8 12.5l3.75-3.75",
 };

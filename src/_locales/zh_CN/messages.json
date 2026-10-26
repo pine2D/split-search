@@ -228,8 +228,8 @@
     "description": "Heading of the settings card where the user picks the default engine pair (left and right engine)."
   },
   "options_pair_hint": {
-    "message": "左侧只能选“可作左侧”的引擎。改了默认组合后，要把新的触发网址重新添加到 Chrome 并设为默认，旧的那条才会被替换。",
-    "description": "Hint in the default pair card. \"Can be left\" refers to the engine tag engine_tag_left_ok; keep the same wording."
+    "message": "左侧不能选标了“只能作右侧”的引擎。改了默认组合后，要把新的触发网址重新添加到 Chrome 并设为默认，旧的那条才会被替换。",
+    "description": "Hint in the default pair card. \"Right only\" refers to the engine tag engine_tag_right_only; keep the same wording."
   },
   "options_guide_title": {
     "message": "添加到 Chrome",
@@ -443,12 +443,8 @@
     "message": "没有可用的引擎",
     "description": "Shown in place of the engine list when it is empty."
   },
-  "engine_tag_left_ok": {
-    "message": "可作左侧",
-    "description": "Tag on an engine row: the engine can be used on the left side."
-  },
   "engine_tag_right_only": {
-    "message": "仅右侧",
+    "message": "只能作右侧",
     "description": "Tag on an engine row: the engine can only be used on the right side."
   },
   "engine_tag_default_left": {
@@ -458,10 +454,6 @@
   "engine_tag_default_right": {
     "message": "默认右侧",
     "description": "Tag on the engine row that is the right side of the default pair."
-  },
-  "engine_tag_custom": {
-    "message": "自定义",
-    "description": "Tag on a user-added (custom) engine row."
   },
   "engine_granted": {
     "message": "已授权",
@@ -1294,6 +1286,10 @@
   "options_lookup_privacy": {
     "message": "选中的文字和图片网址只发给这里选的引擎。有些图片网址本身带访问凭证，发出去后引擎也能打开这张图；图片网址也可能看得出它来自哪个网站。",
     "description": "Privacy note: what is sent to the chosen engine."
+  },
+  "options_lookup_notes_title": {
+    "message": "说明与限制",
+    "description": "Summary of the collapsed notes block in the right-click lookup card (privacy note and image limitations)."
   },
   "catalog_image_title": {
     "message": "以图搜图引擎库",

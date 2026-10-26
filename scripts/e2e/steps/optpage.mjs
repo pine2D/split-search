@@ -10,9 +10,9 @@ export const keySel = key => JSON.stringify(sel(key));
 
 // 页内脚本的公共前缀：按 id 找引擎行、按 data-move 找上移/下移按钮（图标按钮，没有文字；带文案的按钮用 keySel）
 const PRELUDE = `
-const row = id => [...document.querySelectorAll("#engines .engine-row")].find(r => r.querySelector(".engine-id").textContent === id);
+const row = id => [...document.querySelectorAll("#engines .engine-row")].find(r => r.dataset.id === id);
 const moveBtn = (root, dir) => root && root.querySelector('button[data-move="' + dir + '"]');
-const ids = () => [...document.querySelectorAll("#engines .engine-row .engine-id")].map(e => e.textContent);
+const ids = () => [...document.querySelectorAll("#engines .engine-row")].map(r => r.dataset.id);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 `;
 

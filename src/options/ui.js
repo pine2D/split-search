@@ -28,6 +28,23 @@ export function ht(tag, props, key, ...subs) {
   }, t(key, ...subs));
 }
 
+// 可收起的说明：<details> + 带 SVG 箭头的 <summary>。展开状态按 id 记在模块里，卡片重建后保持
+const openIds = new Set();
+export function disclosure(id, titleKey, ...children) {
+  const d = h("details", { class: "disclosure" },
+    h("summary", null, icon("chevron-right", { size: 14, cls: "chev" }), ht("span", null, titleKey)), ...children);
+  d.open = openIds.has(id);
+  d.addEventListener("toggle", () => { if (d.open) openIds.add(id); else openIds.delete(id); });
+  return d;
+}
+
+// options.html 里静态写的 <details class="disclosure">：给 summary 补上箭头
+export function addChevrons(root = document) {
+  for (const s of root.querySelectorAll("details.disclosure > summary")) {
+    if (!s.querySelector(".chev")) s.prepend(icon("chevron-right", { size: 14, cls: "chev" }));
+  }
+}
+
 // 两句各自完整的话放进同一条提示：中文句间不加空格，其他语言加一个空格
 export function joinSentences(...parts) {
   return parts.join(currentLocale()?.startsWith("zh") ? "" : " ");

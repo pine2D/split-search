@@ -18,6 +18,7 @@ const FAKE_ARGS = ["A", "B", "C", "D", "E", "F", "G", "H", "I"];
 const J = JSON.stringify;
 
 const AUDIT = audit();
+const OPEN_ALL = `document.querySelectorAll("details.disclosure").forEach(d => { d.open = true; }); document.querySelectorAll("details.disclosure").length`;
 const POPUP_AUDIT = audit({ box: "body" });
 // “开始使用”卡：每种语言打开设置页前清掉 setupDone，卡片显示三步（模拟引擎 A 已授权，第 1 步是“已授权”）
 const SETUP_AUDIT = audit({ scope: "#setup ", items: "button, a, h2, h3, .url-box, .setup-field-label, .step-status", box: "#setup" });
@@ -88,6 +89,10 @@ async function perLocale(ctx, locale, pairTab) {
       .then(async () => problems.push(...auditProblems(locale, await opt.ev(SETUP_AUDIT)).map(p => `“开始使用”卡：${p}`)))
       .catch(e => problems.push(`“开始使用”卡：${e.message}`));
     shots.push(await shoot(ctx, opt, join(SHOT_DIR, `${locale}-options.png`), { full: true }));
+    // 收起的说明展开后再查一遍（溢出、原样 key），并留一张展开态截图
+    await opt.ev(OPEN_ALL);
+    problems.push(...auditProblems(locale, await opt.ev(AUDIT)).map(p => `设置页（说明展开）：${p}`));
+    shots.push(await shoot(ctx, opt, join(SHOT_DIR, `${locale}-options-open.png`), { full: true }));
     const cat = await catalogDialog(ctx, opt, locale).catch(e => ({ problems: [`引擎库对话框：${e.message}`], shot: null }));
     problems.push(...cat.problems);
     if (cat.shot) shots.push(cat.shot);
