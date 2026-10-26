@@ -1,6 +1,6 @@
 // B14 深色模式（auto）：经 CDP Emulation.setEmulatedMedia 把设置页、向导页和工具栏弹窗页（说明文字，以及 v0.4 的“补成分屏”区）切到 prefers-color-scheme: dark，
 // 断言 body 的背景色、文字色变成样式表里深色 :root 定义的值，再切到 light 断言回到浅色值，最后清除模拟。
-// 期望值从页面实际加载的样式表源码里读（schemeTokens），不写死颜色；深色截图存到 .e2e/ 供报告引用（设置页截整页，含“右键查询”卡片）。
+// 期望值从页面实际加载的样式表源码里读（schemeTokens，含 <link> 与 @import 进来的共享变量表 styles/tokens.css），不写死颜色；深色截图存到 .e2e/ 供报告引用（设置页截整页，含“右键查询”卡片）。
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { OUT_DIR } from "../ext.mjs";
@@ -32,7 +32,9 @@ export function topRules(css) {
     const open = s.indexOf("{", i);
     if (open < 0) break;
     const { body, end } = block(s, open);
-    out.push({ prelude: s.slice(i, open).trim(), body });
+    // 前面的 @import/@charset 之类语句以 ";" 结尾、没有块：只取最后一个 ";" 之后的文字作为这条规则的选择器
+    const pre = s.slice(i, open);
+    out.push({ prelude: pre.slice(pre.lastIndexOf(";") + 1).trim(), body });
     i = end;
   }
   return out;
@@ -69,9 +71,23 @@ export function schemeTokens(css) {
   return t;
 }
 
-// 页面里：读全部样式表源码（同源，fetch 原文），并把期望的颜色值经探针元素换算成计算后的 rgb(...)
-const CSS_EXPR = `(async () => (await Promise.all([...document.styleSheets].filter(s => s.href)
-  .map(s => fetch(s.href).then(r => r.text())))).join("\\n"))()`;
+// 页面里：读全部样式表源码（同源，fetch 原文），并把期望的颜色值经探针元素换算成计算后的 rgb(...)。
+// <link> 的样式表与其中 @import 进来的样式表都读，按层叠顺序拼接（被 @import 的排在引用它的前面）；
+// 页面直接写的 <style> 没有 href，按原文读
+const CSS_EXPR = `(async () => {
+  const order = [], seen = new Set();
+  const visit = sheet => {
+    let rules = [];
+    try { rules = sheet.cssRules; } catch {} // 跨源样式表读不到规则，只读它自己
+    for (const r of rules) if (r instanceof CSSImportRule && r.styleSheet) visit(r.styleSheet);
+    const key = sheet.href ?? sheet.ownerNode;
+    if (seen.has(key)) return;
+    seen.add(key);
+    order.push(sheet.href ? fetch(sheet.href).then(r => r.text()) : Promise.resolve(sheet.ownerNode?.textContent ?? ""));
+  };
+  for (const s of document.styleSheets) visit(s);
+  return (await Promise.all(order)).join("\\n");
+})()`;
 const computed = (tok, scheme) => `(() => {
   const norm = v => { const p = document.createElement("span"); p.style.color = v; document.body.append(p); const c = getComputedStyle(p).color; p.remove(); return c; };
   const cs = getComputedStyle(document.body);

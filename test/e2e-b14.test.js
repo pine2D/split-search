@@ -6,8 +6,12 @@ import { schemeTokens, schemeVerdict, topRules } from "../scripts/e2e/steps/b14.
 const read = p => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
 
 test("schemeTokens: 从真实样式表读出 body 引用的变量与浅色/深色取值", () => {
-  assert.deepEqual(schemeTokens(read("src/options/options.css")),
-    { bgVar: "--bg", fgVar: "--text", light: { bg: "#f5f6f8", fg: "#1c1f25" }, dark: { bg: "#141619", fg: "#e5e7eb" } });
+  // 页面按层叠顺序拼接的样式表源码：先是共享变量表，再是界面自己的样式表
+  const want = { bgVar: "--bg", fgVar: "--text", light: { bg: "#f5f6f8", fg: "#1c1f25" }, dark: { bg: "#141619", fg: "#e5e7eb" } };
+  for (const own of ["src/options/options.css", "src/popup/popup.css"]) {
+    assert.deepEqual(schemeTokens(`${read("src/styles/tokens.css")}\n${read(own)}`), want, own);
+  }
+  assert.deepEqual(schemeTokens(`${read("src/styles/tokens.css")}\n${read("src/go.css")}`), want, "go.css");
   const g = schemeTokens(read("scripts/e2e/guide/guide.css"));
   assert.equal(g.fgVar, "--fg");
   assert.notEqual(g.light.bg, g.dark.bg);
@@ -27,6 +31,13 @@ test("schemeTokens: 不是“变量 + 深色覆盖”的写法时说明原因", 
   assert.throws(() => schemeTokens("body{background:var(--b);color:var(--f)} @media (prefers-color-scheme: dark){:root{--b:#000;--f:#fff}}"), /浅色 :root 里没有定义 --b/);
   assert.throws(() => schemeTokens(":root{--b:#000;--f:#000} body{background:var(--b);color:var(--f)} @media (prefers-color-scheme: dark){:root{--b:#000;--f:#fff}}"), /取值相同/);
   assert.throws(() => topRules("a { b: c"), /不配对/);
+});
+
+test("schemeTokens: @import 语句不吞掉后面的 :root（被 @import 的源码由页面按顺序拼在前面）", () => {
+  const css = `:root { --b: #fff; --f: #000 } @media (prefers-color-scheme: dark) { :root { --b: #000; --f: #eee } }
+    @import url("../styles/tokens.css"); @charset "utf-8"; :root { --r: 4px } body { background: var(--b); color: var(--f) }`;
+  assert.deepEqual(topRules(css).map(r => r.prelude), [":root", "@media (prefers-color-scheme: dark)", ":root", "body"]);
+  assert.deepEqual(schemeTokens(css).dark, { bg: "#000", fg: "#eee" });
 });
 
 test("schemeVerdict: 颜色与 matchMedia 都对才通过，否则逐项说明", () => {

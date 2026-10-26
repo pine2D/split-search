@@ -5,66 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="no-referrer">
   <title>Split Search</title>
-  <style>
-    :root {
-      color-scheme: light dark;
-      --bg: #ffffff;
-      --fg: #1f1f1f;
-      --muted: #5f6368;
-      --error-bg: #fce8e6;
-      --error-fg: #a50e0e;
-      --btn-bg: #1a73e8;
-      --btn-fg: #ffffff;
-      --btn2-bg: #f1f3f4;
-      --btn2-fg: #1f1f1f;
-    }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #202124;
-        --fg: #e8eaed;
-        --muted: #9aa0a6;
-        --error-bg: #3c1f1e;
-        --error-fg: #f6aea9;
-        --btn-bg: #8ab4f8;
-        --btn-fg: #202124;
-        --btn2-bg: #3c4043;
-        --btn2-fg: #e8eaed;
-      }
-    }
-    html, body { margin: 0; background: var(--bg); color: var(--fg); }
-    body {
-      font: 15px/1.6 system-ui, "Microsoft YaHei UI", "PingFang SC", sans-serif;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    :lang(zh-TW) body { font-family: system-ui, "Microsoft JhengHei UI", "PingFang TC", sans-serif; }
-    .i18n-pending main { visibility: hidden; }
-    main { max-width: 32rem; padding: 24px 16px; text-align: center; }
-    #status { margin: 0 0 16px; color: var(--muted); }
-    #error {
-      background: var(--error-bg);
-      color: var(--error-fg);
-      border-radius: 8px;
-      padding: 12px 16px;
-      margin-bottom: 16px;
-      text-align: left;
-    }
-    #error p { margin: 0 0 12px; }
-    button {
-      font: inherit;
-      border: 0;
-      border-radius: 6px;
-      padding: 6px 16px;
-      cursor: pointer;
-      background: var(--btn-bg);
-      color: var(--btn-fg);
-    }
-    #open-options, #left-only { background: var(--btn2-bg); color: var(--btn2-fg); }
-    .actions { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
-    [hidden] { display: none !important; }
-  </style>
+  <link rel="stylesheet" href="styles/tokens.css">
+  <link rel="stylesheet" href="go.css">
   <script type="module" src="go.js"></script>
 </head>
 <body>

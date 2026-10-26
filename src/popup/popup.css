@@ -1,31 +1,4 @@
-/* 颜色变量取自 options/options.css 的 :root 与深色模式段落（只复制弹窗用到的），两处要一起改 */
-:root {
-  color-scheme: light dark;
-  --bg: #f5f6f8;
-  --surface: #ffffff;
-  --text: #1c1f25;
-  --muted: #5d6470;
-  --border: #dfe2e8;
-  --accent: #2b65d9;
-  --accent-soft: #e8effd;
-  --danger: #c0342a;
-  --danger-soft: #fdecea;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #141619;
-    --surface: #1d2025;
-    --text: #e5e7eb;
-    --muted: #9aa1ad;
-    --border: #31353d;
-    --accent: #6b9bff;
-    --accent-soft: #1e2a44;
-    --danger: #ff7d71;
-    --danger-soft: #3a1c1a;
-  }
-}
-
+/* 颜色变量在 ../styles/tokens.css（popup.html 先引用它），这里只用 var(--…)，不定义颜色 */
 * { box-sizing: border-box; }
 
 body {
@@ -87,7 +60,7 @@ p { margin: 0 0 10px; }
   overflow-wrap: anywhere; /* 引擎名或译文较长时换行，不撑出弹窗 */
 }
 .btn:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-soft); }
-.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
 .btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .error {

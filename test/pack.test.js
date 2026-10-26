@@ -146,7 +146,7 @@ test("checkReferenced：工具栏弹窗页 action.default_popup 也要存在", (
 
 test("checkFileSet：运行时文件通过，点文件、测试、垃圾文件和其他文件拒绝", () => {
   const good = ["manifest.json", "_locales/en/messages.json", "_locales/zh_CN/messages.json", "icons/icon-16.png",
-    "background.js", "go.html", "options/options.css", "lib/engines.js"];
+    "background.js", "go.html", "go.css", "styles/tokens.css", "options/options.css", "lib/engines.js"];
   assert.deepEqual(checkFileSet(good), []);
   const bad = [".DS_Store", "icons/.DS_Store", ".eslintrc", "lib/.cache/x.js", "lib/trigger.test.js", "test/a.js",
     "options/x.spec.mjs", "Thumbs.db", "notes.md", "data.json", "_locales/en/other.json", "lib/engines.js.map", "README"];
