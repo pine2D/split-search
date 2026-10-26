@@ -32,8 +32,13 @@
     <!-- 真实截图：地址栏下拉框（输入 rust ownership，建议“DuckDuckGo | Bing Search”），左缘是下拉框左边，下沿切在建议行灰底之下 -->
     <div class="win a"><div class="crop" data-crop="226,62,606,126"><img src="../raw/omnibox-suggest.png" data-iw="2400" alt=""></div></div>
     <div class="cap"><b>02</b><span data-t="marquee.cap2"></span></div>
-    <!-- 真实截图：设置页引擎列表的前两行，DuckDuckGo 标着 Default left、Bing 标着 Default right；左缘比行左缘（658）多留 18px，下沿切在 Bing 的轮换开关之下 -->
-    <div class="win b"><div class="crop" data-crop="640,310,678,290"><img src="../raw/options-engines.png" data-iw="2400" alt=""></div></div>
+    <!-- 真实截图：设置页引擎列表的前两行，DuckDuckGo 标着 Default left、Bing 标着 Default right；左缘比行左缘（658）多留 18px。
+         这两行右侧各多一行“不能隐藏”的说明（原图 x 1330 以后，不在裁切里），整块裁切会在轮换开关下面多出一行空白，
+         所以分两段：DuckDuckGo 行从分隔线（y 304）之下起，Bing 行从它上方的分隔线（y 460）起，都切在轮换开关一行之后（与 Google 行同高）。 -->
+    <div class="win b">
+      <div class="crop" data-crop="640,305,678,117"><img src="../raw/options-engines.png" data-iw="2400" alt=""></div>
+      <div class="crop" data-crop="640,460,678,118"><img src="../raw/options-engines.png" data-iw="2400" alt=""></div>
+    </div>
   </div>
   <script src="../templates/crop.js"></script>
 </body></html>

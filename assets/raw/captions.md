@@ -93,12 +93,14 @@ convert drag-to-tabstrip.png \
 - 扩展从本仓库 `src/` 用 CDP `Extensions.loadUnpacked` 加载，版本 0.4.0（界面翻新后、提交前的工作区，含“右键查询”卡片两个下拉框的排版修正）。
 - `storage.sync` 写成 `uiLocale: "en"`、默认组合 DuckDuckGo ｜ Bing、引擎排序 DuckDuckGo、Bing、Google、Kagi、Perplexity；`storage.local` 没有 `setupDone`，所以“开始使用”卡显示三步。
 - 授权：在设置页里一次申请五个预置引擎的网站，Chrome 弹出授权框后用 xdotool 按 Tab、回车点“允许”（和用户点击效果相同）。所以第 1 步显示“已授权”，引擎列表全部“Access granted”。
-- 模板裁切随之改了：商店截图 4 是 `648,308,1120,600`，顶部宣传图是 `640,310,678,290`（见 `assets/templates-v2/README.md`）。
+- 模板裁切随之改了：商店截图 4 是 `648,308,1120,600`，顶部宣传图是 `640,310,678,290`（见 `assets/templates-v2/README.md`；2026-10-27 起改成按行分段裁切，见下文第四次重拍）。
 
 第二次重拍（同一天，整体审查后的修正）：“不能隐藏”的说明放宽到一行（`options.css` 的 `.row-reason` 改为 `max-width: 56ch`），引擎卡片和整页随之变矮，所以重拍了这三张。用同一个脚本、同一套环境和状态（私有 Xvfb :131、全新临时配置、五个预置引擎在授权框里点“允许”、没有 `setupDone`），扩展是修正后的工作区。设置页的静态 HTML 这时已改成 `lang="en"`，不会再弹翻译气泡；关掉翻译的参数和 Preferences 仍然照旧加着。`options-top.png` 与上一版只差右边滚动条滑块（页面变矮了），画面内容相同；`options-engines.png` 里 DuckDuckGo、Bing 两行各矮了一行。重新渲染后只有商店截图 4 和顶部宣传图变了；商店截图 4 的裁切只到引擎行的左半边，说明文字在右半边、不在画面里，所以这两行的复选框下面仍有一行高的空白（比上一版少一行）。
 
 第三次重拍（2026-10-26，v0.4.0 打标签前的“开始使用”第 2 步改版）：第 2 步拆成三个编号小步（复制设置地址、粘贴触发网址、设为默认，每步只带自己的复制按钮），只有画面里有这张卡的 `options-top.png` 和 `options-fullpage.png` 换了。同一个脚本、同一套环境和状态（私有 Xvfb :131、全新临时配置、五个预置引擎在授权框里点“允许”、没有 `setupDone`）。`options-fullpage.png` 变成 2376×4637（第 2 步比原来的“说明 + 两个带标签的复制框”矮了一点）。`options-engines.png` 也重拍过对比：内容相同，只有文字抗锯齿的像素差（页面高度变了，滚动位置不同），所以保留上一版不换。商店图和宣传图只用 `options-engines.png`，重新渲染后没有变化。工具栏弹窗不在任何原始截图里，弹窗分屏外的三档不用补拍。
 
 第四次重拍（2026-10-27，v0.4 界面收尾）：没授权的非必需引擎改成中性样式、“开始使用”卡显示时“添加到 Chrome”卡里的默认组合一段和“其他组合”收进折叠区、以图搜图列表加了小标题和写明对象的按钮。三张 `en/options-*.png` 都用同一个脚本、同一套环境和状态重拍（私有 Xvfb :131、Chrome 156.0.8078.47、全新临时配置、五个预置引擎在授权框里点“允许”、没有 `setupDone`），扩展是当时 main 上的 `src/`。`options-top.png` 与上一版只差右边滚动条滑块（整页变矮了），画面内容相同；`options-engines.png` 内容相同，滚动位置差约 1 原图像素；`options-fullpage.png` 变成 2376×4343，“添加到 Chrome”卡里是收起的“Trigger URL for the default pair”和“Other pairs”，“右键查询”卡里有“Image search engines”小标题和“Add from image search catalog”“Add image search engine”两个按钮。界面里没授权的引擎都授权了，所以截图里看不到新的中性“未授权”样式。
+
+商店截图 4 多出的一行空白（同日查明）：DuckDuckGo、Bing 两行右侧多一行“不能隐藏”的说明，所以这两行比 Google、Kagi 高 38 原图像素；商店截图 4 和顶部宣传图的裁切都只到行的左半边，说明在画面外，整块裁切就在这两行的复选框下面各留一行空白。原因在模板的裁切，不在文案。改成按行分段裁切、上下紧接：DuckDuckGo 行与 Bing 行都切在复选框一行之后（与 Google 行同高），切掉的两条带在画面可见范围里是纯白，没有删掉任何看得见的内容（见 `assets/templates-v2/store-4-engines.html`、`promo-marquee.html` 的注释）。
 
 每张都逐一看过：没有中文、没有账号头像（右上角是未登录的默认图标）、没有 Kagi 或其他网站的令牌、IP 和浏览历史。网页内容是网站当时实际返回的结果，没有改过。
