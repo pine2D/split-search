@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { setupView, isCompletion } from "../src/lib/setup-state.js";
+import { setupView, countsAsSetup, addTryTab, TRY_TABS_MAX } from "../src/lib/setup-state.js";
 
 const base = { leftGranted: false, rightGranted: false, rightDistinct: true, setupDone: false, justCompleted: false };
 const view = o => setupView({ ...base, ...o });
@@ -63,79 +63,47 @@ test("缺省字段按“没有”处理", () => {
   assert.equal(setupView({}).mode, "steps");
 });
 
-// ---- isCompletion ----
+// ---- countsAsSetup：go.html 写入一对搜索记录之后，算不算“设置完成” ----
 
-const rec = (peer, query, extra = {}) => ({ peer, splitViewId: 7, mode: "split", role: "search", engine: "x", query, ...extra });
-const pair = (a, b, query, extra) => ({
-  [`split:${a}`]: { newValue: rec(b, query, extra) },
-  [`split:${b}`]: { newValue: rec(a, query, extra) },
-});
-const none = new Map();
-
-test("新出现一对搜索记录、两侧都不是“试一下”的标签：算完成", () => {
-  assert.equal(isCompletion(pair(1, 2, "cats"), none), true);
+test("真实触发写入一对、两侧和当前标签都不是“试一下”的标签：算完成", () => {
+  assert.equal(countsAsSetup({ setupDone: false, tryTabs: [], tabIds: [1, 2] }), true);
+  assert.equal(countsAsSetup({ setupDone: undefined, tryTabs: [9], tabIds: [1, 2] }), true);
 });
 
-test("“试一下”打开的那一对不算", () => {
-  assert.equal(isCompletion(pair(1, 2, "示例"), new Map([[1, "示例"]])), false);
-  assert.equal(isCompletion(pair(1, 2, "示例"), new Map([[2, "示例"]])), false);
+test("全新的相邻对（窄窗口）、在旁边新开的一对同样算：只看写入的标签 id", () => {
+  // 相邻对与分屏写的都是同一对标签 id；在旁边新开一对时 tabIds 是当前标签加上新的两侧
+  assert.equal(countsAsSetup({ setupDone: false, tryTabs: [], tabIds: [5, 101] }), true);
+  assert.equal(countsAsSetup({ setupDone: false, tryTabs: [4], tabIds: [4, 102, 103] }), false);
+  assert.equal(countsAsSetup({ setupDone: false, tryTabs: [], tabIds: [4, 102, 103] }), true);
 });
 
-test("“试一下”的标签里换了关键词再搜（经地址栏或拖拽）：算完成", () => {
-  const changes = {
-    "split:1": { oldValue: rec(2, "示例"), newValue: rec(2, "dogs") },
-    "split:2": { oldValue: rec(1, "示例"), newValue: rec(1, "dogs") },
-  };
-  assert.equal(isCompletion(changes, new Map([[1, "示例"]])), true);
+test("任一侧是“试一下”打开的标签：不算", () => {
+  assert.equal(countsAsSetup({ setupDone: false, tryTabs: [1], tabIds: [1, 2] }), false);
+  assert.equal(countsAsSetup({ setupDone: false, tryTabs: [7, 2], tabIds: [1, 2] }), false);
 });
 
-test("关键词没变的改写（换右侧、拼成分屏、标成失效）不算", () => {
-  const same = (extra) => ({
-    "split:1": { oldValue: rec(2, "cats"), newValue: rec(2, "cats", extra) },
-    "split:2": { oldValue: rec(1, "cats"), newValue: rec(1, "cats", extra) },
-  });
-  assert.equal(isCompletion(same({ engine: "y" }), none), false);
-  assert.equal(isCompletion(same({ splitViewId: -1 }), none), false);
-  assert.equal(isCompletion(same({ mode: "adjacent", splitViewId: -1 }), none), false);
+test("已经完成过：不再写", () => {
+  assert.equal(countsAsSetup({ setupDone: true, tryTabs: [], tabIds: [1, 2] }), false);
 });
 
-test("没有 role 的旧形状按搜索记录算", () => {
-  const legacy = { "split:1": { newValue: { peer: 2, splitViewId: 3, mode: "split", engine: "a", query: "q" } },
-    "split:2": { newValue: { peer: 1, splitViewId: 3, mode: "split", engine: "b", query: "q" } } };
-  assert.equal(isCompletion(legacy, none), true);
+test("没有写入一对（tabIds 不足两个或不是整数）、tryTabs 形状不对：按安全的一侧处理", () => {
+  assert.equal(countsAsSetup({ setupDone: false, tryTabs: [], tabIds: [1] }), false);
+  assert.equal(countsAsSetup({ setupDone: false, tryTabs: [], tabIds: null }), false);
+  assert.equal(countsAsSetup({ setupDone: false, tryTabs: [], tabIds: [1, "2"] }), false);
+  // 读不出 tryTabs（不是数组）当作空：此时只差“试一下”的排除，标签 id 照样核对
+  assert.equal(countsAsSetup({ setupDone: false, tryTabs: "x", tabIds: [1, 2] }), true);
+  assert.equal(countsAsSetup({}), false);
 });
 
-test("查询对（page ↔ lookup）不算", () => {
-  const changes = {
-    "split:1": { newValue: { peer: 2, splitViewId: 7, mode: "split", role: "page", input: "text", engine: "", query: "q" } },
-    "split:2": { newValue: { peer: 1, splitViewId: 7, mode: "split", role: "lookup", input: "text", engine: "b", query: "q" } },
-  };
-  assert.equal(isCompletion(changes, none), false);
-});
+// ---- addTryTab：“试一下”打开的标签 id 追加进 setupTryTabs ----
 
-test("查询对改写成搜索对（在 page 一侧搜索）：算完成", () => {
-  const changes = {
-    "split:1": { oldValue: { peer: 2, splitViewId: 7, mode: "split", role: "page", input: "text", engine: "", query: "q" }, newValue: rec(2, "q") },
-    "split:2": { oldValue: { peer: 1, splitViewId: 7, mode: "split", role: "lookup", input: "text", engine: "b", query: "q" }, newValue: rec(1, "q") },
-  };
-  assert.equal(isCompletion(changes, none), true);
-});
-
-test("只有一侧、互不指向、删除、形状不对、别的键：不算", () => {
-  assert.equal(isCompletion({ "split:1": { newValue: rec(2, "q") } }, none), false);
-  assert.equal(isCompletion({ "split:1": { newValue: rec(3, "q") }, "split:2": { newValue: rec(1, "q") } }, none), false);
-  assert.equal(isCompletion({ "split:1": { oldValue: rec(2, "q") }, "split:2": { oldValue: rec(1, "q") } }, none), false);
-  assert.equal(isCompletion({ "split:1": { newValue: 2 }, "split:2": { newValue: 1 } }, none), false);
-  assert.equal(isCompletion({ other: { newValue: rec(2, "q") } }, none), false);
-  assert.equal(isCompletion({}, none), false);
-  assert.equal(isCompletion(null, none), false);
-});
-
-test("一次变化里有别的记录也照样认出那一对", () => {
-  const changes = { ...pair(5, 6, "q"), "split:9": { oldValue: rec(10, "z") } };
-  assert.equal(isCompletion(changes, none), true);
-});
-
-test("tryTabs 缺省视为空", () => {
-  assert.equal(isCompletion(pair(1, 2, "q")), true);
+test("addTryTab：追加、去重、只留最近 max 个；不是数组当作空，不是整数不加", () => {
+  assert.deepEqual(addTryTab([], 3), [3]);
+  assert.deepEqual(addTryTab([1, 2], 3), [1, 2, 3]);
+  assert.deepEqual(addTryTab([1, 3, 2], 3), [1, 2, 3]);
+  assert.deepEqual(addTryTab(undefined, 3), [3]);
+  assert.deepEqual(addTryTab(["x", 1], 3), [1, 3]);
+  assert.deepEqual(addTryTab([1, 2, 3], 4, 3), [2, 3, 4]);
+  assert.deepEqual(addTryTab([1], "4"), [1]);
+  assert.equal(addTryTab(Array.from({ length: 60 }, (_, i) => i), 99).length, TRY_TABS_MAX);
 });

@@ -28,13 +28,16 @@ export async function readRecord(tabId) {
 }
 
 // 一次 set 写两个方向，不做读-改-写。roleA/roleB/input 原样交给 makeRecords（不传时是搜索对）；
-// 组合不合法时 makeRecords 抛错，这里记日志、一条都不写（之后按“没有记录”判定，不会覆盖任何标签）
+// 组合不合法时 makeRecords 抛错，这里记日志、一条都不写（之后按“没有记录”判定，不会覆盖任何标签）。
+// 返回是否写成（true / false），不抛错
 export function writePair({ a, b, splitViewId, mode, engineA, engineB, query, roleA, roleB, input }) {
   return serial(async () => {
     try {
       await chrome.storage.session.set(makeRecords({ a, b, splitViewId, mode, engineA, engineB, query, roleA, roleB, input }));
+      return true;
     } catch (err) {
       log("failed to record the split tab pair", err);
+      return false;
     }
   });
 }

@@ -90,7 +90,7 @@ test("ACTIONS 覆盖 decideSplit 的五种结果", () => {
 
 test("new：右侧新建并与当前标签分屏，复核后写两条 split 记录，当前标签打开左侧", async () => {
   const out = await openNew({ tab: { id: 1, index: 3, windowId: 9 }, leftUrl: L, rightUrl: R, ...ids });
-  assert.deepEqual(out, { replaceWith: L });
+  assert.deepEqual(out, { replaceWith: L, pair: [1, 100] });
   assert.deepEqual(calls, [
     ["tabs.create", { url: R, index: 4, windowId: 9, active: false, splitWithTabId: 1 }],
     ["tabs.get", 1],
@@ -161,7 +161,7 @@ test("reuse：当前在左侧时另一侧更新为右侧，左右不对调", asy
   const out = await reuse({
     tab: { id: 1, index: 3 }, peer: { id: 2, index: 4 }, splitViewId: 55, leftUrl: L, rightUrl: R, ...ids,
   });
-  assert.deepEqual(out, { replaceWith: L });
+  assert.deepEqual(out, { replaceWith: L, pair: [1, 2] });
   assert.deepEqual(calls, [
     ["tabs.update", 2, { url: R }],
     ["session.set", { "split:1": rec(2, "kagi"), "split:2": rec(1, "google") }],
@@ -173,7 +173,7 @@ test("reuse：当前在右侧时另一侧拿左侧，记录里对侧是 leftId�
   const out = await reuse({
     tab: { id: 1, index: 5 }, peer: { id: 2, index: 4 }, splitViewId: 55, leftUrl: L, rightUrl: R, ...ids,
   });
-  assert.deepEqual(out, { replaceWith: R });
+  assert.deepEqual(out, { replaceWith: R, pair: [1, 2] });
   assert.deepEqual(calls, [
     ["tabs.update", 2, { url: L }],
     ["session.set", { "split:1": rec(2, "google"), "split:2": rec(1, "kagi") }],
@@ -192,7 +192,7 @@ test("foreign：在原分屏右侧新建一对并记录，再离开当前标签�
   const tab = { id: 1, index: 2, windowId: 9 };
   const splitTabs = [tab, { id: 2, index: 3, windowId: 9 }];
   const out = await openForeign({ tab, splitTabs, leftUrl: L, rightUrl: R, ...ids });
-  assert.deepEqual(out, { leave: true });
+  assert.deepEqual(out, { leave: true, pair: [100, 101] });
   const hist = { length: 2, back: () => calls.push(["history.back"]) };
   assert.equal(await leaveTab(tab, hist), "back");
   assert.deepEqual(calls, [
@@ -238,7 +238,7 @@ test("foreign：右侧两次创建都失败时不抛错，也不再打开第二�
 test("other-window：在已有的普通窗口建一对、记录后把该窗口切到前台", async () => {
   installChrome({}, { lastFocused: { id: 7, type: "normal" } });
   const out = await openInOtherWindow({ leftUrl: L, rightUrl: R, ...ids });
-  assert.deepEqual(out, { replaceWith: L });
+  assert.deepEqual(out, { replaceWith: L, pair: [100, 101] });
   assert.deepEqual(calls, [
     ["windows.getLastFocused", { windowTypes: ["normal"], populate: true }],
     ["tabs.create", { url: L, windowId: 7, active: true }],
@@ -252,14 +252,14 @@ test("other-window：在已有的普通窗口建一对、记录后把该窗口�
 
 test("other-window：切前台失败只记录，不影响结果", async () => {
   installChrome({ focus: true }, { lastFocused: { id: 7, type: "normal" } });
-  assert.deepEqual(await openInOtherWindow({ leftUrl: L, rightUrl: R, ...ids }), { replaceWith: L });
+  assert.deepEqual(await openInOtherWindow({ leftUrl: L, rightUrl: R, ...ids }), { replaceWith: L, pair: [100, 101] });
   assert.ok(names().includes("windows.update"));
 });
 
 test("other-window：没有普通窗口时新建窗口，不再额外切前台", async () => {
   installChrome({ getLastFocused: true });
   const out = await openInOtherWindow({ leftUrl: L, rightUrl: R, ...ids });
-  assert.deepEqual(out, { replaceWith: L });
+  assert.deepEqual(out, { replaceWith: L, pair: [50, 100] });
   assert.deepEqual(calls, [
     ["windows.getLastFocused", { windowTypes: ["normal"], populate: true }],
     ["windows.create", { type: "normal", url: L }],
@@ -295,7 +295,7 @@ test("new：窄窗口右侧不带 splitWithTabId，在后台相邻位置，写 a
   const out = await openNew({
     tab: { id: 1, index: 3, windowId: 9 }, win: { width: 800 }, leftUrl: L, rightUrl: R, ...ids, narrowEnabled: true,
   });
-  assert.deepEqual(out, { replaceWith: L });
+  assert.deepEqual(out, { replaceWith: L, pair: [1, 100] });
   const adj = { mode: "adjacent", splitViewId: -1 };
   assert.deepEqual(calls, [
     ["tabs.create", { url: R, index: 4, windowId: 9, active: false }],
@@ -316,7 +316,7 @@ test("foreign：窄窗口新左侧在 maxIndex+1，右侧紧挨其后且不分�
   const out = await openForeign({
     tab, win: { width: 700 }, splitTabs: [tab, { id: 2, index: 3, windowId: 9 }], leftUrl: L, rightUrl: R, ...ids, narrowEnabled: true,
   });
-  assert.deepEqual(out, { leave: true });
+  assert.deepEqual(out, { leave: true, pair: [100, 101] });
   const adj = { mode: "adjacent", splitViewId: -1 };
   assert.deepEqual(calls, [
     ["tabs.create", { url: L, index: 4, windowId: 9, active: true }],
@@ -350,7 +350,7 @@ test("join：当前在左侧，先更新右侧，再把两个标签拼成分屏�
   const out = await join({
     tab: { id: 1, index: 3, windowId: 9 }, peer: { id: 2, index: 4, windowId: 9 }, splitViewId: -1, leftUrl: L, rightUrl: R, ...ids,
   });
-  assert.deepEqual(out, { replaceWith: L });
+  assert.deepEqual(out, { replaceWith: L, pair: [1, 2] });
   assert.deepEqual(calls, [
     ["tabs.update", 2, { url: R }],
     ["tabs.createSplit", [1, 2]],
@@ -366,7 +366,7 @@ test("join：当前在右侧时对侧拿左侧，createSplit 仍按标签顺序�
   const out = await join({
     tab: { id: 1, index: 5, windowId: 9 }, peer: { id: 2, index: 4, windowId: 9 }, splitViewId: -1, leftUrl: L, rightUrl: R, ...ids,
   });
-  assert.deepEqual(out, { replaceWith: R });
+  assert.deepEqual(out, { replaceWith: R, pair: [1, 2] });
   assert.deepEqual(calls[0], ["tabs.update", 2, { url: L }]);
   assert.deepEqual(calls[1], ["tabs.createSplit", [2, 1]]);
   assert.deepEqual(calls.at(-1), ["session.set", {
@@ -379,7 +379,7 @@ test("join：createSplit 抛错 → 不抛，退回相邻对的复用（adjacent
   const out = await join({
     tab: { id: 1, index: 3, windowId: 9 }, peer: { id: 2, index: 4, windowId: 9 }, splitViewId: -1, leftUrl: L, rightUrl: R, ...ids,
   });
-  assert.deepEqual(out, { replaceWith: L });
+  assert.deepEqual(out, { replaceWith: L, pair: [1, 2] });
   const adj = { mode: "adjacent", splitViewId: -1 };
   assert.deepEqual(calls.at(-1), ["session.set", { "split:1": rec(2, "kagi", adj), "split:2": rec(1, "google", adj) }]);
   assert.ok(names().includes("tabs.update"));
@@ -511,7 +511,7 @@ test("reuse：在查询对的 page 一侧运行 → 只更新对侧一次，两�
     tab: { id: 1, index: 3 }, peer: { id: 2, index: 4 }, splitViewId: 55, record: page, peerRecord: lookup,
     leftUrl: L, rightUrl: R, ...ids,
   });
-  assert.deepEqual(out, { replaceWith: L });
+  assert.deepEqual(out, { replaceWith: L, pair: [1, 2] });
   assert.deepEqual(calls.filter(c => c[0] === "tabs.update"), [["tabs.update", 2, { url: R }]]);
   assert.deepEqual(session.get("split:1"), rec(2, "kagi"));
   assert.deepEqual(session.get("split:2"), rec(1, "google"));
@@ -560,4 +560,23 @@ test("confirmedSplitViewId：两个标签读到同一个 splitViewId → 返回�
   assert.equal(await confirmedSplitViewId(1, 2), 55);
   installChrome({}, { getSplitViewId: -1 });
   assert.equal(await confirmedSplitViewId(1, 2), -1);
+});
+
+// ---- “开始使用”完成判定用的 pair：只有记录确实写进 storage.session 才带 ----
+
+test("pair：记录写入失败（session.set 抛错）时 new、foreign、reuse 都不带 pair", async () => {
+  installChrome({ session: true });
+  assert.deepEqual(await openNew({ tab: { id: 1, index: 3, windowId: 9 }, leftUrl: L, rightUrl: R, ...ids }), { replaceWith: L });
+  installChrome({ session: true });
+  const hist = { length: 2, back() {} };
+  const out = await openForeign({ tab: { id: 1, index: 0, windowId: 9 }, splitTabs: [{ id: 1, index: 0 }, { id: 2, index: 1 }], leftUrl: L, rightUrl: R, ...ids }, hist);
+  assert.deepEqual(out, { leave: true });
+  installChrome({ session: true });
+  const r = await reuse({ tab: { id: 1, index: 0 }, peer: { id: 2, index: 1 }, splitViewId: 55, leftUrl: L, rightUrl: R, ...ids });
+  assert.deepEqual(r, { replaceWith: L });
+});
+
+test("pair：想分屏却退化成普通标签（不写记录）时不带 pair", async () => {
+  installChrome({ createSplit: true });
+  assert.deepEqual(await openNew({ tab: { id: 1, index: 3, windowId: 9 }, leftUrl: L, rightUrl: R, ...ids }), { replaceWith: L });
 });

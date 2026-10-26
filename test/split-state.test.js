@@ -332,3 +332,9 @@ test("writePair：不合法的组合（makeRecords 抛错）只记日志、一�
   assert.deepEqual(calls, []);
   assert.equal(console.error.mock.callCount(), 2);
 });
+
+test("writePair：写成返回 true，set 抛错返回 false（不抛）", async () => {
+  assert.equal(await writePair({ a: 1, b: 2, splitViewId: 7, mode: "split", engineA: "google", engineB: "bing", query: "q" }), true);
+  installChrome({ fail: { set: true } });
+  assert.equal(await writePair({ a: 1, b: 2, splitViewId: 7, mode: "split", engineA: "google", engineB: "bing", query: "q" }), false);
+});

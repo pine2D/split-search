@@ -1,6 +1,5 @@
-// 设置页“开始使用”卡的纯逻辑：显示哪几步、每步什么状态，以及一次 storage.session 变化算不算“设置完成”。
+// “开始使用”卡的纯逻辑：设置页显示哪几步、每步什么状态；go.html 写入一对搜索记录后算不算“设置完成”。
 // 不得引用 chrome。
-import { RECORD_PREFIX, parseRecord } from "./split-owner.js";
 
 // 输入：左右两侧是否已授权、右侧是否是另一个引擎、storage.local 的 setupDone、本页是否刚看到它变成 true。
 // mode：steps（首次，三步）、regrant（完成过但左侧没授权：只显示第 1 步）、done（本页刚完成：一句确认）、hidden。
@@ -21,36 +20,23 @@ export function setupView({ leftGranted = false, rightGranted = false, rightDist
   };
 }
 
-const tabIdOf = key => {
-  if (typeof key !== "string" || !key.startsWith(RECORD_PREFIX)) return null;
-  const id = Number(key.slice(RECORD_PREFIX.length));
-  return Number.isInteger(id) ? id : null;
-};
-
-// 这条记录代表一次新的搜索：现在是搜索记录，之前没有、不是搜索记录或关键词不同。
-// 关键词不变的改写（换右侧引擎、相邻对拼成分屏、标成失效）不算
-function freshSearch(change) {
-  const now = parseRecord(change?.newValue);
-  if (now?.role !== "search") return null;
-  const before = parseRecord(change?.oldValue);
-  return before?.role === "search" && before.query === now.query ? null : now;
+// go.html 写入一对搜索记录之后（新建分屏、相邻对、在旁边或别的窗口新开一对，以及在本扩展的一对里重新搜索）
+// 由它判定要不要写 storage.local 的 setupDone。tabIds：当前标签和写入记录的两侧（至少两个整数）；
+// tryTabs：storage.session 的 setupTryTabs，“试一下”打开的标签 id（它绕过了用户的网站搜索设置，不算完成）。
+// 已完成过就不再写。读不出 tryTabs（不是数组）当作空。
+export function countsAsSetup({ setupDone, tryTabs, tabIds } = {}) {
+  if (setupDone === true) return false;
+  if (!Array.isArray(tabIds) || tabIds.length < 2 || !tabIds.every(Number.isInteger)) return false;
+  const tried = Array.isArray(tryTabs) ? tryTabs : [];
+  return !tabIds.some(id => tried.includes(id));
 }
 
-// changes：storage.session.onChanged 的 changes；tryTabs：Map<“试一下”打开的标签 id, 当时用的示例关键词>。
-// 算完成：同一次写入里出现互相指向的一对新搜索记录，而且哪一侧都不是“试一下”的标签带着当时的示例关键词
-// （“试一下”绕过了用户的网站搜索设置；之后在那个标签里经地址栏或拖拽换了关键词再搜，就是真的触发成功）
-export function isCompletion(changes, tryTabs = new Map()) {
-  const fresh = new Map();
-  for (const [key, change] of Object.entries(changes || {})) {
-    const id = tabIdOf(key);
-    const rec = id === null ? null : freshSearch(change);
-    if (rec) fresh.set(id, rec);
-  }
-  const fromTry = (id, rec) => tryTabs.has(id) && tryTabs.get(id) === rec.query;
-  for (const [id, rec] of fresh) {
-    const peer = fresh.get(rec.peer);
-    if (!peer || peer.peer !== id) continue;
-    if (!fromTry(id, rec) && !fromTry(rec.peer, peer)) return true;
-  }
-  return false;
+// setupTryTabs 最多留这么多个（只有标签 id；浏览器关闭即清空，这里只防无限增长）
+export const TRY_TABS_MAX = 50;
+
+// 追加一个“试一下”打开的标签 id：去重后放在最后，只留最近 max 个；list 不是数组当作空，非整数项丢掉
+export function addTryTab(list, id, max = TRY_TABS_MAX) {
+  const ids = (Array.isArray(list) ? list : []).filter(x => Number.isInteger(x) && x !== id);
+  if (Number.isInteger(id)) ids.push(id);
+  return ids.slice(-max);
 }

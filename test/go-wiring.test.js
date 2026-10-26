@@ -16,3 +16,25 @@ test("go.js：判定经 decideFor（窗口类型走 splitWindowType），不直�
 test("go.js：读窗口时带 populate（标签数用来区分 PiP 与窗口管理器置顶的普通窗口）", () => {
   assert.match(src, /chrome\.windows\.get\(tab\.windowId, \{ populate: true \}\)/);
 });
+
+// “开始使用”卡的完成判定（I3）：go.js 写成一对搜索记录后经 chrome/setup-store.js 的 noteSetupPair
+// （内部用 lib/setup-state.js 的 countsAsSetup）判定再写 setupDone，跳转之前做
+test("go.js：建成一对后经 noteSetupPair 判定再写 setupDone，在跳转之前", () => {
+  assert.match(src, /import \{[^}]*\bnoteSetupPair\b[^}]*\} from "\.\/chrome\/setup-store\.js"/);
+  const call = src.indexOf("if (outcome.pair) await noteSetupPair([ctx.tab.id, ...outcome.pair]);");
+  assert.ok(call > 0, "split() 里应在 outcome.pair 存在时调用 noteSetupPair");
+  assert.ok(call > src.indexOf("await ACTIONS[action]("), "应在执行分屏动作之后");
+  assert.ok(call < src.indexOf("location.replace(outcome.replaceWith)"), "应在跳转之前");
+  assert.ok(call < src.indexOf("await leaveTab(ctx.tab)"), "应在离开当前标签之前");
+  assert.doesNotMatch(src, /storage\.local/, "go.js 不直接读写 storage.local");
+  const store = readFileSync(new URL("../src/chrome/setup-store.js", import.meta.url), "utf8");
+  assert.match(store, /import \{[^}]*\bcountsAsSetup\b[^}]*\} from "\.\.\/lib\/setup-state\.js"/);
+  assert.match(store, /if \(!countsAsSetup\(\{ setupDone, tryTabs, tabIds \}\)\) return;\s*try \{\s*await chrome\.storage\.local\.set\(\{ \[DONE_KEY\]: true \}\)/);
+});
+
+test("只有 go.js 写 setupDone：补成分屏、右键查询、设置页都不调用 noteSetupPair", () => {
+  for (const f of ["chrome/complete-actions.js", "chrome/lookup-actions.js", "background.js", "options/setup.js", "popup/popup.js"]) {
+    const s = readFileSync(new URL(`../src/${f}`, import.meta.url), "utf8");
+    assert.doesNotMatch(s, /noteSetupPair|storage\.local\.set/, f);
+  }
+});

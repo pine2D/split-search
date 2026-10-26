@@ -63,6 +63,9 @@ Chrome MV3 扩展：用户在地址栏搜索，或把文字拖到标签栏时，
           │                   → 然后 location.replace(左侧网址)
           ├─ 当前标签在“本扩展的分屏”中（判定见 spec 5.3；当前标签是 page 一侧时整对改写成 search 对）：tabs.update(另一侧, 右侧) → location.replace(左侧)
           └─ 当前标签在其他分屏中（含查询对的 lookup 一侧、兜底判出的 fallback-own）：在该分屏右边新建一对，原分屏两侧不动，见 spec 5.3
+      5. “开始使用”完成判定：动作确实写成一对 search 记录时（split-actions 的返回值带 pair：新建分屏、相邻对、在旁边或别的窗口新开一对，以及在本扩展的一对里重新搜索；退化成普通标签、记录没写成都不带），
+         跳转前经 chrome/setup-store.js 的 noteSetupPair（最多等 500 ms、从不抛错）：storage.local 的 setupDone 还不是 true，且当前标签和这一对都不在 storage.session 的 setupTryTabs（设置页“试一下”打开的标签 id）里，
+         就写 setupDone: true（判定 lib/setup-state.js 的 countsAsSetup）。读写失败只记 info 日志。⑦ 补成分屏、右键查询不写；设置页只监听 setupDone 的变化
   工具栏弹窗（popup/）与快捷键 cycle-right（默认不绑定，background.js 的 onCommand）：读记录，经 chrome/right-switch.js 把右侧换成指定/下一个引擎，关键词取自记录（只在 storage.session，不进 sync，不外发）。搜索对的候选与轮换都跳过当前左侧引擎（lib/cycle.js、lib/popup-view.js）；不在本扩展分屏里时弹窗显示说明、默认组合缩小版和快捷键状态（popup/idle.js）。查询对换的永远是 role 为 lookup 的一侧（与标签顺序无关），图片查询对在以图搜图引擎里换、轮换不看 cycleExclude。
   补成分屏（⑦，popup/complete.js）：弹窗经 activeTab 读当前标签网址，lib/result-match.js 认出某个文字引擎的结果页和关键词，且标签不在分屏中、不是本扩展的一对、窗口能分屏、还有别的未隐藏文字引擎可放右侧时显示“补成分屏”区（回复 plain 后本次弹窗不再提供补成）
     → 点引擎：runtime.sendMessage({ type: "complete-split", tabId, engineId })（不带网址和关键词）
@@ -123,13 +126,13 @@ split-search/
 │   ├── popup/popup.html|css|js   工具栏弹窗（action.default_popup）：显示关键词与左右引擎（查询对按“网页”“查询”）、换右侧、进入设置页
 │   ├── popup/complete.js         弹窗的“补成分屏”区：显示识别结果与右侧候选，点一个就发 complete-split 给 SW（自己不建标签、不写记录）
 │   ├── popup/idle.js             弹窗的左右窗格（ui/panes.js 建）、分屏外的“怎么试”与默认组合缩小版、底部快捷键状态
-│   ├── go.html / go.js / go.css  触发处理页（解析、判定、出错页与“只打开左侧搜索”兜底）；go.css 是出错页样式
+│   ├── go.html / go.js / go.css  触发处理页（解析、判定、出错页与“只打开左侧搜索”兜底；写成一对后经 setup-store 判定“开始使用”是否完成）；go.css 是出错页样式
 │   ├── styles/tokens.css         全部颜色变量（浅色 :root 与 @media (prefers-color-scheme: dark) 两段），设置页、弹窗、go.html 都 <link> 这一份；各界面样式表不定义颜色、不写 prefers-color-scheme
 │   ├── styles/panes.css          左右窗格样式（左松绿、右暖雾灰，镜像工具栏图标），设置页与弹窗共用
 │   ├── ui/panes.js               左右窗格的 DOM 构造（pane/panes），设置页的组合下拉框与弹窗共用
 │   ├── ui/icons.js               内联 SVG 图标（16×16 viewBox、统一线宽、currentColor、aria-hidden），不用 Unicode 字符当图标
 │   ├── options/options.html|css  设置页静态结构、引导文字与样式
-│   ├── options/setup.js          设置页顶部“开始使用”卡（#setup）：授权 → 在 Chrome 添加网站搜索并设默认 → 试一下，以及完成判定；唯一写 storage.local 的地方（布尔值 setupDone）；“试一下”打开的标签 id 只在内存，经 BroadcastChannel 告诉其他设置页
+│   ├── options/setup.js          设置页顶部“开始使用”卡（#setup）：授权 → 在 Chrome 添加网站搜索并设默认 → 试一下；只读 setupDone、监听它变成 true（换成完成确认并经 #notices 播报），不判定完成；“试一下”在 tabs.create 返回后把标签 id 追加进 storage.session 的 setupTryTabs
 │   ├── options/options.js        设置页编排：读配置、查授权、渲染、串行写入
 │   ├── options/edits.js          设置页纯逻辑：表单校验、算出写回存储的补丁
 │   ├── options/engine-list.js    引擎列表（每个引擎的“参与快捷键轮换”开关）、已隐藏列表、新增/编辑对话框
@@ -157,7 +160,7 @@ split-search/
 │   ├── lib/menu-spec.js          右键菜单两项的属性与标题（引擎名里 & 写成 &&、%s 拆成 % s）
 │   ├── lib/serial.js             串行队列（SW 全局串行链、菜单重建各用一条）
 │   ├── lib/cycle.js              快捷键轮换：下一个参与轮换的引擎（搜索对跳过当前左侧，查询对不受影响；弹窗候选同样不含搜索对的左侧）
-│   ├── lib/setup-state.js        “开始使用”卡的纯逻辑：setupView（steps / regrant / done / hidden 与每步状态）、isCompletion（storage.session 一次变化里新写出一对互指的 search 记录才算完成；“试一下”标签保持示例关键词的那一对、关键词没变的改写（换右侧、拼成分屏、标失效）不算；⑦ 补成的一对也算，已知限制）
+│   ├── lib/setup-state.js        “开始使用”卡的纯逻辑：setupView（steps / regrant / done / hidden 与每步状态）、countsAsSetup（go.html 写成一对 search 记录后：setupDone 不是 true、涉及的标签都不在 setupTryTabs 里才算完成）、addTryTab（去重、只留最近 50 个）
 │   ├── lib/engine-id.js          新增引擎时按名称自动生成 id（回退网址 host、再回退 engine，按 -2…-99 去重，两类引擎共用命名空间）
 │   ├── lib/popup-view.js         弹窗视图状态与换右侧的目标（switchTarget：图片查询对只在以图搜图引擎里挑），纯逻辑
 │   ├── lib/safe-error.js         日志里的错误先经 safeError/safeArgs：只留错误名和消息，引号内容与网址样文字换成 …，不带堆栈
@@ -166,7 +169,8 @@ split-search/
 │   ├── chrome/i18n.js            页内文案加载器：t()，fetch 读包内 _locales，按 uiLocale 切换
 │   ├── chrome/config-store.js    storage.sync 读写封装；顶层键 uiLocale（"auto"|"en"|"zh_CN"|"zh_TW"|"es"）、narrowFallback（缺省 true）、cycleExclude（不参与轮换的引擎 id 数组）、lookupEngine（查词引擎 id，缺省跟随默认组合右侧，不写默认值）、imageEngine（所选以图搜图引擎 id，缺省 lens）、imageEngines（自定义以图搜图引擎 { id, name, url }[]）；自定义引擎可带 leftDiscouraged
 │   ├── chrome/split-actions.js   分屏动作执行（tabs / windows 薄封装，记录经 split-state.js）
-│   ├── chrome/split-state.js     记录读写与 inspectTab（对侧已关闭、storage 抛错都按“无记录”处理）
+│   ├── chrome/split-state.js     记录读写与 inspectTab（对侧已关闭、storage 抛错都按“无记录”处理）；writePair 返回是否写成
+│   ├── chrome/setup-store.js     “开始使用”卡的存储：storage.local 的 setupDone（readSetupDone、go.html 用的 noteSetupPair）与 storage.session 的 setupTryTabs（rememberTryTab）；失败只记 info 日志
 │   ├── chrome/right-switch.js    换右侧：弹窗与快捷键共用（查询对换的是 lookup 一侧）
 │   ├── chrome/menus.js           右键菜单注册：removeAll 后重建两项，标题经 t()
 │   ├── chrome/lookup-actions.js  右键查询执行（② ⑧）：按 lookup-decision 建对、复用或开普通标签，记录经 split-state.js
@@ -191,7 +195,7 @@ split-search/
 - 以图搜图预置（只写在代码里，不能删除）：`lens` Google Lens `https://lens.google.com/uploadbyurl?url=%s`，缺省选用。以图搜图引擎不经过 DNR、不申请任何 host 权限，设置页不显示授权按钮。
 - 用户界面文案一律写在 `src/_locales/<语言>/messages.json`（首期 `en`、`zh_CN`、`zh_TW`、`es`），代码和 HTML 里不得出现界面文字。页面经 `src/chrome/i18n.js` 的 `t()` 取文案（按设置页所选语言，默认跟随浏览器），SW 里的右键菜单标题同样经 `t()`；`chrome.i18n.getMessage` 只用于 manifest 的 `__MSG_…__`。`zh_CN` 是源文案，`default_locale` 是 `en`。新增或修改文案时 4 种语言的 key 必须同时补齐（`test/i18n-catalog.test.js` 检查）。唯一允许的 `fetch` 是读取扩展包内的 `_locales`。文案的术语、润色与翻译流程见“## 文案”。
 - 日志（`console.info`/`console.error`）不得带标签网址、关键词、选中文字或图片网址；打印错误对象一律经 `lib/safe-error.js`（`test/log-wiring.test.js` 守着），不直接传 Chrome 的错误对象。
-- `storage.local` 只存布尔值 `setupDone`（“开始使用”卡是否完成，只由 `options/setup.js` 写），不放查询词、网址或其他数据。
+- `storage.local` 只存布尔值 `setupDone`（“开始使用”卡是否完成，只由 go.html 经 `chrome/setup-store.js` 写），不放查询词、网址或其他数据。`storage.session` 除分屏记录外只多一个 `setupTryTabs`（“试一下”打开的标签 id 数组，最多 50 个，不含网址或关键词）。
 - 颜色只在 `src/styles/tokens.css` 定义（浅色、深色两段），各界面样式表只用 `var(--…)`（`test/popup-css.test.js` 守着）；图标用 `ui/icons.js` 的内联 SVG，不用 Unicode 字符或 emoji（`test/ui-icons.test.js` 守着）。
 - 不使用 iframe，不修改响应头。只有经过用户确认的“本扩展分屏”才允许被覆盖，而且只改写记录确认属于本扩展的那一侧（查询对只改写 `lookup` 一侧；兜底判出的 `fallback-own` 不允许任何调用方改写标签）。调分屏 API 前窗口必须经 `splitWindowType` 判为 `normal`（读窗口带 `populate: true`）。
 - 开发镜像目录：`/mnt/d/APP/Chrome-Extensions/split-search`。之后只用“重新加载”，不要移除后重装。
@@ -248,8 +252,8 @@ split-search/
   - 右键菜单按文字行定位、悬停确认高亮后点击，不向菜单发任何按键（F20：首字母助记键与 Chrome 自带项冲突）。行号 `MENU_INDEX = { text: -2, image: -2 }`（`v04-lib.mjs`）从末尾数：本扩展项总在倒数第二行，紧挨“检查”；`MENU_MIN_ITEMS = { text: 7, image: 7 }`。依据是 S11 加 e2e 测试配置实测（测试配置界面英文、默认引擎 Kagi/sse2e，没有“翻译所选内容”和 Lens 两项，两种菜单都是 7 行；一次性配置默认引擎 Google 时是 8 行）。使用方把 `MENU_INDEX` 原样传给 `contextMenuPick`，不换算成正数；对不对以效果判定，detail 写当次菜单的实际行数。图片上右键前先清掉页面选区（选区和图片同时命中时 Chrome 把本扩展两项收进子菜单）。关菜单点在菜单矩形以外（`dismissMenu`），不沿用 `(at.x, at.y + 400)`：那个点落在菜单里。T24(i) 只比两次 `contextMenuCount` 的差（无痕少 1）。
   - 日志分级：预期的拒绝和忽略（右键 `ignore` 的各个 reason、`not_results_page`、`message_rejected`、`window_unsupported`）只记 `console.info`，B15 只收 `error` 级，所以 T20、T23、T24 有意走的拒绝路径不会让它判失败。
   - 存储基线不加 `lookupEngine`、`imageEngine`、`imageEngines`，用到它们的步骤自己用 `guarded` 写、写回。
-  - 界面翻新（设计 `docs/superpowers/specs/2026-10-26-v0.4-ui-refresh-design.md`）：B19“开始使用”卡（auto，`b19.mjs`）：清掉 `setupDone` 后卡片显示三步；“试一下”打开的一对不算完成；不经“试一下”在新标签打开触发网址出现一对后 `setupDone` 为 true、卡片换成完成确认，重开后隐藏；撤销左侧授权后卡片重新出现、只有第 1 步，恢复后消失。引擎行按 `data-id` 定位。
-  - `setupDone` 在 `storage.local`，不在 storage 快照里：B4、B19、I18N 用 `keepSetupDone` 或自己写回步骤前的值，但其他步骤建出的一对会让一直开着的设置页判完成并写入 true，所以跑过一次完整 e2e 后测试配置里 `setupDone` 一直是 true（只在测试配置里，不影响判定；要看首次状态的卡片，删掉这个键再开设置页）。
+  - 界面翻新（设计 `docs/superpowers/specs/2026-10-26-v0.4-ui-refresh-design.md`）：B19“开始使用”卡（auto，`b19.mjs`）：清掉 `setupDone` 后卡片显示三步；“试一下”打开的一对不算完成（标签 id 在 `setupTryTabs` 里）；不经“试一下”在新标签打开触发网址出现一对后 `setupDone` 为 true、卡片换成完成确认，重开后隐藏；(c') 卡片所在的设置页关着时触发一次，重新打开卡片不显示；撤销左侧授权后卡片重新出现、只有第 1 步，恢复后消失。引擎行按 `data-id` 定位。
+  - `setupDone`（`storage.local`）与 `setupTryTabs`（`storage.session`）不在 storage 快照里：B4、B19、I18N 用 `keepSetupDone` 或自己写回步骤前的值，但其他步骤经 go.html 建出的一对都会写入 `setupDone: true`，所以跑过一次完整 e2e 后测试配置里 `setupDone` 一直是 true（只在测试配置里，不影响判定；要看首次状态的卡片，删掉这个键再开设置页）。
   - T5 的重启子项（`flow-restart.mjs`）从 v0.4 起期望不覆盖：恢复出来的本扩展分屏两侧都没有记录，兜底判出的 `fallback-own` 按 `foreign` 处理，在旁边新开一对，原来两侧都不动。
 - I18N（`steps/i18n.mjs`，auto，`--auto-only` 会跑）：en、zh_CN、zh_TW、es 逐一打开设置页和 go.html 出错页，核对 `lang`、没有显示成 key 的文字、没有横向和按钮内容溢出；再测页内切换（不刷新、2 秒内）、连切 en → zh_TW 停在最后一次、第二个设置页跟随，以及 `uiLocale = "auto"` 时 `t()` 与 `chrome.i18n.getMessage` 逐 key 相同。它会改写 `storage.sync` 的 `uiLocale`，用 `guarded` 写回步骤前的值（中断时由 storage 快照兜底）。截图存 `.e2e/i18n/<locale>-options.png`、`<locale>-go-error.png`。
 - 测试窗口尺寸：第一次改尺寸（`fixWindow`、T17 的 `sizeTo`）前记到 `.e2e/window-snapshot.json`（`window-snap.mjs`），收尾改回，强制退出留下的快照下次启动先改回。快捷键：测试配置里原有绑定是脚本录不回去的（`parseKeys` 不认，如媒体键）时不改动它，B17(a)(b)/T19 记跳过。

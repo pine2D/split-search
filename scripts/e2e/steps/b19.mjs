@@ -1,9 +1,11 @@
-// B19 设置页“开始使用”卡（auto）：(a) 清掉 setupDone 后卡片显示；(b) 点“试一下”打开的一对出现后仍未完成；
-// (c) 不经“试一下”、在新标签里打开模拟引擎的触发网址出现一对后，setupDone 为 true、卡片换成完成确认，重新打开后消失；
+// B19 设置页“开始使用”卡（auto）：(a) 清掉 setupDone 后卡片显示；(b) 点“试一下”打开的一对出现后仍未完成
+// （它的标签 id 在 storage.session 的 setupTryTabs 里）；(c) 不经“试一下”、在新标签里打开模拟引擎的触发网址出现一对后，
+// setupDone 为 true、卡片换成完成确认，重新打开后消失；(c') 设置页关着时触发一次，重新打开设置页卡片不显示；
 // (d) 撤销左侧（模拟引擎 A）授权后卡片重新出现、只有第 1 步，恢复授权后消失。
-// storage.local 的 setupDone 不在 run.mjs 的 storage 快照里：keepSetupDone 记下步骤前的值，结束时（无论成败）写回并读回核对。
-// 左侧授权由 requestGrant 恢复（之前授权过，Chrome 直接批准）；没恢复成由 restores: true 的步骤后检查兜底。
-// 注意：e2e 一直开着一个设置页（evalExt 用的），它同样监听完成判定；“试一下”的标签 id 经 BroadcastChannel 告诉它，所以 (b) 也覆盖多页的情形。
+// 完成由 go.html 判定并写 setupDone（chrome/setup-store.js），设置页只监听；所以 (c') 不需要开着的设置页。
+// storage.local 的 setupDone 与 storage.session 的 setupTryTabs 都不在 run.mjs 的 storage 快照里：keepSetupDone 记下步骤前的值，
+// 结束时（无论成败）写回并读回核对。左侧授权由 requestGrant 恢复（之前授权过，Chrome 直接批准）；没恢复成由 restores: true 的步骤后检查兜底。
+// 注意：e2e 一直开着一个设置页（evalExt 用的），它不再参与完成判定；(c') 里“设置页关着”指卡片所在的设置页，evalExt 用的那一页照常开着。
 import { GRANT_TIMEOUT_MS, requestGrant, contains } from "./guided.mjs";
 import { openOptions, sleep } from "./optpage.mjs";
 import { resetTabs, openTab, waitState, findPair, trigger, summarize, nonce } from "./util.mjs";
@@ -12,24 +14,32 @@ import { HOSTS } from "../config.mjs";
 
 const J = JSON.stringify;
 const KEY = "setupDone";
+const TRY_KEY = "setupTryTabs";
 
-const readDone = ctx => ctx.ext.eval(`chrome.storage.local.get(${J(KEY)}).then(r => r[${J(KEY)}] ?? null)`);
+const readKey = (ctx, area, key) => ctx.ext.eval(`chrome.storage.${area}.get(${J(key)}).then(r => r[${J(key)}] ?? null)`);
 // value 为 null：删掉这个键（原本不存在）
-export const setDone = (ctx, value) => ctx.ext.eval(value === null
-  ? `chrome.storage.local.remove(${J(KEY)}).then(() => true)`
-  : `chrome.storage.local.set({ ${J(KEY)}: ${J(value)} }).then(() => true)`);
+const writeKey = (ctx, area, key, value) => ctx.ext.eval(value === null
+  ? `chrome.storage.${area}.remove(${J(key)}).then(() => true)`
+  : `chrome.storage.${area}.set({ ${J(key)}: ${J(value)} }).then(() => true)`);
+const readDone = ctx => readKey(ctx, "local", KEY);
+export const setDone = (ctx, value) => writeKey(ctx, "local", KEY, value);
+const readTry = ctx => readKey(ctx, "session", TRY_KEY);
 
-// 记下 setupDone，fn 结束后写回并读回核对。setupDone 只在测试配置里，写回总是对的，中断时也照样尽力写回
+// 记下 setupDone 和 setupTryTabs，fn 结束后写回并读回核对。两者只在测试配置里，写回总是对的，中断时也照样尽力写回
 export async function keepSetupDone(ctx, fn) {
   const saved = await readDone(ctx);
+  const savedTry = await readTry(ctx);
   let res, thrown;
   try { res = await fn(); } catch (e) { thrown = e; }
   let err = "";
   try {
     await setDone(ctx, saved);
+    await writeKey(ctx, "session", TRY_KEY, savedTry);
     const now = await readDone(ctx);
+    const nowTry = await readTry(ctx);
     if (now !== saved) err = `setupDone 读回 ${J(now)}，应为 ${J(saved)}`;
-  } catch (e) { err = `setupDone 写回失败：${e.message}`; }
+    else if (J(nowTry) !== J(savedTry)) err = `setupTryTabs 读回 ${J(nowTry)}，应为 ${J(savedTry)}`;
+  } catch (e) { err = `setupDone / setupTryTabs 写回失败：${e.message}`; }
   if (err) ctx.log?.(`清理失败：${err}`);
   if (thrown) { if (err) thrown.message += `；清理失败：${err}`; throw thrown; }
   if (err && res?.status !== "fail") return { ...res, status: "fail", detail: `${res?.detail ?? ""}；清理失败：${err}` };
@@ -80,12 +90,16 @@ async function tryNotDone(ctx, page) {
   }
   const pair = await waitState(ctx, st => findPair(st, ctx.port, q), `“试一下”打开的分屏（关键词 ${decodeURIComponent(q)}）`);
   await waitRecords(ctx, pair);
-  await sleep(1500); // 给两个设置页的监听留出时间
+  await sleep(1500); // go.html 写 setupDone 在跳转之前；多等一会儿，确认确实没写
   const done = await readDone(ctx);
+  const tried = await readTry(ctx);
   const c = await page.ev(CARD);
   if (done === true) return { status: "fail", detail: `“试一下”打开的一对（标签 ${pair[0].id}/${pair[1].id}）被判成完成：setupDone 已是 true` };
+  if (!Array.isArray(tried) || !pair.some(t => tried.includes(t.id))) {
+    return { status: "fail", detail: `setupTryTabs 里应有“试一下”打开的标签（${pair[0].id}/${pair[1].id} 之一），实际 ${J(tried)}` };
+  }
   if (c.mode !== "steps") return { status: "fail", detail: `“试一下”之后卡片应仍显示三步：${fmt(c)}` };
-  return { status: "pass", detail: `分屏 ${pair[0].id}/${pair[1].id} 出现、记录已写，setupDone 仍为 ${J(done)}，${fmt(c)}` };
+  return { status: "pass", detail: `分屏 ${pair[0].id}/${pair[1].id} 出现、记录已写，setupTryTabs ${J(tried)}，setupDone 仍为 ${J(done)}，${fmt(c)}` };
 }
 
 async function realDone(ctx, page) {
@@ -100,6 +114,24 @@ async function realDone(ctx, page) {
   const after = await page.ev(CARD);
   if (!after.hidden || after.mode !== "hidden") return { status: "fail", detail: `完成后重新打开设置页，卡片应消失：${fmt(after)}` };
   return { status: "pass", detail: `分屏 ${pair[0].id}/${pair[1].id} 出现后 setupDone 为 true，当前页 ${fmt(c)}；重新打开后卡片隐藏` };
+}
+
+// (c') 卡片所在的设置页关着：清掉 setupDone 后触发一次，go.html 自己写 setupDone；重新打开设置页卡片不显示
+async function closedDone(ctx, page) {
+  await page.close();
+  await setDone(ctx, null);
+  const q = `b19c+${nonce()}`;
+  await openTab(ctx, trigger(ctx.port, q));
+  const pair = await waitState(ctx, st => findPair(st, ctx.port, q), `设置页关着时触发的分屏（${q}）`);
+  await waitRecords(ctx, pair);
+  await ctx.browser.waitFor(async () => (await readDone(ctx)) === true, { timeoutMs: 5000, intervalMs: 200 })
+    .catch(() => { throw new Error(`设置页关着时，分屏 ${pair[0].id}/${pair[1].id} 出现后 5 秒内 setupDone 没有变成 true`); });
+  const again = await openOptions(ctx.browser);
+  try {
+    const c = await waitCard(again, c => c.mode !== null, "设置页渲染出卡片状态");
+    if (!c.hidden || c.mode !== "hidden") return { status: "fail", detail: `设置页关着时完成，重新打开后卡片应不显示：${fmt(c)}` };
+    return { status: "pass", detail: `设置页关着时分屏 ${pair[0].id}/${pair[1].id} 出现，setupDone 为 true；重新打开后 ${fmt(c)}` };
+  } finally { await again.close(); }
 }
 
 async function regrant(ctx, page) {
@@ -123,19 +155,21 @@ async function regrant(ctx, page) {
 }
 
 export const B19 = {
-  id: "B19", title: "设置页“开始使用”卡：“试一下”不算完成、真实触发算完成、撤销左侧授权后重新出现（自动判定）", kind: "auto", needs: [],
+  id: "B19", title: "设置页“开始使用”卡：“试一下”不算完成、真实触发算完成（设置页关着也算）、撤销左侧授权后重新出现（自动判定）", kind: "auto", needs: [],
   timeoutFactor: 2, restores: true, timeoutExtraMs: GRANT_TIMEOUT_MS,
   run: ctx => keepSetupDone(ctx, async () => {
     await resetTabs(ctx);
     await setDone(ctx, null);
-    const page = await openOptions(ctx.browser);
+    let page = await openOptions(ctx.browser);
     const items = [];
     try {
       items.push(await item("(a) 清掉 setupDone 后卡片显示", () => shown(page)));
       items.push(await item("(b) “试一下”打开的一对不算完成", () => tryNotDone(ctx, page)));
       items.push(await item("(c) 新标签里真实触发算完成", () => realDone(ctx, page)));
+      items.push(await item("(c') 设置页关着时触发也算完成，重新打开卡片不显示", () => closedDone(ctx, page)));
+      page = await openOptions(ctx.browser);
       items.push(await item("(d) 撤销左侧授权后重新出现，恢复后消失", () => regrant(ctx, page)));
-    } finally { await page.close(); }
+    } finally { await page.close().catch(() => {}); }
     return summarize(items);
   }),
 };

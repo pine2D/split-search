@@ -4,6 +4,7 @@ import { decideFor } from "./lib/split-decision.js";
 import { loadConfig } from "./chrome/config-store.js";
 import { ACTIONS, leaveTab } from "./chrome/split-actions.js";
 import { inspectTab } from "./chrome/split-state.js";
+import { noteSetupPair } from "./chrome/setup-store.js";
 import { initI18n, applyI18n, setI18nText } from "./chrome/i18n.js";
 import { errorKey } from "./lib/errors.js";
 import { safeArgs } from "./lib/safe-error.js";
@@ -66,6 +67,9 @@ async function split(engines, narrowEnabled, { left, right, query }, leftUrl, ri
   const outcome = await ACTIONS[action]({
     ...ctx, leftUrl, rightUrl, leftId: left.id, rightId: right.id, query, narrowEnabled,
   });
+  // 写成了一对搜索记录：经 lib/setup-state.js 判定后写 setupDone（“开始使用”卡完成）。
+  // 跳转前做（跳转会中断它）；noteSetupPair 从不抛错、最多等 500 ms，不影响分屏流程
+  if (outcome.pair) await noteSetupPair([ctx.tab.id, ...outcome.pair]);
   if (!outcome.leave) {
     location.replace(outcome.replaceWith);
   } else if (await leaveTab(ctx.tab) === "kept") {
