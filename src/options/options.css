@@ -234,7 +234,7 @@ dialog {
   color: var(--text);
   box-shadow: var(--shadow);
 }
-dialog::backdrop { background: rgb(0 0 0 / 0.4); }
+dialog::backdrop { background: var(--backdrop); }
 /* 用鼠标打开引擎库时焦点在对话框本身（ui.js 的 showDialog），它不画焦点框 */
 dialog:focus { outline: none; }
 .dlg-advanced { margin: 12px 0 0; }

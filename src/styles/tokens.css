@@ -29,6 +29,7 @@
   --pane-left-text: #4a6f5f;
   --pane-right-text: #68625a;
   --shadow: 0 6px 24px rgb(15 20 30 / 0.14);
+  --backdrop: rgb(15 20 30 / 0.4);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -58,6 +59,7 @@
     --pane-left-text: #7fae98;
     --pane-right-text: #b0a99f;
     --shadow: 0 6px 24px rgb(0 0 0 / 0.5);
+    --backdrop: rgb(0 0 0 / 0.6);
   }
 }
 
