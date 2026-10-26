@@ -1344,7 +1344,7 @@
     "description": "Heading above the list of reverse image search engines."
   },
   "options_image_add_catalog": {
-    "message": "Añadir del catálogo de buscadores",
+    "message": "Añadir del catálogo de buscadores de imágenes",
     "description": "Button that opens the catalog of reverse image search engines."
   },
   "options_image_add_custom": {
