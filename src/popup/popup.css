@@ -73,13 +73,14 @@ p { margin: 0 0 10px; }
   background: var(--danger-soft); color: var(--danger);
 }
 
+/* 页脚不折行：快捷键状态占左侧剩下的宽度、在自己的格子里换行，“打开设置”按钮保持一行、留在右边（es 的文字较长） */
 footer {
   margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border);
-  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: nowrap; gap: 8px;
 }
-footer .btn { margin-inline-start: auto; }
+footer .btn { margin-inline-start: auto; flex: none; }
 /* 快捷键状态：组合键或“设置快捷键”文字按钮 */
-.shortcut { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 6px; font-size: 12.5px; min-width: 0; }
+.shortcut { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 6px; font-size: 12.5px; flex: 1 1 0; min-width: 0; }
 .shortcut-key {
   font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   background: var(--code-bg); border: 1px solid var(--border); border-radius: 4px; padding: 0 5px;
