@@ -135,7 +135,9 @@ const B7 = {
         const r = await page.run(`
           const last = ids().at(-1), rw = row("baidu"), b = rw.querySelector(${keySel("engine_grant")});
           const notice = [...document.querySelectorAll("#notices .notice-text")].map(n => n.textContent).find(t => t.includes(${JSON.stringify(msg("notice_needs_grant"))}));
-          return { last, hasAuth: !!b, attention: !!b && b.classList.contains("btn-attention"), name: rw.querySelector(".engine-name").textContent, notice: notice || "" };`);
+          const st = rw.querySelector(".perm");
+          return { last, hasAuth: !!b, attention: !!b && b.classList.contains("btn-attention"), name: rw.querySelector(".engine-name").textContent, notice: notice || "",
+            perm: st ? st.className : "", permText: st ? st.textContent.trim() : "" };`);
         const problems = [];
         if (auto.id !== "baidu") problems.push(`id 应自动生成为 baidu，实际 ${JSON.stringify(auto.id)}`);
         if (auto.advancedOpen) problems.push("“高级”应默认收起");
@@ -144,6 +146,9 @@ const B7 = {
         if (r.name !== "百度") problems.push(`名称应为百度，实际 ${r.name}`);
         if (!r.hasAuth) problems.push("没有“授权”按钮");
         else if (!r.attention) problems.push("授权按钮没有高亮（btn-attention）");
+        // 百度不是默认组合左侧：状态是中性的“未授权（可选）”，只有授权按钮高亮（attention 与 perm-optional 同时出现）
+        if (!r.perm.split(" ").includes("perm-optional") || r.permText !== msg("engine_not_granted_optional"))
+          problems.push(`状态应是 perm-optional“${msg("engine_not_granted_optional")}”，实际 ${r.perm}“${r.permText}”`);
         if (!r.notice) problems.push("没有“尚未授权”的提示");
         // 顺带验证两步删除：点一次只变成“确认删除？”、不删；再点一次才删
         const once = await page.run(`row("baidu").querySelector(${keySel("engine_delete")}).click(); await sleep(300);
@@ -154,7 +159,7 @@ const B7 = {
         await page.until(`return !row("baidu")`);
         if (page.dialogs.length) problems.push(`不该弹 JS 对话框，实际弹了 ${page.dialogs.length} 个`);
         if (problems.length) return { status: "fail", detail: problems.join("；") };
-        return { status: "pass", detail: "id 按网址自动生成 baidu（“高级”收起，字段顺序 名称、网址、id）；百度出现在列表末尾，授权按钮高亮，右下角有未授权提示；删除点一次变成“确认删除？”，再点才删，没有弹框" };
+        return { status: "pass", detail: "id 按网址自动生成 baidu（“高级”收起，字段顺序 名称、网址、id）；百度出现在列表末尾，状态是中性的“未授权（可选）”、授权按钮高亮，右下角有未授权提示；删除点一次变成“确认删除？”，再点才删，没有弹框" };
       });
     } finally { /* 清理由 guarded 统一恢复 */ }
   },
