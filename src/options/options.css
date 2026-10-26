@@ -140,7 +140,7 @@ a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-r
 /* ---- 组合选择：左右两个窗格见 styles/panes.css ---- */
 .pair-pickers { margin-top: 8px; max-width: 480px; }
 .pair-pickers .pane { cursor: pointer; }
-/* “右键查询”卡片的两个下拉框：小标题在上，放不下时换行（不是左右窗格） */
+/* “右键查询”卡与“其他组合”生成器的两个下拉框：小标题在上，放不下时换行（不是左右窗格） */
 .lookup-pickers { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
 .lookup-pickers label { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: var(--muted); min-width: 0; overflow-wrap: break-word; }
 

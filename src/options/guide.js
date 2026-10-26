@@ -71,7 +71,7 @@ export function renderTriggers(ctx) {
     disclosure("guide-other", "guide_other_pairs_title",
       ht("p", { class: "hint" }, "guide_pair_shortcut_hint", t("guide_example_shortcut_query")),
       lefts.length
-        ? h("div", { class: "lookup-pickers gen-pickers" },
+        ? h("div", { class: "lookup-pickers" },
           h("label", null, ht("span", null, "common_left"), leftSel),
           h("label", null, ht("span", null, "common_right"), rightSel))
         : ht("p", { class: "hint hint-error" }, "guide_no_left"),
