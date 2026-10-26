@@ -47,11 +47,13 @@ function engineRow(e, index, total, ctx) {
   const reason = inPair ? ht("p", { class: "hint row-reason", id: `reason-${e.id}` },
     preset ? "engine_in_pair_hide" : "engine_in_pair_delete") : null;
   const removeProps = { type: "button", id: `remove-${e.id}`, disabled: inPair, "aria-describedby": reason ? `reason-${e.id}` : null };
-  // 隐藏随时能恢复，不确认（提示里带“撤销”）；删除要点两次（ui.js 的 confirmStep）
+  // 隐藏随时能恢复，不确认（提示里带“撤销”）；删除要点两次（ui.js 的 confirmStep），
+  // 第一次点击经 #notices 播报：再点一次才删，删前先删掉 Chrome 里用到它的网站搜索
   const removeBtn = preset
     ? ht("button", { ...removeProps, class: "btn btn-small", onclick: () => actions.hide(e) }, "engine_hide")
     : confirmStep(ht("button", { ...removeProps, class: "btn btn-small btn-danger" }, "engine_delete"),
-      "engine_delete", "engine_delete_confirm", () => actions.remove(e));
+      "engine_delete", "engine_delete_confirm", () => actions.remove(e),
+      { armNotice: () => t("engine_delete_confirm_hint", e.name) });
 
   // id 让重渲染后焦点能回到这个开关（options.js 的 render）
   const cycle = h("input", { type: "checkbox", id: `cycle-${e.id}`, "aria-label": t("engine_cycle_aria", e.name) });

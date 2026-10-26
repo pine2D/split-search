@@ -523,6 +523,26 @@
     "message": "Confirm delete?",
     "description": "Delete button text after the first click; clicking again within 3 seconds deletes the engine."
   },
+  "engine_delete_confirm_hint": {
+    "message": "Click again to delete “$NAME$”. Before you do, delete the Chrome site searches that use it. Otherwise, the ones with it on the left fall back to a normal search, and the ones with it on the right stop at an “Unknown engine” error page.",
+    "description": "Announced (via the live notice area) when the user first clicks Delete on a custom search engine; the button now reads engine_delete_confirm. Keep the warning consistent with guide_caveat_remove.",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "Baidu"
+      }
+    }
+  },
+  "engine_delete_confirm_again": {
+    "message": "Click again to delete “$NAME$”.",
+    "description": "Announced when the user first clicks Delete on a custom image search engine; the button now reads engine_delete_confirm.",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "TinEye"
+      }
+    }
+  },
   "engine_in_pair_hide": {
     "message": "Used by the default pair, so it can’t be hidden",
     "description": "Small inline text under a disabled Hide button: the default pair uses this built-in engine."

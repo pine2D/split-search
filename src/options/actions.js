@@ -123,8 +123,9 @@ export const actions = {
     const toast = notify(t("notice_hidden", e.name), "ok", { action: { key: "common_undo", run: () => undoHide(e) } });
     if (onRow) toast?.querySelector(".notice-action")?.focus();
   },
-  // 删除按钮自己要点两次（engine-list.js），这里不再确认
-  remove: (e) => act(raw => deleteEngine(raw, e.id), ["notice_deleted", e.name]),
+  // 删除按钮自己要点两次（engine-list.js），这里不再确认；删掉后焦点交给相邻的一行
+  remove: (e) => deleteWithFocus(ENGINE_LIST, e.id, "add-engine",
+    () => act(raw => deleteEngine(raw, e.id), ["notice_deleted", e.name])),
   restore: (e) => act(raw => restoreEngine(raw, e.id), ["notice_restored", e.name]),
   // 勾选框本身就是反馈，成功不弹提示；失败照常提示，重渲染后开关退回已保存的状态
   setCycle: (id, included) => act(raw => setCycle(raw, id, included), null),
@@ -133,7 +134,8 @@ export const actions = {
   setImageEngine: (id) => act(raw => setImageEngine(raw, id), ["notice_image_engine_saved"]),
   addImageEngine: (input) => saveImage(raw => addImageEngine(raw, input), "notice_added"),
   addImageFromCatalog: (entry) => act(raw => addImageFromCatalog(raw, entry), ["notice_catalog_added", entry.name]),
-  deleteImageEngine: (e) => act(raw => deleteImageEngine(raw, e.id), ["notice_deleted", e.name]),
+  deleteImageEngine: (e) => deleteWithFocus(IMAGE_LIST, e.id, "image-add-open",
+    () => act(raw => deleteImageEngine(raw, e.id), ["notice_deleted", e.name])),
   move(id, delta) {
     const current = deps.current();
     if (!current) return;
@@ -146,6 +148,25 @@ export const actions = {
     orderTimer = setTimeout(flushOrder, ORDER_DEBOUNCE_MS);
   },
 };
+
+// list：列表选择器；actions：行里放操作按钮的那一块（文字引擎是 .row-actions，不含它前面的“授权”按钮）
+const ENGINE_LIST = { list: "#engines .engine-list", actions: ".row-actions" };
+const IMAGE_LIST = { list: "#lookup-body .engine-list", actions: ".engine-side" };
+
+// 删除成功后这一行没了，焦点不能落回 body：等列表重建后交给相邻一行（优先下一行）里第一个可用的按钮，
+// 没有相邻行（或那一行没有可用按钮，如内置的 Google Lens）就交给 fallbackId（该列表的添加按钮）
+async function deleteWithFocus({ list, actions: scope }, id, fallbackId, run) {
+  const rows = [...document.querySelectorAll(`${list} > li[data-id]`)];
+  const i = rows.findIndex(r => r.dataset.id === id);
+  const neighbor = i < 0 ? null : (rows[i + 1] ?? rows[i - 1])?.dataset.id ?? null;
+  const result = await run();
+  await lastRender;
+  if (!result.ok) return result;
+  const row = neighbor && document.querySelector(`${list} > li[data-id="${CSS.escape(neighbor)}"]`);
+  const btn = row?.querySelector(`${scope} button:not([disabled])`);
+  (btn ?? document.getElementById(fallbackId))?.focus();
+  return result;
+}
 
 // 提示里的“撤销”：恢复显示，等列表重建后把焦点放回这一行的“隐藏”按钮（提示已经关掉，焦点不能留在那里）
 async function undoHide(e) {

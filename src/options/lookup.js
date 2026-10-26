@@ -39,7 +39,8 @@ function imageRow(e, actions) {
       !builtin && h("div", { class: "engine-url mono" }, originOf(e))),
     !builtin && h("div", { class: "engine-side" },
       confirmStep(ht("button", { type: "button", id: `remove-image-${e.id}`, class: "btn btn-small btn-danger" }, "engine_delete"),
-        "engine_delete", "engine_delete_confirm", () => actions.deleteImageEngine(e))));
+        "engine_delete", "engine_delete_confirm", () => actions.deleteImageEngine(e),
+        { armNotice: () => t("engine_delete_confirm_again", e.name) })));
 }
 
 export function renderLookupCard(cfg, actions) {

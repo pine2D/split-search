@@ -93,7 +93,8 @@ export function notify(text, kind = "ok", { sticky = false, action = null } = {}
 
 // 两步确认的按钮（删除）：第一次点把文字换成 confirmKey，ms 毫秒内再点才执行 onConfirm；
 // 超时、失焦或按 Esc 复原。按钮文字经 setI18nText 切换，切换语言时照当前状态重写。
-export function confirmStep(btn, labelKey, confirmKey, onConfirm, ms = 3000) {
+// armNotice：第一次点击进入确认时经 #notices（aria-live）播报的一句提醒，读屏用户也能听到要再点一次、删前要注意什么
+export function confirmStep(btn, labelKey, confirmKey, onConfirm, { ms = 3000, armNotice = null } = {}) {
   let timer = null;
   const reset = () => {
     clearTimeout(timer);
@@ -106,6 +107,7 @@ export function confirmStep(btn, labelKey, confirmKey, onConfirm, ms = 3000) {
       setI18nText(btn, confirmKey);
       btn.classList.add("btn-confirm");
       timer = setTimeout(reset, ms);
+      if (armNotice) notify(armNotice(), "warn");
       return;
     }
     reset();

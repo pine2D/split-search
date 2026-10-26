@@ -523,6 +523,26 @@
     "message": "确认删除？",
     "description": "Delete button text after the first click; clicking again within 3 seconds deletes the engine."
   },
+  "engine_delete_confirm_hint": {
+    "message": "再点一次就会删除“$NAME$”。删除前，请先删掉 Chrome 里用到它的网站搜索：它作左侧的会退化为普通搜索，作右侧的会停在“未知引擎”错误页。",
+    "description": "Announced (via the live notice area) when the user first clicks Delete on a custom search engine; the button now reads engine_delete_confirm. Keep the warning consistent with guide_caveat_remove.",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "Baidu"
+      }
+    }
+  },
+  "engine_delete_confirm_again": {
+    "message": "再点一次就会删除“$NAME$”。",
+    "description": "Announced when the user first clicks Delete on a custom image search engine; the button now reads engine_delete_confirm.",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "TinEye"
+      }
+    }
+  },
   "engine_in_pair_hide": {
     "message": "默认组合在用，不能隐藏",
     "description": "Small inline text under a disabled Hide button: the default pair uses this built-in engine."

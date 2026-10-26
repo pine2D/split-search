@@ -193,3 +193,39 @@ test("restoreRowFocus：按钮可点就聚焦按钮，按钮已禁用就聚焦�
   restoreRowFocus(list, null);
   assert.equal(globalThis.document.activeElement, list.rows[1]);
 });
+
+// ---- confirmStep：删除的两步确认；第一次点击可经 #notices 播报一句提醒 ----
+
+import { confirmStep } from "../src/options/ui.js";
+
+function fakeButton() {
+  const btn = new Box();
+  btn.listeners = {};
+  btn.classList = { set: new Set(), add(c) { this.set.add(c); }, remove(c) { this.set.delete(c); } };
+  btn.addEventListener = (type, fn) => { (btn.listeners[type] ??= []).push(fn); };
+  btn.fire = (type, ev = {}) => { for (const fn of btn.listeners[type] ?? []) fn({ preventDefault() {}, ...ev }); };
+  return btn;
+}
+
+test("confirmStep：第一次点击进入确认并播报 armNotice 的文字（警告级），第二次才执行；没传 armNotice 不播报", async () => {
+  const notices = formFakes();
+  await setLocale("en");
+  const btn = fakeButton();
+  let confirmed = 0, armed = 0;
+  confirmStep(btn, "plain", "plain", () => { confirmed++; }, { ms: 60000, armNotice: () => { armed++; return "Think twice"; } });
+  btn.fire("click");
+  assert.equal(confirmed, 0);
+  assert.equal(armed, 1);
+  assert.equal(notices.children.length, 1, "应在 #notices 里加一条提示");
+  assert.match(notices.children[0].attrs.get("class") ?? notices.children[0].className ?? "", /notice-warn/);
+  btn.fire("click");
+  assert.equal(confirmed, 1);
+  assert.equal(armed, 1, "确认那一下不再播报");
+
+  const plain = fakeButton();
+  const before = notices.children.length;
+  confirmStep(plain, "plain", "plain", () => {}, { ms: 60000 });
+  plain.fire("click");
+  assert.equal(notices.children.length, before, "没传 armNotice 不播报");
+  plain.fire("blur");
+});
