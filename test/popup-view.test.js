@@ -145,20 +145,25 @@ test("switchTarget：搜索对点了当前左侧引擎（弹窗没显示它，�
 });
 
 test("idleView：默认组合左侧没授权 → setup（完成设置是主按钮，不显示快捷键和“打开设置”，不列默认组合）", () => {
-  for (const setupDone of [false, true, null]) {
+  for (const setupDone of [false, null]) {
     assert.deepEqual(idleView({ leftGranted: false, setupDone }),
-      { tier: "setup", notOurs: false, tryHint: false, setupButton: true, setupLink: false, pair: false, footer: false }, String(setupDone));
+      { tier: "setup", regrant: false, notOurs: false, tryHint: false, setupButton: true, setupLink: false, pair: false, footer: false }, String(setupDone));
   }
+});
+
+test("idleView：完成过设置（setupDone 为 true）但左侧授权没了 → 仍是 setup 档，regrant 为 true（弹窗换成“已无权访问”的说法）", () => {
+  assert.deepEqual(idleView({ leftGranted: false, setupDone: true }),
+    { tier: "setup", regrant: true, notOurs: false, tryHint: false, setupButton: true, setupLink: false, pair: false, footer: false });
 });
 
 test("idleView：左侧已授权、setupDone 不是 true → try（试试看 + 去第 2 步的次级入口）", () => {
   assert.deepEqual(idleView({ leftGranted: true, setupDone: false }),
-    { tier: "try", notOurs: true, tryHint: true, setupButton: false, setupLink: true, pair: true, footer: true });
+    { tier: "try", regrant: false, notOurs: true, tryHint: true, setupButton: false, setupLink: true, pair: true, footer: true });
 });
 
 test("idleView：setupDone 为 true → ready（与 v0.3 相同）", () => {
   assert.deepEqual(idleView({ leftGranted: true, setupDone: true }),
-    { tier: "ready", notOurs: true, tryHint: true, setupButton: false, setupLink: false, pair: true, footer: true });
+    { tier: "ready", regrant: false, notOurs: true, tryHint: true, setupButton: false, setupLink: false, pair: true, footer: true });
 });
 
 test("idleView：读不出授权或 setupDone（null、缺省）按 ready 处理，不吓用户", () => {

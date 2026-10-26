@@ -5,7 +5,7 @@ import { pane, panes } from "../ui/panes.js";
 import { engineById, originPattern } from "../lib/engines.js";
 import { idleView } from "../lib/popup-view.js";
 import { safeArgs } from "../lib/safe-error.js";
-import { t } from "../chrome/i18n.js";
+import { t, setI18nText } from "../chrome/i18n.js";
 import { currentShortcut, openShortcutsPage } from "../chrome/shortcuts.js";
 import { readSetupDone } from "../chrome/setup-store.js";
 
@@ -71,6 +71,10 @@ export function showIdle(cfg, setup) {
   $("idle").dataset.tier = view.tier;
   $("not-ours").hidden = !view.notOurs;
   $("idle-setup").hidden = !view.setupButton;
+  // regrant 时 leftGranted 一定读到了 false，左侧引擎一定存在；引擎名是用户数据，经占位符写入
+  const left = view.regrant && engineById(cfg, "text", cfg.defaultPair[0]);
+  if (left) setI18nText($("idle-setup-text"), "popup_setup_regrant", left.name);
+  else setI18nText($("idle-setup-text"), "popup_setup_needed");
   $("idle-try").hidden = !view.tryHint;
   $("idle-setup-note").hidden = !view.setupLink;
   document.querySelector("footer").hidden = !view.footer;

@@ -14,11 +14,11 @@
     <h1 class="brand">Split Search</h1>
 
     <!-- 不是本扩展的分屏，或读取失败；#idle 按设置进度分三档（lib/popup-view.js 的 idleView，data-tier 记档位）：
-         setup 只留“还没设置好”和“完成设置”；try、ready 补一句怎么试和当前默认组合（读不到配置时不显示组合），try 再加去第 2 步的入口 -->
+         setup 只留“还没设置好”（完成过设置、左侧授权没了时换成“已无权访问”）和“完成设置”；try、ready 补一句怎么试和当前默认组合（读不到配置时不显示组合），try 再加去第 2 步的入口 -->
     <p id="not-ours" class="muted" data-i18n="popup_not_ours" hidden></p>
     <div id="idle" hidden>
       <div id="idle-setup" hidden>
-        <p data-i18n="popup_setup_needed"></p>
+        <p id="idle-setup-text" data-i18n="popup_setup_needed"></p>
         <button id="idle-setup-open" class="btn btn-primary" type="button" data-i18n="popup_setup_button"></button>
       </div>
       <p id="idle-try" class="muted" data-i18n="popup_idle_hint"></p>

@@ -1185,6 +1185,16 @@
     "message": "Setup isn’t finished, so searches won’t open a split view yet.",
     "description": "Toolbar popup, outside a Split Search split view, when the default pair's left engine is not granted: searching only does a plain search. Shown with the popup_setup_button primary button."
   },
+  "popup_setup_regrant": {
+    "message": "Split Search can’t access $NAME$ anymore, so searches won’t open a split view for now.",
+    "description": "Toolbar popup, outside a Split Search split view, when setup was finished before but the default pair's left engine ($NAME$, an engine name) is no longer granted: searches only do a plain search. Replaces popup_setup_needed; shown with the popup_setup_button primary button.",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "Google"
+      }
+    }
+  },
   "popup_setup_button": {
     "message": "Finish setup",
     "description": "Toolbar popup primary button: opens the settings page at the Get started card."

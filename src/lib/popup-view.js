@@ -74,11 +74,13 @@ export function completeView(match, engines) {
 //        不显示“不是本扩展的拆分视图”、怎么试、默认组合和页脚（快捷键、“打开设置”：主按钮已经是去设置页）；
 // try：左侧已授权、setupDone 不是 true（新装的、从 v0.2 升级还没搜过的）→ 照常说怎么试，再加一句和去第 2 步的次级入口；
 // ready：setupDone 为 true → 与 v0.3 相同。
+// regrant：setup 档里 setupDone 为 true（完成过设置、左侧授权后来没了，设置页显示的是“需要授权”）→ 弹窗换成“已无权访问”的说法，按钮不变。
 // leftGranted、setupDone 读不出来（null 或缺省）时按 ready 处理：不拿可能不对的状态吓用户。
 export function idleView({ leftGranted = null, setupDone = null } = {}) {
   const tier = leftGranted === false ? "setup"
     : leftGranted === true && setupDone === false ? "try"
     : "ready";
   const setup = tier === "setup";
-  return { tier, notOurs: !setup, tryHint: !setup, setupButton: setup, setupLink: tier === "try", pair: !setup, footer: !setup };
+  return { tier, regrant: setup && setupDone === true, notOurs: !setup, tryHint: !setup, setupButton: setup,
+    setupLink: tier === "try", pair: !setup, footer: !setup };
 }
