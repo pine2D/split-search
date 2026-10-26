@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { popupView, targetTabId, popupMode, completeView } from "../src/lib/popup-view.js";
+import { popupView, targetTabId, popupMode, completeView, idleView } from "../src/lib/popup-view.js";
 import { mergeConfig } from "../src/lib/engines.js";
 import { IMAGE_CATALOG } from "../src/lib/image-engines.js";
 
@@ -142,4 +142,30 @@ test("switchTarget：搜索对点了当前左侧引擎（弹窗没显示它，�
   const lookup = { kind: "text", query: "q", left: { engineId: "" }, right: { engineId: "bing" } };
   assert.equal(switchTarget(lookup, cfg, "google").id, "google");
   assert.equal(switchTarget(null, cfg, "ddg"), null);
+});
+
+test("idleView：默认组合左侧没授权 → setup（完成设置是主按钮，不显示快捷键和“打开设置”，不列默认组合）", () => {
+  for (const setupDone of [false, true, null]) {
+    assert.deepEqual(idleView({ leftGranted: false, setupDone }),
+      { tier: "setup", notOurs: false, tryHint: false, setupButton: true, setupLink: false, pair: false, footer: false }, String(setupDone));
+  }
+});
+
+test("idleView：左侧已授权、setupDone 不是 true → try（试试看 + 去第 2 步的次级入口）", () => {
+  assert.deepEqual(idleView({ leftGranted: true, setupDone: false }),
+    { tier: "try", notOurs: true, tryHint: true, setupButton: false, setupLink: true, pair: true, footer: true });
+});
+
+test("idleView：setupDone 为 true → ready（与 v0.3 相同）", () => {
+  assert.deepEqual(idleView({ leftGranted: true, setupDone: true }),
+    { tier: "ready", notOurs: true, tryHint: true, setupButton: false, setupLink: false, pair: true, footer: true });
+});
+
+test("idleView：读不出授权或 setupDone（null、缺省）按 ready 处理，不吓用户", () => {
+  const ready = idleView({ leftGranted: true, setupDone: true });
+  assert.deepEqual(idleView({ leftGranted: null, setupDone: false }), ready);
+  assert.deepEqual(idleView({ leftGranted: null, setupDone: null }), ready);
+  assert.deepEqual(idleView({ leftGranted: true, setupDone: null }), ready);
+  assert.deepEqual(idleView({}), ready);
+  assert.deepEqual(idleView(), ready);
 });

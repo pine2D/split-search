@@ -1,11 +1,19 @@
-// 弹窗的静态部分与分屏外状态：左右窗格（ui/panes.js 建）、分屏外的默认组合缩小版、底部的快捷键状态。
+// 弹窗的静态部分与分屏外状态：左右窗格（ui/panes.js 建）、分屏外按设置进度分三档的引导（lib/popup-view.js 的 idleView）、
+// 默认组合缩小版、底部的快捷键状态。
 // 引擎名是用户数据，一律写 textContent；带 key 的文字写 data-i18n，切换语言时 applyI18n 重写。
 import { pane, panes } from "../ui/panes.js";
-import { engineById } from "../lib/engines.js";
+import { engineById, originPattern } from "../lib/engines.js";
+import { idleView } from "../lib/popup-view.js";
+import { safeArgs } from "../lib/safe-error.js";
 import { t } from "../chrome/i18n.js";
 import { currentShortcut, openShortcutsPage } from "../chrome/shortcuts.js";
+import { readSetupDone } from "../chrome/setup-store.js";
 
 const $ = (id) => document.getElementById(id);
+const log = (...args) => console.error("[split-search]", ...safeArgs(args));
+const info = (...args) => console.info("[split-search]", ...safeArgs(args));
+// 设置页的“开始使用”卡；设置页按 #setup 滚到卡片并把焦点给它（卡片不显示时什么都不做）
+const SETUP_PAGE = "options/options.html#setup";
 
 function el(tag, props = {}, key = null) {
   const node = document.createElement(tag);
@@ -23,10 +31,50 @@ export function buildPairPanes() {
   $("pair-panes").replaceWith(panes(side("left"), side("right")));
 }
 
-// 分屏外：一句“怎么试”，再列当前默认组合（缩小的窗格）。cfg 为 null（读配置失败）时只显示那句话
-export function showIdle(cfg) {
+// 默认组合左侧引擎的授权（与设置页同一个 originPattern）：读不出来（没有配置、查询抛错）返回 null，按“不知道”处理；
+// 模板生成不了精确 origin 的引擎永远授权不了，与设置页一样算没授权
+async function leftGranted(cfg) {
+  const left = cfg && engineById(cfg, "text", cfg.defaultPair[0]);
+  if (!left) return null;
+  const pattern = originPattern(left);
+  if (!pattern) return false;
+  try {
+    return await chrome.permissions.contains({ origins: [pattern] });
+  } catch (err) {
+    info("popup: checking the left engine's access failed", err);
+    return null;
+  }
+}
+
+// 分屏外显示哪一档要用的两项：{ leftGranted, setupDone }，读不出来的是 null（idleView 按 ready 处理）
+export async function readSetupState(cfg) {
+  const [granted, setupDone] = await Promise.all([leftGranted(cfg), readSetupDone()]);
+  return { leftGranted: granted, setupDone };
+}
+
+function openSetup() {
+  Promise.resolve().then(() => chrome.tabs.create({ url: chrome.runtime.getURL(SETUP_PAGE) }))
+    .catch((err) => log("popup: opening Get started failed", err));
+}
+
+// “完成设置”（setup 档的主按钮）与 try 档“去第 2 步”的入口都打开设置页的“开始使用”卡。只绑一次
+export function bindIdle() {
+  $("idle-setup-open").addEventListener("click", openSetup);
+  $("idle-setup-link").addEventListener("click", openSetup);
+}
+
+// 分屏外：按 idleView 的档位显示引导，再列当前默认组合（缩小的窗格）。cfg 为 null（读配置失败）时不显示组合；
+// setup 为 null（没读成）按 ready 处理
+export function showIdle(cfg, setup) {
+  const view = idleView(setup ?? {});
   $("idle").hidden = false;
-  const pair = cfg && cfg.defaultPair.map(id => engineById(cfg, "text", id));
+  $("idle").dataset.tier = view.tier;
+  $("not-ours").hidden = !view.notOurs;
+  $("idle-setup").hidden = !view.setupButton;
+  $("idle-try").hidden = !view.tryHint;
+  $("idle-setup-note").hidden = !view.setupLink;
+  document.querySelector("footer").hidden = !view.footer;
+  const pair = view.pair && cfg && cfg.defaultPair.map(id => engineById(cfg, "text", id));
   const ok = !!pair && pair.every(Boolean);
   $("idle-pair").hidden = !ok;
   if (!ok) return;
@@ -40,6 +88,7 @@ export function showIdle(cfg) {
 
 export function hideIdle() {
   $("idle").hidden = true;
+  document.querySelector("footer").hidden = false;
 }
 
 // 底部的快捷键状态（与设置页快捷键区相同做法）：已绑定显示组合键；未绑定显示“设置快捷键”按钮

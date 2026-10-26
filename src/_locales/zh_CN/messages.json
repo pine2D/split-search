@@ -1181,6 +1181,22 @@
     "message": "在地址栏搜索，或把文字拖到标签栏试试。",
     "description": "Popup, under popup_not_ours: what to try to open a split view."
   },
+  "popup_setup_needed": {
+    "message": "还没设置好，现在搜索不会打开拆分视图。",
+    "description": "Toolbar popup, outside a Split Search split view, when the default pair's left engine is not granted: searching only does a plain search. Shown with the popup_setup_button primary button."
+  },
+  "popup_setup_button": {
+    "message": "完成设置",
+    "description": "Toolbar popup primary button: opens the settings page at the Get started card."
+  },
+  "popup_setup_try_note": {
+    "message": "搜索后没有打开拆分视图的话，回设置页完成第 2 步。",
+    "description": "Toolbar popup, under popup_idle_hint, when the left engine is granted but setup isn't confirmed yet (also for users upgraded from an older version who already set things up): a conditional hint, must not say setup is unfinished. Step 2 = adding the site search in the Get started card. Followed by the popup_setup_link button."
+  },
+  "popup_setup_link": {
+    "message": "查看第 2 步",
+    "description": "Toolbar popup text button after popup_setup_try_note: opens the settings page at the Get started card."
+  },
   "popup_shortcut_label": {
     "message": "快捷键换右侧",
     "description": "Popup footer, before the key combination of the shortcut that switches the right side to the next engine."

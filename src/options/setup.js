@@ -57,6 +57,11 @@ export function initSetup(render) {
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area === "local") onLocal(changes);
   });
+  window.addEventListener("hashchange", () => {
+    if (location.hash !== "#setup") return;
+    revealPending = true;
+    revealSetup();
+  });
 }
 
 // ---- 渲染 ----
@@ -145,6 +150,23 @@ function announce(left, leftGranted) {
   lastLeft = left ? { id: left.id, granted: leftGranted } : null;
 }
 
+// 卡片标题：tabindex=-1 让 #setup 定位时能把焦点给它（重建后 options.js 按 id 把焦点还回来）
+const title = (key, props = {}, ...children) => children.length
+  ? h("h2", { id: "setup-title", tabindex: "-1", ...props }, ...children)
+  : ht("h2", { id: "setup-title", tabindex: "-1", ...props }, key);
+
+// 网址带 #setup（弹窗的“完成设置”“去第 2 步”）：页面第一次显示出来后滚到卡片、焦点给标题；卡片不显示时什么都不做。
+// 只做一次，之后 hash 再变成 #setup 才再做
+let revealPending = location.hash === "#setup";
+export function revealSetup() {
+  if (!revealPending) return;
+  revealPending = false;
+  const card = document.getElementById("setup");
+  if (!card || card.hidden) return;
+  card.scrollIntoView({ block: "start" });
+  document.getElementById("setup-title")?.focus({ preventScroll: true });
+}
+
 // el 是 #setup；返回卡片是否显示（显示时默认组合卡与组合生成器不再重复左侧授权的提示框）
 export function renderSetup(el, { cfg, byId, granted }) {
   const [left, right] = cfg.defaultPair.map(id => byId.get(id));
@@ -156,14 +178,14 @@ export function renderSetup(el, { cfg, byId, granted }) {
   const info = { left, right, rightPending: v.rightPending, url: triggerOf(left, right) };
   let nodes = [];
   if (!left && v.mode !== "hidden" && v.mode !== "done") {
-    nodes = [ht("h2", { id: "setup-title" }, "setup_title"), ht("p", { class: "hint hint-error" }, "guide_no_trigger")];
+    nodes = [title("setup_title"), ht("p", { class: "hint hint-error" }, "guide_no_trigger")];
   } else if (v.mode === "steps") {
-    nodes = [ht("h2", { id: "setup-title" }, "setup_title"), stepList(v, info)];
+    nodes = [title("setup_title"), stepList(v, info)];
   } else if (v.mode === "regrant") {
-    nodes = [ht("h2", { id: "setup-title" }, "setup_regrant_title"),
+    nodes = [title("setup_regrant_title"),
       h("div", { class: "setup-step", "data-step": "grant", "data-state": "todo" }, grantTodo(info, "setup_regrant_text"))];
   } else if (v.mode === "done") {
-    nodes = [h("h2", { id: "setup-title", class: "setup-done-title" }, checkIcon(), ht("span", null, "setup_done_title")),
+    nodes = [title(null, { class: "setup-done-title" }, checkIcon(), ht("span", null, "setup_done_title")),
       ht("p", { class: "hint" }, "setup_done_text")];
   }
   el.replaceChildren(...nodes);

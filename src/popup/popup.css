@@ -32,7 +32,13 @@ p { margin: 0 0 10px; }
 .panes-mini .pane { padding: 5px 8px 6px; gap: 2px; border-radius: 6px; }
 .panes-mini .pane-label { font-size: 11.5px; }
 .panes-mini dd { font-size: 13px; }
-#idle > p { margin: 0 0 10px; }
+#idle > p, #idle-setup > p { margin: 0 0 10px; }
+/* 说明文字不让最后一个词单独成行 */
+#not-ours, #idle p { text-wrap: pretty; }
+/* 还没设置好：一句话 + 主按钮，按钮占满宽度 */
+#idle-setup { margin: 0 0 4px; }
+#idle-setup .btn { width: 100%; }
+#idle-setup-note .link-btn { padding: 0; }
 #idle h2 { margin-top: 0; }
 /* 很长的关键词最多显示 3 行，完整内容在 title 里 */
 #query { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; }
@@ -65,6 +71,8 @@ p { margin: 0 0 10px; }
   overflow-wrap: anywhere; /* 引擎名或译文较长时换行，不撑出弹窗 */
 }
 .btn:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-soft); }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 600; }
+.btn-primary:hover:not(:disabled) { background: var(--accent); filter: brightness(1.08); }
 .btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
 .btn:disabled { opacity: 0.45; cursor: not-allowed; }
 

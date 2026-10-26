@@ -9,7 +9,7 @@ import { renderEngineList, renderHiddenList, setupEngineDialog } from "./engine-
 import { setupCatalogDialog, refreshCatalog } from "./catalog.js";
 import { renderShortcut, SHORTCUT_BUTTON_ID } from "./shortcut.js";
 import { renderTriggers, setupGuide, pickerPanes } from "./guide.js";
-import { renderSetup, loadSetupDone, initSetup } from "./setup.js";
+import { renderSetup, loadSetupDone, initSetup, revealSetup } from "./setup.js";
 import { applyRichText, renderLangPicker } from "./locale-ui.js";
 import { initI18n, applyI18n, setLocale, currentPref, currentLocale, t } from "../chrome/i18n.js";
 import { safeArgs } from "../lib/safe-error.js";
@@ -122,6 +122,7 @@ async function render() {
   if (focusedId && document.activeElement === document.body) focusAfterRender(focusedId);
   refreshShortcut();
   document.body.classList.remove("loading");
+  revealSetup(); // 网址带 #setup：页面显示出来之后才能滚动和给焦点
 }
 
 // 快捷键一行只依赖 chrome.commands，不随存储变化；用户去 chrome://extensions/shortcuts 绑完回来时（focus）也重画

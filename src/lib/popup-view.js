@@ -68,3 +68,17 @@ export function completeView(match, engines) {
   return { engine: match.engine, query: match.query, suggestedId: match.suggestedId,
     choices: [...rest.filter(isSuggested), ...rest.filter(e => !isSuggested(e))] };
 }
+
+// 分屏外（mode "not-ours"）怎么引导，三档（v0.4 critique P1）：
+// setup：默认组合左侧没授权，照着试只会得到一次普通搜索 → 只留“还没设置好”和主按钮“完成设置”（打开设置页 #setup），
+//        不显示“不是本扩展的拆分视图”、怎么试、默认组合和页脚（快捷键、“打开设置”：主按钮已经是去设置页）；
+// try：左侧已授权、setupDone 不是 true（新装的、从 v0.2 升级还没搜过的）→ 照常说怎么试，再加一句和去第 2 步的次级入口；
+// ready：setupDone 为 true → 与 v0.3 相同。
+// leftGranted、setupDone 读不出来（null 或缺省）时按 ready 处理：不拿可能不对的状态吓用户。
+export function idleView({ leftGranted = null, setupDone = null } = {}) {
+  const tier = leftGranted === false ? "setup"
+    : leftGranted === true && setupDone === false ? "try"
+    : "ready";
+  const setup = tier === "setup";
+  return { tier, notOurs: !setup, tryHint: !setup, setupButton: setup, setupLink: tier === "try", pair: !setup, footer: !setup };
+}

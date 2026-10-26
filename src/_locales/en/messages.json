@@ -1181,6 +1181,22 @@
     "message": "Try searching from the address bar, or drag text to the tab strip.",
     "description": "Popup, under popup_not_ours: what to try to open a split view."
   },
+  "popup_setup_needed": {
+    "message": "Setup isn’t finished, so searches won’t open a split view yet.",
+    "description": "Toolbar popup, outside a Split Search split view, when the default pair's left engine is not granted: searching only does a plain search. Shown with the popup_setup_button primary button."
+  },
+  "popup_setup_button": {
+    "message": "Finish setup",
+    "description": "Toolbar popup primary button: opens the settings page at the Get started card."
+  },
+  "popup_setup_try_note": {
+    "message": "If a search doesn’t open a split view, finish step 2 in settings.",
+    "description": "Toolbar popup, under popup_idle_hint, when the left engine is granted but setup isn't confirmed yet (also for users upgraded from an older version who already set things up): a conditional hint, must not say setup is unfinished. Step 2 = adding the site search in the Get started card. Followed by the popup_setup_link button."
+  },
+  "popup_setup_link": {
+    "message": "See step 2",
+    "description": "Toolbar popup text button after popup_setup_try_note: opens the settings page at the Get started card."
+  },
   "popup_shortcut_label": {
     "message": "Next right engine",
     "description": "Popup footer, before the key combination of the shortcut that switches the right side to the next engine."

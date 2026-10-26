@@ -113,6 +113,8 @@ div.setup-step { display: block; margin-top: 6px; }
 .step-status { display: flex; align-items: center; gap: 6px; margin: 2px 0 0; font-size: 13px; font-weight: 600; color: var(--ok); }
 .step-status:focus { outline: none; }
 .step-status:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
+.setup h2:focus { outline: none; }
+.setup h2:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
 /* 第 2 步的三个小步：<ol> 自带的序号，每步一句话 + 它自己的复制框 */
 .setup-substeps { margin: 6px 0 0; padding-inline-start: 1.3em; display: grid; gap: 10px; }
 .setup-substeps > li { padding-inline-start: 2px; }

@@ -7,7 +7,8 @@ import { popupView, targetTabId, popupMode, completeView, switchTarget } from ".
 import { matchResultPage } from "../lib/result-match.js";
 import { splitWindowType } from "../lib/window-kind.js";
 import { showComplete } from "./complete.js";
-import { buildPairPanes, showIdle, hideIdle, renderShortcut } from "./idle.js";
+import { buildPairPanes, showIdle, hideIdle, renderShortcut, readSetupState, bindIdle } from "./idle.js";
+import { DONE_KEY } from "../chrome/setup-store.js";
 import { normalizeLocalePref } from "../lib/i18n.js";
 import { initI18n, applyI18n, setLocale, setI18nText } from "../chrome/i18n.js";
 import { safeArgs } from "../lib/safe-error.js";
@@ -28,8 +29,8 @@ async function targetTab() {
   return tab ?? null;
 }
 
-// 返回 { mode, pair, match, cfg, tab }，mode 见 popupMode："pair"（本扩展的一对）、"complete"（补成分屏）、
-// "not-ours"（v0.3 的说明，下面再列默认组合）；没有目标标签返回 null。不是本扩展的一对时才读窗口（带 populate，区分 PiP）和识别结果页：
+// 返回 { mode, pair, match, cfg, tab, setup }，mode 见 popupMode："pair"（本扩展的一对）、"complete"（补成分屏）、
+// "not-ours"（说明与按设置进度分档的引导，见 idle.js；只有这时才读 setup：左侧授权与 setupDone）；没有目标标签返回 null。不是本扩展的一对时才读窗口（带 populate，区分 PiP）和识别结果页：
 // tab.url 只在用户点了图标（activeTab）或引擎已授权时读得到，读不到就识别不出。读取失败照常抛出，由调用方记日志。
 async function load() {
   const tab = await targetTab();
@@ -43,7 +44,8 @@ async function load() {
     match = matchResultPage(tab.url, cfg);
   }
   const mode = popupMode({ pair, tab, windowType, match, engines: cfg.engines });
-  return { mode, pair, match, cfg, tab };
+  const setup = mode === "not-ours" ? await readSetupState(cfg) : null;
+  return { mode, pair, match, cfg, tab, setup };
 }
 
 // 引擎名是用户数据，直接写 textContent，并去掉 data-i18n，切换语言时不会被改写；
@@ -74,7 +76,7 @@ function show(state) {
   $("not-ours").hidden = mode !== "not-ours";
   $("pair").hidden = mode !== "pair";
   $("complete").hidden = mode !== "complete";
-  if (mode === "not-ours") showIdle(state?.cfg ?? null);
+  if (mode === "not-ours") showIdle(state?.cfg ?? null, state?.setup ?? null);
   else hideIdle();
   if (mode === "complete") {
     // 补成之后重绘：这一对已是本扩展的，换成对视图；焦点给第一个换右侧的按钮
@@ -151,11 +153,12 @@ async function render() {
 
 // 列表重建会丢掉焦点：还给刚点的引擎；它成了当前右侧、不在列表里了，就给第一个按钮
 // （补成分屏没建成对、仍显示“补成分屏”区时，给那一区的第一个按钮）；
-// 列表为空或这一对已经不是本扩展的，给“打开设置”
+// 列表为空或这一对已经不是本扩展的，给“打开设置”（还没设置好、页脚隐藏时给“完成设置”）
 function restoreFocus(engineId) {
   const list = !$("pair").hidden ? $("choices") : !$("complete").hidden ? $("complete-choices") : null;
   const buttons = list ? [...list.querySelectorAll("button")] : [];
-  (buttons.find((b) => b.dataset.engine === engineId) ?? buttons[0] ?? $("open-options")).focus();
+  const fallback = document.querySelector("footer").hidden ? $("idle-setup-open") : $("open-options");
+  (buttons.find((b) => b.dataset.engine === engineId) ?? buttons[0] ?? fallback).focus();
 }
 
 // 点击时重新判定一次：弹窗打开期间这一对可能已被拆开或关掉。换完弹窗保持打开并刷新，方便连续切换。
@@ -187,8 +190,12 @@ $("open-options").addEventListener("click", () => {
   Promise.resolve().then(() => chrome.runtime.openOptionsPage()).catch((err) => log("popup: openOptionsPage failed", err));
 });
 
-// 设置页改了语言或引擎：跟着切换语言并重绘
+// 设置页改了语言或引擎：跟着切换语言并重绘；设置完成（storage.local 的 setupDone）或授权变了也重绘（分屏外的档位跟着变）
 chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === "local" && DONE_KEY in changes) {
+    render();
+    return;
+  }
   if (area !== "sync") return;
   i18nReady
     .then(() => ("uiLocale" in changes ? setLocale(normalizeLocalePref(changes.uiLocale.newValue)).then(() => applyI18n()) : null))
@@ -196,9 +203,13 @@ chrome.storage.onChanged.addListener((changes, area) => {
     .then(render);
 });
 
+chrome.permissions.onAdded.addListener(() => render());
+chrome.permissions.onRemoved.addListener(() => render());
+
 try {
   await i18nReady;
   buildPairPanes();
+  bindIdle();
   applyI18n();
   await Promise.all([render(), renderShortcut()]);
 } finally {
