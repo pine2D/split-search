@@ -98,14 +98,17 @@ function grantDone({ left, right, rightPending }) {
   ];
 }
 
-const field = (labelKey, box) => h("div", { class: "setup-field" }, ht("span", { class: "setup-field-label" }, labelKey), box);
-
+// 第 2 步按操作顺序拆成三个编号小步（<ol> 的序号），每步只带它自己要复制的东西：剪贴板一次只装一样，
+// 先复制设置地址打开设置页，再复制触发网址粘进“网站搜索”，最后设为默认
 function addBody({ left, url }) {
+  const sub = (key, ...rest) => h("li", null, ht("p", { class: "hint" }, key), ...rest);
   return [
-    ht("p", { class: "hint" }, "setup_add_text"),
-    url ? field("setup_trigger_label", urlBox(url, undefined, "guide_copy_default_aria")) : ht("p", { class: "hint hint-error" }, "guide_no_trigger"),
-    url && left.leftDiscouraged && leftWarn(left),
-    field("setup_settings_label", urlBox(SETTINGS_URL, ["guide_copy_settings_url"], "guide_copy_settings_aria")),
+    h("ol", { class: "setup-substeps" },
+      sub("setup_add_open", urlBox(SETTINGS_URL, ["guide_copy_settings_url"], "guide_copy_settings_aria")),
+      sub("setup_add_paste",
+        url ? urlBox(url, undefined, "guide_copy_default_aria") : ht("p", { class: "hint hint-error" }, "guide_no_trigger"),
+        url && left.leftDiscouraged && leftWarn(left)),
+      sub("setup_add_default")),
     ht("a", { href: "#guide", class: "step-link" }, "setup_details_link"),
   ];
 }

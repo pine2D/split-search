@@ -241,7 +241,7 @@
   },
   "guide_copy_settings_url": {
     "message": "複製網址",
-    "description": "Button next to chrome://settings/searchEngines in setup step 1: copies that address."
+    "description": "Button next to chrome://settings/searchEngines (setup guide and Get started step 2): copies that address."
   },
   "guide_copy_default_aria": {
     "message": "複製預設組合的觸發網址",
@@ -889,17 +889,17 @@
     "message": "在 Chrome 中新增網站搜尋，並設為預設",
     "description": "Get started step 2 heading. \"Site search\" and \"Make default\" are Chrome's terms (see docs/i18n/chrome-terms.md)."
   },
-  "setup_add_text": {
-    "message": "把下方的設定網址複製到網址列開啟，在「網站搜尋」區塊點選「新增」：「姓名」隨意填，「搜尋捷徑」自訂，「以 %s 取代查詢的網址」貼上觸發網址，再點選「新增」。最後在這個項目的 ⋮ 選單中選「設為預設」。",
-    "description": "Get started step 2 in one sentence: open Chrome's search engine settings (address below), add a site search, fill in its three fields, save, and make it default. Field and menu names must match Chrome's labels; ⋮ is the More actions menu icon."
+  "setup_add_open": {
+    "message": "複製下方的設定網址，貼到網址列開啟。",
+    "description": "Get started step 2, first numbered sub-step: copy chrome://settings/searchEngines (shown below with its own Copy address button) and paste it into the address bar to open Chrome's search engine settings."
   },
-  "setup_trigger_label": {
-    "message": "觸發網址",
-    "description": "Label above the default pair's trigger URL in Get started step 2."
+  "setup_add_paste": {
+    "message": "在「網站搜尋」旁點選「新增」。「姓名」和「搜尋捷徑」可隨意填寫，在「以 %s 取代查詢的網址」貼上下方的觸發網址，再點選「新增」。",
+    "description": "Get started step 2, second sub-step: add a site search and paste the trigger URL (shown below with its own Copy button). Field and button names must match Chrome's labels (docs/i18n/chrome-terms.md, Chrome's .pak)."
   },
-  "setup_settings_label": {
-    "message": "搜尋引擎設定",
-    "description": "Label above chrome://settings/searchEngines in Get started step 2."
+  "setup_add_default": {
+    "message": "開啟剛新增這個項目的 ⋮ 選單，選擇「設為預設」。",
+    "description": "Get started step 2, third sub-step: make the new site search the default. “Make default” must match Chrome's label; ⋮ is the More actions menu icon."
   },
   "setup_details_link": {
     "message": "詳細步驟",

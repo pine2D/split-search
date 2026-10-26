@@ -241,7 +241,7 @@
   },
   "guide_copy_settings_url": {
     "message": "复制地址",
-    "description": "Button next to chrome://settings/searchEngines in setup step 1: copies that address."
+    "description": "Button next to chrome://settings/searchEngines (setup guide and Get started step 2): copies that address."
   },
   "guide_copy_default_aria": {
     "message": "复制默认组合的触发网址",
@@ -889,17 +889,17 @@
     "message": "在 Chrome 里添加网站搜索，并设为默认",
     "description": "Get started step 2 heading. \"Site search\" and \"Make default\" are Chrome's terms (see docs/i18n/chrome-terms.md)."
   },
-  "setup_add_text": {
-    "message": "把下面的设置地址复制到地址栏打开，在“网站搜索”旁点“添加”：名称随意，快捷字词自定，在“网址格式”里粘贴触发网址，再点“添加”。然后在这一条的 ⋮ 菜单里选“设为默认选项”。",
-    "description": "Get started step 2 in one sentence: open Chrome's search engine settings (address below), add a site search, fill in its three fields, save, and make it default. Field and menu names must match Chrome's labels; ⋮ is the More actions menu icon."
+  "setup_add_open": {
+    "message": "复制下面的设置地址，粘贴到地址栏打开。",
+    "description": "Get started step 2, first numbered sub-step: copy chrome://settings/searchEngines (shown below with its own Copy address button) and paste it into the address bar to open Chrome's search engine settings."
   },
-  "setup_trigger_label": {
-    "message": "触发网址",
-    "description": "Label above the default pair's trigger URL in Get started step 2."
+  "setup_add_paste": {
+    "message": "在“网站搜索”旁点“添加”。名称和快捷字词随意填，在“网址格式”里粘贴下面的触发网址，再点“添加”。",
+    "description": "Get started step 2, second sub-step: add a site search and paste the trigger URL (shown below with its own Copy button). Field and button names must match Chrome's labels (docs/i18n/chrome-terms.md, Chrome's .pak)."
   },
-  "setup_settings_label": {
-    "message": "搜索引擎设置",
-    "description": "Label above chrome://settings/searchEngines in Get started step 2."
+  "setup_add_default": {
+    "message": "打开刚添加这一条的 ⋮ 菜单，选“设为默认选项”。",
+    "description": "Get started step 2, third sub-step: make the new site search the default. “Make default” must match Chrome's label; ⋮ is the More actions menu icon."
   },
   "setup_details_link": {
     "message": "详细步骤",

@@ -241,7 +241,7 @@
   },
   "guide_copy_settings_url": {
     "message": "Copiar dirección",
-    "description": "Button next to chrome://settings/searchEngines in setup step 1: copies that address."
+    "description": "Button next to chrome://settings/searchEngines (setup guide and Get started step 2): copies that address."
   },
   "guide_copy_default_aria": {
     "message": "Copiar la URL de activación de la combinación predeterminada",
@@ -889,17 +889,17 @@
     "message": "Añade a Chrome una búsqueda en el sitio y elígela como predeterminada",
     "description": "Get started step 2 heading. \"Site search\" and \"Make default\" are Chrome's terms (see docs/i18n/chrome-terms.md)."
   },
-  "setup_add_text": {
-    "message": "Pega en la barra de direcciones la dirección de configuración de abajo. En «Búsquedas en el sitio», haz clic en «Añadir»: pon cualquier nombre y el atajo que quieras, pega la URL de activación en «URL con %s en el lugar de la consulta» y haz clic en «Añadir». Después, en el menú ⋮ de esa entrada, selecciona «Elegir como predeterminado».",
-    "description": "Get started step 2 in one sentence: open Chrome's search engine settings (address below), add a site search, fill in its three fields, save, and make it default. Field and menu names must match Chrome's labels; ⋮ is the More actions menu icon."
+  "setup_add_open": {
+    "message": "Copia la dirección de configuración de abajo y pégala en la barra de direcciones.",
+    "description": "Get started step 2, first numbered sub-step: copy chrome://settings/searchEngines (shown below with its own Copy address button) and paste it into the address bar to open Chrome's search engine settings."
   },
-  "setup_trigger_label": {
-    "message": "URL de activación",
-    "description": "Label above the default pair's trigger URL in Get started step 2."
+  "setup_add_paste": {
+    "message": "Junto a «Búsquedas en el sitio», haz clic en «Añadir». Pon el nombre y el atajo que quieras, pega la URL de activación de abajo en «URL con %s en el lugar de la consulta» y haz clic en «Añadir».",
+    "description": "Get started step 2, second sub-step: add a site search and paste the trigger URL (shown below with its own Copy button). Field and button names must match Chrome's labels (docs/i18n/chrome-terms.md, Chrome's .pak)."
   },
-  "setup_settings_label": {
-    "message": "Configuración de buscadores",
-    "description": "Label above chrome://settings/searchEngines in Get started step 2."
+  "setup_add_default": {
+    "message": "Abre el menú ⋮ de la entrada que acabas de añadir y selecciona «Elegir como predeterminado».",
+    "description": "Get started step 2, third sub-step: make the new site search the default. “Make default” must match Chrome's label; ⋮ is the More actions menu icon."
   },
   "setup_details_link": {
     "message": "Pasos detallados",

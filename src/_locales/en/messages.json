@@ -241,7 +241,7 @@
   },
   "guide_copy_settings_url": {
     "message": "Copy address",
-    "description": "Button next to chrome://settings/searchEngines in setup step 1: copies that address."
+    "description": "Button next to chrome://settings/searchEngines (setup guide and Get started step 2): copies that address."
   },
   "guide_copy_default_aria": {
     "message": "Copy the default pair’s trigger URL",
@@ -889,17 +889,17 @@
     "message": "Add a site search in Chrome and make it the default",
     "description": "Get started step 2 heading. \"Site search\" and \"Make default\" are Chrome's terms (see docs/i18n/chrome-terms.md)."
   },
-  "setup_add_text": {
-    "message": "Paste the settings address below into the address bar. Under “Site search”, click “Add”. Enter any name and a shortcut of your choice, paste the trigger URL into “URL with %s in place of query”, and click “Add”. Then choose “Make default” from the new entry’s ⋮ menu.",
-    "description": "Get started step 2 in one sentence: open Chrome's search engine settings (address below), add a site search, fill in its three fields, save, and make it default. Field and menu names must match Chrome's labels; ⋮ is the More actions menu icon."
+  "setup_add_open": {
+    "message": "Copy the settings address below and paste it into the address bar.",
+    "description": "Get started step 2, first numbered sub-step: copy chrome://settings/searchEngines (shown below with its own Copy address button) and paste it into the address bar to open Chrome's search engine settings."
   },
-  "setup_trigger_label": {
-    "message": "Trigger URL",
-    "description": "Label above the default pair's trigger URL in Get started step 2."
+  "setup_add_paste": {
+    "message": "Next to “Site search”, click “Add”. Enter any name and shortcut, paste the trigger URL below into “URL with %s in place of query”, and click “Add”.",
+    "description": "Get started step 2, second sub-step: add a site search and paste the trigger URL (shown below with its own Copy button). Field and button names must match Chrome's labels (docs/i18n/chrome-terms.md, Chrome's .pak)."
   },
-  "setup_settings_label": {
-    "message": "Search engine settings",
-    "description": "Label above chrome://settings/searchEngines in Get started step 2."
+  "setup_add_default": {
+    "message": "Open the new entry’s ⋮ menu and choose “Make default”.",
+    "description": "Get started step 2, third sub-step: make the new site search the default. “Make default” must match Chrome's label; ⋮ is the More actions menu icon."
   },
   "setup_details_link": {
     "message": "Detailed steps",
