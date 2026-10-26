@@ -260,7 +260,7 @@
     "description": "Setup step 2. \"Site search\" and \"Add\" must match Chrome's own labels on chrome://settings/searchEngines in this language."
   },
   "guide_step_fields": {
-    "message": "「姓名」隨意填（例如「Google ｜ Bing」）；「搜尋捷徑」自訂（例如 $KEYWORD$）；把上方複製的觸發網址貼到「以 %s 取代查詢的網址」欄位，最後點選「新增」。",
+    "message": "「姓名」隨意填（例如「Google ｜ Bing」）；「搜尋捷徑」自訂（例如 $KEYWORD$）；把要用的那個組合的觸發網址貼到「以 %s 取代查詢的網址」欄位，最後點選「新增」。",
     "description": "Setup step 3: what to type into Chrome's site search dialog. \"Shortcut\" must match Chrome's label. The placeholder becomes the example shortcut (guide_example_keyword) shown as code.",
     "placeholders": {
       "KEYWORD": {

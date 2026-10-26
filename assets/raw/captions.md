@@ -101,6 +101,8 @@ convert drag-to-tabstrip.png \
 
 第四次重拍（2026-10-27，v0.4 界面收尾）：没授权的非必需引擎改成中性样式、“开始使用”卡显示时“添加到 Chrome”卡里的默认组合一段和“其他组合”收进折叠区、以图搜图列表加了小标题和写明对象的按钮。三张 `en/options-*.png` 都用同一个脚本、同一套环境和状态重拍（私有 Xvfb :131、Chrome 156.0.8078.47、全新临时配置、五个预置引擎在授权框里点“允许”、没有 `setupDone`），扩展是当时 main 上的 `src/`。`options-top.png` 与上一版只差右边滚动条滑块（整页变矮了），画面内容相同；`options-engines.png` 内容相同，滚动位置差约 1 原图像素；`options-fullpage.png` 变成 2376×4343，“添加到 Chrome”卡里是收起的“Trigger URL for the default pair”和“Other pairs”，“右键查询”卡里有“Image search engines”小标题和“Add from image search catalog”“Add image search engine”两个按钮。界面里没授权的引擎都授权了，所以截图里看不到新的中性“未授权”样式。
 
+之后（2026-10-27，整体审查修正）：“添加到 Chrome”卡“设置”第 3 步改成不依赖位置的说法（en：“paste the trigger URL of the pair you want to use”），`en/options-fullpage.png` 里仍是旧句子“paste the trigger URL you copied above”。商店图和 README 图不用这张，没有重拍。
+
 商店截图 4 多出的一行空白（同日查明）：DuckDuckGo、Bing 两行右侧多一行“不能隐藏”的说明，所以这两行比 Google、Kagi 高 38 原图像素；商店截图 4 和顶部宣传图的裁切都只到行的左半边，说明在画面外，整块裁切就在这两行的复选框下面各留一行空白。原因在模板的裁切，不在文案。改成按行分段裁切、上下紧接：DuckDuckGo 行与 Bing 行都切在复选框一行之后（与 Google 行同高），切掉的两条带在画面可见范围里是纯白，没有删掉任何看得见的内容（见 `assets/templates-v2/store-4-engines.html`、`promo-marquee.html` 的注释）。
 
 每张都逐一看过：没有中文、没有账号头像（右上角是未登录的默认图标）、没有 Kagi 或其他网站的令牌、IP 和浏览历史。网页内容是网站当时实际返回的结果，没有改过。

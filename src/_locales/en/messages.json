@@ -260,7 +260,7 @@
     "description": "Setup step 2. \"Site search\" and \"Add\" must match Chrome's own labels on chrome://settings/searchEngines in this language."
   },
   "guide_step_fields": {
-    "message": "Enter any name (e.g. “Google | Bing”) and a shortcut of your choice (e.g. $KEYWORD$). In “URL with %s in place of query”, paste the trigger URL you copied above. Then click “Add”.",
+    "message": "Enter any name (e.g. “Google | Bing”) and a shortcut of your choice (e.g. $KEYWORD$). In “URL with %s in place of query”, paste the trigger URL of the pair you want to use. Then click “Add”.",
     "description": "Setup step 3: what to type into Chrome's site search dialog. \"Shortcut\" must match Chrome's label. The placeholder becomes the example shortcut (guide_example_keyword) shown as code.",
     "placeholders": {
       "KEYWORD": {
