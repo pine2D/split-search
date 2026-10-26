@@ -15,6 +15,19 @@ export function canBeLeft(engine) {
   return v.ok && v.canBeLeft;
 }
 
+// “其他组合”生成器的选择 [leftId, rightId]。prev（用户改过的选择）两侧都还有效就保留；
+// 否则取初值：左取默认左侧（不能作左侧时退回第一个可作左侧的），右取第一个既不是默认右侧、也不是左侧的引擎，
+// 没有就退回默认右侧（也不在列表里时取第一个引擎）。初值故意不等于默认组合，免得看起来像在改默认组合
+export function generatorPick(engines, defaultPair, prev = null) {
+  const lefts = engines.filter(canBeLeft);
+  const has = (list, id) => list.some(e => e.id === id);
+  if (prev && has(lefts, prev[0]) && has(engines, prev[1])) return [prev[0], prev[1]];
+  const [dl, dr] = defaultPair;
+  const left = has(lefts, dl) ? dl : lefts[0]?.id;
+  const right = engines.find(e => e.id !== dr && e.id !== left)?.id ?? (has(engines, dr) ? dr : engines[0]?.id);
+  return [left, right];
+}
+
 // 只有能作左侧、又还没授权的引擎才需要持久的“需授权”警告；右侧专用引擎的授权只是兜底
 export function needsGrantWarning(engine, granted) {
   return !granted && canBeLeft(engine);

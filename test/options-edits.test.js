@@ -4,7 +4,7 @@ import { PRESETS, ID_PATTERN, isIdTaken, mergeConfig } from "../src/lib/engines.
 import { CATALOG } from "../src/lib/engine-catalog.js";
 import {
   addEngine, editEngine, hideEngine, deleteEngine, restoreEngine, setDefaultPair, setNarrowFallback, describeTemplate, addFromCatalog,
-  setCycle, setLookupEngine,
+  setCycle, setLookupEngine, generatorPick,
 } from "../src/options/edits.js";
 
 const preset = (id) => PRESETS.find(p => p.id === id);
@@ -210,4 +210,38 @@ test("新增引擎：名称或网址有错时不报 id 错误（空表单只提�
   assert.deepEqual(Object.keys(badName.errors), ["name"]);
   const onlyId = addEngine({}, { id: "Bad id", name: "百度", url: baidu.url });
   assert.deepEqual(Object.keys(onlyId.errors), ["id"]);
+});
+
+// ---- 其他组合生成器的初值 ----
+const wiki = { id: "wiki", name: "Wiki", url: "https://x.com/wiki/%s" }; // 路径型，只能作右侧
+
+test("生成器初值：左取默认左侧，右取第一个既不是默认右侧也不是左侧的引擎", () => {
+  assert.deepEqual(generatorPick(PRESETS, ["google", "bing"]), ["google", "ddg"]);
+  assert.deepEqual(generatorPick(PRESETS, ["bing", "google"]), ["bing", "ddg"]);
+  assert.deepEqual(generatorPick(PRESETS, ["ddg", "google"]), ["ddg", "bing"]);
+  // 右侧专用引擎也可以作右侧初值
+  assert.deepEqual(generatorPick([wiki, ...PRESETS], ["google", "bing"]), ["google", "wiki"]);
+});
+test("生成器初值：默认左侧不能作左侧或不在列表里时退回第一个可作左侧的", () => {
+  assert.deepEqual(generatorPick([wiki, preset("bing"), preset("ddg")], ["google", "bing"]), ["bing", "wiki"]);
+  assert.deepEqual(generatorPick([wiki, preset("bing"), preset("kagi")], ["wiki", "kagi"]), ["bing", "wiki"]);
+});
+test("生成器初值：没有别的引擎时右侧退回默认右侧", () => {
+  const two = [preset("google"), preset("bing")];
+  assert.deepEqual(generatorPick(two, ["google", "bing"]), ["google", "bing"]);
+  // 默认右侧也不在列表里：退回第一个引擎
+  assert.deepEqual(generatorPick([preset("google")], ["google", "bing"]), ["google", "google"]);
+});
+test("生成器初值：没有可作左侧的引擎时左侧为空", () => {
+  assert.deepEqual(generatorPick([wiki], ["google", "wiki"]), [undefined, "wiki"]);
+  assert.deepEqual(generatorPick([], ["google", "bing"]), [undefined, undefined]);
+});
+test("生成器：用户改过的选择仍然有效就保留，失效才重新取初值", () => {
+  assert.deepEqual(generatorPick(PRESETS, ["google", "bing"], ["kagi", "bing"]), ["kagi", "bing"]);
+  assert.deepEqual(generatorPick(PRESETS, ["google", "bing"], ["google", "google"]), ["google", "google"]);
+  // 左侧引擎被隐藏或改成右侧专用
+  assert.deepEqual(generatorPick(PRESETS.filter(e => e.id !== "kagi"), ["google", "bing"], ["kagi", "bing"]), ["google", "ddg"]);
+  assert.deepEqual(generatorPick([wiki, ...PRESETS], ["google", "bing"], ["wiki", "bing"]), ["google", "wiki"]);
+  // 右侧引擎不在列表里
+  assert.deepEqual(generatorPick(PRESETS, ["google", "bing"], ["kagi", "gone"]), ["google", "ddg"]);
 });
