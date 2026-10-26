@@ -23,7 +23,10 @@ const CARD = `
     .filter(x => keyLike.test(x));
   const d = card.querySelector("details.disclosure");
   const notes = d && { open: d.open, items: d.querySelectorAll("li").length, title: d.querySelector("summary").textContent.trim() };
-  return { notes, intro: card.querySelector(".hint")?.textContent ?? "", raw,
+  const il = card.querySelector("ul.engine-list");
+  const imageUi = { title: card.querySelector("#image-list-title")?.textContent ?? null, labelledby: il?.getAttribute("aria-labelledby") ?? null,
+    catalogBtn: card.querySelector("#image-catalog-open")?.textContent.trim() ?? null, addBtn: card.querySelector("#image-add-open")?.textContent.trim() ?? null };
+  return { imageUi, notes, intro: card.querySelector(".hint")?.textContent ?? "", raw,
     lookup: opts("lookup-engine"), lookupValue: document.getElementById("lookup-engine").value,
     image: opts("image-engine"), imageValue: document.getElementById("image-engine").value,
     rows: [...card.querySelectorAll(".engine-row")].map(r => r.dataset.id),
@@ -50,6 +53,11 @@ const render = (ctx, page) => sub("(a) 渲染：说明、跟随默认组合右�
   const c = await card(page);
   const rightName = mockEngines(ctx.port).find(e => e.id === "eb").name;
   const p = [];
+  const u = c.imageUi;
+  if (u.title !== msg("options_image_list_title")) p.push(`以图搜图列表小标题应为“${msg("options_image_list_title")}”，实际“${u.title}”`);
+  if (u.labelledby !== "image-list-title") p.push(`以图搜图列表 aria-labelledby 应为 image-list-title，实际 ${J(u.labelledby)}`);
+  if (u.catalogBtn !== msg("options_image_add_catalog")) p.push(`引擎库按钮应为“${msg("options_image_add_catalog")}”，实际“${u.catalogBtn}”`);
+  if (u.addBtn !== msg("options_image_add_custom")) p.push(`新增按钮应为“${msg("options_image_add_custom")}”，实际“${u.addBtn}”`);
   if (c.intro !== msg("options_lookup_intro")) p.push(`说明应为“${msg("options_lookup_intro")}”，实际“${c.intro}”`);
   if (!c.notes) p.push("卡片里没有收起的说明（details）");
   else {
