@@ -55,7 +55,7 @@ for (const ui of UIS) {
     assert.doesNotMatch(html, /<style\b/, `${ui.name} 不应再有内联 <style>`);
 
     assert.doesNotMatch(css, /prefers-color-scheme/, `${ui.name} 的样式表不应自己写深色段`);
-    assert.doesNotMatch(css.replace(/\/\*[\s\S]*?\*\//g, ""), /#[0-9a-f]{3,8}\b/i, `${ui.name} 的样式表里不应写十六进制颜色`);
+    assert.doesNotMatch(css.replace(/\/\*[\s\S]*?\*\//g, ""), /#[0-9a-f]{3,8}\b|\b(?:rgb|hsl)a?\(/i, `${ui.name} 的样式表里不应写十六进制、rgb() 或 hsl() 颜色`);
     const local = sections(css).light;
     for (const [k, v] of Object.entries(local)) assert.ok(!looksLikeColor(v), `${ui.name} 自己定义了颜色变量 ${k}: ${v}`);
 
