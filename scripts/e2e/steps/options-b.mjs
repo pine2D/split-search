@@ -161,13 +161,25 @@ const B7 = {
 };
 
 const B8 = {
-  id: "B8", title: "其他组合：百度｜Google 触发网址与复制", kind: "auto", needs: [],
+  id: "B8", title: "其他组合：默认收起、初值不等于默认组合；百度｜Google 触发网址与复制", kind: "auto", needs: [],
   async run({ browser, ext }) {
     const want = "https://www.baidu.com/s?wd=%s&_ss=baidu,google";
     await addCustom(ext, BAIDU);
     try {
       return await withOptions(browser, async page => {
         await page.until(`return !!row("baidu")`);
+        // “其他组合”默认收起、不用默认组合卡的窗格；初值左侧同默认左侧、右侧不是默认右侧
+        const pre = await page.run(`
+          const l = document.getElementById("gen-left"), r = document.getElementById("gen-right"), d = l?.closest("details");
+          const was = d ? d.open : null;
+          if (d) d.open = true;
+          return { was, panes: !!l?.closest(".pair-pickers"), left: l?.value, right: r?.value,
+            pl: document.getElementById("pair-left")?.value, pr: document.getElementById("pair-right")?.value };`);
+        const pp = [];
+        if (pre.was !== false) pp.push(`“其他组合”应收在默认收起的 <details> 里，实际 ${pre.was === null ? "没有 <details>" : "已展开"}`);
+        if (pre.panes) pp.push("生成器不该用默认组合卡的左右窗格");
+        if (pre.left !== pre.pl || pre.right === pre.pr || pre.right === pre.left) pp.push(`初值应为左侧 ${pre.pl}、右侧不是 ${pre.pr}，实际 ${pre.left}｜${pre.right}`);
+        if (pp.length) return { status: "fail", detail: pp.join("；") };
         const url = await page.run(`
           const set = (id, v) => { const s = document.getElementById(id); s.value = v; s.dispatchEvent(new Event("change")); };
           set("gen-left", "baidu"); set("gen-right", "google");
@@ -177,7 +189,7 @@ const B8 = {
         await page.ev(`document.querySelector(".gen-output .url-line button").click(); true`, { userGesture: true });
         const copiedText = msg("common_copied");
         const copied = await page.until(`return document.querySelector(".gen-output .url-line button").textContent === ${JSON.stringify(copiedText)}`, 3000).catch(() => false);
-        if (copied) return { status: "pass", detail: `网址 ${url}；点“复制”后按钮变为“${copiedText}”` };
+        if (copied) return { status: "pass", detail: `默认收起，初值 ${pre.left}｜${pre.right}；网址 ${url}；点“复制”后按钮变为“${copiedText}”` };
         const failPrefix = msg("notice_copy_failed", "\0").split("\0")[0]; // 提示里错误详情之前的部分
         const err = await page.run(`return [...document.querySelectorAll("#notices .notice-text")].map(n => n.textContent).find(t => t.startsWith(${JSON.stringify(failPrefix)})) || ""`);
         return { status: "fail", detail: `网址正确，但按钮没有变为“${copiedText}”；${err ? "页面提示：" + err : "也没有出现复制失败提示"}` };

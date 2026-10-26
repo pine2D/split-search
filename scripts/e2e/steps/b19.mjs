@@ -3,6 +3,7 @@
 // setupDone 为 true、卡片换成完成确认，重新打开后消失；(c') 设置页关着时触发一次，重新打开设置页卡片不显示；
 // (d) 撤销左侧（模拟引擎 A）授权后卡片重新出现、只有第 1 步，恢复授权后消失。
 // 第 2 步拆成三个编号小步（先复制设置地址，再复制触发网址，最后设为默认），(a) 核对每步只带自己的复制按钮。
+// 卡片显示时“添加到 Chrome”卡的默认组合一段收在默认收起的 <details> 里，(c) 重新打开后卡片不显示时照常显示（def）。
 // 弹窗分屏外的三档（src/lib/popup-view.js 的 idleView）跟着走：(a') try 档（左侧已授权、setupDone 没写）点“查看第 2 步”
 // 打开 options.html#setup，焦点落在卡片标题；(e) ready 档（setupDone 为 true），这时直接打开 #setup 卡片不显示、焦点不动；
 // (d) 撤销左侧授权后是 setup 档（只有“完成设置”，不显示说明文字和页脚），点它打开 #setup、焦点落在重新授权的卡片标题。
@@ -57,7 +58,8 @@ const CARD = `(() => { const s = document.getElementById("setup");
   return { hidden: s.hidden, mode: s.dataset.mode ?? null,
     steps: [...s.querySelectorAll(".setup-step")].map(e => e.dataset.step + ":" + e.dataset.state),
     grantButton: !!document.getElementById("setup-grant"), tryDisabled: document.getElementById("setup-try")?.disabled ?? null,
-    pairCallouts: document.querySelectorAll("#pair-body .callout-warn").length }; })()`;
+    pairCallouts: document.querySelectorAll("#pair-body .callout-warn").length,
+    def: (el => !el ? "none" : !el.closest("details") ? "plain" : el.closest("details").open ? "open" : "closed")(document.querySelector("#triggers .trigger-default")) }; })()`;
 const fmt = c => `mode ${c.mode}${c.hidden ? "（隐藏）" : ""}，步骤 ${c.steps.join("、") || "无"}`;
 
 async function waitCard(page, pred, what, timeoutMs = 8000) {
@@ -178,6 +180,7 @@ async function shown(page) {
   const c = await waitCard(page, c => !c.hidden && c.mode === "steps" && c.steps.length === 3, "卡片显示三步");
   if (c.steps[0] !== "grant:done") return { status: "fail", detail: `模拟引擎 A 已授权，第 1 步应为 done：${fmt(c)}` };
   if (c.tryDisabled !== false) return { status: "fail", detail: "左侧已授权，“试一下”按钮应可点" };
+  if (c.def !== "closed") return { status: "fail", detail: `卡片显示时“添加到 Chrome”卡的默认组合一段应收在收起的 <details> 里，实际 ${c.def}` };
   const subs = await page.ev(SUBSTEPS);
   return verdictOf(substepProblems(subs), `${fmt(c)}；第 2 步 3 个小步，复制按钮 ${subs.map(x => x.buttons).join("/")}`);
 }
@@ -212,6 +215,7 @@ async function realDone(ctx, page) {
   await page.reload();
   const after = await page.ev(CARD);
   if (!after.hidden || after.mode !== "hidden") return { status: "fail", detail: `完成后重新打开设置页，卡片应消失：${fmt(after)}` };
+  if (after.def !== "plain") return { status: "fail", detail: `卡片不显示时默认组合一段应照常显示、不包 <details>，实际 ${after.def}` };
   return { status: "pass", detail: `分屏 ${pair[0].id}/${pair[1].id} 出现后 setupDone 为 true，当前页 ${fmt(c)}；重新打开后卡片隐藏` };
 }
 
@@ -242,6 +246,7 @@ async function regrant(ctx, page, tabId) {
   const problems = [];
   if (c.steps.length !== 1 || c.steps[0] !== "grant:todo") problems.push(`应只有第 1 步（grant:todo）：${fmt(c)}`);
   if (!c.grantButton) problems.push("没有第 1 步的授权按钮");
+  if (c.def !== "closed") problems.push(`卡片重新出现后默认组合一段应收起，实际 ${c.def}`);
   if (c.pairCallouts) problems.push(`卡片显示时默认组合卡不应再有左侧未授权的提示框（实际 ${c.pairCallouts} 个）`);
   let pop = "";
   try {
