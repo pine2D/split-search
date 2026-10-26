@@ -30,6 +30,8 @@ Requires Chrome 155 or later.
 
 ## Setup
 
+The first time you open the settings page, the “Get started” card at the top walks you through these steps and ends with a test search.
+
 1. **Grant access**: on the settings page, click “Grant access” for each engine you want to use.
 2. **Copy the URL**: under “Default pair”, pick a left and a right engine, then copy the generated URL from “Add to Chrome”.
 3. **Add it and make it default**: enter `chrome://settings/searchEngines` in the address bar. Under “Site search”, click “Add”. Enter any name and a shortcut of your choice (for example, `gb`), paste the URL you copied into “URL with %s in place of query” and click “Add”. Then open the ⋮ menu next to the new entry and choose “Make default”.

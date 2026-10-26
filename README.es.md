@@ -30,6 +30,8 @@ Requiere Chrome 155 o posterior.
 
 ## Configuración
 
+La primera vez que abras la configuración de Split Search, la tarjeta «Primeros pasos», en la parte superior, te guiará por estos pasos y terminará con una búsqueda de prueba.
+
 1. **Da acceso**: en la configuración de Split Search, haz clic en «Dar acceso» junto a cada buscador que vayas a usar.
 2. **Copia la URL**: en «Combinación predeterminada», elige el buscador de la izquierda y el de la derecha. Luego copia la URL que aparece en «Añadir a Chrome».
 3. **Añádela y elígela como predeterminada**: escribe `chrome://settings/searchEngines` en la barra de direcciones. En la sección «Búsquedas en el sitio» («Búsqueda en sitios»), haz clic en «Añadir» («Agregar»). En «Nombre», pon lo que quieras; en «Atajo», el que prefieras (por ejemplo, `gb`); en «URL con %s en el lugar de la consulta» («URL con %s en lugar de la consulta»), pega la URL que copiaste. Haz clic en «Añadir» («Agregar»). Por último, en el menú ⋮ a la derecha de esa entrada, selecciona «Elegir como predeterminado» («Configurar como predeterminado»).
