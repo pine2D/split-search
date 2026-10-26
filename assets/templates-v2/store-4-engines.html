@@ -7,8 +7,9 @@
 <style>
   /* 左栏字，右侧是设置页“Search engines”卡片里引擎列表的前四行：DuckDuckGo（Default left）、Bing（Default right）、Google、Kagi。
      Perplexity 不放：它在设置页带“Better on the right”提示，裁掉提示只剩“Left or right”会说过头；放上提示，提示句在画布右缘被截断。
-     原图 x 648 起，蓝色指示条离卡片左缘约 11px（再贴边，Google、Kagi 两行的字就离边不到 10px）；y 646–1122 是四行（下沿切在 Kagi 行下的分隔线之上，行内自带的下边距已够，不再加白边）。
-     缩放 1.1，引擎名约 29px、网址约 20px。窗口左缘 680，向右出血：画布内可见原图 x 648–1193（标签止于约 1056，“Access granted”列在 1560 以后）。 */
+     原图（2026-10-26 界面翻新后重拍）x 648 起，行左缘 658、引擎名从约 665 起，离卡片左缘约 19px；y 308–908 是四行（上沿在 DuckDuckGo 行顶的分隔线之下，下沿切在 Kagi 行下的分隔线之上）。
+     DuckDuckGo、Bing 两行右侧有“默认组合在用，不能隐藏”的说明，所以比另外两行高，说明本身在画布外，左栏留白是真实界面。
+     缩放 1.1，引擎名约 29px。窗口左缘 680，向右出血：画布内可见原图 x 648–1193（标签止于约 1030，“Access granted”列在 1550 以后）。 */
   .win { left: 680px; top: 50%; width: 1240px; transform: translateY(-50%); }
   .crop { width: 1232px; }
 </style></head>
@@ -19,6 +20,6 @@
     <p class="sub" data-t="s4.sub" data-lines="2"></p>
   </div>
   <!-- 真实截图：设置页的搜索引擎列表（英文界面，五个预置引擎都已授权） -->
-  <div class="win"><div class="crop" data-crop="648,646,1120,476"><img src="../raw/options-engines.png" data-iw="2400" alt=""></div></div>
+  <div class="win"><div class="crop" data-crop="648,308,1120,600"><img src="../raw/options-engines.png" data-iw="2400" alt=""></div></div>
   <script src="../templates/crop.js"></script>
 </body></html>

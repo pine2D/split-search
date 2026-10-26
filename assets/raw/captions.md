@@ -72,9 +72,9 @@ convert drag-to-tabstrip.png \
 
 | 文件 | 内容 |
 |---|---|
-| `en/options-top.png` | 设置页首屏（英文界面）：标题、语言下拉框、默认组合、“Add to Chrome”卡片里的触发网址 |
-| `en/options-engines.png` | 设置页滚动到“Search engines”卡片，卡片上缘与中文版同高（左右比中文版偏左 11px，模板用 `data-crop-en`） |
-| `en/options-fullpage.png` | 设置页整页（CDP `Page.captureScreenshot`），2376×3312 |
+| `en/options-top.png` | 设置页首屏（英文界面，2026-10-26 重拍，见下文“设置页三张的重拍”）：标题、语言下拉框、“Get started”卡（第 1 步“DuckDuckGo: access granted”，第 2 步里的触发网址 `https://duckduckgo.com/?q=%s&_ss=ddg,bing`，第 3 步“Try it”）、“Default pair”卡开头的左右两个窗格 |
+| `en/options-engines.png` | 设置页滚动到“Search engines”卡片，卡片上缘在视口顶下 8 CSS 像素（原图 y≈143）；五个引擎都是“Access granted”，DuckDuckGo、Bing 带“Default left/Default right”和“默认组合在用，不能隐藏”的说明（2026-10-26 重拍） |
+| `en/options-fullpage.png` | 设置页整页（CDP `Page.captureScreenshot`），2376×4709（2026-10-26 重拍） |
 | `en/split-ddg-bing-rust.png` | 新标签打开触发网址 `https://duckduckgo.com/?q=rust+programming&_ss=ddg,bing`，扩展建成 DuckDuckGo ｜ Bing 拆分视图；标签栏里是“Split Search settings”和两个分屏标签 |
 | `en/drag-to-tabstrip.png` | 英文维基百科“Rust (programming language)”，在正文“Software developer Graydon Hoare created Rust…”里选中“Graydon Hoare”（不是链接），用 xdotool 真实按下拖到标签栏空白处（落点 1460,30），没松手时截图。第一个标签旁同样有 Xvfb 下的黑底插入箭头（397,61），商店截图 3（v2）的裁切包含它，用 `en/patches/` 的修补图盖掉（见“修补”） |
 | `en/drag-result-split.png` | 松手后：默认搜索引擎（触发网址）打开新标签，扩展建成 DuckDuckGo ｜ Bing 拆分视图，查询词“Graydon Hoare” |
@@ -82,5 +82,17 @@ convert drag-to-tabstrip.png \
 | `en/omnibox-result-split.png` | 回车后扩展在原分屏里更新两侧，查询词“rust ownership” |
 
 两次拍摄：第一次拍了全部 8 张，但拖拽落点（1509,30）离选区太远，商店截图 3 的左块装不下选区和拖拽影像；第二次只把落点改到 1460,30 重拍拖拽和地址栏两组。`en/drag-to-tabstrip.png` 取第二次的；`en/drag-result-split.png`、`en/omnibox-*.png` 取第一次的（同一流程、同一查询词，第二次的地址栏下拉多了一条第一次留下的历史记录）。
+
+### 设置页三张的重拍（2026-10-26，v0.4 界面翻新）
+
+界面翻新（配色、“开始使用”卡、左右窗格、引擎行精简）之后，只重拍了画面里有设置页的三张 `en/options-*.png`。另外五张英文图里的设置页只是标签栏上的标签标题“Split Search settings”，没有变，不重拍。
+
+- Google Chrome 156.0.8078.47（Linux），`--lang=en-US`、`LANGUAGE=en_US:en`，另加 `--disable-features=Translate`，并在启动前往临时配置的 `Default/Preferences` 写 `translate.enabled: false`（只加启动参数不够）：设置页的静态 HTML 是 `lang="zh-CN"`，全新配置里 Chrome 会在右上角弹“要翻译此页吗（中文）”的气泡，盖住页面右上角。
+- 私有 Xvfb（:131，2400×1500，`/opt/google/chrome/google-chrome` 固定缩放 1.5，窗口 1600×1000 CSS 像素），`import -window root` 截整屏，没有鼠标指针。
+- 全新的临时配置（`--disable-sync`，没有登录 Chrome 账号和任何网站），拍完删除；没有用 e2e 测试配置。字体配置同 e2e 的 `launch()`（排除 9P 挂载上的 Windows 字体）。
+- 扩展从本仓库 `src/` 用 CDP `Extensions.loadUnpacked` 加载，版本 0.4.0（界面翻新后、提交前的工作区，含“右键查询”卡片两个下拉框的排版修正）。
+- `storage.sync` 写成 `uiLocale: "en"`、默认组合 DuckDuckGo ｜ Bing、引擎排序 DuckDuckGo、Bing、Google、Kagi、Perplexity；`storage.local` 没有 `setupDone`，所以“开始使用”卡显示三步。
+- 授权：在设置页里一次申请五个预置引擎的网站，Chrome 弹出授权框后用 xdotool 按 Tab、回车点“允许”（和用户点击效果相同）。所以第 1 步显示“已授权”，引擎列表全部“Access granted”。
+- 模板裁切随之改了：商店截图 4 是 `648,308,1120,600`，顶部宣传图是 `640,310,678,290`（见 `assets/templates-v2/README.md`）。
 
 每张都逐一看过：没有中文、没有账号头像（右上角是未登录的默认图标）、没有 Kagi 或其他网站的令牌、IP 和浏览历史。网页内容是网站当时实际返回的结果，没有改过。
