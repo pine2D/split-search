@@ -495,7 +495,7 @@
   },
   "engine_not_granted_optional": {
     "message": "未授权（可选）",
-    "description": "Status on a non-default engine row when its site is not granted; access is only needed if the engine is used on the left."
+    "description": "Status on an engine row (any engine except the default left one, including the default right one) when its site is not granted; access is only needed if the engine is used on the left."
   },
   "engine_grant": {
     "message": "授权",
