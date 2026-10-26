@@ -37,7 +37,7 @@ export function pickerPanes(leftSel, rightSel) {
     "pair-pickers");
 }
 
-// ctx: { cfg, granted, refresh, setupShown }。setupShown：“开始使用”卡显示着，左侧授权的入口只留在卡里
+// ctx: { cfg, granted, refresh, setupShown }。setupShown：“开始使用”卡显示着，默认组合左侧的授权入口只留在卡里
 export function renderTriggers(ctx) {
   const { cfg, granted } = ctx;
   const all = [...cfg.engines, ...cfg.hidden];
@@ -85,13 +85,15 @@ export function renderTriggers(ctx) {
   return frag;
 }
 
-function genOutput(left, right, { granted, refresh, setupShown }) {
+// “开始使用”卡显示着时，只有默认组合的左侧把授权入口留在卡里；生成器选了别的未授权左侧照常提示
+function genOutput(left, right, { cfg, granted, refresh, setupShown }) {
   if (!left || !right) return [];
   const url = triggerOf(left, right);
   if (!url) return [ht("p", { class: "hint hint-error" }, "guide_not_left", left.name)];
   const nodes = [urlBox(url, undefined, "guide_copy_gen_aria")];
   if (left.leftDiscouraged) nodes.push(leftWarn(left));
-  if (!setupShown && granted.get(left.id) !== true) {
+  const inSetupCard = setupShown && left.id === cfg.defaultPair[0];
+  if (!inSetupCard && granted.get(left.id) !== true) {
     nodes.push(h("div", { class: "callout callout-warn" },
       ht("span", null, "guide_left_not_granted", left.name),
       authButton([left, right], ["engine_grant_named", left.name], { cls: "btn btn-small btn-attention", onDone: refresh })));
