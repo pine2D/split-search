@@ -83,7 +83,7 @@ code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
 .btn-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 600; }
 .btn-primary:hover:not(:disabled) { filter: brightness(1.08); }
 .btn-danger { color: var(--danger); }
-/* 删除的第二步（ui.js 的 confirmStep）：再点一次才删，3 秒后复原 */
+/* 删除的第二步（ui.js 的 confirmStep）：再点一次才删，不限时；失焦或 Esc 复原 */
 .btn-confirm { background: var(--danger-soft); border-color: var(--danger); color: var(--danger); font-weight: 600; }
 .btn-confirm:hover:not(:disabled) { border-color: var(--danger); }
 .btn-attention {

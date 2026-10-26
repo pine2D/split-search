@@ -202,7 +202,7 @@ test("confirmStep：第一次点击进入确认并播报 armNotice 的文字（�
   await setLocale("en");
   const btn = fakeButton();
   let confirmed = 0, armed = 0;
-  confirmStep(btn, "plain", "plain", () => { confirmed++; }, { ms: 60000, armNotice: () => { armed++; return "Think twice"; } });
+  confirmStep(btn, "plain", "plain", () => { confirmed++; }, { armNotice: () => { armed++; return "Think twice"; } });
   btn.fire("click");
   assert.equal(confirmed, 0);
   assert.equal(armed, 1);
@@ -214,8 +214,43 @@ test("confirmStep：第一次点击进入确认并播报 armNotice 的文字（�
 
   const plain = fakeButton();
   const before = notices.children.length;
-  confirmStep(plain, "plain", "plain", () => {}, { ms: 60000 });
+  confirmStep(plain, "plain", "plain", () => {}, {});
   plain.fire("click");
   assert.equal(notices.children.length, before, "没传 armNotice 不播报");
   plain.fire("blur");
+});
+
+test("confirmStep：失焦和 Esc 复原，复原后再点重新进入确认；进入确认很久之后再点仍会删除", async () => {
+  formFakes();
+  await setLocale("en");
+  const btn = fakeButton();
+  let confirmed = 0;
+  confirmStep(btn, "plain", "plain", () => { confirmed++; });
+  btn.fire("click");
+  assert.ok(btn.classList.set.has("btn-confirm"));
+  btn.fire("blur");
+  assert.ok(!btn.classList.set.has("btn-confirm"), "失焦复原");
+  btn.fire("click");
+  assert.ok(btn.classList.set.has("btn-confirm"));
+  let prevented = 0;
+  btn.fire("keydown", { key: "Escape", preventDefault() { prevented++; } });
+  assert.ok(!btn.classList.set.has("btn-confirm"), "Esc 复原");
+  assert.equal(prevented, 1);
+  btn.fire("click");
+  btn.fire("click");
+  assert.equal(confirmed, 1, "复原后重新点两次才删");
+
+  const realSetTimeout = globalThis.setTimeout;
+  let timers = 0;
+  globalThis.setTimeout = (...a) => { timers++; return realSetTimeout(...a); };
+  try {
+    const slow = fakeButton();
+    confirmStep(slow, "plain", "plain", () => { confirmed++; });
+    slow.fire("click");
+    assert.equal(timers, 0, "进入确认不起任何计时器");
+    await new Promise((r) => realSetTimeout(r, 3300));
+    assert.ok(slow.classList.set.has("btn-confirm"), "超过 3 秒仍在确认状态");
+    slow.fire("click");
+    assert.equal(confirmed, 2);
+  } finally { globalThis.setTimeout = realSetTimeout; }
 });

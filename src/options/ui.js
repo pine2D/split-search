@@ -91,30 +91,29 @@ export function notify(text, kind = "ok", { sticky = false, action = null } = {}
   return item;
 }
 
-// 两步确认的按钮（删除）：第一次点把文字换成 confirmKey，ms 毫秒内再点才执行 onConfirm；
-// 超时、失焦或按 Esc 复原。按钮文字经 setI18nText 切换，切换语言时照当前状态重写。
+// 两步确认的按钮（删除）：第一次点把文字换成 confirmKey，再点一次才执行 onConfirm。
+// 不限时（读屏用户需要时间）：保持到再点、失焦或按 Esc 复原。按钮文字经 setI18nText 切换，切换语言时照当前状态重写。
 // armNotice：第一次点击进入确认时经 #notices（aria-live）播报的一句提醒，读屏用户也能听到要再点一次、删前要注意什么
-export function confirmStep(btn, labelKey, confirmKey, onConfirm, { ms = 3000, armNotice = null } = {}) {
-  let timer = null;
+export function confirmStep(btn, labelKey, confirmKey, onConfirm, { armNotice = null } = {}) {
+  let armed = false;
   const reset = () => {
-    clearTimeout(timer);
-    timer = null;
+    armed = false;
     btn.classList.remove("btn-confirm");
     setI18nText(btn, labelKey);
   };
   btn.addEventListener("click", () => {
-    if (timer === null) {
+    if (!armed) {
+      armed = true;
       setI18nText(btn, confirmKey);
       btn.classList.add("btn-confirm");
-      timer = setTimeout(reset, ms);
       if (armNotice) notify(armNotice(), "warn");
       return;
     }
     reset();
     onConfirm();
   });
-  btn.addEventListener("blur", () => { if (timer !== null) reset(); });
-  btn.addEventListener("keydown", (ev) => { if (ev.key === "Escape" && timer !== null) { ev.preventDefault(); reset(); } });
+  btn.addEventListener("blur", () => { if (armed) reset(); });
+  btn.addEventListener("keydown", (ev) => { if (ev.key === "Escape" && armed) { ev.preventDefault(); reset(); } });
   return btn;
 }
 
