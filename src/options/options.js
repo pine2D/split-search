@@ -8,11 +8,12 @@ import { renderLookupCard, setupLookupDialogs, refreshImageCatalog } from "./loo
 import { renderEngineList, renderHiddenList, setupEngineDialog } from "./engine-list.js";
 import { setupCatalogDialog, refreshCatalog } from "./catalog.js";
 import { renderShortcut, SHORTCUT_BUTTON_ID } from "./shortcut.js";
-import { renderTriggers, setupGuide, pickerPanes } from "./guide.js";
+import { renderTriggers, setupGuide } from "./guide.js";
 import { renderSetup, loadSetupDone, initSetup, revealSetup } from "./setup.js";
 import { applyRichText, renderLangPicker } from "./locale-ui.js";
 import { initI18n, applyI18n, setLocale, currentPref, currentLocale, t } from "../chrome/i18n.js";
 import { safeArgs } from "../lib/safe-error.js";
+import { pane, panes } from "../ui/panes.js";
 
 const $ = (id) => document.getElementById(id);
 const log = (...args) => console.error("[split-search]", ...safeArgs(args));
@@ -142,6 +143,14 @@ async function refreshShortcut() {
   } catch (err) {
     log("failed to render the keyboard shortcut", err);
   }
+}
+
+// 默认组合的左右两个下拉框做成镜像图标的两个窗格（只有默认组合卡用：窗格就代表默认组合）；整个窗格是 <label>，点哪里都聚焦下拉框
+function pickerPanes(leftSel, rightSel) {
+  return panes(
+    pane("left", "label", ht("span", null, "common_left"), leftSel),
+    pane("right", "label", ht("span", null, "common_right"), rightSel),
+    "pair-pickers");
 }
 
 // setupShown：“开始使用”卡显示着时，左侧授权的提示框只留在卡里，这里不重复

@@ -609,6 +609,10 @@
     "message": "Predeterminada",
     "description": "Tag on the trigger URL card for the default pair."
   },
+  "guide_default_url_title": {
+    "message": "URL de activación de la combinación predeterminada",
+    "description": "Summary of the collapsible section on the Add to Chrome card that holds the default pair's trigger URL. Shown collapsed while the Get started card is on the page, since that card already shows the same URL."
+  },
   "guide_pair_label": {
     "message": "$LEFT$ | $RIGHT$",
     "description": "Name of an engine pair on the trigger URL card: left engine, a separator, right engine.",

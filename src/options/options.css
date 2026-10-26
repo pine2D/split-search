@@ -163,6 +163,9 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 .trigger-card:first-child { padding-top: 4px; }
 .trigger-card:last-child { padding-bottom: 0; }
 .trigger-card + .trigger-card { border-top: 1px solid var(--border); }
+/* 收进 <details> 的一段（其他组合；“开始使用”卡显示时的默认组合）：分隔线由 .trigger-card 负责，不要 .disclosure 的外边距 */
+.trigger-card > .disclosure { margin: 0; }
+.trigger-card > .disclosure[open] > summary { margin-bottom: 6px; }
 .trigger-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
 .url-line { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
 .url-box {

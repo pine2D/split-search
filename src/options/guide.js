@@ -1,13 +1,12 @@
 // 触发网址：默认组合一条 + 自选组合生成器。分步引导和注意事项是 options.html 里的静态文字。
 import { buildTriggerTemplate } from "../lib/trigger.js";
-import { h, ht, copyButton, authButton, option } from "./ui.js";
-import { canBeLeft } from "./edits.js";
+import { h, ht, copyButton, authButton, option, disclosure } from "./ui.js";
+import { canBeLeft, generatorPick } from "./edits.js";
 import { t } from "../chrome/i18n.js";
-import { pane, panes } from "../ui/panes.js";
 
 export const SETTINGS_URL = "chrome://settings/searchEngines";
 
-let gen = null; // 生成器当前选择 [leftId, rightId]，跨重渲染保留
+let gen = null; // 生成器当前选择 [leftId, rightId]，跨重渲染保留（仍有效时，见 generatorPick）
 
 export function setupGuide() {
   const slot = document.getElementById("settings-url-copy");
@@ -29,17 +28,10 @@ export function urlBox(url, label, ariaKey) {
     copyButton(() => url, label, ariaKey));
 }
 
-// 左右两个下拉框做成镜像图标的两个窗格（默认组合卡与组合生成器共用）：整个窗格是 <label>，点哪里都聚焦下拉框
-export function pickerPanes(leftSel, rightSel) {
-  return panes(
-    pane("left", "label", ht("span", null, "common_left"), leftSel),
-    pane("right", "label", ht("span", null, "common_right"), rightSel),
-    "pair-pickers");
-}
-
-// ctx: { cfg, granted, refresh, setupShown }。setupShown：“开始使用”卡显示着，默认组合左侧的授权入口只留在卡里
+// ctx: { cfg, granted, refresh, setupShown }。setupShown：“开始使用”卡显示着，默认组合左侧的授权入口只留在卡里，
+// 默认组合的触发网址卡里也有，这里收进默认收起的 <details>；卡片不显示时照常展开
 export function renderTriggers(ctx) {
-  const { cfg, granted } = ctx;
+  const { cfg, setupShown } = ctx;
   const all = [...cfg.engines, ...cfg.hidden];
   const byId = new Map(all.map(e => [e.id, e]));
   const [dl, dr] = cfg.defaultPair.map(id => byId.get(id));
@@ -47,26 +39,23 @@ export function renderTriggers(ctx) {
 
   // 默认组合
   const defUrl = dl && dr ? triggerOf(dl, dr) : null;
-  frag.append(h("div", { class: "trigger-card trigger-default" },
+  const def = h("div", { class: "trigger-default" },
     h("div", { class: "trigger-head" },
       ht("span", { class: "tag tag-accent" }, "guide_default_tag"),
       dl && dr ? ht("strong", null, "guide_pair_label", dl.name, dr.name) : ht("strong", null, "guide_pair_invalid")),
     defUrl ? urlBox(defUrl, undefined, "guide_copy_default_aria") : ht("p", { class: "hint hint-error" }, "guide_no_trigger"),
     defUrl && dl.leftDiscouraged && leftWarn(dl),
-    ht("p", { class: "hint" }, "guide_default_hint")));
+    ht("p", { class: "hint" }, "guide_default_hint"));
+  frag.append(h("div", { class: "trigger-card" },
+    setupShown ? disclosure("guide-default", "guide_default_url_title", def) : def));
 
-  // 自选组合
+  // 其他组合：普通的左右两个下拉框（不用默认组合卡的窗格，免得看起来像在改默认组合），整段默认收起
   const lefts = cfg.engines.filter(canBeLeft);
-  const rights = cfg.engines;
-  if (!gen || !lefts.some(e => e.id === gen[0]) || !rights.some(e => e.id === gen[1])) {
-    gen = [...cfg.defaultPair];
-    if (!lefts.some(e => e.id === gen[0])) gen[0] = lefts[0]?.id;
-    if (!rights.some(e => e.id === gen[1])) gen[1] = rights[0]?.id;
-  }
+  gen = generatorPick(cfg.engines, cfg.defaultPair, gen);
   const out = h("div", { class: "gen-output" });
   const leftSel = h("select", { id: "gen-left" },
     lefts.map(e => option(e.id, e.leftDiscouraged ? t("engine_left_discouraged_suffix", e.name) : e.name, e.id === gen[0])));
-  const rightSel = h("select", { id: "gen-right" }, rights.map(e => option(e.id, e.name, e.id === gen[1])));
+  const rightSel = h("select", { id: "gen-right" }, cfg.engines.map(e => option(e.id, e.name, e.id === gen[1])));
   const update = () => {
     gen = [leftSel.value, rightSel.value];
     out.replaceChildren(...genOutput(byId.get(gen[0]), byId.get(gen[1]), ctx));
@@ -75,12 +64,14 @@ export function renderTriggers(ctx) {
   rightSel.addEventListener("change", update);
 
   frag.append(h("div", { class: "trigger-card" },
-    h("div", { class: "trigger-head" }, ht("strong", null, "guide_other_pairs_title")),
-    ht("p", { class: "hint" }, "guide_pair_shortcut_hint", t("guide_example_shortcut_query")),
-    lefts.length
-      ? pickerPanes(leftSel, rightSel)
-      : ht("p", { class: "hint hint-error" }, "guide_no_left"),
-    out));
+    disclosure("guide-other", "guide_other_pairs_title",
+      ht("p", { class: "hint" }, "guide_pair_shortcut_hint", t("guide_example_shortcut_query")),
+      lefts.length
+        ? h("div", { class: "lookup-pickers gen-pickers" },
+          h("label", null, ht("span", null, "common_left"), leftSel),
+          h("label", null, ht("span", null, "common_right"), rightSel))
+        : ht("p", { class: "hint hint-error" }, "guide_no_left"),
+      out)));
   if (lefts.length) update();
   return frag;
 }
