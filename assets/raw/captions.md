@@ -73,8 +73,8 @@ convert drag-to-tabstrip.png \
 | 文件 | 内容 |
 |---|---|
 | `en/options-top.png` | 设置页首屏（英文界面，2026-10-26 重拍，见下文“设置页三张的重拍”）：标题、语言下拉框、“Get started”卡（第 1 步“DuckDuckGo: access granted”，第 2 步里的触发网址 `https://duckduckgo.com/?q=%s&_ss=ddg,bing`，第 3 步“Try it”）、“Default pair”卡开头的左右两个窗格 |
-| `en/options-engines.png` | 设置页滚动到“Search engines”卡片，卡片上缘在视口顶下 8 CSS 像素（原图 y≈143）；五个引擎都是“Access granted”，DuckDuckGo、Bing 带“Default left/Default right”和“默认组合在用，不能隐藏”的说明（2026-10-26 重拍） |
-| `en/options-fullpage.png` | 设置页整页（CDP `Page.captureScreenshot`），2376×4709（2026-10-26 重拍） |
+| `en/options-engines.png` | 设置页滚动到“Search engines”卡片，卡片上缘在视口顶下 8 CSS 像素（原图 y≈143）；五个引擎都是“Access granted”，DuckDuckGo、Bing 带“Default left/Default right”和“默认组合在用，不能隐藏”的说明，说明只占一行（2026-10-26 第二次重拍） |
+| `en/options-fullpage.png` | 设置页整页（CDP `Page.captureScreenshot`），2376×4652（2026-10-26 第二次重拍） |
 | `en/split-ddg-bing-rust.png` | 新标签打开触发网址 `https://duckduckgo.com/?q=rust+programming&_ss=ddg,bing`，扩展建成 DuckDuckGo ｜ Bing 拆分视图；标签栏里是“Split Search settings”和两个分屏标签 |
 | `en/drag-to-tabstrip.png` | 英文维基百科“Rust (programming language)”，在正文“Software developer Graydon Hoare created Rust…”里选中“Graydon Hoare”（不是链接），用 xdotool 真实按下拖到标签栏空白处（落点 1460,30），没松手时截图。第一个标签旁同样有 Xvfb 下的黑底插入箭头（397,61），商店截图 3（v2）的裁切包含它，用 `en/patches/` 的修补图盖掉（见“修补”） |
 | `en/drag-result-split.png` | 松手后：默认搜索引擎（触发网址）打开新标签，扩展建成 DuckDuckGo ｜ Bing 拆分视图，查询词“Graydon Hoare” |
@@ -94,5 +94,7 @@ convert drag-to-tabstrip.png \
 - `storage.sync` 写成 `uiLocale: "en"`、默认组合 DuckDuckGo ｜ Bing、引擎排序 DuckDuckGo、Bing、Google、Kagi、Perplexity；`storage.local` 没有 `setupDone`，所以“开始使用”卡显示三步。
 - 授权：在设置页里一次申请五个预置引擎的网站，Chrome 弹出授权框后用 xdotool 按 Tab、回车点“允许”（和用户点击效果相同）。所以第 1 步显示“已授权”，引擎列表全部“Access granted”。
 - 模板裁切随之改了：商店截图 4 是 `648,308,1120,600`，顶部宣传图是 `640,310,678,290`（见 `assets/templates-v2/README.md`）。
+
+第二次重拍（同一天，整体审查后的修正）：“不能隐藏”的说明放宽到一行（`options.css` 的 `.row-reason` 改为 `max-width: 56ch`），引擎卡片和整页随之变矮，所以重拍了这三张。用同一个脚本、同一套环境和状态（私有 Xvfb :131、全新临时配置、五个预置引擎在授权框里点“允许”、没有 `setupDone`），扩展是修正后的工作区。设置页的静态 HTML 这时已改成 `lang="en"`，不会再弹翻译气泡；关掉翻译的参数和 Preferences 仍然照旧加着。`options-top.png` 与上一版只差右边滚动条滑块（页面变矮了），画面内容相同；`options-engines.png` 里 DuckDuckGo、Bing 两行各矮了一行。重新渲染后只有商店截图 4 和顶部宣传图变了；商店截图 4 的裁切只到引擎行的左半边，说明文字在右半边、不在画面里，所以这两行的复选框下面仍有一行高的空白（比上一版少一行）。
 
 每张都逐一看过：没有中文、没有账号头像（右上角是未登录的默认图标）、没有 Kagi 或其他网站的令牌、IP 和浏览历史。网页内容是网站当时实际返回的结果，没有改过。
