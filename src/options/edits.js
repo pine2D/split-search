@@ -44,6 +44,8 @@ const hasErrors = (errors) => Object.keys(errors).length > 0;
 export function addEngine(raw, input) {
   const id = String(input.id ?? "").trim();
   const { errors, name, url } = checkFields(input);
+  // id 在收起的“高级”里，多半是按名称自动生成的：名称或网址有错时先只报这两项，不报 id、不展开“高级”
+  if (hasErrors(errors)) return { ok: false, errors };
   if (!ID_PATTERN.test(id)) errors.id = spec("id_format");
   else if (isIdTaken(id, raw)) errors.id = spec("id_taken", id);
   if (hasErrors(errors)) return { ok: false, errors };

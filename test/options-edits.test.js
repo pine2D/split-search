@@ -199,3 +199,15 @@ test("隐藏或删除查词引擎时一并删掉 lookupEngine", () => {
   assert.deepEqual(deleteEngine(raw, "my").remove, ["lookupEngine"]);
   assert.equal(deleteEngine({ ...raw, lookupEngine: "bing" }, "my").remove, undefined);
 });
+test("新增引擎：名称或网址有错时不报 id 错误（空表单只提示名称和网址），只有 id 有错才报 id", () => {
+  const empty = addEngine({}, { id: "", name: "", url: "" });
+  assert.equal(empty.ok, false);
+  assert.ok(empty.errors.name && empty.errors.url, "空表单应报名称和网址");
+  assert.equal("id" in empty.errors, false, "空表单不应报 id");
+  const badUrl = addEngine({ customEngines: [baidu] }, { id: "baidu", name: "百度", url: "https://*.x.com/?q=%s" });
+  assert.deepEqual(Object.keys(badUrl.errors), ["url"]);
+  const badName = addEngine({}, { id: "Bad id", name: " ", url: baidu.url });
+  assert.deepEqual(Object.keys(badName.errors), ["name"]);
+  const onlyId = addEngine({}, { id: "Bad id", name: "百度", url: baidu.url });
+  assert.deepEqual(Object.keys(onlyId.errors), ["id"]);
+});
