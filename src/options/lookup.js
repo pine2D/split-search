@@ -45,7 +45,7 @@ function imageRow(e, actions) {
 export function renderLookupCard(cfg, actions) {
   return h("div", { class: "lookup-card" },
     ht("p", { class: "hint" }, "options_lookup_intro"),
-    h("div", { class: "pair-pickers" },
+    h("div", { class: "lookup-pickers" },
       h("label", null, ht("span", null, "options_lookup_engine_label"), lookupSelect(cfg, actions)),
       h("label", null, ht("span", null, "options_image_engine_label"), imageSelect(cfg, actions))),
     h("ul", { class: "engine-list" }, cfg.imageEngines.map(e => imageRow(e, actions))),
