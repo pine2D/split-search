@@ -248,8 +248,7 @@ test("confirmStep：失焦和 Esc 复原，复原后再点重新进入确认；�
     confirmStep(slow, "plain", "plain", () => { confirmed++; });
     slow.fire("click");
     assert.equal(timers, 0, "进入确认不起任何计时器");
-    await new Promise((r) => realSetTimeout(r, 3300));
-    assert.ok(slow.classList.set.has("btn-confirm"), "超过 3 秒仍在确认状态");
+    assert.ok(slow.classList.set.has("btn-confirm"), "没有计时器，一直保持确认状态");
     slow.fire("click");
     assert.equal(confirmed, 2);
   } finally { globalThis.setTimeout = realSetTimeout; }

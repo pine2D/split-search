@@ -521,7 +521,7 @@
   },
   "engine_delete_confirm": {
     "message": "確認刪除？",
-    "description": "Delete button text after the first click; clicking again within 3 seconds deletes the engine."
+    "description": "Delete button text after the first click; clicking it again deletes the engine. Blur or Esc restores the button."
   },
   "engine_delete_confirm_hint": {
     "message": "再點一次就會刪除「$NAME$」。刪除前，請先刪除 Chrome 中用到它的網站搜尋：放在左側的會變成一般搜尋，放在右側的會停在「未知引擎」錯誤頁。",

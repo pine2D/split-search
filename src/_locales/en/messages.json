@@ -521,7 +521,7 @@
   },
   "engine_delete_confirm": {
     "message": "Confirm delete?",
-    "description": "Delete button text after the first click; clicking again within 3 seconds deletes the engine."
+    "description": "Delete button text after the first click; clicking it again deletes the engine. Blur or Esc restores the button."
   },
   "engine_delete_confirm_hint": {
     "message": "Click again to delete “$NAME$”. Before you do, delete the Chrome site searches that use it. Otherwise, the ones with it on the left fall back to a normal search, and the ones with it on the right stop at an “Unknown engine” error page.",
