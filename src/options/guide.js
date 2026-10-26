@@ -4,7 +4,7 @@ import { h, ht, copyButton, authButton, option } from "./ui.js";
 import { canBeLeft } from "./edits.js";
 import { t } from "../chrome/i18n.js";
 
-const SETTINGS_URL = "chrome://settings/searchEngines";
+export const SETTINGS_URL = "chrome://settings/searchEngines";
 
 let gen = null; // 生成器当前选择 [leftId, rightId]，跨重渲染保留
 
@@ -21,13 +21,14 @@ function triggerOf(left, right) {
   }
 }
 
-function urlBox(url) {
+// label 是复制按钮的 LabelSpec
+export function urlBox(url, label) {
   return h("div", { class: "url-line" },
     h("code", { class: "url-box mono" }, url),
-    copyButton(() => url));
+    copyButton(() => url, label));
 }
 
-// ctx: { cfg, granted, refresh }
+// ctx: { cfg, granted, refresh, setupShown }。setupShown：“开始使用”卡显示着，左侧授权的入口只留在卡里
 export function renderTriggers(ctx) {
   const { cfg, granted } = ctx;
   const all = [...cfg.engines, ...cfg.hidden];
@@ -59,7 +60,7 @@ export function renderTriggers(ctx) {
   const rightSel = h("select", { id: "gen-right" }, rights.map(e => option(e.id, e.name, e.id === gen[1])));
   const update = () => {
     gen = [leftSel.value, rightSel.value];
-    out.replaceChildren(...genOutput(byId.get(gen[0]), byId.get(gen[1]), granted, ctx.refresh));
+    out.replaceChildren(...genOutput(byId.get(gen[0]), byId.get(gen[1]), ctx));
   };
   leftSel.addEventListener("change", update);
   rightSel.addEventListener("change", update);
@@ -78,13 +79,13 @@ export function renderTriggers(ctx) {
   return frag;
 }
 
-function genOutput(left, right, granted, refresh) {
+function genOutput(left, right, { granted, refresh, setupShown }) {
   if (!left || !right) return [];
   const url = triggerOf(left, right);
   if (!url) return [ht("p", { class: "hint hint-error" }, "guide_not_left", left.name)];
   const nodes = [urlBox(url)];
   if (left.leftDiscouraged) nodes.push(leftWarn(left));
-  if (granted.get(left.id) !== true) {
+  if (!setupShown && granted.get(left.id) !== true) {
     nodes.push(h("div", { class: "callout callout-warn" },
       ht("span", null, "guide_left_not_granted", left.name),
       authButton([left, right], ["engine_grant_named", left.name], { cls: "btn btn-small btn-attention", onDone: refresh })));
@@ -93,7 +94,7 @@ function genOutput(left, right, granted, refresh) {
 }
 
 // 预置里标了 leftDiscouraged 的引擎（如 Perplexity）作左侧：站点 Service Worker 接管跳转，扩展收不到触发
-function leftWarn(e) {
+export function leftWarn(e) {
   return h("div", { class: "callout callout-warn" },
     ht("span", null, "guide_left_discouraged", e.name));
 }

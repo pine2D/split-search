@@ -9,6 +9,7 @@ import { renderEngineList, renderHiddenList, setupEngineDialog } from "./engine-
 import { setupCatalogDialog, refreshCatalog } from "./catalog.js";
 import { renderShortcut, SHORTCUT_BUTTON_ID } from "./shortcut.js";
 import { renderTriggers, setupGuide } from "./guide.js";
+import { renderSetup, loadSetupDone, initSetup } from "./setup.js";
 import { applyRichText, renderLangPicker } from "./locale-ui.js";
 import { initI18n, applyI18n, setLocale, currentPref, currentLocale, t } from "../chrome/i18n.js";
 import { safeArgs } from "../lib/safe-error.js";
@@ -19,6 +20,9 @@ const log = (...args) => console.error("[split-search]", ...safeArgs(args));
 // 目录加载前不得调用 t / ht / tNodes：凡是要用它们的路径都先 await i18nReady
 const i18nReady = initI18n().catch(log);
 bindActions({ render: () => render(), current: () => current });
+
+// 重建后焦点原来的元素没了（授权成功后授权按钮消失）：焦点交给这一步的状态行
+const FOCUS_FALLBACK = { "setup-grant": "setup-grant-status", "setup-grant-right": "setup-grant-status" };
 
 let renderSeq = 0;
 let current = null;          // 最近一次渲染用的 cfg
@@ -90,7 +94,8 @@ async function render() {
   }
   await localeSwitch;
   const all = [...cfg.engines, ...cfg.hidden];
-  const granted = new Map(await Promise.all(all.map(async e => [e.id, await isGranted(e)])));
+  const [grants] = await Promise.all([Promise.all(all.map(async e => [e.id, await isGranted(e)])), loadSetupDone()]);
+  const granted = new Map(grants);
   if (seq !== renderSeq) return; // 已有更新的渲染
   for (const id of attention) if (granted.get(id)) attention.delete(id);
   current = cfg;
@@ -98,17 +103,17 @@ async function render() {
   refreshImageCatalog(cfg);
   applyStatic();
   syncLangPicker(cfg.uiLocale);
-  const ctx = { cfg, granted, attention, actions, refresh: render };
   const byId = new Map(all.map(e => [e.id, e]));
   // 有意为之：重建下面几个区块会丢掉焦点，记下有 id 的焦点元素（键盘用户刚改的开关、下拉框），重建后还给它
   const focusedId = document.activeElement?.id;
-  $("banner").replaceChildren(...banner(cfg, byId, granted));
-  $("pair-body").replaceChildren(...pairSection(cfg, byId, granted));
+  const setupShown = renderSetup($("setup"), { cfg, byId, granted });
+  const ctx = { cfg, granted, attention, actions, refresh: render, setupShown };
+  $("pair-body").replaceChildren(...pairSection(cfg, byId, granted, setupShown));
   $("lookup-body").replaceChildren(renderLookupCard(cfg, actions));
   $("triggers").replaceChildren(renderTriggers(ctx));
   $("engines").replaceChildren(renderEngineList(ctx));
   $("hidden-engines").replaceChildren(renderHiddenList(ctx));
-  if (focusedId && document.activeElement === document.body) $(focusedId)?.focus();
+  if (focusedId && document.activeElement === document.body) ($(focusedId) ?? $(FOCUS_FALLBACK[focusedId]))?.focus();
   refreshShortcut();
   document.body.classList.remove("loading");
 }
@@ -131,22 +136,8 @@ async function refreshShortcut() {
   }
 }
 
-// 首次安装授权横幅：默认组合左侧未授权就一直显示
-function banner(cfg, byId, granted) {
-  const [left, right] = cfg.defaultPair.map(id => byId.get(id));
-  if (!left || granted.get(left.id)) return [];
-  const engines = right && right.id !== left.id && !granted.get(right.id) ? [left, right] : [left];
-  const label = engines.length === 2
-    ? ["options_banner_grant_both", left.name, right.name]
-    : ["options_banner_grant_left", left.name];
-  return [h("div", { class: "banner" },
-    h("div", { class: "banner-text" },
-      ht("strong", null, "options_banner_title"),
-      ht("p", null, "options_banner_text", left.name)),
-    authButton(engines, label, { cls: "btn btn-primary", onDone: render }))];
-}
-
-function pairSection(cfg, byId, granted) {
+// setupShown：“开始使用”卡显示着时，左侧授权的提示框只留在卡里，这里不重复
+function pairSection(cfg, byId, granted, setupShown) {
   const lefts = cfg.engines.filter(canBeLeft);
   const [l, r] = cfg.defaultPair;
   const leftSel = h("select", { id: "pair-left" }, lefts.map(e => option(e.id, e.name, e.id === l)));
@@ -166,7 +157,7 @@ function pairSection(cfg, byId, granted) {
   h("label", { class: "check-row" }, narrow, ht("span", null, "options_narrow_label")),
   ht("p", { class: "hint" }, "options_narrow_hint")];
   const left = byId.get(l);
-  if (left && !granted.get(left.id)) {
+  if (left && !setupShown && !granted.get(left.id)) {
     nodes.push(h("div", { class: "callout callout-warn" },
       ht("span", null, "options_left_not_granted", left.name),
       authButton([left], ["engine_grant_named", left.name], { cls: "btn btn-small btn-attention", onDone: render })));
@@ -182,6 +173,7 @@ i18nReady.then(() => {
   setupCatalogDialog(actions);
   setupLookupDialogs(actions);
   setupGuide();
+  initSetup(render);
 });
 chrome.storage.onChanged.addListener((_changes, area) => { if (area === "sync") render(); });
 chrome.permissions.onAdded.addListener(() => render());

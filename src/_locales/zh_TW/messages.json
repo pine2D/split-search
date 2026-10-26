@@ -773,23 +773,17 @@
     "message": "預設組合已儲存。記得把新的觸發網址複製到 Chrome 並設為預設。",
     "description": "Notice after changing the default pair: the new trigger URL must be added to Chrome and made default."
   },
-  "options_banner_title": {
-    "message": "還差一步：授權存取搜尋引擎網站",
-    "description": "Title of the first-run banner asking for site access."
+  "setup_title": {
+    "message": "開始使用",
+    "description": "Heading of the first-run “Get started” card at the top of the settings page."
   },
-  "options_banner_text": {
-    "message": "開啟分割畫面需要攔截傳送給左側引擎 $LEFT$ 的搜尋要求，因此必須授權它的網站；右側引擎授權後，再次搜尋時就能辨識本擴充功能開啟的分割畫面，並直接在原處更新。授權只限這兩個網站。",
-    "description": "Body of the first-run banner: why access to the left (required) and right (recommended) engine sites is needed.",
-    "placeholders": {
-      "LEFT": {
-        "content": "$1",
-        "example": "Google"
-      }
-    }
+  "setup_grant_title": {
+    "message": "授權存取引擎網站",
+    "description": "Get started step 1 heading: grant access to the default pair's engine sites."
   },
-  "options_banner_grant_both": {
-    "message": "點這裡授權 $LEFT$（必要）和 $RIGHT$（建議）",
-    "description": "Banner button that requests access to both default engines' sites: left required, right recommended.",
+  "setup_grant_text": {
+    "message": "Split Search 要在左側 $LEFT$ 的網站上把搜尋轉成分割畫面，所以必須授權這個網站。再授權右側的 $RIGHT$，之後再次搜尋時就能直接更新已開啟的分割畫面。授權只限這兩個網站。",
+    "description": "Get started step 1: why access to the left (required) and right (recommended) engine sites is needed. Plain words, no talk of intercepting requests.",
     "placeholders": {
       "LEFT": {
         "content": "$1",
@@ -801,9 +795,145 @@
       }
     }
   },
-  "options_banner_grant_left": {
-    "message": "點這裡授權 $LEFT$（必要）",
-    "description": "Banner button that requests access to the default left engine's site (required).",
+  "setup_grant_text_left": {
+    "message": "Split Search 要在左側 $LEFT$ 的網站上把搜尋轉成分割畫面，所以必須授權這個網站。授權只限這個網站。",
+    "description": "Get started step 1 when only the left engine needs access (the right one is the same engine or already granted).",
+    "placeholders": {
+      "LEFT": {
+        "content": "$1",
+        "example": "Google"
+      }
+    }
+  },
+  "setup_grant_both": {
+    "message": "授權 $LEFT$（必要）和 $RIGHT$（建議）",
+    "description": "Get started button that requests access to both default engines' sites: left required, right recommended.",
+    "placeholders": {
+      "LEFT": {
+        "content": "$1",
+        "example": "Google"
+      },
+      "RIGHT": {
+        "content": "$2",
+        "example": "Bing"
+      }
+    }
+  },
+  "setup_grant_left": {
+    "message": "授權 $LEFT$（必要）",
+    "description": "Get started button that requests access to the default left engine's site (required).",
+    "placeholders": {
+      "LEFT": {
+        "content": "$1",
+        "example": "Google"
+      }
+    }
+  },
+  "setup_grant_right": {
+    "message": "授權 $RIGHT$（建議）",
+    "description": "Get started button shown after the left engine is granted: requests access to the right engine's site (recommended).",
+    "placeholders": {
+      "RIGHT": {
+        "content": "$1",
+        "example": "Bing"
+      }
+    }
+  },
+  "setup_granted": {
+    "message": "$LEFT$ 已授權",
+    "description": "Get started step 1 status once the left engine's site is granted, next to a check icon.",
+    "placeholders": {
+      "LEFT": {
+        "content": "$1",
+        "example": "Google"
+      }
+    }
+  },
+  "setup_right_hint": {
+    "message": "也建議授權右側的 $RIGHT$：再次搜尋時就能直接更新已開啟的分割畫面。",
+    "description": "Get started step 1, after the left engine is granted: why the right engine's site is still worth granting.",
+    "placeholders": {
+      "RIGHT": {
+        "content": "$1",
+        "example": "Bing"
+      }
+    }
+  },
+  "setup_add_title": {
+    "message": "在 Chrome 中新增網站搜尋，並設為預設",
+    "description": "Get started step 2 heading. \"Site search\" and \"Make default\" are Chrome's terms (see docs/i18n/chrome-terms.md)."
+  },
+  "setup_add_text": {
+    "message": "把下方的設定網址複製到網址列開啟，在「網站搜尋」區塊點選「新增」：「姓名」隨意填，「搜尋捷徑」自訂，「以 %s 取代查詢的網址」貼上觸發網址；新增後在這個項目的 ⋮ 選單中選「設為預設」。",
+    "description": "Get started step 2 in one sentence: open Chrome's search engine settings (address below), add a site search, fill in its three fields, save, and make it default. Field and menu names must match Chrome's labels; ⋮ is the More actions menu icon."
+  },
+  "setup_trigger_label": {
+    "message": "觸發網址",
+    "description": "Label above the default pair's trigger URL in Get started step 2."
+  },
+  "setup_settings_label": {
+    "message": "搜尋引擎設定",
+    "description": "Label above chrome://settings/searchEngines in Get started step 2."
+  },
+  "setup_details_link": {
+    "message": "詳細步驟",
+    "description": "Link in Get started step 2 that jumps to the Add to Chrome card with the full steps."
+  },
+  "setup_try_title": {
+    "message": "確認分割畫面能開啟",
+    "description": "Get started step 3 heading: try a search and confirm that a split view opens."
+  },
+  "setup_try_button": {
+    "message": "試試看",
+    "description": "Get started step 3 button: opens a sample search with the default pair in a new tab."
+  },
+  "setup_try_hint": {
+    "message": "會用預設組合搜尋「$QUERY$」。接著到網址列搜尋任何內容，只要開啟了分割畫面，就代表設定完成。",
+    "description": "Under the Try it button: what it opens, and how to finish setup (a real search from the address bar). The placeholder is setup_sample_query.",
+    "placeholders": {
+      "QUERY": {
+        "content": "$1",
+        "example": "banana bread recipe"
+      }
+    }
+  },
+  "setup_try_blocked": {
+    "message": "請先完成第 1 步的授權。",
+    "description": "Inline reason next to the disabled Try it button: the left engine's site is not granted yet."
+  },
+  "setup_sample_query": {
+    "message": "滷肉飯做法",
+    "description": "Sample search words the Try it button searches for. Pick a short, natural everyday search in this language (not about this extension)."
+  },
+  "setup_done_title": {
+    "message": "設定完成",
+    "description": "Get started card after setup is detected as complete (shown once, on the page that saw it)."
+  },
+  "setup_done_text": {
+    "message": "在網址列搜尋，或把文字拖曳到分頁列，都會開啟分割畫面。",
+    "description": "Sentence under setup_done_title."
+  },
+  "setup_done_notice": {
+    "message": "設定完成。在網址列搜尋或把文字拖曳到分頁列，都會開啟分割畫面。",
+    "description": "Notice announced when setup is detected as complete."
+  },
+  "setup_regrant_title": {
+    "message": "需要授權",
+    "description": "Get started card heading when setup was done before but the left engine's site is not granted now."
+  },
+  "setup_regrant_text": {
+    "message": "左側的 $LEFT$ 沒有授權，現在搜尋只會開啟一般的 $LEFT$ 搜尋。",
+    "description": "Get started card when setup was done before but the left engine's site is not granted now: searches fall back to a plain search.",
+    "placeholders": {
+      "LEFT": {
+        "content": "$1",
+        "example": "Google"
+      }
+    }
+  },
+  "setup_revoked_notice": {
+    "message": "左側 $LEFT$ 的授權已取消，現在搜尋只會開啟一般的 $LEFT$ 搜尋。",
+    "description": "Notice when access to the default left engine's site is removed while the settings page is open.",
     "placeholders": {
       "LEFT": {
         "content": "$1",

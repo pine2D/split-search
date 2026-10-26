@@ -773,23 +773,17 @@
     "message": "Default pair saved. Remember to add the new trigger URL to Chrome and make it default.",
     "description": "Notice after changing the default pair: the new trigger URL must be added to Chrome and made default."
   },
-  "options_banner_title": {
-    "message": "One more step: grant access to your search engines’ sites",
-    "description": "Title of the first-run banner asking for site access."
+  "setup_title": {
+    "message": "Get started",
+    "description": "Heading of the first-run “Get started” card at the top of the settings page."
   },
-  "options_banner_text": {
-    "message": "To open a split view, Split Search intercepts searches sent to the left engine, $LEFT$, so it needs access to that site. With access to the right engine’s site too, it can recognize a split view it opened and update it in place when you search again. Access covers only these two sites.",
-    "description": "Body of the first-run banner: why access to the left (required) and right (recommended) engine sites is needed.",
-    "placeholders": {
-      "LEFT": {
-        "content": "$1",
-        "example": "Google"
-      }
-    }
+  "setup_grant_title": {
+    "message": "Allow access to the engine sites",
+    "description": "Get started step 1 heading: grant access to the default pair's engine sites."
   },
-  "options_banner_grant_both": {
-    "message": "Grant access to $LEFT$ (required) and $RIGHT$ (recommended)",
-    "description": "Banner button that requests access to both default engines' sites: left required, right recommended.",
+  "setup_grant_text": {
+    "message": "Split Search turns searches on the left engine’s site, $LEFT$, into a split view, so it needs access to that site. Allow the right engine, $RIGHT$, too, and searching again updates the split view that’s already open. Access covers only these two sites.",
+    "description": "Get started step 1: why access to the left (required) and right (recommended) engine sites is needed. Plain words, no talk of intercepting requests.",
     "placeholders": {
       "LEFT": {
         "content": "$1",
@@ -801,9 +795,145 @@
       }
     }
   },
-  "options_banner_grant_left": {
+  "setup_grant_text_left": {
+    "message": "Split Search turns searches on the left engine’s site, $LEFT$, into a split view, so it needs access to that site. Access covers only this site.",
+    "description": "Get started step 1 when only the left engine needs access (the right one is the same engine or already granted).",
+    "placeholders": {
+      "LEFT": {
+        "content": "$1",
+        "example": "Google"
+      }
+    }
+  },
+  "setup_grant_both": {
+    "message": "Grant access to $LEFT$ (required) and $RIGHT$ (recommended)",
+    "description": "Get started button that requests access to both default engines' sites: left required, right recommended.",
+    "placeholders": {
+      "LEFT": {
+        "content": "$1",
+        "example": "Google"
+      },
+      "RIGHT": {
+        "content": "$2",
+        "example": "Bing"
+      }
+    }
+  },
+  "setup_grant_left": {
     "message": "Grant access to $LEFT$ (required)",
-    "description": "Banner button that requests access to the default left engine's site (required).",
+    "description": "Get started button that requests access to the default left engine's site (required).",
+    "placeholders": {
+      "LEFT": {
+        "content": "$1",
+        "example": "Google"
+      }
+    }
+  },
+  "setup_grant_right": {
+    "message": "Grant access to $RIGHT$ (recommended)",
+    "description": "Get started button shown after the left engine is granted: requests access to the right engine's site (recommended).",
+    "placeholders": {
+      "RIGHT": {
+        "content": "$1",
+        "example": "Bing"
+      }
+    }
+  },
+  "setup_granted": {
+    "message": "$LEFT$: access granted",
+    "description": "Get started step 1 status once the left engine's site is granted, next to a check icon.",
+    "placeholders": {
+      "LEFT": {
+        "content": "$1",
+        "example": "Google"
+      }
+    }
+  },
+  "setup_right_hint": {
+    "message": "Allowing the right engine, $RIGHT$, too lets a new search update the split view that’s already open.",
+    "description": "Get started step 1, after the left engine is granted: why the right engine's site is still worth granting.",
+    "placeholders": {
+      "RIGHT": {
+        "content": "$1",
+        "example": "Bing"
+      }
+    }
+  },
+  "setup_add_title": {
+    "message": "Add a site search in Chrome and make it the default",
+    "description": "Get started step 2 heading. \"Site search\" and \"Make default\" are Chrome's terms (see docs/i18n/chrome-terms.md)."
+  },
+  "setup_add_text": {
+    "message": "Paste the settings address below into the address bar. Under “Site search”, click “Add”, enter any name and a shortcut of your choice, and paste the trigger URL into “URL with %s in place of query”. Save, then choose “Make default” from the entry’s ⋮ menu.",
+    "description": "Get started step 2 in one sentence: open Chrome's search engine settings (address below), add a site search, fill in its three fields, save, and make it default. Field and menu names must match Chrome's labels; ⋮ is the More actions menu icon."
+  },
+  "setup_trigger_label": {
+    "message": "Trigger URL",
+    "description": "Label above the default pair's trigger URL in Get started step 2."
+  },
+  "setup_settings_label": {
+    "message": "Search engine settings",
+    "description": "Label above chrome://settings/searchEngines in Get started step 2."
+  },
+  "setup_details_link": {
+    "message": "Detailed steps",
+    "description": "Link in Get started step 2 that jumps to the Add to Chrome card with the full steps."
+  },
+  "setup_try_title": {
+    "message": "Check that a split view opens",
+    "description": "Get started step 3 heading: try a search and confirm that a split view opens."
+  },
+  "setup_try_button": {
+    "message": "Try it",
+    "description": "Get started step 3 button: opens a sample search with the default pair in a new tab."
+  },
+  "setup_try_hint": {
+    "message": "This searches for “$QUERY$” with your default pair. Then search for anything from the address bar. If a split view opens, you’re all set.",
+    "description": "Under the Try it button: what it opens, and how to finish setup (a real search from the address bar). The placeholder is setup_sample_query.",
+    "placeholders": {
+      "QUERY": {
+        "content": "$1",
+        "example": "banana bread recipe"
+      }
+    }
+  },
+  "setup_try_blocked": {
+    "message": "Finish step 1 first.",
+    "description": "Inline reason next to the disabled Try it button: the left engine's site is not granted yet."
+  },
+  "setup_sample_query": {
+    "message": "banana bread recipe",
+    "description": "Sample search words the Try it button searches for. Pick a short, natural everyday search in this language (not about this extension)."
+  },
+  "setup_done_title": {
+    "message": "You’re all set",
+    "description": "Get started card after setup is detected as complete (shown once, on the page that saw it)."
+  },
+  "setup_done_text": {
+    "message": "Searching from the address bar or dragging text to the tab strip opens a split view.",
+    "description": "Sentence under setup_done_title."
+  },
+  "setup_done_notice": {
+    "message": "Setup complete. Searching from the address bar or dragging text to the tab strip opens a split view.",
+    "description": "Notice announced when setup is detected as complete."
+  },
+  "setup_regrant_title": {
+    "message": "Access needed",
+    "description": "Get started card heading when setup was done before but the left engine's site is not granted now."
+  },
+  "setup_regrant_text": {
+    "message": "Split Search can’t access the left engine, $LEFT$. For now, searches open a normal $LEFT$ search.",
+    "description": "Get started card when setup was done before but the left engine's site is not granted now: searches fall back to a plain search.",
+    "placeholders": {
+      "LEFT": {
+        "content": "$1",
+        "example": "Google"
+      }
+    }
+  },
+  "setup_revoked_notice": {
+    "message": "Access to the left engine, $LEFT$, was removed. Searches now open a normal $LEFT$ search.",
+    "description": "Notice when access to the default left engine's site is removed while the settings page is open.",
     "placeholders": {
       "LEFT": {
         "content": "$1",

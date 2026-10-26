@@ -84,17 +84,38 @@ code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
   box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
-/* ---- 横幅与提示块 ---- */
-.banner {
-  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
-  background: var(--warn-soft);
-  border: 1px solid var(--warn-border);
-  border-radius: var(--radius);
-  padding: 14px 18px;
-  margin-bottom: 16px;
+/* ---- 开始使用（#setup）与提示块 ---- */
+.setup { border-color: var(--accent); }
+.setup h2 { margin-bottom: 0; }
+.setup > .hint { margin: 6px 0 0; }
+.setup-steps { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 18px; }
+.setup-step { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 12px; }
+div.setup-step { display: block; margin-top: 6px; }
+.step-mark {
+  width: 26px; height: 26px; border-radius: 50%;
+  display: grid; place-items: center;
+  font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums;
+  border: 1px solid var(--border); color: var(--muted); background: var(--surface);
 }
-.banner-text { flex: 1 1 320px; }
-.banner-text p { margin: 4px 0 0; font-size: 13px; }
+.setup-step.current .step-mark { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+.setup-step[data-state="done"] .step-mark { background: var(--ok-soft); border-color: var(--ok-soft); color: var(--ok); }
+.step-body h3 { margin: 2px 0 2px; font-size: 14px; }
+.step-body > .hint, .setup-step > .hint { margin: 2px 0 0; }
+.step-actions { display: flex; align-items: center; gap: 6px 12px; flex-wrap: wrap; margin-top: 10px; }
+.step-actions .hint { margin: 0; flex: 1 1 240px; }
+.step-status { display: flex; align-items: center; gap: 6px; margin: 2px 0 0; font-size: 13px; font-weight: 600; color: var(--ok); }
+.step-status:focus { outline: none; }
+.step-status:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
+.setup-field { margin-top: 10px; }
+.setup-field-label { display: block; font-size: 12px; color: var(--muted); }
+.setup-field .url-line { margin: 2px 0 0; }
+.step-link { display: inline-block; margin-top: 8px; font-size: 13px; }
+.setup-done-title { display: flex; align-items: center; gap: 8px; }
+.setup-done-title .icon { color: var(--ok); }
+.icon { flex: none; }
+
+a { color: var(--accent); text-underline-offset: 2px; }
+a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 2px; }
 
 .callout {
   display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
