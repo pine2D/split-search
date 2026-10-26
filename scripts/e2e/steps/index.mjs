@@ -14,6 +14,7 @@ import { DRAG_STEPS } from "./assisted-drag.mjs";
 import { T8 } from "./t8.mjs";
 import { B14 } from "./b14.mjs";
 import { B4 } from "./b4.mjs";
+import { B19 } from "./b19.mjs";
 import { I18N } from "./i18n.mjs";
 import { B1, withNeeds } from "./setup.mjs";
 import { XAUTO_STEPS } from "./xauto.mjs";
@@ -46,7 +47,7 @@ export const sortSteps = steps => [...steps].sort((a, b) => (a.last ? 1 : 0) - (
 const XAUTO = [...XAUTO_STEPS, ...XAUTO_T12, ...XAUTO_T14, ...XAUTO_T19, ...V04_LOOKUP_STEPS, T24].map(x => ({ ...x, fallback: withNeeds(x.fallback) }));
 const replaced = new Set(XAUTO.map(x => x.id));
 const MANUAL = [...ASSISTED_STEPS, ...DRAG_STEPS, ...ASSISTED_2].filter(s => !replaced.has(s.id));
-export const STEPS = sortSteps([...OPTIONS_STEPS, ...FLOW_STEPS, B1, B4, B14, ...MANUAL, T8, I18N,
+export const STEPS = sortSteps([...OPTIONS_STEPS, ...FLOW_STEPS, B1, B4, B14, B19, ...MANUAL, T8, I18N,
   ...V03_SPLIT_STEPS, ...V03_NARROW_STEPS, ...V03_POPUP_STEPS, ...V03_OPTIONS_STEPS,
   ...V04_COMPLETE_STEPS, ...V04_OPTIONS_STEPS, ...V04_GUARD_STEPS].map(withNeeds).concat(XAUTO));
 

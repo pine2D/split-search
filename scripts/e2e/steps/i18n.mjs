@@ -1,5 +1,5 @@
 // I18N 多语言冒烟（auto）：4 种语言逐一打开设置页（含引擎库对话框）、工具栏弹窗（本扩展的一对）和 go.html 出错页，核对 lang、原样 key、溢出并截图；
-// 页内切换、连切、两个设置页跟随；uiLocale = "auto" 时 t() 与 chrome.i18n.getMessage 的替换结果逐 key 相同。
+// 设置页含“开始使用”卡（每种语言前清掉 setupDone，结束时写回）；页内切换、连切、两个设置页跟随；uiLocale = "auto" 时 t() 与 chrome.i18n.getMessage 的替换结果逐 key 相同。
 // uiLocale 由 guarded 写回步骤前的值（基线 zh_CN），中断时由快照恢复兜底。截图存 .e2e/i18n/。v0.4 的弹窗“补成分屏”区与设置页“右键查询”卡片见 v04-i18n.mjs。
 import { join } from "node:path";
 import { EXT_ID } from "../config.mjs";
@@ -9,6 +9,7 @@ import { summarize } from "./util.mjs";
 import { pairOn } from "./v03-lib.mjs";
 import { POPUP_URL, popupPage } from "./v03-popup.mjs";
 import { v04I18nChecks } from "./v04-i18n.mjs";
+import { keepSetupDone, setDone } from "./b19.mjs";
 import { SHOT_DIR, htmlLang, audit, auditProblems, waitPage, shoot, bodyClip } from "./i18n-audit.mjs";
 
 const LOCALES = ["en", "zh_CN", "zh_TW", "es"];
@@ -18,6 +19,9 @@ const J = JSON.stringify;
 
 const AUDIT = audit();
 const POPUP_AUDIT = audit({ box: "body" });
+// “开始使用”卡：每种语言打开设置页前清掉 setupDone，卡片显示三步（模拟引擎 A 已授权，第 1 步是“已授权”）
+const SETUP_AUDIT = audit({ scope: "#setup ", items: "button, a, h2, h3, .url-box, .setup-field-label, .step-status", box: "#setup" });
+const SETUP_SHOWN = `(() => { const s = document.getElementById("setup"); return !s.hidden && s.dataset.mode === "steps"; })()`;
 
 const setPref = (ctx, value) => ctx.ext.eval(`chrome.storage.sync.set({ uiLocale: ${J(value)} }).then(() => true)`);
 
@@ -74,11 +78,15 @@ async function catalogDialog(ctx, opt, locale) {
 async function perLocale(ctx, locale, pairTab) {
   const n0 = ctx.consoleCollector?.errors?.length ?? 0;
   await setPref(ctx, locale);
+  await setDone(ctx, null); // 前面建的一对会让一直开着的设置页写入 setupDone，每种语言都重新清掉
   const problems = [], shots = [];
   const opt = await openOptions(ctx.browser);
   try {
     await waitPage(opt, showsLocale(locale), `设置页显示为 ${locale}`).catch(e => problems.push(`设置页：${e.message}`));
     problems.push(...auditProblems(locale, await opt.ev(AUDIT)).map(p => `设置页：${p}`));
+    await waitPage(opt, SETUP_SHOWN, "“开始使用”卡显示三步")
+      .then(async () => problems.push(...auditProblems(locale, await opt.ev(SETUP_AUDIT)).map(p => `“开始使用”卡：${p}`)))
+      .catch(e => problems.push(`“开始使用”卡：${e.message}`));
     shots.push(await shoot(ctx, opt, join(SHOT_DIR, `${locale}-options.png`), { full: true }));
     const cat = await catalogDialog(ctx, opt, locale).catch(e => ({ problems: [`引擎库对话框：${e.message}`], shot: null }));
     problems.push(...cat.problems);
@@ -176,7 +184,7 @@ async function sameAsChrome(ctx, opt) {
 
 export const I18N = {
   id: "I18N", title: "多语言：4 种语言的设置页（含引擎库对话框）、弹窗与出错页、页内切换、连切、多页跟随、与 chrome.i18n 一致（自动判定）", kind: "auto", needs: [],
-  run: ctx => guarded(ctx, ["uiLocale"], async () => {
+  run: ctx => keepSetupDone(ctx, () => guarded(ctx, ["uiLocale"], async () => {
     const items = [];
     // 弹窗要有本扩展的一对才显示全部文字：先建一对（模拟引擎 A ｜ B），4 种语言共用它的左侧标签
     const { pair } = await pairOn(ctx, "i18n+popup");
@@ -193,5 +201,5 @@ export const I18N = {
       await opt.close();
     }
     return summarize(items);
-  }),
+  })),
 };
