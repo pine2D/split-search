@@ -256,7 +256,7 @@
     "description": "Accessible name of the button that copies chrome://settings/searchEngines. Must start with the visible text (guide_copy_settings_url)."
   },
   "guide_step_add": {
-    "message": "在“网站搜索”一栏点“添加”。",
+    "message": "在“网站搜索”旁点“添加”。",
     "description": "Setup step 2. \"Site search\" and \"Add\" must match Chrome's own labels on chrome://settings/searchEngines in this language."
   },
   "guide_step_fields": {
