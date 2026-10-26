@@ -1339,12 +1339,16 @@
     "message": "Buscador para imágenes",
     "description": "Label of the dropdown that picks the reverse image search engine."
   },
+  "options_image_list_title": {
+    "message": "Buscadores para imágenes",
+    "description": "Heading above the list of reverse image search engines."
+  },
   "options_image_add_catalog": {
-    "message": "Añadir del catálogo",
+    "message": "Añadir del catálogo de imágenes",
     "description": "Button that opens the catalog of reverse image search engines."
   },
   "options_image_add_custom": {
-    "message": "Añadir buscador",
+    "message": "Añadir buscador de imágenes",
     "description": "Button that opens the dialog for adding a custom reverse image search engine."
   },
   "options_image_note_embedded": {

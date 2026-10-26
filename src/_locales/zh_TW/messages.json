@@ -1339,12 +1339,16 @@
     "message": "以圖搜圖引擎",
     "description": "Label of the dropdown that picks the reverse image search engine."
   },
+  "options_image_list_title": {
+    "message": "以圖搜圖引擎清單",
+    "description": "Heading above the list of reverse image search engines."
+  },
   "options_image_add_catalog": {
-    "message": "從引擎庫新增",
+    "message": "從以圖搜圖引擎庫新增",
     "description": "Button that opens the catalog of reverse image search engines."
   },
   "options_image_add_custom": {
-    "message": "新增引擎",
+    "message": "新增以圖搜圖引擎",
     "description": "Button that opens the dialog for adding a custom reverse image search engine."
   },
   "options_image_note_embedded": {
