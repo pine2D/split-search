@@ -16,7 +16,7 @@ import { POPUP_URL, popupPage, plainTab } from "./v03-popup.mjs";
 import { pageTargets, waitTarget } from "./util.mjs";
 import { resetTabs, openTab, waitState, findPair, trigger, summarize, nonce } from "./util.mjs";
 import { msgIn, E2E_LOCALE } from "../i18n.mjs";
-import { HOSTS } from "../config.mjs";
+import { HOSTS, mockEngines } from "../config.mjs";
 
 const J = JSON.stringify;
 const KEY = "setupDone";
@@ -134,6 +134,12 @@ async function popupTier(ctx, tabId, tier, { click = null, mode = null } = {}) {
     if (s.idleShown.join() !== want.shown.join() || s.notOurs !== want.notOurs || s.footer !== want.footer) p.push(`${tier} 档显示不对：${fmtPopup(s)}`);
     if (tier !== "setup" && s.idlePair.length !== 2) p.push(`${tier} 档应列出默认组合，实际 ${J(s.idlePair)}`);
     if (tier === "setup" && s.idlePair.length) p.push(`setup 档不该列默认组合，实际 ${J(s.idlePair)}`);
+    if (tier === "setup") {
+      // 完成过设置、左侧授权没了：说“已无权访问 <左侧引擎>”，不说“还没设置好”
+      const want = msgIn(E2E_LOCALE, "popup_setup_regrant", mockEngines(ctx.port).find(e => e.id === "ea").name);
+      const text = await page.ev(`document.getElementById("idle-setup-text").textContent`);
+      if (text !== want) p.push(`setup 档（setupDone 为 true）的说明应为“${want}”，实际“${text}”`);
+    }
     detail = fmtPopup(s);
     if (!click) return { p, detail };
     const before = new Set((await pageTargets(ctx.browser)).map(t => t.targetId));

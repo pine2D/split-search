@@ -161,7 +161,7 @@ const foreignPair = ctx => sub("(c) 不是本扩展的分屏：显示说明文�
     const p = [];
     if (s.ours || !s.notOurs) p.push("弹窗应只显示说明文字，实际显示了一对");
     if (s.notOursText !== want) p.push(`说明文字应为“${want}”，实际“${s.notOursText}”`);
-    if (!s.idle || !s.idleShown.includes("idle-try")) p.push(`说明下面应有“${msg("popup_idle_hint")}”`);
+    if (!s.idle || !s.idleShown.includes("idle-try") || !s.idleText.includes(msg("popup_idle_hint"))) p.push(`说明下面应有“${msg("popup_idle_hint")}”`);
     if (!["try", "ready"].includes(s.idleTier)) p.push(`模拟引擎 A 已授权，分屏外应是 try 或 ready 档，实际 ${s.idleTier}`);
     if (s.idleShown.includes("idle-setup")) p.push("左侧已授权，不该显示“完成设置”");
     const pair = await ctx.ext.eval(`chrome.storage.sync.get("defaultPair").then(r => r.defaultPair ?? null)`);
