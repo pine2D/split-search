@@ -73,10 +73,11 @@ export async function waitPage(page, expr, what, timeoutMs = 10000) {
   }
 }
 
-export async function shoot(ctx, page, file, { full = false, clip = null } = {}) {
+// beyond：clip 超出视口的部分也画出来（captureBeyondViewport），否则视口以下是空白
+export async function shoot(ctx, page, file, { full = false, clip = null, beyond = false } = {}) {
   const { client } = ctx.browser;
   await activate(ctx, page.targetId);
-  const params = { format: "png", ...(clip ? { clip } : {}) };
+  const params = { format: "png", ...(clip ? { clip } : {}), ...(beyond ? { captureBeyondViewport: true } : {}) };
   if (full) {
     const { cssContentSize: s } = await client.send("Page.getLayoutMetrics", {}, page.sid);
     Object.assign(params, { captureBeyondViewport: true, clip: { x: 0, y: 0, width: Math.ceil(s.width), height: Math.ceil(s.height), scale: 1 } });

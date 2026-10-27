@@ -1,4 +1,4 @@
-// 收集整次运行中的 [split-search] 控制台错误：浏览器级自动 attach 到所有页面与 worker，
+// 收集整次运行中的 [split-search] 控制台错误（errors，B15 只看它）和 info 级消息（infos，T25 的隐私核对用）：浏览器级自动 attach 到所有页面与 worker，
 // 在每个会话上 Runtime.enable（会回放已有的控制台消息），只保留含标记的 error 和扩展里的未捕获异常。
 // 顺带在页面会话上 Network.enable，记下每个页面主框架的 Document 请求与跳转（失败诊断用，见 diag.mjs）：
 // 有这条链就能看出触发网址有没有被 DNR 重定向到 go.html。每个页面只留最近 NAV_MAX 条，最多记 NAV_PAGES 个页面
@@ -16,23 +16,24 @@ const argText = a => (a.type === "string" ? a.value : a.value !== undefined ? JS
 export async function collectConsole(browser, { carry, extId = EXT_ID } = {}) {
   const { client } = browser;
   const errors = carry?.errors ?? [];
+  const infos = carry?.infos ?? [];
   const seen = carry?.seen ?? new Set();
   const extPrefix = `chrome-extension://${extId}/`;
   const sessions = new Set();
   const base = carry?.stats() ?? { attached: 0, extAttached: 0 };
   let attached = base.attached, extAttached = base.extAttached; // 历次附着的会话数（会话 detach 后 sessions 会减少）
-  const push = e => {
-    const k = `${e.text}|${e.url}|${e.ts}`;
+  const push = (e, list = errors) => {
+    const k = `${list === infos ? "i" : "e"}|${e.text}|${e.url}|${e.ts}`;
     if (seen.has(k)) return;
     seen.add(k);
-    errors.push(e);
+    list.push(e);
   };
 
   const onConsole = (p, sessionId) => {
-    if (!sessions.has(sessionId) || p.type !== "error") return;
+    if (!sessions.has(sessionId) || (p.type !== "error" && p.type !== "info")) return;
     const text = (p.args || []).map(argText).join(" ");
     if (!text.includes(MARK)) return;
-    push({ text, url: p.stackTrace?.callFrames?.[0]?.url || "", ts: p.timestamp });
+    push({ text, url: p.stackTrace?.callFrames?.[0]?.url || "", ts: p.timestamp }, p.type === "info" ? infos : errors);
   };
   const onException = (p, sessionId) => {
     if (!sessions.has(sessionId)) return;
@@ -77,6 +78,7 @@ export async function collectConsole(browser, { carry, extId = EXT_ID } = {}) {
 
   return {
     errors,
+    infos,
     seen,
     sessionCount: () => sessions.size,
     stats: () => ({ attached, extAttached }),

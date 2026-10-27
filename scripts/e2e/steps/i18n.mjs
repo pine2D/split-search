@@ -1,6 +1,6 @@
 // I18N 多语言冒烟（auto）：4 种语言逐一打开设置页（含引擎库对话框、编辑对话框的隐藏/删除、“调整顺序”模式）、工具栏弹窗（本扩展的一对与分屏外的 try 档）和 go.html 出错页，核对 lang、原样 key、溢出并截图；
 // 设置页含“开始使用”卡（每种语言前清掉 setupDone，结束时写回）；页内切换、连切、两个设置页跟随；uiLocale = "auto" 时 t() 与 chrome.i18n.getMessage 的替换结果逐 key 相同。
-// uiLocale 由 guarded 写回步骤前的值（基线 zh_CN），中断时由快照恢复兜底。截图存 .e2e/i18n/。v0.4 的弹窗“补成分屏”区与设置页“右键查询”卡片见 v04-i18n.mjs。
+// uiLocale 由 guarded 写回步骤前的值（基线 zh_CN），中断时由快照恢复兜底。截图存 .e2e/i18n/。v0.4 的弹窗“补成分屏”区与设置页“右键查询”卡片见 v04-i18n.mjs，v0.5 的规则区、规则对话框与带规则标记的弹窗见 v05-i18n.mjs。
 import { join } from "node:path";
 import { EXT_ID } from "../config.mjs";
 import { catalog, msgIn, sel } from "../i18n.mjs";
@@ -9,6 +9,7 @@ import { summarize } from "./util.mjs";
 import { pairOn } from "./v03-lib.mjs";
 import { POPUP_URL, popupPage, plainTab } from "./v03-popup.mjs";
 import { v04I18nChecks } from "./v04-i18n.mjs";
+import { v05I18nChecks } from "./v05-i18n.mjs";
 import { keepSetupDone, setDone } from "./b19.mjs";
 import { SHOT_DIR, htmlLang, audit, auditProblems, lineCount, lineProblems, waitPage, shoot, bodyClip } from "./i18n-audit.mjs";
 
@@ -168,6 +169,7 @@ async function perLocale(ctx, locale, pairTab, idleTab) {
   } catch (e) { problems.push(`go 出错页：${e.message}`); }
   finally { await go?.close(); }
   const v4 = await v04I18nChecks(ctx, locale); problems.push(...v4.problems); shots.push(...v4.shots);
+  const v5 = await v05I18nChecks(ctx, locale); problems.push(...v5.problems); shots.push(...v5.shots);
   const missing = missingSince(ctx, n0);
   if (missing.length) problems.push(`控制台有 ${missing.length} 条 missing message：${missing.slice(0, 3).map(e => e.text).join("；")}`);
   const noCollector = ctx.consoleCollector ? "" : "（没有控制台收集器，未查 missing message）";
