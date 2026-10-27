@@ -89,7 +89,7 @@ Google  [默认左侧]                        ⚠ 未授权（必需） [授权]
 
 1. `renderEngineList(ctx)` 开头调用 `reorder.js` 的 `syncReorder(cfg.engines.length)`：先做退出判断（模式中且可见引擎少于 2 个 → 清掉模式状态、`flushOrderNow()`），再按当前状态更新卡头（按钮文字与类、按钮本身的 `hidden`、`#catalog-open`/`#add-engine`、两段说明、退出时清空 `#engines-status`）。
 2. 然后 `renderEngineList` 按 `isReordering()` 建 `ol.engine-list`：模式中加类 `reordering`，每行由 `engineRow` 按 `isReordering()` 分两支。退出判断已经先做，所以自动退出的这次渲染直接就是平时的行和平时的卡头，不会出现“状态已退出、行仍是模式样式”。
-3. 自动退出发生在渲染里面，本次渲染已经反映了退出，不再调用 `render()`（否则递归）。焦点若原在被移除的 ↑↓ 上，`focusAfterRender` 找不到 `move-` 的 id 和它的兄弟时交给 `#add-engine`（这时“调整顺序”按钮已隐藏）。
+3. 自动退出发生在渲染里面，本次渲染已经反映了退出，不再调用 `render()`（否则递归）。焦点若原在被移除的 ↑↓ 上，`focusAfterRender` 找不到 `move-` 的 id 和它的兄弟时交给卡头看得见的那个：已退出模式交给 `#add-engine`（这时“调整顺序”按钮已隐藏）；仍在模式中（另一页隐藏或删除了焦点所在的那一行，可见引擎仍不少于 2 个）交给 `#engines-reorder`“完成”，因为这时 `#add-engine` 是 `hidden`，`focus()` 不生效。
 4. 点“完成”和 Esc 这两种主动退出：清掉模式状态 → `flushOrderNow()` → 显式调用 `setupReorder` 传入的 `render()`。不依赖 `flushOrder` 末尾的 `render()`：没有 `pendingOrder` 时它直接 `return`（`actions.js:180`），行会停在模式样式。
 - 模式状态记在新文件 `reorder.js` 的模块变量里，跨重渲染保留（另一页改了顺序、`storage.onChanged` 触发重渲染时不退出）；刷新页面回到平时。
 - 不做拖拽。
@@ -151,7 +151,7 @@ Google  [默认左侧]                        ⚠ 未授权（必需） [授权]
 
 **焦点**：
 
-- 隐藏：`dlg.close()` 把焦点还给 `#edit-<id>`，随后这一行消失。`actions.hide` 去掉 `onRow` 判断，一律把焦点交给提示里的“撤销”（隐藏现在只能从对话框发起；而对话框开着时这一行若被重渲染过，Chrome 还焦点的目标已经脱离文档，`onRow` 会误判为假）。`undoHide` 的焦点目标从 `remove-<id>` 改成 `edit-<id>`。
+- 隐藏：`dlg.close()` 把焦点还给 `#edit-<id>`，随后这一行消失。`actions.hide` 去掉 `onRow` 判断，一律把焦点交给提示里的“撤销”（隐藏现在只能从对话框发起；而对话框开着时这一行若被重渲染过，Chrome 还焦点的目标已经脱离文档，`onRow` 会误判为假）。`undoHide` 的焦点目标从 `remove-<id>` 改成 `edit-<id>`；隐藏后提示还在时进了排序模式，模式中的行没有 `edit-<id>`，交给 `#engines-reorder`。
 - 删除：`deleteWithFocus` 在 `run()` 之前读行列表（这时行还在），删完把焦点交给相邻行 `.row-actions` 里第一个可用按钮，也就是相邻行的“编辑”；没有相邻行就交给 `#add-engine`。逻辑不用改，前提是 ↑↓ 从 T1 起就不在 `.row-actions` 里（3.1，放在 `.row-move`）：否则 T1 里焦点会落到相邻行的 ↑ 上。
 - 保存：`dlg.close()` 还焦点给 `#edit-<id>`，重渲染后 `focusAfterRender("edit-<id>")` 再还一次。
 
@@ -285,7 +285,7 @@ grep 命中（`scripts/e2e/`：`data-move`、`moveBtn`、`remove-`、`cycle-`、
 - **`optpage.mjs`**：新增 Node 侧帮手 `openEdit(page, id)`：点 `#edit-<id>`，等 `#engine-dialog` 的 `open` 为真。`row`、`ids`、`READY` 不变。
 - **B7**（`options-b.mjs:121-166`）：删除改成 `openEdit("baidu")` → 点 `#dlg-delete` 一次，断言文字是 `engine_delete_confirm`、行还在、对话框还开着 → 再点一次 → 行消失、对话框关闭、焦点在相邻行（baidu 在末尾，即前一行）的 `#edit-<id>` 上（T1 里前一行还有 ↑↓，但它们在 `.row-move` 里，不在 `.row-actions` 里，见 3.1；T1、T2 同一条断言）。顺带断言：先打开一次自定义引擎的编辑对话框、取消，再打开“新增引擎”，这时 `#dlg-danger`、`#dlg-hide`、`#dlg-delete`、`#dlg-remove-reason` 都不可见；行内没有 `engine_delete` 按钮。可见性一律用 `el.checkVisibility()` 判断，不读 `.hidden`（属性在、作者样式盖掉它时 `.hidden` 会假通过，见 3.5）。授权按钮高亮和 `perm-optional` 的断言不变；字段顺序断言（`#engine-form input`）不受危险区影响。约 +6 行。
 - **B10**（`options-b.mjs:206-235`）：probe 改为逐个 `openEdit`，读 `#dlg-hide`/`#dlg-delete` 中可见那个（按 `checkVisibility()` 挑，`#dlg-remove-reason` 是否可见同样这样判断）的 `aria-disabled`、`disabled`、`aria-describedby`，以及 `#dlg-remove-reason` 是否可见和文字，然后点“取消”。断言：当前默认组合 ea｜eb 的删除按钮可见、没有 `disabled`、`aria-disabled="true"`、`aria-describedby="dlg-remove-reason"`、原因等于 `engine_in_pair_delete`；点一下没有效果（文字没变成 `engine_delete_confirm`、行还在、`customEngines` 没变）；ec、ddg 没有 `aria-disabled`、原因隐藏。切到 Google｜Bing 后，google、bing 的隐藏按钮同样 `aria-disabled`、原因等于 `engine_in_pair_hide`，点一下行还在。第 226 行的等待条件改成等 `row("google")` 出现 `engine_tag_default_left` 标签。另断言列表里没有 `.row-reason`。`options-b.mjs` 现在 262 行，改完若超过 300 就把 B10 搬到 `options-b2.mjs`。约 +18 行。
-- **B12**（`options-b2.mjs:8-39`）：隐藏改成 `openEdit("ddg")` → 聚焦并点 `#dlg-hide`；撤销后的焦点断言从 `remove-ddg` 改成 `edit-ddg`（第 26 行）；第 (3) 段（第 30 行）同样经对话框隐藏。新增断言：`#edit-ddg` 的 `aria-label` 等于 `msg("engine_edit_label", name)`，行内没有 `engine_hide` 按钮。约 +6 行。
+- **B12**（`options-b2.mjs:8-39`）：隐藏改成 `openEdit("ddg")` → 聚焦并点 `#dlg-hide`；撤销后的焦点断言从 `remove-ddg` 改成 `edit-ddg`（第 26 行）；第 (3) 段（第 30 行）同样经对话框隐藏。新增断言：`#edit-ddg` 的 `aria-label` 等于 `msg("engine_edit_label", name)`，行内没有 `engine_hide` 按钮。约 +6 行。T2 起再加两段（`reorderFocusProblems`）：(4) 隐藏后提示还在时进入排序模式，点“撤销”，焦点在 `#engines-reorder`、仍在模式中；(5) 模式中焦点停在 ddg 可用的 ↑ 或 ↓ 上，另开一个设置页经对话框隐藏 ddg，第一页焦点交给 `#engines-reorder`、仍在模式中，再从第二页的“已隐藏”恢复 ddg。
 - **B17(c)**（`v03-options.mjs:220-233`）：子项名改成“(c) 快捷键卡的轮换开关写入 cycleExclude”。点开关前先展开 `#cycle details`；新增断言 `#cycle-ec` 在快捷键卡（`[aria-labelledby=shortcut-title]`）的 `fieldset` 里、label 文字是引擎名；关掉 ec 后 summary 计数少 1、`row("ec")` 出现 `engine_tag_no_cycle` 标签、重渲染后 `<details>` 仍展开；`cycle-ec` 的 id 和写入断言不变。约 +8 行。
 - **I18N**（`i18n.mjs`，230 行）：本来就会展开所有 `details.disclosure`（`OPEN_ALL`），轮换清单自动纳入溢出检查。新增 `engineDialog(ctx, opt, locale)`（仿 `catalogDialog`，`audit({ scope: "#engine-dialog ", … })`）：每种语言打开 ea 行（默认组合里的自定义引擎：删除按钮 `aria-disabled` 加原因）和 ddg 行（预置引擎：可用的隐藏按钮）的编辑对话框各一次，核对没有原样 key、底栏不溢出、“隐藏”“删除”按钮不换行（`lineProblems`），es 最长；截图 `<locale>-engine-dialog.png`。约 +15 行。
 
@@ -295,7 +295,7 @@ grep 命中（`scripts/e2e/`：`data-move`、`moveBtn`、`remove-`、`cycle-`、
 - **B13**（`options-b2.mjs:41-85`）：整段重写，标题改成“调整顺序模式：移动后焦点与播报、完成时立即保存、刷新后保持、另一页自动刷新且不退出模式”。流程：
   1. p1 `setReorder(true)`：断言 `#engines-reorder` 文字是 `engine_reorder_done`、`#add-engine`/`#catalog-open` 不可见、`#engines-reorder-hint` 可见（可见性都用 `checkVisibility()`）、行里没有 `.perm`、`.row-actions` 和 `#edit-<id>`、`#engines-status` 文字等于 `engine_reorder_hint`。
   2. `x = start[1]`，`total = start.length`：聚焦并点 `#move-up-<x>` → 等 `ids()[0] === x`，断言焦点落在 `#move-down-<x>`（↑ 已禁用，回退）、`#engines-status` 等于 `msg("engine_moved", name, 1, total)`；再点一次 `#move-down-<x>`（第一次下移）→ 等 `ids()[1] === x`，断言焦点仍在它上面、播报是第 2 位。
-  3. 第二次下移和点“完成”在同一段页内脚本里连着做：脚本点 `#move-down-<x>`，等页内 `ids()[2] === x`（最多 2 秒），读出此刻的 `document.activeElement.id` 和 `#engines-status` 文字，再点 `#engines-reorder`，把读到的两项和点击时刻一起返回。Node 侧断言：点“完成”前焦点在 `#move-down-<x>`、播报是第 3 位；点击后 400 ms 内（短于 500 ms 防抖）`storage.sync.order` 已等于 `want = [start[0], start[2], x, ...start.slice(3)]`（验证立即写）；焦点在 `#engines-reorder`，文字是 `engine_reorder`，列表没有 `.reordering`。
+  3. 第二次下移和点“完成”在同一段页内脚本里连着做：脚本点 `#move-down-<x>`，等页内 `ids()[2] === x`（最多 2 秒），读出此刻的 `document.activeElement.id` 和 `#engines-status` 文字，再点 `#engines-reorder`，把读到的两项和点击时刻一起返回。Node 侧断言：点“完成”前焦点在 `#move-down-<x>`、播报是第 3 位；`want = [start[0], start[2], x, ...start.slice(3)]` 的写入要在页内判时刻（防抖定时器在下移的 click 里就开始走，Node 侧从拿到返回值才计时区分不了）：脚本在第二次下移前挂 `chrome.storage.onChanged` 记下 `order` 变成 `want` 的时刻，并记下下移点击和点“完成”的时刻；断言写入早于“下移 + 500 ms”（那之前防抖不可能写出）且在“完成”后 150 ms 内，下移到“完成”超过 400 ms 时报“区分不了”（验证立即写）；焦点在 `#engines-reorder`，文字是 `engine_reorder`，列表没有 `.reordering`。
   4. `p1.reload()` 后顺序等于 `want`、不在排序模式。
   5. p1 再 `setReorder(true)`；p2 打开，`setReorder(true)`，把 x 上移一位，焦点放在 ↑ 上按 Esc（派发 `keydown`）退出；从 Esc 起计时，p1 在 4 秒内自动刷新成 `want2`，阈值 2 秒（Esc 退出时立即写，不含防抖），且 p1 仍在排序模式（`.reordering` 还在）。
   6. p1 焦点放在“完成”（`#engines-reorder`）上按 Esc：退出模式，焦点仍在 `#engines-reorder`（监听挂在整张卡上，见 3.2）。

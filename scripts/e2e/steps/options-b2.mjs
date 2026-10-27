@@ -63,8 +63,40 @@ const B10 = {
 const HIDDEN_ROW = `[...document.querySelectorAll("#hidden-engines .hidden-row")].find(r => r.querySelector(".engine-id").textContent === "ddg")`;
 const UNDO = `[...document.querySelectorAll("#notices .notice")].find(n => n.querySelector(".notice-text").textContent === want)?.querySelector(".notice-action")`;
 
+// 调整顺序模式中焦点要找的元素不在了：模式中的行没有“编辑”、“新增引擎”藏着，焦点都应交给看得见的“完成”。
+// (4) 隐藏后提示还在时进入模式，再点提示里的“撤销”；(5) 焦点停在 ddg 的上移/下移上，另一页把 ddg 隐藏
+async function reorderFocusProblems(browser, page, want) {
+  const problems = [];
+  const focusIs = (id) => page.until(`return document.activeElement?.id === ${J(id)}`, 2000).then(() => true, () => false);
+  const focused = () => page.run(`return document.activeElement?.id || document.activeElement?.tagName || ""`);
+  await hideViaDialog(page);
+  await page.until(`return !row("ddg") && !!${HIDDEN_ROW}`);
+  await page.until(`const want = ${J(want)}; return !!${UNDO}`);
+  await setReorder(page, true);
+  await page.run(`const want = ${J(want)}; const b = ${UNDO}; b.focus(); b.click(); return true;`);
+  await page.until(`return !!row("ddg") && !${HIDDEN_ROW}`);
+  if (!(await focusIs("engines-reorder"))) problems.push(`模式中点“撤销”后焦点应交给“完成”，实际 ${J(await focused())}`);
+  if (!(await page.run(`return reordering()`))) problems.push("模式中点“撤销”后不该退出模式");
+  let p2 = null;
+  try {
+    const btn = await page.run(`const b = [moveBtn("ddg", "down"), moveBtn("ddg", "up")].find(b => b && !b.disabled); b.focus(); return b.id;`);
+    p2 = await openOptions(browser);
+    await hideViaDialog(p2);
+    await page.until(`return !row("ddg")`);
+    if (!(await focusIs("engines-reorder"))) problems.push(`焦点在 #${btn} 上、另一页隐藏 ddg 后焦点应交给“完成”，实际 ${J(await focused())}`);
+    if (!(await page.run(`return reordering()`))) problems.push("另一页隐藏引擎后（仍有 2 个以上可见引擎）不该退出模式");
+    await p2.until(`return !!${HIDDEN_ROW}`);
+    await p2.run(`${HIDDEN_ROW}.querySelector(${keySel("engine_restore")}).click(); return true;`);
+    await page.until(`return !!row("ddg")`);
+  } finally {
+    await p2?.close();
+  }
+  await setReorder(page, false);
+  return problems;
+}
+
 const B12 = {
-  id: "B12", title: "隐藏/恢复预置引擎：不弹确认框，提示里的“撤销”可用键盘点、能恢复；“已隐藏”列表里的“恢复”同样可用", kind: "auto", needs: [],
+  id: "B12", title: "隐藏/恢复预置引擎：不弹确认框，提示里的“撤销”可用键盘点、能恢复；“已隐藏”列表里的“恢复”同样可用；调整顺序模式中焦点不掉回 body", kind: "auto", needs: [],
   async run({ browser }) {
     return await withOptions(browser, async page => {
       const name = await page.run(`return row("ddg").querySelector(".engine-name").textContent`);
@@ -95,8 +127,9 @@ const B12 = {
       await page.run(`${HIDDEN_ROW}.querySelector(${keySel("engine_restore")}).click(); return true;`);
       await page.until(`return !!row("ddg") && !document.querySelector("#hidden-engines .hidden-row")`);
       if (page.dialogs.length) problems.push(`不该弹确认框，共弹了 ${page.dialogs.length} 个`);
+      problems.push(...await reorderFocusProblems(browser, page, want));
       if (problems.length) return { status: "fail", detail: problems.join("；") };
-      return { status: "pass", detail: `行上没有“隐藏”，“编辑”的无障碍名称是“${rowState.aria}”；在编辑对话框里隐藏 ddg 不弹框，提示“${want}”带“${undo.text}”且焦点在它上面，点了后 ddg 回到列表、焦点回到“编辑”；再隐藏后用“已隐藏”里的“恢复”同样回到列表` };
+      return { status: "pass", detail: `行上没有“隐藏”，“编辑”的无障碍名称是“${rowState.aria}”；在编辑对话框里隐藏 ddg 不弹框，提示“${want}”带“${undo.text}”且焦点在它上面，点了后 ddg 回到列表、焦点回到“编辑”；再隐藏后用“已隐藏”里的“恢复”同样回到列表；调整顺序模式中点“撤销”、另一页隐藏焦点所在的行，焦点都交给“完成”` };
     });
   },
 };
@@ -159,24 +192,34 @@ const B13 = {
       if (s.focus !== `move-down-${x}`) problems.push(`下移后焦点应留在 #move-down-${x}，实际 ${J(s.focus)}`);
       if (s.status !== msg("engine_moved", name, 2, total)) problems.push(`下移后播报应为第 2 位，实际“${s.status}”`);
 
-      // (3) 第二次下移后马上点“完成”（防抖还没到）：顺序应在 400 ms 内写进 storage.sync
+      // (3) 第二次下移后马上点“完成”（防抖还没到）：顺序应立即写进 storage.sync。
+      // 时刻都在页内记：防抖定时器在下移的 click 里就开始走（move() 同步 setTimeout），写入时刻取自本页的
+      // storage.onChanged。判据是写入早于“下移 + 500 ms”——那之前防抖不可能写出，只能是“完成”立即写的；
+      // 另要求在“完成”后 150 ms 内。下移到“完成”之间就超过 400 ms 时区分不了，单独报出来，不当作通过
       const want = [start[0], start[2], x, ...start.slice(3)];
-      const before = await p1.run(`const b = moveBtn(${J(x)}, "down"); b.focus(); b.click();
-        const end = Date.now() + 2000; while (ids()[2] !== ${J(x)} && Date.now() < end) await sleep(20);
-        const r = { moved: ids()[2] === ${J(x)}, focus: document.activeElement?.id ?? "", status: document.getElementById("engines-status").textContent };
-        document.getElementById("engines-reorder").click(); return r;`);
-      const t0 = Date.now();
+      const before = await p1.run(`const want = ${J(J(want))};
+        let tWrite = null;
+        const onCh = (ch, area) => { if (area === "sync" && ch.order && tWrite === null && JSON.stringify(ch.order.newValue) === want) tWrite = Date.now(); };
+        chrome.storage.onChanged.addListener(onCh);
+        try {
+          const b = moveBtn(${J(x)}, "down"); b.focus();
+          const tMove = Date.now(); b.click();
+          const end = Date.now() + 2000; while (ids()[2] !== ${J(x)} && Date.now() < end) await sleep(20);
+          const r = { moved: ids()[2] === ${J(x)}, focus: document.activeElement?.id ?? "", status: document.getElementById("engines-status").textContent };
+          const tDone = Date.now(); document.getElementById("engines-reorder").click();
+          const until = Date.now() + 1500; while (tWrite === null && Date.now() < until) await sleep(10);
+          return { ...r, gap: tDone - tMove, sinceMove: tWrite === null ? null : tWrite - tMove, sinceDone: tWrite === null ? null : tWrite - tDone };
+        } finally { chrome.storage.onChanged.removeListener(onCh); }`);
       if (!before.moved) problems.push("第二次下移后 2 秒内顺序没有变");
       if (before.focus !== `move-down-${x}`) problems.push(`点“完成”前焦点应在 #move-down-${x}，实际 ${J(before.focus)}`);
       if (before.status !== msg("engine_moved", name, 3, total)) problems.push(`第二次下移后播报应为第 3 位，实际“${before.status}”`);
-      let saved = null;
-      for (;;) {
-        const { order } = await readKeys(ext, ["order"]);
-        if (J(order) === J(want)) { saved = Date.now() - t0; break; }
-        if (Date.now() - t0 > 400) break;
-        await sleep(25);
+      if (before.gap > 400) problems.push(`第二次下移到点“完成”用了 ${before.gap} ms，太接近 500 ms 防抖，区分不了是否立即写`);
+      else if (before.sinceMove === null) problems.push(`点“完成”后 1.5 秒内本页没有收到 order = ${want.join(",")} 的写入`);
+      else if (before.sinceMove >= 500 || before.sinceDone > 150) {
+        problems.push(`order 在下移后 ${before.sinceMove} ms、点“完成”后 ${before.sinceDone} ms 才写入（应在“完成”时立即写：下移 500 ms 以内、“完成”后 150 ms 以内）`);
       }
-      if (saved === null) problems.push(`点“完成”后 400 ms 内 storage.sync.order 没有变成 ${want.join(",")}（应立即写，不等 500 ms 防抖）`);
+      const { order: stored } = await readKeys(ext, ["order"]);
+      if (J(stored) !== J(want)) problems.push(`点“完成”后 storage.sync.order 应为 ${want.join(",")}，实际 ${J(stored)}`);
       await p1.until(`return !reordering()`).catch(() => problems.push("点“完成”后没有退出模式"));
       const after = await p1.run(`const b = document.getElementById("engines-reorder"); return { focus: document.activeElement === b, text: b.textContent };`);
       if (!after.focus) problems.push("点“完成”后焦点应留在卡头按钮上");
@@ -219,7 +262,7 @@ const B13 = {
       if (!(await p1.run(`return document.activeElement?.id === "engines-reorder"`))) problems.push("在“完成”上按 Esc 后焦点应留在卡头按钮上");
 
       if (problems.length) return { status: "fail", detail: problems.join("；") };
-      return { status: "pass", detail: `模式中卡头只剩“${m.text}”、行里只有上移/下移；${x} 上移到顶后焦点交给“下移”、播报“${msg("engine_moved", name, 1, total)}”，再下移两次焦点留在“下移”上；点“完成”后 ${saved} ms 写入 ${want.join(",")}、焦点留在按钮上，刷新后保持；另一页 Esc 退出后第一页 ${sync} ms 内刷新且仍在模式中；“完成”上按 Esc 也退出` };
+      return { status: "pass", detail: `模式中卡头只剩“${m.text}”、行里只有上移/下移；${x} 上移到顶后焦点交给“下移”、播报“${msg("engine_moved", name, 1, total)}”，再下移两次焦点留在“下移”上；点“完成”后 ${before.sinceDone} ms（下移后 ${before.sinceMove} ms）写入 ${want.join(",")}、焦点留在按钮上，刷新后保持；另一页 Esc 退出后第一页 ${sync} ms 内刷新且仍在模式中；“完成”上按 Esc 也退出` };
     } finally {
       await p2?.close();
       await p1?.close();

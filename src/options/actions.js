@@ -7,6 +7,7 @@ import {
   setLookupEngine,
 } from "./edits.js";
 import { addImageEngine, addImageFromCatalog, deleteImageEngine, setImageEngine } from "./image-edits.js";
+import { isReordering } from "./reorder.js";
 import { currentLocale, t } from "../chrome/i18n.js";
 
 const ORDER_DEBOUNCE_MS = 500;
@@ -170,11 +171,12 @@ async function deleteWithFocus({ list, actions: scope }, id, fallbackId, run) {
   return result;
 }
 
-// 提示里的“撤销”：恢复显示，等列表重建后把焦点放回这一行的“编辑”按钮（提示已经关掉，焦点不能留在那里）
+// 提示里的“撤销”：恢复显示，等列表重建后把焦点放回这一行的“编辑”按钮（提示已经关掉，焦点不能留在那里）；
+// 提示还在时进了“调整顺序”，模式中的行没有“编辑”，交给卡头的“完成”
 async function undoHide(e) {
   const result = await actions.restore(e);
   await lastRender;
-  if (result.ok) document.getElementById(`edit-${e.id}`)?.focus();
+  if (result.ok) (document.getElementById(`edit-${e.id}`) ?? (isReordering() ? document.getElementById("engines-reorder") : null))?.focus();
 }
 
 // 退出“调整顺序”时立刻写出，不等防抖（reorder.js）

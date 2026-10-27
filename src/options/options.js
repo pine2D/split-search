@@ -4,7 +4,7 @@ import { mergeConfig } from "../lib/engines.js";
 import { h, ht, notify, errorText, authButton, option, isGranted, addChevrons } from "./ui.js";
 import { setDefaultPair, canBeLeft, setNarrowFallback, siblingMoveId } from "./edits.js";
 import { write, act, actions, attention, bindActions, getPendingOrder, flushOrderNow } from "./actions.js";
-import { setupReorder } from "./reorder.js";
+import { setupReorder, isReordering } from "./reorder.js";
 import { renderLookupCard, setupLookupDialogs, refreshImageCatalog } from "./lookup.js";
 import { renderEngineList, renderHiddenList, setupEngineDialog } from "./engine-list.js";
 import { setupCatalogDialog, refreshCatalog } from "./catalog.js";
@@ -27,12 +27,13 @@ bindActions({ render: () => render(), current: () => current });
 // 重建后焦点原来的元素没了（授权成功后授权按钮消失）：焦点交给这一步的状态行；
 // 卡片整个不见了（重新授权成功后隐藏）就交给默认组合的左侧下拉框。
 // 上移 / 下移移到边缘后被禁用（禁用的按钮 focus() 悄悄不生效）：交给同一行另一个方向的；
-// 两个都没了（“调整顺序”自动退出）就交给“新增引擎”
+// 两个都没了就交给卡头看得见的那个：模式中是“完成”（“新增引擎”这时隐藏，focus() 不生效），
+// 平时（“调整顺序”自动退出）是“新增引擎”
 const FOCUS_FALLBACK = { "setup-grant": "setup-grant-status", "setup-grant-right": "setup-grant-status" };
 function focusAfterRender(id) {
   let el = $(id) ?? $(FOCUS_FALLBACK[id]) ?? (id.startsWith("setup-") ? $("pair-left") : null);
   const sibling = siblingMoveId(id);
-  if (sibling && (!el || el.disabled)) el = $(sibling) ?? $("add-engine");
+  if (sibling && (!el || el.disabled)) el = $(sibling) ?? $(isReordering() ? "engines-reorder" : "add-engine");
   el?.focus();
 }
 
