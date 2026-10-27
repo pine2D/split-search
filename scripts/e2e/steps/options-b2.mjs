@@ -119,11 +119,11 @@ async function autoExitFocusProblems(page, focusIs, focused) {
     await setReorder(page, mode);
     await page.run(`document.getElementById("engines-reorder").focus(); return true;`);
     await keep(["ddg", "perplexity", "kagi", "bing"]);
-    await page.until(`return ids().join() === "google" && document.getElementById("engines-reorder").hidden`);
+    await page.until(`return ids().join() === "google" && !document.getElementById("engines-reorder").checkVisibility()`);
     if (await page.run(`return reordering()`)) problems.push(`焦点在“${label}”上、可见引擎只剩 1 个后应退出模式`);
     if (!(await focusIs("add-engine"))) problems.push(`焦点在“${label}”上、按钮被藏起来后焦点应交给“新增引擎”，实际 ${J(await focused())}`);
     await keep(["ddg", "perplexity", "kagi"]);
-    await page.until(`return ids().length === 2 && !document.getElementById("engines-reorder").hidden`);
+    await page.until(`return ids().length === 2 && document.getElementById("engines-reorder").checkVisibility()`);
   }
   return problems;
 }
