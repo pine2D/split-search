@@ -6,7 +6,7 @@
 
 ## 提交前必做（上架阻塞项）
 
-提交时机：v0.2.0 已于 2026-10-25 首次提交；v0.3.0 还没上传，下一次上传是单独发 v0.3.0 还是直接发 v0.4.0，由用户在发布时决定。本清单和详情按 v0.4 的完整状态维护。和 v0.2.0 一样带 4 种语言的详情：`en`（默认）、`zh_CN`、`zh_TW`、`es`，见 `docs/superpowers/specs/2026-10-24-i18n-design.md`。
+提交时机：v0.2.0 已于 2026-10-25 首次提交；v0.3.0、v0.4.0、v0.5.0 都还没上传，下一次上传发哪个版本由用户在发布时决定。本清单和详情按 v0.5 的完整状态维护。和 v0.2.0 一样带 4 种语言的详情：`en`（默认）、`zh_CN`、`zh_TW`、`es`，见 `docs/superpowers/specs/2026-10-24-i18n-design.md`。
 
 - [ ] `npm run pack -- --store-key ~/.config/split-search/cws-public-key.pem --smoke` 生成上传包（`dist/split-search-<版本>.zip`）。v0.2.0 首次上传不带 key；之后都带商店公钥，商店 ID 保持不变。
 - [x] manifest 图标：方案 3 形状 + c6 pine-fog 配色，已接入 `src/icons/` 并在 manifest 声明；宣传图已用它重渲（见 `assets-spec.md` 第 1 节）。商店图标上传 `src/icons/icon-128.png`。
@@ -18,7 +18,7 @@
 - [x] 隐私政策已托管（2026-10-24）：公开仓库 `pine2D/split-search`，GitHub Pages 发布 main 分支的 `/docs`；`https://pine2d.github.io/split-search/privacy`、`…/privacy.zh-CN.html` 和仓库 Issues 页均已确认可访问，内部文档（superpowers、store、验收文档）返回 404。
 - [ ] 上架后在 `docs/index.md` 末尾加商店链接（`[Install from the Chrome Web Store](https://chromewebstore.google.com/detail/<商店 ID>)`）。
 - [ ] 先更新 GitHub Pages 上的隐私政策：把改好的 `docs/privacy.md`、`docs/privacy.zh-CN.md` 推上 main，确认 `https://pine2d.github.io/split-search/privacy` 已是新版，再去控制台改“隐私做法”。
-- [ ] 隐私做法标签页：数据使用披露**勾“网页浏览记录”（Web history）和“网站内容”（Website content），其余不勾**；单一用途换成 `privacy.md` (a) 的新文字；给新增的 `activeTab`、`contextMenus` 两个权限填 (b) 的理由，`storage`、host 权限的理由也换成 (b) 的新文字；附上 (d) 的英文审核说明。v0.2.0 提交时一项都没勾。
+- [ ] 隐私做法标签页：数据使用披露**勾“网页浏览记录”（Web history）和“网站内容”（Website content），其余不勾**；单一用途换成 `privacy.md` (a) 的新文字；给新增的 `activeTab`、`contextMenus` 两个权限填 (b) 的理由，`storage`、host 权限的理由也换成 (b) 的新文字（`storage` 理由和 (d) 已含 v0.5 的 `rightRules` 与记录里的 `rule`/`base`）；附上 (d) 的英文审核说明。v0.2.0 提交时一项都没勾。
 - [ ] 4 种语言的详细说明换成本文件和 `listing.en|zh-TW|es.md` 的新版。
 - [x] 面向用户的文案统一润色：zh-CN 的简介和详细说明已过 lieflat-less-ai-tone 和 humanizer-zh（2026-10-24）。其他语言按 CLAUDE.md“文案”一节各自润色。
 

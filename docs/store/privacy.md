@@ -28,7 +28,7 @@
 | 弹窗只读当前窗口的活动标签页（`tabs.query({active:true, currentWindow:true})`）；快捷键 `cycle-right` 只改最后聚焦的 normal 窗口的活动标签页。挑窗口时（`windows.getLastFocused`、`windows.getAll`、`windows.get` 带 `populate`，用来排除画中画小窗）会拿到这些窗口的标签列表，网址只有已授权网站才给，代码只用标签数、`openerTabId`、`lastAccessed` 挑窗口，不读、不存网址。`manifest` 不写 `suggested_key`，用户没绑定时快捷键不生效 | `src/popup/popup.js`、`src/background.js`、`src/chrome/split-actions.js` |
 | 日志不带关键词、关键词规则命中的词、选中的文字、图片网址和任何标签页网址：打印错误前一律经 `safeError` / `safeArgs`，只留错误名和消息，引号里的内容和网址样的文字换成 …，不带堆栈；预期的拒绝只记 `console.info` 级 | `src/lib/safe-error.js`、`src/background.js`、`src/chrome/lookup-actions.js`、`src/chrome/complete-actions.js`；`test/log-wiring.test.js` 守门 |
 | 唯一的 `fetch` 读取扩展包内的 `_locales/*/messages.json`（`chrome-extension://` 地址），没有任何外部请求；没有 `XMLHttpRequest`、`WebSocket`、`sendBeacon`，也没有 `eval` 或远程脚本；两个引擎库都只写在代码里 | `src/chrome/i18n.js`、`src/lib/engine-catalog.js`、`src/lib/image-engines.js`；`test/i18n-catalog.test.js` 的 fetch 守门 |
-| 没有 `externally_connectable`，不注册 `onMessageExternal`；`runtime.onMessage` 只接受本扩展弹窗发来的 `complete-split` 消息 | `src/manifest.json`、`src/background.js`、`src/lib/messages.js` |
+| 没有 `externally_connectable`，不注册 `onMessageExternal`；`runtime.onMessage` 只处理本扩展弹窗发来的两种消息：SW 处理 `complete-split`（`{ type, tabId, engineId }`），已开的设置页只接受发给本标签的 `reveal-setup`（`{ type, tabId }`），两种都不带网址或关键词，都校验发送方是本扩展的 `popup/popup.html`；SW 对 `reveal-setup` 不回复 | `src/manifest.json`、`src/background.js`、`src/options/setup.js`、`src/lib/messages.js` |
 | 复制按钮用 `navigator.clipboard.writeText` 写入触发网址或 `chrome://settings/searchEngines`；不读剪贴板。设置页“快捷键”一行用 `chrome.commands.getAll` 读当前绑定，按钮用 `tabs.create` 打开 `chrome://extensions/shortcuts` | `src/options/ui.js`、`src/options/shortcut.js` |
 | `incognito: "not_allowed"`：扩展不在无痕窗口运行，右键菜单项在无痕窗口里不出现 | `src/manifest.json` |
 
@@ -47,10 +47,10 @@ Split Search opens search results side by side in Chrome’s split view: two sea
 ### activeTab
 
 ```text
-When the user clicks the toolbar icon, Chrome temporarily grants access to the current tab. The popup uses it only to read that tab’s URL: it checks whether the page is a results page of one of the user’s search engines and reads its search terms, so the user can open another engine’s results next to it in a split view. The URL is used on the device only and is never stored or sent anywhere. If the user then opens the split view, the search terms are kept in memory like any other split view (see storage). Choosing one of the extension’s right-click menu items, or pressing its keyboard shortcut, also grants this access because of how Chrome works; the extension does not use it there. No content scripts are injected.
+When the user clicks the toolbar icon, Chrome temporarily grants access to the current tab. The popup uses it only to read that tab’s URL: it checks whether the page is a results page of one of the user’s search engines and reads its search terms, so the user can open another engine’s results next to it in a split view. The search terms are also compared on the device with the user’s keyword rules to choose which engine to suggest first. The URL is used on the device only and is never stored or sent anywhere. If the user then opens the split view, the search terms are kept in memory like any other split view (see storage). Choosing one of the extension’s right-click menu items, or pressing its keyboard shortcut, also grants this access because of how Chrome works; the extension does not use it there. No content scripts are injected.
 ```
 
-字数：724
+字数：844
 
 ### contextMenus
 
@@ -84,7 +84,7 @@ No host access is granted at install. https://*/* and http://*/* are optional ho
 
 字数：950
 
-说明：扩展还调用了 `chrome.tabs.create / get / update / query / remove / getCurrent / createSplit`、`chrome.tabs.onRemoved`、`chrome.windows.get / getLastFocused / getAll / create / update`、`chrome.runtime.onMessage / sendMessage`、`chrome.contextMenus.onClicked` 和 `chrome.commands.getAll / onCommand`。这些 API 不需要声明权限，控制台不会让你写理由；上面的 host 一栏已说明为什么不需要 `tabs` 权限。
+说明：扩展还调用了 `chrome.tabs.create / get / update / query / remove / getCurrent / createSplit`、`chrome.tabs.onRemoved`、`chrome.windows.get / getCurrent / getLastFocused / getAll / create / update`、`chrome.runtime.onMessage / sendMessage / getContexts / openOptionsPage`、`chrome.permissions.contains / onAdded / onRemoved`（`request` 见速查表）、`chrome.contextMenus.onClicked` 和 `chrome.commands.getAll / onCommand` 等（不逐个列全）。这些 API 不需要声明权限，控制台不会让你写理由；上面的 host 一栏已说明为什么不需要 `tabs` 权限。
 
 ## (c) Remote code（远程代码）
 
@@ -156,7 +156,7 @@ Website content：右键查词读取的是网页上的文字（选区），以�
 Data usage: “Web history” and “Website content” are selected. Here is exactly what the extension reads and keeps, all inside the user’s browser.
 - It reads the URL of a search the user started with a trigger URL they added to Chrome as a site search. Only top-level navigations to the hostnames of the user’s left-capable engines that carry the marker parameter “_ss” (normally produced only by the user’s own trigger URL) reach the extension, via one declarativeNetRequest redirect to its own page. It takes the search terms and the “_ss” value (two engine IDs) from that URL to open the two result pages in a split view.
 - Right-click menu: only when the user chooses one of the extension’s two menu items, it reads the selected text or the image’s address that Chrome passes with that click, and opens it in the engine the user picked, next to the current page. That text or address goes only to that engine. It does not read the page URL or anything else on the page; there are no content scripts.
-- activeTab: when the user clicks the toolbar icon, the popup reads the current tab’s URL to check whether it is a results page of one of the user’s engines and to read its search terms. The URL is not stored.
+- activeTab: when the user clicks the toolbar icon, the popup reads the current tab’s URL to check whether it is a results page of one of the user’s engines and to read its search terms, which are compared on the device with the user’s keyword rules to order the suggested engines. The URL is not stored.
 - For each pair of tabs it opens, it keeps a record in chrome.storage.session (memory only): the other tab’s ID, the split view ID, each tab’s role, which engine each tab shows, which keyword rule (if any) picked the right-side engine and which engine it replaced, and what was searched (search terms, selected text or an image address). The toolbar popup shows this and lets the user load another engine, and an optional keyboard shortcut (unbound by default) does the same. The record is never synced or transmitted, is deleted when the tab closes, and is cleared when the browser closes.
 - To tell whether a split view is its own, it checks that record. Without a record (for example after a browser restart), it reads the other tab’s URL and compares its origin, path and search-terms parameter with the user’s engine templates; it never overwrites a tab based on that check. The extension’s own right-click lookups skip this comparison. Chrome exposes that URL only for sites the user granted access to. The URL is not stored.
 - It does not read browsing history (no “history” or “tabs” permission), cookies, clipboard contents, keystrokes or text the user types on web pages.
