@@ -256,7 +256,7 @@
     "description": "Hint under the default pair card heading: what the default pair is used for. Split view is Chrome's feature name; keep the Chrome term."
   },
   "options_pair_other": {
-    "message": "Want a different pair? Create its trigger URL in “$LINK$”.",
+    "message": "Want more pairs? Create their trigger URLs in “$LINK$”.",
     "description": "Last line of the default pair card. $LINK$ is a link whose text is the tab name options_tab_add; it opens that tab and expands “Other pairs”.",
     "placeholders": {
       "LINK": {
@@ -266,7 +266,7 @@
     }
   },
   "options_pair_changed": {
-    "message": "Your default pair is now $PAIR$. Chrome’s site search still uses the old URL. Copy the new one below and replace it.",
+    "message": "Your default pair is now $PAIR$. The site search you added to Chrome still uses the old URL. Copy the new one below to replace it.",
     "description": "Box shown in the default pair card after the pair was changed on this page and setup was already done: Chrome’s site search still has the old trigger URL. $PAIR$ is the new pair, such as “Google | Bing”.",
     "placeholders": {
       "PAIR": {
@@ -612,11 +612,11 @@
     }
   },
   "engine_in_pair_hide": {
-    "message": "Used by the default pair, so it can’t be hidden. First choose another engine for the default pair in “Search pairs”.",
+    "message": "The default pair uses this engine, so it can’t be hidden. Choose a different engine in “Search pairs” first.",
     "description": "Visible reason under the unavailable Hide button in the edit engine dialog: the default pair uses this built-in engine. The quoted tab name must match options_tab_pair exactly."
   },
   "engine_in_pair_delete": {
-    "message": "Used by the default pair, so it can’t be deleted. First choose another engine for the default pair in “Search pairs”.",
+    "message": "The default pair uses this engine, so it can’t be deleted. Choose a different engine in “Search pairs” first.",
     "description": "Visible reason under the unavailable Delete button in the edit engine dialog: the default pair uses this custom engine. The quoted tab name must match options_tab_pair exactly."
   },
   "engine_rules_used_preset": {
@@ -864,7 +864,7 @@
     "description": "Sentence shown right after notice_added / notice_saved when the engine's site is not granted yet. The quoted button is engine_grant."
   },
   "notice_template_changed": {
-    "message": "“$NAME$” has a new URL. Site searches that use it on the left need a new trigger URL: copy it again in “Add to Chrome”, then replace the URL of that site search in Chrome’s settings.",
+    "message": "“$NAME$” has a new URL. Any site search with it on the left needs a new trigger URL. Copy the new one from “Add to Chrome” and paste it into that site search in Chrome settings.",
     "description": "Sticky notice after an engine's URL changed: site searches that use it on the left need the trigger URL copied again from the Add to Chrome tab and replaced in Chrome's settings. The quoted tab name must match options_tab_add exactly.",
     "placeholders": {
       "NAME": {
@@ -874,7 +874,7 @@
     }
   },
   "notice_template_changed_go": {
-    "message": "View trigger URL",
+    "message": "View trigger URLs",
     "description": "Button in the notice notice_template_changed; opens the Add to Chrome tab at the trigger URLs."
   },
   "notice_hidden": {
@@ -942,7 +942,7 @@
     }
   },
   "notice_pair_saved": {
-    "message": "Default pair saved. Chrome’s site search still uses the old URL. Replace it with the new one below.",
+    "message": "Default pair saved. The site search you added to Chrome still uses the old URL. Copy the new one from “Default pair” to replace it.",
     "description": "Notice after changing the default pair once setup is done: Chrome’s site search still has the old trigger URL; the new one is shown in the default pair card."
   },
   "notice_pair_saved_setup": {
@@ -1171,7 +1171,7 @@
   },
   "options_narrow_label": {
     "message": "Open the right side in a background tab when the window is narrow",
-    "description": "Checkbox label in the default pair card. Narrow means the window is under 960 px wide."
+    "description": "Name of the switch in the default pair card. Narrow means the window is under 960 px wide."
   },
   "options_narrow_hint": {
     "message": "Below 960 px wide, a split view gets too cramped. With this on, the left results stay in the tab you searched from, and the right results open in the tab next to it.",
@@ -1182,16 +1182,16 @@
     "description": "Settings, Search pairs tab: heading of the keyword rules card (rules that switch the default pair's right engine when the search contains certain words or a writing system)."
   },
   "options_rules_intro": {
-    "message": "When a search matches a rule, the default pair’s right side switches to that rule’s engine. The left side stays the same. Rules are checked from top to bottom, and the first match is used. Searches made with another pair’s trigger URL ignore the rules.",
+    "message": "When a search matches a rule, the default pair’s right side switches to that rule’s engine. The left side stays the same. Rules are checked from top to bottom, and the first match wins. Rules don’t apply to searches made with another pair’s trigger URL.",
     "description": "Keyword rules card: what the rules do. The last sentence says searches made with the trigger URL of a pair other than the default pair don't use the rules."
   },
   "options_rules_privacy": {
     "message": "Matching happens on this device, and your searches aren’t sent anywhere else. You write the words in your rules yourself, and they sync with Chrome like your other settings.",
-    "description": "Keyword rules section: privacy note. Matching runs locally; the rules sync with the user's other settings through Chrome sync."
+    "description": "Keyword rules card: privacy note. Matching runs locally; the rules sync with the user's other settings through Chrome sync."
   },
   "options_rules_empty": {
     "message": "No rules yet. The right side always uses the default pair’s right engine.",
-    "description": "Keyword rules section: shown when there are no rules."
+    "description": "Keyword rules card: shown when there are no rules."
   },
   "options_rules_words_row": {
     "message": "Contains $WORDS$",
@@ -1297,7 +1297,7 @@
   },
   "options_rules_add": {
     "message": "Add rule",
-    "description": "Keyword rules section: button that opens the dialog to add a rule."
+    "description": "Keyword rules card: button that opens the dialog to add a rule."
   },
   "options_rules_edit": {
     "message": "Edit",

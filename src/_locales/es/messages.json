@@ -256,7 +256,7 @@
     "description": "Hint under the default pair card heading: what the default pair is used for. Split view is Chrome's feature name; keep the Chrome term."
   },
   "options_pair_other": {
-    "message": "¿Quieres otra combinación? Crea su URL de activación en «$LINK$».",
+    "message": "¿Quieres usar más combinaciones? Crea sus URL de activación en «$LINK$».",
     "description": "Last line of the default pair card. $LINK$ is a link whose text is the tab name options_tab_add; it opens that tab and expands “Other pairs”.",
     "placeholders": {
       "LINK": {
@@ -266,7 +266,7 @@
     }
   },
   "options_pair_changed": {
-    "message": "Tu combinación predeterminada ahora es $PAIR$. La búsqueda en el sitio de Chrome sigue usando la URL anterior: copia la nueva de abajo y reemplázala.",
+    "message": "Tu combinación predeterminada ahora es $PAIR$. La búsqueda en el sitio que añadiste a Chrome sigue usando la URL anterior. Copia la URL nueva de abajo y úsala en su lugar.",
     "description": "Box shown in the default pair card after the pair was changed on this page and setup was already done: Chrome’s site search still has the old trigger URL. $PAIR$ is the new pair, such as “Google | Bing”.",
     "placeholders": {
       "PAIR": {
@@ -280,7 +280,7 @@
     "description": "Box shown in the default pair card after the pair was changed during first-run setup. The quoted card name must match setup_title."
   },
   "options_pair_changed_steps": {
-    "message": "Ver los pasos",
+    "message": "Ver los pasos de configuración",
     "description": "Link in the changed-pair box; opens the setup steps in the Add to Chrome tab."
   },
   "options_pair_changed_continue": {
@@ -338,7 +338,7 @@
     "description": "Setup step 4. \"Make default\" and \"shortcut\" must match Chrome's labels; ⋮ is the More actions menu icon."
   },
   "guide_step_grant": {
-    "message": "En «$LINK$», comprueba que el buscador de la izquierda muestra «Con acceso».",
+    "message": "En «$LINK$», asegúrate de que el buscador de la izquierda muestre «Con acceso».",
     "description": "Setup step 5. $LINK$ is a link whose text is the tab name options_tab_engines. The quoted status must match engine_granted.",
     "placeholders": {
       "LINK": {
@@ -612,11 +612,11 @@
     }
   },
   "engine_in_pair_hide": {
-    "message": "Lo usa la combinación predeterminada; no se puede ocultar. Primero ve a «Combinaciones» y elige otro buscador para la combinación predeterminada.",
+    "message": "La combinación predeterminada usa este buscador, así que no se puede ocultar. Primero cámbialo por otro en «Combinaciones».",
     "description": "Visible reason under the unavailable Hide button in the edit engine dialog: the default pair uses this built-in engine. The quoted tab name must match options_tab_pair exactly."
   },
   "engine_in_pair_delete": {
-    "message": "Lo usa la combinación predeterminada; no se puede eliminar. Primero ve a «Combinaciones» y elige otro buscador para la combinación predeterminada.",
+    "message": "La combinación predeterminada usa este buscador, así que no se puede eliminar. Primero cámbialo por otro en «Combinaciones».",
     "description": "Visible reason under the unavailable Delete button in the edit engine dialog: the default pair uses this custom engine. The quoted tab name must match options_tab_pair exactly."
   },
   "engine_rules_used_preset": {
@@ -864,7 +864,7 @@
     "description": "Sentence shown right after notice_added / notice_saved when the engine's site is not granted yet. The quoted button is engine_grant."
   },
   "notice_template_changed": {
-    "message": "La URL de «$NAME$» cambió. Las búsquedas en el sitio que lo usan a la izquierda necesitan una URL de activación nueva: cópiala otra vez en «Añadir a Chrome» y sustituye con ella la URL de esa búsqueda en el sitio en la configuración de Chrome.",
+    "message": "«$NAME$» tiene una URL nueva. Si alguna búsqueda en el sitio lo usa a la izquierda, necesita una URL de activación nueva: cópiala en «Añadir a Chrome» y úsala en lugar de la URL de esa búsqueda en la configuración de Chrome.",
     "description": "Sticky notice after an engine's URL changed: site searches that use it on the left need the trigger URL copied again from the Add to Chrome tab and replaced in Chrome's settings. The quoted tab name must match options_tab_add exactly.",
     "placeholders": {
       "NAME": {
@@ -874,7 +874,7 @@
     }
   },
   "notice_template_changed_go": {
-    "message": "Ver la URL de activación",
+    "message": "Ver las URL de activación",
     "description": "Button in the notice notice_template_changed; opens the Add to Chrome tab at the trigger URLs."
   },
   "notice_hidden": {
@@ -942,7 +942,7 @@
     }
   },
   "notice_pair_saved": {
-    "message": "Combinación predeterminada guardada. La búsqueda en el sitio de Chrome sigue usando la URL anterior; reemplázala por la nueva de abajo.",
+    "message": "Combinación predeterminada guardada. La búsqueda en el sitio que añadiste a Chrome sigue usando la URL anterior. Copia la URL nueva de «Combinación predeterminada» y úsala en su lugar.",
     "description": "Notice after changing the default pair once setup is done: Chrome’s site search still has the old trigger URL; the new one is shown in the default pair card."
   },
   "notice_pair_saved_setup": {
@@ -1171,27 +1171,27 @@
   },
   "options_narrow_label": {
     "message": "Si la ventana es estrecha, abrir el lado derecho en una pestaña en segundo plano",
-    "description": "Checkbox label in the default pair card. Narrow means the window is under 960 px wide."
+    "description": "Name of the switch in the default pair card. Narrow means the window is under 960 px wide."
   },
   "options_narrow_hint": {
     "message": "Si la ventana mide menos de 960 px de ancho, la vista dividida queda demasiado apretada. Al activar esta opción, los resultados de la izquierda se quedan en la pestaña desde la que buscaste y los de la derecha se abren en la pestaña de al lado.",
     "description": "Hint under the narrow-window switch on the settings page, describing what happens when it is on. Split view is Chrome's feature name; keep the Chrome term. Do not say \"this tab\": the reader is on the settings page."
   },
   "options_rules_title": {
-    "message": "Reglas de palabras clave para la derecha",
+    "message": "Reglas de palabras clave para el lado derecho",
     "description": "Settings, Search pairs tab: heading of the keyword rules card (rules that switch the default pair's right engine when the search contains certain words or a writing system)."
   },
   "options_rules_intro": {
-    "message": "Cuando una búsqueda coincide con una regla, el lado derecho de la combinación predeterminada cambia al buscador de esa regla y el izquierdo se mantiene. Las reglas se revisan de arriba abajo y se aplica la primera que coincida. Las búsquedas con la URL de activación de otra combinación no usan las reglas.",
+    "message": "Cuando una búsqueda coincide con una regla, el lado derecho de la combinación predeterminada cambia al buscador de esa regla y el izquierdo se mantiene. Las reglas se revisan de arriba abajo y se aplica la primera que coincida. Las reglas no se aplican a las búsquedas hechas con la URL de activación de otra combinación.",
     "description": "Keyword rules card: what the rules do. The last sentence says searches made with the trigger URL of a pair other than the default pair don't use the rules."
   },
   "options_rules_privacy": {
     "message": "La comparación se hace en este dispositivo y tus búsquedas no se envían a ningún otro sitio. Las palabras de las reglas las escribes tú y se sincronizan con Chrome como el resto de tu configuración.",
-    "description": "Keyword rules section: privacy note. Matching runs locally; the rules sync with the user's other settings through Chrome sync."
+    "description": "Keyword rules card: privacy note. Matching runs locally; the rules sync with the user's other settings through Chrome sync."
   },
   "options_rules_empty": {
     "message": "Aún no hay reglas. A la derecha siempre se usa el buscador derecho de la combinación predeterminada.",
-    "description": "Keyword rules section: shown when there are no rules."
+    "description": "Keyword rules card: shown when there are no rules."
   },
   "options_rules_words_row": {
     "message": "Contiene $WORDS$",
@@ -1297,7 +1297,7 @@
   },
   "options_rules_add": {
     "message": "Añadir regla",
-    "description": "Keyword rules section: button that opens the dialog to add a rule."
+    "description": "Keyword rules card: button that opens the dialog to add a rule."
   },
   "options_rules_edit": {
     "message": "Editar",
