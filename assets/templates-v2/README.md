@@ -34,7 +34,7 @@ node scripts/store/render-assets.mjs --locale en   # 商店 7 张来自本目录
 | 1 | `split-ddg-bing-rust.png` | 0,0,1800,760（右、下出血） | 0.69 |
 | 2 | `omnibox-suggest.png` | 226,62,900,126（窗口下沿 24px 白边） | 1.3 |
 | 3 | `drag-to-tabstrip.png` + `en/patches/` 修补图 | 0,-14,1800,790（右、下出血） | 0.68 |
-| 4 | `options-engines.png` | 三段：648,305,1120,117；648,460,1120,118；648,616,1120,237（右出血） | 1.1 |
-| 顶部宣传图 | `omnibox-suggest.png`、`options-engines.png` | 226,62,606,126；两段 640,305,678,117 与 640,460,678,118 | 0.95；0.85 |
+| 4 | `options-engines.png` | 三段：648,334,1120,117；648,489,1120,118；648,645,1120,237（右出血） | 1.1 |
+| 顶部宣传图 | `omnibox-suggest.png`、`options-engines.png` | 226,62,606,126；两段 640,334,678,117 与 640,489,678,118 | 0.95；0.85 |
 
 颜色、字体沿用 d1：纸底 `#F4F3EF`、墨色 `#1D2320`、副标题 `#4D534F`、唯一强调色松针绿 `#507665`（文字用 `#3E5D50`），只用更纱黑体（Sarasa UI SC，粗体即 Inter Bold）。

@@ -72,9 +72,9 @@ convert drag-to-tabstrip.png \
 
 | 文件 | 内容 |
 |---|---|
-| `en/options-top.png` | 设置页首屏（英文界面，2026-10-27 第四次重拍，见下文“设置页三张的重拍”）：标题、语言下拉框、“Get started”卡（第 1 步“DuckDuckGo: access granted”，第 2 步的三个编号小步：`chrome://settings/searchEngines` 带“Copy address”、触发网址 `https://duckduckgo.com/?q=%s&_ss=ddg,bing` 带“Copy”、在 ⋮ 菜单里选“Make default”，第 3 步“Try it”）、“Default pair”卡开头的左右两个窗格 |
-| `en/options-engines.png` | 设置页滚动到“Search engines”卡片，卡片上缘在视口顶下约 8 CSS 像素（原图 y≈143）；五个引擎都是“Access granted”，DuckDuckGo、Bing 带“Default left/Default right”和“默认组合在用，不能隐藏”的说明，说明只占一行；在 x=700 处，行分隔线在原图 y 304、460、616、734、853（2026-10-27 第四次重拍） |
-| `en/options-fullpage.png` | 设置页整页（CDP `Page.captureScreenshot`），2376×4343（2026-10-27 第四次重拍） |
+| `en/options-top.png` | 设置页首屏（英文界面，2026-10-27 第五次重拍，见下文“设置页三张的重拍”）：标题、语言下拉框、“Get started”卡（第 1 步“DuckDuckGo: access granted”，第 2 步的三个编号小步：`chrome://settings/searchEngines` 带“Copy address”、触发网址 `https://duckduckgo.com/?q=%s&_ss=ddg,bing` 带“Copy”、在 ⋮ 菜单里选“Make default”，第 3 步“Try it”）、“Default pair”卡开头的左右两个窗格 |
+| `en/options-engines.png` | 设置页滚动到“Search engines”卡片，卡片上缘在视口顶下约 8 CSS 像素（原图 y≈143）；五个引擎都是“Access granted”，DuckDuckGo、Bing 带“Default left/Default right”和“默认组合在用，不能隐藏”的说明，说明只占一行；在 x=700 处，行分隔线在原图 y 333、489、645、763、882（2026-10-27 第五次重拍） |
+| `en/options-fullpage.png` | 设置页整页（CDP `Page.captureScreenshot`），2376×4161（2026-10-27 第五次重拍） |
 | `en/split-ddg-bing-rust.png` | 新标签打开触发网址 `https://duckduckgo.com/?q=rust+programming&_ss=ddg,bing`，扩展建成 DuckDuckGo ｜ Bing 拆分视图；标签栏里是“Split Search settings”和两个分屏标签 |
 | `en/drag-to-tabstrip.png` | 英文维基百科“Rust (programming language)”，在正文“Software developer Graydon Hoare created Rust…”里选中“Graydon Hoare”（不是链接），用 xdotool 真实按下拖到标签栏空白处（落点 1460,30），没松手时截图。第一个标签旁同样有 Xvfb 下的黑底插入箭头（397,61），商店截图 3（v2）的裁切包含它，用 `en/patches/` 的修补图盖掉（见“修补”） |
 | `en/drag-result-split.png` | 松手后：默认搜索引擎（触发网址）打开新标签，扩展建成 DuckDuckGo ｜ Bing 拆分视图，查询词“Graydon Hoare” |
@@ -101,7 +101,7 @@ convert drag-to-tabstrip.png \
 
 第四次重拍（2026-10-27，v0.4 界面收尾）：没授权的非必需引擎改成中性样式、“开始使用”卡显示时“添加到 Chrome”卡里的默认组合一段和“其他组合”收进折叠区、以图搜图列表加了小标题和写明对象的按钮。三张 `en/options-*.png` 都用同一个脚本、同一套环境和状态重拍（私有 Xvfb :131、Chrome 156.0.8078.47、全新临时配置、五个预置引擎在授权框里点“允许”、没有 `setupDone`），扩展是当时 main 上的 `src/`。`options-top.png` 与上一版只差右边滚动条滑块（整页变矮了），画面内容相同；`options-engines.png` 内容相同，滚动位置差约 1 原图像素；`options-fullpage.png` 变成 2376×4343，“添加到 Chrome”卡里是收起的“Trigger URL for the default pair”和“Other pairs”，“右键查询”卡里有“Image search engines”小标题和“Add from image search catalog”“Add image search engine”两个按钮。界面里没授权的引擎都授权了，所以截图里看不到新的中性“未授权”样式。
 
-之后（2026-10-27，整体审查修正）：“添加到 Chrome”卡“设置”第 3 步改成不依赖位置的说法（en：“paste the trigger URL of the pair you want to use”），`en/options-fullpage.png` 里仍是旧句子“paste the trigger URL you copied above”。商店图和 README 图不用这张，没有重拍。
+第五次重拍（2026-10-27，v0.4 收尾第二批 A）：“开始使用”卡显示时“添加到 Chrome”卡的 5 步说明也收进折叠区，说明文字限宽 60ch（标语、提示和步骤换行更早），引擎卡说明去掉了“网址模板里 %s 代表关键词”半句，Perplexity 的提示改成不提 Service Worker 的说法。三张 `en/options-*.png` 都用同一个脚本、同一套环境和状态重拍（私有 Xvfb :131、Chrome 156.0.8078.47、全新临时配置、五个预置引擎在授权框里点“允许”、没有 `setupDone`），扩展是当时 main 上的 `src/`。`options-top.png` 里标语换成三行、各步说明换行位置变了；`options-engines.png` 的卡片说明多一行，引擎行整体比第四次低 29 原图像素，所以 `assets/templates-v2/store-4-engines.html`、`promo-marquee.html` 的分段裁切 y 跟着加 29（305→334、460→489、616→645），重新渲染后商店截图 4 和顶部宣传图与上一版内容相同，只有文字抗锯齿的像素差；`options-fullpage.png` 变成 2376×4161，“添加到 Chrome”卡里只有四个收起的标题（默认组合的触发网址、其他组合、设置步骤、注意事项），第四次重拍后改过的第 3 步句子收在折叠区里、不在画面中。
 
 商店截图 4 多出的一行空白（同日查明）：DuckDuckGo、Bing 两行右侧多一行“不能隐藏”的说明，所以这两行比 Google、Kagi 高 38 原图像素；商店截图 4 和顶部宣传图的裁切都只到行的左半边，说明在画面外，整块裁切就在这两行的复选框下面各留一行空白。原因在模板的裁切，不在文案。改成按行分段裁切、上下紧接：DuckDuckGo 行与 Bing 行都切在复选框一行之后（与 Google 行同高），切掉的两条带在画面可见范围里是纯白，没有删掉任何看得见的内容（见 `assets/templates-v2/store-4-engines.html`、`promo-marquee.html` 的注释）。
 

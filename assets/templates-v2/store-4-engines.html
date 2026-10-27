@@ -11,7 +11,7 @@
      画布里看不到，整块裁切时两行复选框下面就多出一行空白（2026-10-27 查明：是裁切造成的，不是文案）。所以分三段裁、上下紧接：
      DuckDuckGo 行（分隔线之下到复选框一行之后）、Bing 行（含上方分隔线，同样切在复选框一行之后）、Google 与 Kagi 两行（含上方分隔线，切在 Kagi 行下的分隔线之上）。
      每段的内容高度都和 Google 行一样是 117 原图像素，切掉的两条带在画布可见范围（x 648–1193）里是纯白。
-     原图（2026-10-27 重拍，引擎卡片上缘在视口顶下 8 CSS 像素）的行分隔线在 y 304、460、616、734、853；行左缘 658，引擎名从约 665 起。
+     原图（2026-10-27 第五次重拍，引擎卡片上缘在视口顶下 8 CSS 像素；卡片说明改短、限宽后多一行，行整体比第四次低 29 原图像素）的行分隔线在 y 333、489、645、763、882；行左缘 658，引擎名从约 665 起。
      缩放 1.1，引擎名约 29px。窗口左缘 680，向右出血：画布内可见原图 x 648–1193（标签止于约 1030，“Access granted”列在 1550 以后）。 */
   .win { left: 680px; top: 50%; width: 1240px; transform: translateY(-50%); }
   .crop { width: 1232px; }
@@ -24,9 +24,9 @@
   </div>
   <!-- 真实截图：设置页的搜索引擎列表（英文界面，五个预置引擎都已授权） -->
   <div class="win">
-    <div class="crop" data-crop="648,305,1120,117"><img src="../raw/options-engines.png" data-iw="2400" alt=""></div>
-    <div class="crop" data-crop="648,460,1120,118"><img src="../raw/options-engines.png" data-iw="2400" alt=""></div>
-    <div class="crop" data-crop="648,616,1120,237"><img src="../raw/options-engines.png" data-iw="2400" alt=""></div>
+    <div class="crop" data-crop="648,334,1120,117"><img src="../raw/options-engines.png" data-iw="2400" alt=""></div>
+    <div class="crop" data-crop="648,489,1120,118"><img src="../raw/options-engines.png" data-iw="2400" alt=""></div>
+    <div class="crop" data-crop="648,645,1120,237"><img src="../raw/options-engines.png" data-iw="2400" alt=""></div>
   </div>
   <script src="../templates/crop.js"></script>
 </body></html>
