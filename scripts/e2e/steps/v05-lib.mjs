@@ -2,7 +2,7 @@
 // 等一对规则分屏、记录形状核对、隐私核对（privacyProblems，有 node 测试），以及“带规则标记的弹窗”现场（withRulePopup）。
 // 查询词一律带一次性 token（nonce），隐私核对按 token 找泄漏。
 import { HOSTS, mockEngines } from "../config.mjs";
-import { engineA, trigger, splitPairs, waitState, openTab, nonce } from "./util.mjs";
+import { engineA, trigger, splitPairs, waitState, openTab, nonce, pageTargets } from "./util.mjs";
 import { guarded } from "./optpage.mjs";
 import { readRecords } from "./v03-lib.mjs";
 import { POPUP_URL, popupPage } from "./v03-popup.mjs";
@@ -70,23 +70,35 @@ export function ruleRecordProblems(recs, L, R, want) {
   return p;
 }
 
+// 关掉网址里带 token 的页面目标（token 是 nonce()，只出现在本次的触发网址、go.html 与两侧结果页里）；出错不抛
+async function closeTokenTargets(ctx, token) {
+  const targets = await pageTargets(ctx.browser).catch(() => []);
+  for (const t of targets.filter(t => t.url.includes(token))) {
+    await ctx.browser.client.send("Target.closeTarget", { targetId: t.targetId }).catch(() => {});
+  }
+}
+
 // “带规则标记的弹窗”现场（B14 与 v05I18nChecks 共用）：写一条 wiki → ec 的规则，在新标签打开触发网址，
-// 等右侧记录带 rule，再打开 popup.html?tabId=<左标签>，交给 fn(page)。结束时关弹窗和这一对标签，guarded 写回 rightRules。
+// 等右侧记录带 rule，再打开 popup.html?tabId=<左标签>，交给 fn(page)。结束时关弹窗和这一对标签（等不到一对时按 token 关掉触发标签），guarded 写回 rightRules。
 // 不整理现场（I18N 还要用它之前建的一对）
 export function withRulePopup(ctx, fn) {
   return guarded(ctx, ["rightRules"], async () => {
     await ctx.ext.eval(`chrome.storage.sync.set({ rightRules: ${J([{ id: "r1", when: "words", words: ["wiki"], engine: "ec" }])} }).then(() => true)`);
-    const raw = `wiki ${nonce()}`;
-    await openTab(ctx, ruleTrigger(ctx.port, raw));
-    const [L, R] = await waitRulePair(ctx, expectLeft(ctx.port, raw), expectRight(ctx.port, "ec", raw));
-    let page = null;
+    const token = nonce();
+    const raw = `wiki ${token}`;
+    let page = null, pair = null;
     try {
+      await openTab(ctx, ruleTrigger(ctx.port, raw));
+      pair = await waitRulePair(ctx, expectLeft(ctx.port, raw), expectRight(ctx.port, "ec", raw));
+      const [L, R] = pair;
       await waitState(ctx, async () => (await readRecords(ctx, [R.id]))[R.id]?.rule === "r1", "右侧记录带 rule");
       page = await popupPage(ctx, { url: `${POPUP_URL}?tabId=${L.id}` });
       return await fn(page);
     } finally {
       await page?.close();
-      await ctx.ext.eval(`chrome.tabs.remove(${J([L.id, R.id])}).then(() => true, () => false)`).catch(() => false);
+      if (pair) await ctx.ext.eval(`chrome.tabs.remove(${J(pair.map(t => t.id))}).then(() => true, () => false)`).catch(() => false);
+      // 等不到这一对时，触发标签（或已建出的一侧）还开着：按本次 token 找页面目标关掉，不留给后续检查
+      await closeTokenTargets(ctx, token);
     }
   });
 }

@@ -46,6 +46,7 @@ test("go.js：关键词规则经 ruleRight，在展开右侧模板之前；出�
   assert.ok(at > 0 && at < src.indexOf("expandTemplate(right.url"), "ruleRight 在第一个 expandTemplate(right.url 之前");
   const tryAt = src.lastIndexOf("try {", at), catchAt = src.indexOf("} catch", at);
   assert.ok(tryAt > 0 && catchAt > at, "ruleRight 在 try 里");
+  assert.ok(src.lastIndexOf("} catch", at) < tryAt, "ruleRight 与最近的 try 之间没有别的 catch（try 没被拆开）");
   const nextTry = src.indexOf("try {", catchAt);
   assert.ok(nextTry > catchAt, "规则块之后还有展开右侧并分屏的 try");
   const body = src.slice(catchAt, nextTry);
