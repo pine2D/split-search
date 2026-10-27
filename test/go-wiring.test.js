@@ -38,3 +38,18 @@ test("只有 go.js 写 setupDone：补成分屏、右键查询、设置页都不
     assert.doesNotMatch(s, /noteSetupPair|storage\.local\.set/, f);
   }
 });
+
+// v0.5 关键词规则（设计稿 8.1）：规则只决定右侧，出错退回 _ss 原来的右侧，不落进“只开左侧”
+test("go.js：关键词规则经 ruleRight，在展开右侧模板之前；出错退回原右侧，不落进只开左侧", () => {
+  assert.match(src, /import \{ ruleRight \} from "\.\/lib\/right-rules\.js"/);
+  const at = src.indexOf("ruleRight(");
+  assert.ok(at > 0 && at < src.indexOf("expandTemplate(right.url"), "ruleRight 在第一个 expandTemplate(right.url 之前");
+  const tryAt = src.lastIndexOf("try {", at), catchAt = src.indexOf("} catch", at);
+  assert.ok(tryAt > 0 && catchAt > at, "ruleRight 在 try 里");
+  const nextTry = src.indexOf("try {", catchAt);
+  assert.ok(nextTry > catchAt, "规则块之后还有展开右侧并分屏的 try");
+  const body = src.slice(catchAt, nextTry);
+  assert.doesNotMatch(body, /location\.replace/, "这个 catch 里不跳转");
+  assert.match(src, /ACTIONS\[action\]\(\{[^}]*\bauto\b[^}]*\}\)/);
+  assert.doesNotMatch(src, /\b(?:log|console\.\w+)\([^;]*\b(?:query|pick)\b/);
+});

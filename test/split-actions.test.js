@@ -580,3 +580,84 @@ test("pair：想分屏却退化成普通标签（不写记录）时不带 pair",
   installChrome({ createSplit: true });
   assert.deepEqual(await openNew({ tab: { id: 1, index: 3, windowId: 9 }, leftUrl: L, rightUrl: R, ...ids }), { replaceWith: L });
 });
+
+// ---- v0.5 关键词规则（设计稿 8.2）：执行层只把 auto 透传成右侧标签记录上的 rule/base ----
+const AUTO = { rule: "r2", base: "google" };
+const ruleIds = { ...ids, rightId: "mdn", auto: AUTO };
+const noAuto = (r) => !("rule" in r) && !("base" in r);
+
+test("new：auto 写在右侧新标签的记录上，当前标签的记录没有 rule/base", async () => {
+  const out = await openNew({ tab: { id: 1, index: 3, windowId: 9 }, leftUrl: L, rightUrl: R, ...ruleIds });
+  assert.deepEqual(out, { replaceWith: L, pair: [1, 100] });
+  assert.deepEqual(session.get("split:100"), rec(1, "mdn", AUTO));
+  assert.deepEqual(session.get("split:1"), rec(100, "kagi"));
+  assert.ok(noAuto(session.get("split:1")));
+});
+
+test("new：窄窗口的相邻对同样把 auto 写在右侧", async () => {
+  await openNew({ tab: { id: 1, index: 3, windowId: 9 }, win: { width: 800 }, leftUrl: L, rightUrl: R, ...ruleIds, narrowEnabled: true });
+  const adj = { mode: "adjacent", splitViewId: -1 };
+  assert.deepEqual(session.get("split:100"), rec(1, "mdn", { ...adj, ...AUTO }));
+  assert.deepEqual(session.get("split:1"), rec(100, "kagi", adj));
+});
+
+test("foreign：auto 写在新建一对的右侧", async () => {
+  const tab = { id: 1, index: 2, windowId: 9 };
+  const out = await openForeign({ tab, splitTabs: [tab, { id: 2, index: 3, windowId: 9 }], leftUrl: L, rightUrl: R, ...ruleIds });
+  assert.deepEqual(out, { leave: true, pair: [100, 101] });
+  assert.deepEqual(session.get("split:101"), rec(100, "mdn", AUTO));
+  assert.deepEqual(session.get("split:100"), rec(101, "kagi"));
+});
+
+test("other-window：auto 写在新建一对的右侧", async () => {
+  installChrome({}, { lastFocused: { id: 7, type: "normal" } });
+  const out = await openInOtherWindow({ leftUrl: L, rightUrl: R, ...ruleIds });
+  assert.deepEqual(out, { replaceWith: L, pair: [100, 101] });
+  assert.deepEqual(session.get("split:101"), rec(100, "mdn", AUTO));
+  assert.deepEqual(session.get("split:100"), rec(101, "kagi"));
+});
+
+test("reuse：当前标签在左（index 小）→ 对侧记录带 auto；当前标签在右 → 当前标签记录带 auto", async () => {
+  await reuse({ tab: { id: 1, index: 3 }, peer: { id: 2, index: 4 }, splitViewId: 55, leftUrl: L, rightUrl: R, ...ruleIds });
+  assert.deepEqual(session.get("split:2"), rec(1, "mdn", AUTO));
+  assert.deepEqual(session.get("split:1"), rec(2, "kagi"));
+  installChrome();
+  const out = await reuse({ tab: { id: 1, index: 5 }, peer: { id: 2, index: 4 }, splitViewId: 55, leftUrl: L, rightUrl: R, ...ruleIds });
+  assert.deepEqual(out, { replaceWith: R, pair: [1, 2] });
+  assert.deepEqual(session.get("split:1"), rec(2, "mdn", AUTO));
+  assert.deepEqual(session.get("split:2"), rec(1, "kagi"));
+});
+
+test("join：createSplit 成功后同上；auto 为 undefined 时两侧都没有 rule/base", async () => {
+  const sv = { splitViewId: 66 };
+  installChrome({}, { getSplitViewId: 66 });
+  await join({ tab: { id: 1, index: 3, windowId: 9 }, peer: { id: 2, index: 4, windowId: 9 }, splitViewId: -1, leftUrl: L, rightUrl: R, ...ruleIds });
+  assert.deepEqual(session.get("split:2"), rec(1, "mdn", { ...sv, ...AUTO }));
+  assert.deepEqual(session.get("split:1"), rec(2, "kagi", sv));
+  installChrome({}, { getSplitViewId: 66 });
+  await join({ tab: { id: 1, index: 5, windowId: 9 }, peer: { id: 2, index: 4, windowId: 9 }, splitViewId: -1, leftUrl: L, rightUrl: R, ...ruleIds });
+  assert.deepEqual(session.get("split:1"), rec(2, "mdn", { ...sv, ...AUTO }));
+  assert.deepEqual(session.get("split:2"), rec(1, "kagi", sv));
+  installChrome({}, { getSplitViewId: 66 });
+  await join({ tab: { id: 1, index: 3, windowId: 9 }, peer: { id: 2, index: 4, windowId: 9 }, splitViewId: -1, leftUrl: L, rightUrl: R, ...ids, auto: undefined });
+  for (const k of ["split:1", "split:2"]) assert.ok(noAuto(session.get(k)), k);
+});
+
+test("不传 auto 时五个分支写出的记录与 v0.4 相同（没有 rule、base 键）", async () => {
+  const tab = { id: 1, index: 3, windowId: 9 };
+  const peer = { id: 2, index: 4, windowId: 9 };
+  const runs = [
+    () => openNew({ tab, leftUrl: L, rightUrl: R, ...ids }),
+    () => reuse({ tab, peer, splitViewId: 55, leftUrl: L, rightUrl: R, ...ids }),
+    () => join({ tab, peer, splitViewId: -1, leftUrl: L, rightUrl: R, ...ids }),
+    () => openForeign({ tab, splitTabs: [tab, peer], leftUrl: L, rightUrl: R, ...ids }),
+    () => openInOtherWindow({ leftUrl: L, rightUrl: R, ...ids, auto: null }),
+  ];
+  for (const [i, run] of runs.entries()) {
+    installChrome({}, { getSplitViewId: i === 2 ? 66 : 55, lastFocused: { id: 7, type: "normal" } });
+    const out = await run();
+    assert.ok(out.pair, `分支 ${i} 写成了一对`);
+    assert.equal(session.size, 2, `分支 ${i}`);
+    for (const [k, r] of session) assert.ok(noAuto(r), `分支 ${i} ${k}`);
+  }
+});

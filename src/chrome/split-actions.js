@@ -54,23 +54,23 @@ export async function createPaired(url, withTab, { split = true, active = false 
 
 // 新建的一对写记录：真分屏写 split；窄窗口降级（adjacent）写 adjacent 记录；
 // 想分屏却退化成普通标签时不写。left 显示 leftId、角色 roleA，right 显示 rightId、角色 roleB；
-// input 只有查询对（page/lookup）才传。返回 { mode, written }：mode 是写下的 mode，没写是 "plain"；
-// written 表示记录确实写进了 storage.session。
-async function recordNewPair(left, paired, { leftId, rightId, query, roleA, roleB, input }, adjacent) {
+// input 只有查询对（page/lookup）才传；auto（关键词规则的 { rule, base }，只有 go.html 传）写在右侧。
+// 返回 { mode, written }：mode 是写下的 mode，没写是 "plain"；written 表示记录确实写进了 storage.session。
+async function recordNewPair(left, paired, { leftId, rightId, query, roleA, roleB, input, auto }, adjacent) {
   if (paired.splitViewId === -1 && !adjacent) return { mode: "plain", written: false };
   const mode = adjacent ? "adjacent" : "split";
   const written = await writePair({
     a: left.id, b: paired.tab.id, splitViewId: paired.splitViewId, mode,
-    engineA: leftId, engineB: rightId, query, roleA, roleB, input,
+    engineA: leftId, engineB: rightId, query, roleA, roleB, input, autoB: auto,
   });
   return { mode, written };
 }
 
 // 同 openRight，另返回写成的一对：{ mode, pair: [left.id, 右侧标签 id] | null }
 async function openRightPair(left, rightUrl, narrow,
-  { leftId, rightId, query, roleA = "search", roleB = "search", input, active = false }) {
+  { leftId, rightId, query, roleA = "search", roleB = "search", input, active = false, auto }) {
   const paired = await createPaired(rightUrl, left, { split: !narrow, active });
-  const { mode, written } = await recordNewPair(left, paired, { leftId, rightId, query, roleA, roleB, input }, narrow);
+  const { mode, written } = await recordNewPair(left, paired, { leftId, rightId, query, roleA, roleB, input, auto }, narrow);
   return { mode, pair: written ? [left.id, paired.tab.id] : null };
 }
 
@@ -84,15 +84,16 @@ export async function openRight(left, rightUrl, narrow, opts) {
 const withPair = (out, pair) => (pair ? { ...out, pair } : out);
 
 // 当前标签不在分屏中：右侧新建并与当前标签组成分屏（窄窗口则只在旁边开后台标签），当前标签打开左侧。
-export async function openNew({ tab, win, leftUrl, rightUrl, leftId, rightId, query, narrowEnabled }) {
-  const { pair } = await openRightPair(tab, rightUrl, isNarrow(win?.width, narrowEnabled), { leftId, rightId, query });
+export async function openNew({ tab, win, leftUrl, rightUrl, leftId, rightId, query, narrowEnabled, auto }) {
+  const { pair } = await openRightPair(tab, rightUrl, isNarrow(win?.width, narrowEnabled), { leftId, rightId, query, auto });
   return withPair({ replaceWith: leftUrl }, pair);
 }
 
 // 就地更新两侧，左右位置不变（index 小的在左）。对侧先换网址，再由 settle() 给出要记下的 splitViewId：
 // 不是 -1 记 "split"，是 -1 记 "adjacent"；null 表示状态不明，删掉旧记录、不写新的
 // （之后的触发按两个标签的实际状态判定）。返回当前标签要打开的网址。
-async function refreshPair({ tab, peer, leftUrl, rightUrl, leftId, rightId, query }, settle) {
+// auto 写在显示右侧的那一侧：当前标签在左时是对侧（b），在右时是当前标签自己（a）。
+async function refreshPair({ tab, peer, leftUrl, rightUrl, leftId, rightId, query, auto }, settle) {
   const tabIsLeft = sideOf(tab.index, peer.index) === "left";
   await chrome.tabs.update(peer.id, { url: tabIsLeft ? rightUrl : leftUrl });
   const splitViewId = await settle(tabIsLeft);
@@ -104,7 +105,7 @@ async function refreshPair({ tab, peer, leftUrl, rightUrl, leftId, rightId, quer
   const written = await writePair({
     a: tab.id, b: peer.id, splitViewId, mode: splitViewId !== -1 ? "split" : "adjacent",
     engineA: tabIsLeft ? leftId : rightId, engineB: tabIsLeft ? rightId : leftId, query,
-    roleA: "search", roleB: "search",
+    roleA: "search", roleB: "search", ...(tabIsLeft ? { autoB: auto } : { autoA: auto }),
   });
   return withPair({ replaceWith: tabIsLeft ? leftUrl : rightUrl }, written ? [tab.id, peer.id] : null);
 }
@@ -136,7 +137,7 @@ export async function join(ctx) {
 }
 
 // 当前标签在其他分屏中：另一侧不动，在该分屏右侧相邻位置新建一对标签。
-export async function openForeign({ tab, win, splitTabs, leftUrl, rightUrl, leftId, rightId, query, narrowEnabled }) {
+export async function openForeign({ tab, win, splitTabs, leftUrl, rightUrl, leftId, rightId, query, narrowEnabled, auto }) {
   const maxIndex = Math.max(tab.index, ...splitTabs.map(t => t.index));
   const newLeft = await chrome.tabs.create({
     url: leftUrl, index: maxIndex + 1, windowId: tab.windowId, active: true,
@@ -144,7 +145,7 @@ export async function openForeign({ tab, win, splitTabs, leftUrl, rightUrl, left
   // 左侧已打开；右侧失败只记录，不再让当前标签兜底打开左侧（否则会出现两个左侧）。
   let pair = null;
   try {
-    ({ pair } = await openRightPair(newLeft, rightUrl, isNarrow(win?.width, narrowEnabled), { leftId, rightId, query }));
+    ({ pair } = await openRightPair(newLeft, rightUrl, isNarrow(win?.width, narrowEnabled), { leftId, rightId, query, auto }));
   } catch (err) {
     log("foreign split: failed to create the right side", err);
   }
@@ -169,7 +170,7 @@ export async function lastSplitWindow({ fallback = true } = {}) {
 }
 
 // 当前窗口不能分屏（popup/app/PiP）：不在这里调用分屏 API，改到一个能分屏的窗口里新建一对；没有就新建窗口。
-export async function openInOtherWindow({ leftUrl, rightUrl, leftId, rightId, query, narrowEnabled }) {
+export async function openInOtherWindow({ leftUrl, rightUrl, leftId, rightId, query, narrowEnabled, auto }) {
   const target = await lastSplitWindow();
   let newLeft;
   let width = target?.width;
@@ -182,7 +183,7 @@ export async function openInOtherWindow({ leftUrl, rightUrl, leftId, rightId, qu
   }
   let pair = null;
   try {
-    ({ pair } = await openRightPair(newLeft, rightUrl, isNarrow(width, narrowEnabled), { leftId, rightId, query }));
+    ({ pair } = await openRightPair(newLeft, rightUrl, isNarrow(width, narrowEnabled), { leftId, rightId, query, auto }));
   } catch (err) {
     log("other window: failed to create the right side", err);
   }

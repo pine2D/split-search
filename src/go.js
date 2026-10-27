@@ -1,6 +1,7 @@
 // 触发处理页：解析 go.html?u=<原始网址>，判定分屏动作并执行。只做编排。
 import { extractOriginalUrl, parseTrigger, expandTemplate, stripMarker } from "./lib/trigger.js";
 import { decideFor } from "./lib/split-decision.js";
+import { ruleRight } from "./lib/right-rules.js";
 import { loadConfig } from "./chrome/config-store.js";
 import { ACTIONS, leaveTab } from "./chrome/split-actions.js";
 import { inspectTab } from "./chrome/split-state.js";
@@ -60,12 +61,13 @@ async function gatherContext(engines) {
   return { tab, win, ...(await inspectTab(tab, engines)) };
 }
 
-async function split(engines, narrowEnabled, { left, right, query }, leftUrl, rightUrl) {
+// auto：关键词规则选的右侧（{ rule, base }），没有时为 null；执行层只把它写进右侧标签的记录
+async function split(engines, narrowEnabled, { left, right, query, auto }, leftUrl, rightUrl) {
   const ctx = await gatherContext(engines);
   // 判定经 decideFor：PiP 归为 "pip"，走 other-window，不在它上面调分屏 API（test/go-wiring.test.js 守着这条接线）
   const action = decideFor(ctx, narrowEnabled);
   const outcome = await ACTIONS[action]({
-    ...ctx, leftUrl, rightUrl, leftId: left.id, rightId: right.id, query, narrowEnabled,
+    ...ctx, leftUrl, rightUrl, leftId: left.id, rightId: right.id, query, narrowEnabled, auto,
   });
   // 写成了一对搜索记录：经 lib/setup-state.js 判定后写 setupDone（“开始使用”卡完成）。
   // 跳转前做（跳转会中断它）；noteSetupPair 从不抛错、最多等 500 ms，不影响分屏流程
@@ -89,10 +91,9 @@ async function main() {
     return;
   }
 
-  let engines;
-  let narrowFallback;
+  let cfg;
   try {
-    ({ engines, narrowFallback } = await loadConfig());
+    cfg = await loadConfig();
   } catch (err) {
     log("failed to read the config", err);
     const fallback = safeOriginal(original);
@@ -101,7 +102,7 @@ async function main() {
     return;
   }
 
-  const parsed = parseTrigger(original, engines);
+  const parsed = parseTrigger(original, cfg.engines);
   if (!parsed.ok) {
     const [key, ...subs] = errorKey(parsed.error) ?? ["go_status_failed"];
     showError(GO_KEYS[parsed.error.code] ?? key, ...subs).catch(log);
@@ -109,7 +110,7 @@ async function main() {
     return;
   }
 
-  const { left, right, query } = parsed;
+  const { left, query } = parsed;
   let leftUrl;
   try {
     leftUrl = query === "" ? expandTemplate(left.url, "") : stripMarker(original);
@@ -119,9 +120,24 @@ async function main() {
     return;
   }
 
+  // 关键词规则只换默认组合的右侧（lib/right-rules.js 的 ruleRight）；规则出任何错都退回 _ss 原来的右侧，
+  // 不落进下面的“只开左侧”。日志不记命中的规则、词或查询
+  let right = parsed.right;
+  let rightUrl = null;
+  let auto = null;
   try {
-    const rightUrl = expandTemplate(right.url, query);
-    await split(engines, narrowFallback, parsed, leftUrl, rightUrl);
+    const pick = ruleRight(cfg, { leftId: left.id, rightId: right.id, query });
+    if (pick) {
+      rightUrl = expandTemplate(pick.engine.url, query);
+      right = pick.engine;
+      auto = { rule: pick.ruleId, base: parsed.right.id };
+    }
+  } catch (err) {
+    log("keyword rule skipped", err);
+  }
+  try {
+    rightUrl ??= expandTemplate(right.url, query);
+    await split(cfg.engines, cfg.narrowFallback, { left, right, query, auto }, leftUrl, rightUrl);
   } catch (err) {
     log("split failed, opening the left side only", err);
     location.replace(leftUrl);
