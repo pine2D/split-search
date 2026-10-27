@@ -1,5 +1,5 @@
 // 设置页自动步骤（二）：B10 B12 B13 B15（B13 的实现在 options-b3.mjs）
-import { openOptions, withOptions, guarded, sleep, keySel, openEdit, closeDialog, dangerState, readKeys, setReorder } from "./optpage.mjs";
+import { openOptions, withOptions, guarded, keySel, openEdit, closeDialog, dangerState, readKeys, setReorder } from "./optpage.mjs";
 import { msg } from "../i18n.mjs";
 import { pressEsc, B13_STEP } from "./options-b3.mjs";
 
