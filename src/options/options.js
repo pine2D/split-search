@@ -2,8 +2,9 @@
 import { loadRaw } from "../chrome/config-store.js";
 import { mergeConfig } from "../lib/engines.js";
 import { h, ht, notify, errorText, authButton, option, isGranted, addChevrons } from "./ui.js";
-import { setDefaultPair, canBeLeft, setNarrowFallback } from "./edits.js";
-import { write, act, actions, attention, bindActions, getPendingOrder } from "./actions.js";
+import { setDefaultPair, canBeLeft, setNarrowFallback, siblingMoveId } from "./edits.js";
+import { write, act, actions, attention, bindActions, getPendingOrder, flushOrderNow } from "./actions.js";
+import { setupReorder } from "./reorder.js";
 import { renderLookupCard, setupLookupDialogs, refreshImageCatalog } from "./lookup.js";
 import { renderEngineList, renderHiddenList, setupEngineDialog } from "./engine-list.js";
 import { setupCatalogDialog, refreshCatalog } from "./catalog.js";
@@ -24,10 +25,14 @@ const i18nReady = initI18n().catch(log);
 bindActions({ render: () => render(), current: () => current });
 
 // 重建后焦点原来的元素没了（授权成功后授权按钮消失）：焦点交给这一步的状态行；
-// 卡片整个不见了（重新授权成功后隐藏）就交给默认组合的左侧下拉框
+// 卡片整个不见了（重新授权成功后隐藏）就交给默认组合的左侧下拉框。
+// 上移 / 下移移到边缘后被禁用（禁用的按钮 focus() 悄悄不生效）：交给同一行另一个方向的；
+// 两个都没了（“调整顺序”自动退出）就交给“新增引擎”
 const FOCUS_FALLBACK = { "setup-grant": "setup-grant-status", "setup-grant-right": "setup-grant-status" };
 function focusAfterRender(id) {
-  const el = $(id) ?? $(FOCUS_FALLBACK[id]) ?? (id.startsWith("setup-") ? $("pair-left") : null);
+  let el = $(id) ?? $(FOCUS_FALLBACK[id]) ?? (id.startsWith("setup-") ? $("pair-left") : null);
+  const sibling = siblingMoveId(id);
+  if (sibling && (!el || el.disabled)) el = $(sibling) ?? $("add-engine");
   el?.focus();
 }
 
@@ -186,6 +191,7 @@ function pairSection(cfg, byId, granted, setupShown) {
 // 对话框和“复制地址”按钮要用 t()，等目录加载完再建；下面的监听只调 render()，render 自己 await i18nReady
 i18nReady.then(() => {
   setupEngineDialog(actions, () => current);
+  setupReorder({ render, flush: flushOrderNow });
   setupCatalogDialog(actions);
   setupLookupDialogs(actions);
   setupGuide();

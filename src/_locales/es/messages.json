@@ -318,8 +318,8 @@
     "description": "Button that opens the dialog for adding a custom search engine."
   },
   "options_engines_hint": {
-    "message": "Debes dar acceso al sitio del buscador de la izquierda, y conviene darlo también al de la derecha. Para ocultar o eliminar un buscador, usa «Editar». El orden de esta lista es el de los menús desplegables.",
-    "description": "Hint under the engine list heading: site access, where Hide/Delete are, and what the order is for. The quoted button text must match engine_edit word for word. (How to write a URL template is explained in the add/edit engine dialog.)"
+    "message": "Debes dar acceso al sitio del buscador de la izquierda, y conviene darlo también al de la derecha. Para ocultar o eliminar un buscador, usa «Editar». Para cambiar el orden, usa «Reordenar».",
+    "description": "Hint under the engine list heading: site access, where Hide/Delete and the order are. The quoted button texts must match engine_edit and engine_reorder word for word. (How to write a URL template is explained in the add/edit engine dialog.)"
   },
   "options_hidden_title": {
     "message": "Buscadores predefinidos ocultos",
@@ -577,11 +577,11 @@
   },
   "engine_move_up": {
     "message": "Subir",
-    "description": "Tooltip of the up-arrow icon button that moves an engine up in the list."
+    "description": "Tooltip of the up-arrow icon button that moves an engine up in the list (shown only in the reorder mode)."
   },
   "engine_move_up_label": {
     "message": "Subir $NAME$",
-    "description": "Accessible label of the up-arrow icon button. The placeholder is the engine name.",
+    "description": "Accessible label of the up-arrow icon button (reorder mode). The placeholder is the engine name.",
     "placeholders": {
       "NAME": {
         "content": "$1",
@@ -591,15 +591,45 @@
   },
   "engine_move_down": {
     "message": "Bajar",
-    "description": "Tooltip of the down-arrow icon button that moves an engine down in the list."
+    "description": "Tooltip of the down-arrow icon button that moves an engine down in the list (shown only in the reorder mode)."
   },
   "engine_move_down_label": {
     "message": "Bajar $NAME$",
-    "description": "Accessible label of the down-arrow icon button. The placeholder is the engine name.",
+    "description": "Accessible label of the down-arrow icon button (reorder mode). The placeholder is the engine name.",
     "placeholders": {
       "NAME": {
         "content": "$1",
         "example": "Google"
+      }
+    }
+  },
+  "engine_reorder": {
+    "message": "Reordenar",
+    "description": "Button in the engine list card header that turns on the reorder mode, where each row shows only the Move up / Move down buttons."
+  },
+  "engine_reorder_done": {
+    "message": "Listo",
+    "description": "Text of the same header button while the reorder mode is on; clicking it leaves the mode (the order is saved right away)."
+  },
+  "engine_reorder_hint": {
+    "message": "Usa «Subir» y «Bajar» en cada fila para cambiar el orden. Los cambios se guardan automáticamente. Los menús desplegables y la rotación del acceso directo siguen este orden.",
+    "description": "Hint under the engine list heading while the reorder mode is on; also announced to screen readers when the mode starts. The quoted button names must match engine_move_up and engine_move_down word for word."
+  },
+  "engine_moved": {
+    "message": "$NAME$: posición $POS$ de $TOTAL$",
+    "description": "Screen reader announcement after an engine is moved in the reorder mode (not shown on screen). $NAME$ = engine name, $POS$ = its new position (from 1), $TOTAL$ = number of visible engines. Write it so it reads correctly for any number (no plural forms).",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "Google"
+      },
+      "POS": {
+        "content": "$2",
+        "example": "2"
+      },
+      "TOTAL": {
+        "content": "$3",
+        "example": "5"
       }
     }
   },
@@ -1176,7 +1206,7 @@
     "description": "Button that opens chrome://extensions/shortcuts, where the user binds the key combination."
   },
   "options_cycle_title": {
-    "message": "Rotación del acceso directo: $ON$ de $ALL$ seleccionados",
+    "message": "Buscadores en la rotación del acceso directo: $ON$ de $ALL$",
     "description": "Collapsible summary in the keyboard shortcut card above the rotation checkboxes. $ON$ = engines included in the rotation, $ALL$ = visible engines. Write it so it reads correctly for any number (no plural forms).",
     "placeholders": {
       "ON": {
@@ -1190,7 +1220,7 @@
     }
   },
   "options_cycle_hint": {
-    "message": "La rotación sigue el orden de la lista de buscadores. Se omiten los que no están marcados y el de la izquierda actual.",
+    "message": "La rotación sigue el orden de la lista de buscadores. Se omiten los que no están marcados y el que esté a la izquierda en ese momento.",
     "description": "Legend of the rotation checkbox group in the keyboard shortcut card: the order of rotation and what is skipped."
   },
   "popup_not_ours": {

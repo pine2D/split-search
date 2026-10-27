@@ -215,15 +215,15 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 .engine-url { color: var(--muted); overflow-wrap: anywhere; margin-top: 2px; }
 .engine-side { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
 .perm-line, .row-actions, .row-move { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
-/* 文字引擎行：状态、授权、↑↓、编辑排成一行（以图搜图列表也用 .engine-side，不受影响） */
+/* 文字引擎行：状态、授权、编辑排成一行（以图搜图列表也用 .engine-side，不受影响） */
 #engines .engine-side { flex-direction: row; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 6px 10px; }
+/* “调整顺序”模式（reorder.js）：行里只有名称和上移 / 下移，没有第二行内容，按钮与名称对齐；显隐由 JS 处理 */
+#engines .engine-list.reordering .engine-row { align-items: center; }
 .perm { display: inline-flex; align-items: center; gap: 4px; font-size: 12.5px; }
 .perm-ok { color: var(--ok); }
 .perm-missing { color: var(--warn); }
 .perm-optional { color: var(--muted); }
 .btn-icon { display: inline-grid; place-items: center; padding: 4px 7px; }
-/* 组合在用、不能隐藏 / 删除的原因（行内小字）；宽度按 es 最长的一句一行放下 */
-.row-reason { font-size: 12px; margin: 0; text-align: end; max-width: 56ch; }
 
 .tag {
   font-size: 11.5px; line-height: 1.5;
@@ -240,7 +240,6 @@ input[aria-invalid="true"] { border-color: var(--danger); }
   .engine-side { align-items: flex-start; }
   #engines .engine-side { justify-content: flex-start; }
   .perm-line, .row-actions, .row-move { justify-content: flex-start; }
-  .row-reason { text-align: start; }
 }
 
 /* ---- 对话框 ---- */
@@ -313,7 +312,6 @@ dialog:focus { outline: none; }
 .check-row input { margin-top: 2px; flex: none; }
 
 /* ---- 快捷键 ---- */
-.cycle-row { margin-top: 6px; }
 /* 参与轮换的引擎清单（shortcut.js）：收在 <details> 里，复选框放不下时换行 */
 .cycle-list { border: 0; padding: 0; margin: 8px 0 0; min-width: 0; display: flex; flex-wrap: wrap; gap: 4px 18px; }
 .cycle-list legend { padding: 0; margin-bottom: 4px; }
@@ -332,3 +330,9 @@ dialog:focus { outline: none; }
 /* ---- 右键查询卡片 ---- */
 #image-catalog-dialog { max-height: calc(100vh - 48px); overflow-y: auto; }
 .lookup-actions { justify-content: flex-start; margin: 10px 0; }
+
+/* 只给读屏的文字（“调整顺序”模式的播报 #engines-status）：视觉隐藏，仍在无障碍树里 */
+.sr-only {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0;
+  overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+}

@@ -5,12 +5,14 @@ import { PRESETS } from "../lib/engines.js";
 import { suggestId, takenIn } from "../lib/engine-id.js";
 import { t, setI18nText } from "../chrome/i18n.js";
 import { icon } from "../ui/icons.js";
+import { isReordering, syncReorder, moveButtons } from "./reorder.js";
 
 // ctx: { cfg, granted: Map<id, boolean>, attention: Set<id>, actions, refresh }
 export function renderEngineList(ctx) {
   const { cfg } = ctx;
   const ids = cfg.engines.map(e => e.id);
-  const list = h("ol", { class: "engine-list" });
+  syncReorder(ids.length); // 先判断要不要自动退出“调整顺序”，再按模式建行
+  const list = h("ol", { class: "engine-list" + (isReordering() ? " reordering" : "") });
   cfg.engines.forEach((e, i) => list.append(engineRow(e, i, ids.length, ctx)));
   if (!ids.length) list.append(ht("li", { class: "empty" }, "engine_list_empty"));
   return list;
@@ -31,6 +33,14 @@ function engineRow(e, index, total, ctx) {
     e.id === rightId && ht("span", { class: "tag tag-accent" }, "engine_tag_default_right"),
     cfg.cycleExclude.includes(e.id) && ht("span", { class: "tag" }, "engine_tag_no_cycle"),
   ];
+  const title = h("div", { class: "engine-title" }, h("strong", { class: "engine-name" }, e.name), tags);
+
+  // “调整顺序”模式（reorder.js）：只有名称、标签和上移 / 下移。状态、授权、编辑、网址都不建（不用 CSS 藏），不留在 Tab 顺序里
+  if (isReordering()) {
+    return h("li", { class: "engine-row" + (inPair ? " in-pair" : ""), "data-id": e.id },
+      h("div", { class: "engine-main" }, title),
+      h("div", { class: "engine-side" }, moveButtons(e, index, total, actions)));
+  }
 
   // 状态图标在文字之外（--ok 与主色同属绿色系，不能只靠颜色区分）；文字在 data-i18n 的 span 里，切换语言时只重写它
   // 只有默认组合的左侧必须授权：警示样式；其余没授权的引擎用中性样式（空心圆 + 灰字），不抢眼
@@ -43,25 +53,16 @@ function engineRow(e, index, total, ctx) {
     onDone: ctx.refresh,
   });
 
-  // 隐藏 / 删除在编辑对话框里（openEngineDialog）；轮换开关在快捷键卡（shortcut.js），行上只留“不参与轮换”标签。
-  // ↑↓ 在单独的 .row-move 里：.row-actions 只有“编辑”，删除后焦点交给相邻行的“编辑”（actions.js 的 deleteWithFocus）。
+  // 隐藏 / 删除在编辑对话框里（openEngineDialog）；轮换开关在快捷键卡（shortcut.js），行上只留“不参与轮换”标签；
+  // 排序在“调整顺序”模式里。.row-actions 只有“编辑”，删除后焦点交给相邻行的“编辑”（actions.js 的 deleteWithFocus）。
   // 编辑按钮的 id 让重渲染后焦点能回到它（对话框保存、撤销隐藏后，options.js 的 render）
   return h("li", { class: "engine-row" + (inPair ? " in-pair" : ""), "data-id": e.id },
     h("div", { class: "engine-main" },
-      h("div", { class: "engine-title" },
-        h("strong", { class: "engine-name" }, e.name),
-        tags),
+      title,
       showUrl && h("div", { class: "engine-url mono" }, e.url),
       e.leftDiscouraged && ht("div", { class: "hint hint-warn" }, "engine_left_discouraged_hint")),
     h("div", { class: "engine-side" },
       h("div", { class: "perm-line" }, status, auth),
-      h("div", { class: "row-move" },
-        h("button", { type: "button", class: "btn btn-small btn-icon", disabled: index === 0,
-          title: t("engine_move_up"), "aria-label": t("engine_move_up_label", e.name), "data-move": "up",
-          onclick: () => actions.move(e.id, -1) }, icon("arrow-up")),
-        h("button", { type: "button", class: "btn btn-small btn-icon", disabled: index === total - 1,
-          title: t("engine_move_down"), "aria-label": t("engine_move_down_label", e.name), "data-move": "down",
-          onclick: () => actions.move(e.id, 1) }, icon("arrow-down"))),
       h("div", { class: "row-actions" },
         ht("button", { type: "button", id: `edit-${e.id}`, class: "btn btn-small", "aria-label": t("engine_edit_label", e.name),
           onclick: () => openEngineDialog("edit", e) }, "engine_edit"))));

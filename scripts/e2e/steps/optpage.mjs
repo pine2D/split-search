@@ -8,10 +8,12 @@ export const sleep = ms => new Promise(r => setTimeout(r, ms));
 // 页内脚本里按 data-i18n 的 key 找元素：返回选择器的 JS 字面量，直接拼进页内脚本，如 rw.querySelector(${keySel("engine_hide")})
 export const keySel = key => JSON.stringify(sel(key));
 
-// 页内脚本的公共前缀：按 id 找引擎行、按 data-move 找上移/下移按钮（图标按钮，没有文字；带文案的按钮用 keySel）
+// 页内脚本的公共前缀：按 id 找引擎行、按 id 找上移/下移按钮（#move-up-<id>、#move-down-<id>，只在“调整顺序”模式里有；
+// 图标按钮，没有文字；带文案的按钮用 keySel）
 const PRELUDE = `
 const row = id => [...document.querySelectorAll("#engines .engine-row")].find(r => r.dataset.id === id);
-const moveBtn = (root, dir) => root && root.querySelector('button[data-move="' + dir + '"]');
+const moveBtn = (id, dir) => document.getElementById("move-" + dir + "-" + id);
+const reordering = () => !!document.querySelector("#engines .engine-list.reordering");
 const ids = () => [...document.querySelectorAll("#engines .engine-row")].map(r => r.dataset.id);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 `;
@@ -94,6 +96,13 @@ export const closeDialog = page => page.run(`document.getElementById("dlg-cancel
 export async function openEdit(page, id) {
   await page.run(`document.getElementById(${JSON.stringify(`edit-${id}`)}).click(); return true;`);
   await page.until(`return document.getElementById("engine-dialog").open`);
+}
+
+// 进入（on = true）或退出“调整顺序”模式：状态不符就点卡头的 #engines-reorder，等列表的 .reordering 翻过来
+export async function setReorder(page, on) {
+  if (await page.run(`return reordering()`) === on) return;
+  await page.run(`document.getElementById("engines-reorder").click(); return true;`);
+  await page.until(`return reordering() === ${on}`);
 }
 
 // 编辑对话框底栏的危险区：可见性一律用 checkVisibility()（hidden 被作者样式盖掉时 .hidden 会假通过）。

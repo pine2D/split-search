@@ -4,7 +4,7 @@ import { PRESETS, ID_PATTERN, isIdTaken, mergeConfig } from "../src/lib/engines.
 import { CATALOG } from "../src/lib/engine-catalog.js";
 import {
   addEngine, editEngine, hideEngine, deleteEngine, restoreEngine, setDefaultPair, setNarrowFallback, describeTemplate, addFromCatalog,
-  setCycle, setLookupEngine, generatorPick,
+  setCycle, setLookupEngine, generatorPick, moveId, reconcileOrder, movePosition, siblingMoveId,
 } from "../src/options/edits.js";
 
 const preset = (id) => PRESETS.find(p => p.id === id);
@@ -252,4 +252,50 @@ test("生成器：没改过的初值跟着默认组合变，不会停在新的�
   const next = generatorPick(PRESETS, ["google", "ddg"]);
   assert.deepEqual(next, ["google", "bing"]);
   assert.notDeepEqual(next, ["google", "ddg"]);
+});
+
+// ---- 排序（“调整顺序”模式）----
+
+test("moveId：上移、下移交换相邻两项，越界或找不到时返回同一个数组", () => {
+  const ids = ["a", "b", "c"];
+  assert.deepEqual(moveId(ids, "b", -1), ["b", "a", "c"]);
+  assert.deepEqual(moveId(ids, "b", 1), ["a", "c", "b"]);
+  assert.deepEqual(ids, ["a", "b", "c"], "不改原数组");
+  assert.equal(moveId(ids, "a", -1), ids);
+  assert.equal(moveId(ids, "c", 1), ids);
+  assert.equal(moveId(ids, "x", 1), ids);
+});
+
+test("reconcileOrder：没有 pending 时就是 ids", () => {
+  const ids = ["a", "b", "c"];
+  assert.deepEqual(reconcileOrder(null, ids), ids);
+  assert.deepEqual(reconcileOrder(undefined, ids), ids);
+});
+
+test("reconcileOrder：按 pending 的先后保留，ids 里缺的（防抖期内刚恢复的引擎）按原顺序补到末尾", () => {
+  assert.deepEqual(reconcileOrder(["c", "a"], ["a", "b", "c", "d"]), ["c", "a", "b", "d"]);
+});
+
+test("reconcileOrder：pending 里已不可见的 id（另一页隐藏或删除）去掉", () => {
+  assert.deepEqual(reconcileOrder(["b", "x", "a"], ["a", "b"]), ["b", "a"]);
+});
+
+test("reconcileOrder 的结果能直接交给 moveId：刚恢复的引擎也能移动", () => {
+  const base = reconcileOrder(["b", "a"], ["b", "a", "ddg"]);
+  assert.deepEqual(moveId(base, "ddg", -1), ["b", "ddg", "a"]);
+});
+
+test("movePosition：位置从 1 起、总数，找不到返回 null", () => {
+  assert.deepEqual(movePosition(["a", "b", "c"], "a"), { pos: 1, total: 3 });
+  assert.deepEqual(movePosition(["a", "b", "c"], "c"), { pos: 3, total: 3 });
+  assert.equal(movePosition(["a"], "x"), null);
+});
+
+test("siblingMoveId：move-up-x 与 move-down-x 互换，其他 id 返回 null", () => {
+  assert.equal(siblingMoveId("move-up-google"), "move-down-google");
+  assert.equal(siblingMoveId("move-down-my-engine"), "move-up-my-engine");
+  assert.equal(siblingMoveId("edit-google"), null);
+  assert.equal(siblingMoveId("move-left-x"), null);
+  assert.equal(siblingMoveId(""), null);
+  assert.equal(siblingMoveId(undefined), null);
 });

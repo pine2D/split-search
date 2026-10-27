@@ -318,8 +318,8 @@
     "description": "Button that opens the dialog for adding a custom search engine."
   },
   "options_engines_hint": {
-    "message": "Split Search needs access to the left engine’s site; for the right engine, access is recommended. To hide or delete an engine, use “Edit”. The order here is the order in the drop-down menus.",
-    "description": "Hint under the engine list heading: site access, where Hide/Delete are, and what the order is for. The quoted button text must match engine_edit word for word. (How to write a URL template is explained in the add/edit engine dialog.)"
+    "message": "Split Search needs access to the left engine’s site; for the right engine, access is recommended. To hide or delete an engine, use “Edit”; to change the order, use “Reorder”.",
+    "description": "Hint under the engine list heading: site access, where Hide/Delete and the order are. The quoted button texts must match engine_edit and engine_reorder word for word. (How to write a URL template is explained in the add/edit engine dialog.)"
   },
   "options_hidden_title": {
     "message": "Hidden built-in engines",
@@ -577,11 +577,11 @@
   },
   "engine_move_up": {
     "message": "Move up",
-    "description": "Tooltip of the up-arrow icon button that moves an engine up in the list."
+    "description": "Tooltip of the up-arrow icon button that moves an engine up in the list (shown only in the reorder mode)."
   },
   "engine_move_up_label": {
     "message": "Move $NAME$ up",
-    "description": "Accessible label of the up-arrow icon button. The placeholder is the engine name.",
+    "description": "Accessible label of the up-arrow icon button (reorder mode). The placeholder is the engine name.",
     "placeholders": {
       "NAME": {
         "content": "$1",
@@ -591,15 +591,45 @@
   },
   "engine_move_down": {
     "message": "Move down",
-    "description": "Tooltip of the down-arrow icon button that moves an engine down in the list."
+    "description": "Tooltip of the down-arrow icon button that moves an engine down in the list (shown only in the reorder mode)."
   },
   "engine_move_down_label": {
     "message": "Move $NAME$ down",
-    "description": "Accessible label of the down-arrow icon button. The placeholder is the engine name.",
+    "description": "Accessible label of the down-arrow icon button (reorder mode). The placeholder is the engine name.",
     "placeholders": {
       "NAME": {
         "content": "$1",
         "example": "Google"
+      }
+    }
+  },
+  "engine_reorder": {
+    "message": "Reorder",
+    "description": "Button in the engine list card header that turns on the reorder mode, where each row shows only the Move up / Move down buttons."
+  },
+  "engine_reorder_done": {
+    "message": "Done",
+    "description": "Text of the same header button while the reorder mode is on; clicking it leaves the mode (the order is saved right away)."
+  },
+  "engine_reorder_hint": {
+    "message": "Use “Move up” and “Move down” on each row to change the order. Changes save automatically. The drop-down menus and the shortcut rotation use this order.",
+    "description": "Hint under the engine list heading while the reorder mode is on; also announced to screen readers when the mode starts. The quoted button names must match engine_move_up and engine_move_down word for word."
+  },
+  "engine_moved": {
+    "message": "$NAME$: position $POS$ of $TOTAL$",
+    "description": "Screen reader announcement after an engine is moved in the reorder mode (not shown on screen). $NAME$ = engine name, $POS$ = its new position (from 1), $TOTAL$ = number of visible engines. Write it so it reads correctly for any number (no plural forms).",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "Google"
+      },
+      "POS": {
+        "content": "$2",
+        "example": "2"
+      },
+      "TOTAL": {
+        "content": "$3",
+        "example": "5"
       }
     }
   },

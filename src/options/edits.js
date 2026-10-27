@@ -198,3 +198,23 @@ export function moveId(ids, id, delta) {
   [next[i], next[j]] = [next[j], next[i]];
   return next;
 }
+
+// 防抖期内的排序（pendingOrder）与当前可见引擎（ids）对齐：按 pending 的先后保留仍可见的，
+// ids 里缺的（刚恢复的引擎）按原顺序补到末尾；另一页隐藏或删除、却还留在 pending 里的 id 去掉
+export function reconcileOrder(pending, ids) {
+  if (!pending) return ids.slice();
+  const kept = pending.filter(id => ids.includes(id));
+  return [...kept, ...ids.filter(id => !kept.includes(id))];
+}
+
+// 移动后的播报用：位置从 1 起，找不到返回 null
+export function movePosition(order, id) {
+  const i = order.indexOf(id);
+  return i < 0 ? null : { pos: i + 1, total: order.length };
+}
+
+// 上移 / 下移按钮移到边缘后被禁用，焦点交给同一行另一个方向的按钮：move-up-x ↔ move-down-x
+export function siblingMoveId(id) {
+  const m = /^move-(up|down)-(.+)$/.exec(id ?? "");
+  return m ? `move-${m[1] === "up" ? "down" : "up"}-${m[2]}` : null;
+}

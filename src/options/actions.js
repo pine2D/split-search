@@ -3,7 +3,7 @@
 import { loadRaw, saveKeys, removeKeys } from "../chrome/config-store.js";
 import { notify, errorText, isGranted, joinSentences } from "./ui.js";
 import {
-  addEngine, editEngine, hideEngine, restoreEngine, deleteEngine, moveId, addFromCatalog, needsGrantWarning, setCycle,
+  addEngine, editEngine, hideEngine, restoreEngine, deleteEngine, moveId, reconcileOrder, addFromCatalog, needsGrantWarning, setCycle,
   setLookupEngine,
 } from "./edits.js";
 import { addImageEngine, addImageFromCatalog, deleteImageEngine, setImageEngine } from "./image-edits.js";
@@ -135,16 +135,19 @@ export const actions = {
   addImageFromCatalog: (entry) => act(raw => addImageFromCatalog(raw, entry), ["notice_catalog_added", entry.name]),
   deleteImageEngine: (e) => deleteWithFocus(IMAGE_LIST, e.id, "image-add-open",
     () => act(raw => deleteImageEngine(raw, e.id), ["notice_deleted", e.name])),
+  // 返回移动后的顺序（“调整顺序”模式据此播报位置），没动时返回 null。base 经 reconcileOrder 对齐当前可见引擎：
+  // 防抖期内刚恢复的引擎不在 pendingOrder 里，不对齐的话 moveId 找不到它，点了没有反应
   move(id, delta) {
     const current = deps.current();
-    if (!current) return;
-    const base = pendingOrder || current.engines.map(e => e.id);
+    if (!current) return null;
+    const base = reconcileOrder(pendingOrder, current.engines.map(e => e.id));
     const next = moveId(base, id, delta);
-    if (next === base) return;
+    if (next === base) return null;
     pendingOrder = next;
     render();
     clearTimeout(orderTimer);
     orderTimer = setTimeout(flushOrder, ORDER_DEBOUNCE_MS);
+    return next;
   },
 };
 
@@ -172,6 +175,13 @@ async function undoHide(e) {
   const result = await actions.restore(e);
   await lastRender;
   if (result.ok) document.getElementById(`edit-${e.id}`)?.focus();
+}
+
+// 退出“调整顺序”时立刻写出，不等防抖（reorder.js）
+export function flushOrderNow() {
+  clearTimeout(orderTimer);
+  orderTimer = null;
+  return flushOrder();
 }
 
 export async function flushOrder() {

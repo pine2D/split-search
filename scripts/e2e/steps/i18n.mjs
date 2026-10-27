@@ -1,4 +1,4 @@
-// I18N 多语言冒烟（auto）：4 种语言逐一打开设置页（含引擎库对话框、编辑对话框的隐藏/删除）、工具栏弹窗（本扩展的一对与分屏外的 try 档）和 go.html 出错页，核对 lang、原样 key、溢出并截图；
+// I18N 多语言冒烟（auto）：4 种语言逐一打开设置页（含引擎库对话框、编辑对话框的隐藏/删除、“调整顺序”模式）、工具栏弹窗（本扩展的一对与分屏外的 try 档）和 go.html 出错页，核对 lang、原样 key、溢出并截图；
 // 设置页含“开始使用”卡（每种语言前清掉 setupDone，结束时写回）；页内切换、连切、两个设置页跟随；uiLocale = "auto" 时 t() 与 chrome.i18n.getMessage 的替换结果逐 key 相同。
 // uiLocale 由 guarded 写回步骤前的值（基线 zh_CN），中断时由快照恢复兜底。截图存 .e2e/i18n/。v0.4 的弹窗“补成分屏”区与设置页“右键查询”卡片见 v04-i18n.mjs。
 import { join } from "node:path";
@@ -105,6 +105,20 @@ async function engineDialog(ctx, opt, locale) {
   return { problems, shots };
 }
 
+// “调整顺序”模式：进入后整页再查一遍（卡头按钮变“完成”、模式说明、行里只有上移/下移），截图后退出。
+// 按钮文字在点击时同步换掉，按它判断要不要点，轮询时不会把刚进入的模式又点出去
+async function reorderMode(ctx, opt, locale) {
+  const done = msgIn(locale, "engine_reorder_done");
+  const mode = `!!document.querySelector("#engines .engine-list.reordering")`;
+  await waitPage(opt, `(() => { const b = document.getElementById("engines-reorder"); if (b.textContent !== ${J(done)}) b.click();
+    return ${mode} && !document.getElementById("engines-reorder-hint").hidden; })()`, "进入“调整顺序”模式");
+  const problems = auditProblems(locale, await opt.ev(AUDIT)).map(p => `调整顺序模式：${p}`);
+  const shot = await shoot(ctx, opt, join(SHOT_DIR, `${locale}-options-reorder.png`), { full: true });
+  await waitPage(opt, `(() => { const b = document.getElementById("engines-reorder"); if (b.textContent === ${J(done)}) b.click();
+    return !${mode}; })()`, "退出“调整顺序”模式");
+  return { problems, shot };
+}
+
 async function perLocale(ctx, locale, pairTab, idleTab) {
   const n0 = ctx.consoleCollector?.errors?.length ?? 0;
   await setPref(ctx, locale);
@@ -128,6 +142,9 @@ async function perLocale(ctx, locale, pairTab, idleTab) {
     const dlg = await engineDialog(ctx, opt, locale).catch(e => ({ problems: [`编辑对话框：${e.message}`], shots: [] }));
     problems.push(...dlg.problems);
     shots.push(...dlg.shots);
+    const ro = await reorderMode(ctx, opt, locale).catch(e => ({ problems: [`调整顺序模式：${e.message}`], shot: null }));
+    problems.push(...ro.problems);
+    if (ro.shot) shots.push(ro.shot);
   } finally { await opt.close(); }
   let pop = null;
   try {

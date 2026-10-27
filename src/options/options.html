@@ -71,11 +71,15 @@
       <div class="section-head">
         <h2 id="engines-title" data-i18n="options_engines_title"></h2>
         <div class="section-actions">
+          <button type="button" id="engines-reorder" class="btn btn-small" aria-controls="engines" data-i18n="engine_reorder"></button>
           <button type="button" id="catalog-open" class="btn btn-small" data-i18n="options_add_from_catalog"></button>
           <button type="button" id="add-engine" class="btn btn-primary btn-small" data-i18n="options_add_engine"></button>
         </div>
       </div>
       <p id="engines-hint" class="hint" data-i18n="options_engines_hint"></p>
+      <!-- “调整顺序”模式（reorder.js）的说明与播报：在 #engines 之外，列表重建时不会被清掉 -->
+      <p id="engines-reorder-hint" class="hint" hidden data-i18n="engine_reorder_hint"></p>
+      <p id="engines-status" class="sr-only" role="status"></p>
       <div id="engines"></div>
       <h3 data-i18n="options_hidden_title"></h3>
       <div id="hidden-engines"></div>

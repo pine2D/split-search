@@ -318,8 +318,8 @@
     "description": "Button that opens the dialog for adding a custom search engine."
   },
   "options_engines_hint": {
-    "message": "左侧引擎的网站必须授权，右侧建议授权。隐藏和删除在“编辑”里。排序决定下拉框里的顺序。",
-    "description": "Hint under the engine list heading: site access, where Hide/Delete are, and what the order is for. The quoted button text must match engine_edit word for word. (How to write a URL template is explained in the add/edit engine dialog.)"
+    "message": "左侧引擎的网站必须授权，右侧建议授权。隐藏和删除在“编辑”里，排序在“调整顺序”里。",
+    "description": "Hint under the engine list heading: site access, where Hide/Delete and the order are. The quoted button texts must match engine_edit and engine_reorder word for word. (How to write a URL template is explained in the add/edit engine dialog.)"
   },
   "options_hidden_title": {
     "message": "已隐藏的预置引擎",
@@ -577,11 +577,11 @@
   },
   "engine_move_up": {
     "message": "上移",
-    "description": "Tooltip of the up-arrow icon button that moves an engine up in the list."
+    "description": "Tooltip of the up-arrow icon button that moves an engine up in the list (shown only in the reorder mode)."
   },
   "engine_move_up_label": {
     "message": "上移 $NAME$",
-    "description": "Accessible label of the up-arrow icon button. The placeholder is the engine name.",
+    "description": "Accessible label of the up-arrow icon button (reorder mode). The placeholder is the engine name.",
     "placeholders": {
       "NAME": {
         "content": "$1",
@@ -591,15 +591,45 @@
   },
   "engine_move_down": {
     "message": "下移",
-    "description": "Tooltip of the down-arrow icon button that moves an engine down in the list."
+    "description": "Tooltip of the down-arrow icon button that moves an engine down in the list (shown only in the reorder mode)."
   },
   "engine_move_down_label": {
     "message": "下移 $NAME$",
-    "description": "Accessible label of the down-arrow icon button. The placeholder is the engine name.",
+    "description": "Accessible label of the down-arrow icon button (reorder mode). The placeholder is the engine name.",
     "placeholders": {
       "NAME": {
         "content": "$1",
         "example": "Google"
+      }
+    }
+  },
+  "engine_reorder": {
+    "message": "调整顺序",
+    "description": "Button in the engine list card header that turns on the reorder mode, where each row shows only the Move up / Move down buttons."
+  },
+  "engine_reorder_done": {
+    "message": "完成",
+    "description": "Text of the same header button while the reorder mode is on; clicking it leaves the mode (the order is saved right away)."
+  },
+  "engine_reorder_hint": {
+    "message": "用每行的“上移”“下移”调整顺序，改动会自动保存。下拉框和快捷键轮换都按这个顺序。",
+    "description": "Hint under the engine list heading while the reorder mode is on; also announced to screen readers when the mode starts. The quoted button names must match engine_move_up and engine_move_down word for word."
+  },
+  "engine_moved": {
+    "message": "$NAME$：第 $POS$ 位，共 $TOTAL$ 个",
+    "description": "Screen reader announcement after an engine is moved in the reorder mode (not shown on screen). $NAME$ = engine name, $POS$ = its new position (from 1), $TOTAL$ = number of visible engines. Write it so it reads correctly for any number (no plural forms).",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "Google"
+      },
+      "POS": {
+        "content": "$2",
+        "example": "2"
+      },
+      "TOTAL": {
+        "content": "$3",
+        "example": "5"
       }
     }
   },
