@@ -6,9 +6,11 @@ import { buildTriggerTemplate, expandTemplate } from "../lib/trigger.js";
 import { setupView } from "../lib/setup-state.js";
 import { safeArgs } from "../lib/safe-error.js";
 import { acceptRevealSetup } from "../lib/messages.js";
+import { routeFromHash } from "../lib/options-route.js";
 import { DONE_KEY, readSetupDone, rememberTryTab } from "../chrome/setup-store.js";
 import { h, ht, notify, errorText, authButton } from "./ui.js";
 import { urlBox, leftWarn, revealGuideSteps, SETTINGS_URL } from "./guide.js";
+import { showTab } from "./tabs.js";
 import { t } from "../chrome/i18n.js";
 import { icon } from "../ui/icons.js";
 
@@ -59,10 +61,6 @@ export function initSetup(render) {
   rerender = render;
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area === "local") onLocal(changes);
-  });
-  window.addEventListener("hashchange", () => {
-    const target = hashTarget(location.hash);
-    if (target) requestReveal(target);
   });
   chrome.tabs.getCurrent().then(tab => { selfTabId = tab?.id ?? null; })
     .catch(err => info("options: reading the current tab failed", err));
@@ -178,10 +176,10 @@ const title = (key, props = {}, ...children) => children.length
 
 // 网址带 #setup（弹窗的“完成设置”“去第 2 步”新开的设置页）：页面第一次显示出来后滚到卡片、焦点给标题；卡片不显示时什么都不做。
 // 网址带 #guide-steps（中键或 Ctrl+点“详细步骤”在新标签打开的）：同样等页面显示出来，再做与左键点击相同的 revealGuideSteps。
-// 只做一次，之后 hash 再变成这两者之一或收到弹窗的 reveal-setup 才再做
-const hashTarget = hash => (hash === "#setup" ? "setup" : hash === "#guide-steps" ? "guide-steps" : null);
-let revealPending = hashTarget(location.hash);
-function requestReveal(target) {
+// 只做一次，之后 hash 再变成这两者之一（tabs.js 的 hashchange 经 onReveal 调 requestReveal）或收到弹窗的 reveal-setup 才再做。
+// 卡片显示时先切到“添加到 Chrome”（从别的 tab 过来就写 #tab-add）；卡片隐藏时什么都不做，也不切 tab
+let revealPending = routeFromHash(location.hash).reveal ?? null;
+export function requestReveal(target) {
   revealPending = target;
   revealSetup();
 }
@@ -192,11 +190,12 @@ export function revealSetup() {
   if (target === "guide-steps") return revealGuideSteps();
   const card = document.getElementById("setup");
   if (!card || card.hidden) return;
+  showTab("add");
   card.scrollIntoView({ block: "start" });
   document.getElementById("setup-title")?.focus({ preventScroll: true });
 }
 
-// el 是 #setup；返回卡片是否显示（显示时默认组合卡与组合生成器不再重复左侧授权的提示框）
+// el 是 #setup；返回 setupView 的 mode（steps / regrant 时卡片显示，默认组合卡与组合生成器不再重复左侧授权的提示框）
 export function renderSetup(el, { cfg, byId, granted }) {
   const [left, right] = cfg.defaultPair.map(id => byId.get(id));
   const leftGranted = !!left && granted.get(left.id) === true;
@@ -220,5 +219,5 @@ export function renderSetup(el, { cfg, byId, granted }) {
   el.replaceChildren(...nodes);
   el.dataset.mode = v.mode;
   el.hidden = v.mode === "hidden";
-  return v.mode === "steps" || v.mode === "regrant";
+  return v.mode;
 }

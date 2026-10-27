@@ -21,12 +21,14 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const READY = `document.readyState === "complete" && !!globalThis.chrome?.runtime?.id
   && !document.body.classList.contains("loading") && document.querySelectorAll("#engines .engine-row").length > 0`;
 
-// 打开一个新的设置页并等它渲染完。返回页面对象；用完必须 close()。hash：网址后接的片段（如 "#guide-steps"）。
+// 打开一个新的设置页并等它渲染完。返回页面对象；用完必须 close()。hash：网址后接的片段（如 "#guide-steps"）；
+// tab：没给 hash 时接 #tab-<tab>，直接进那个 tab（真实用户也会用的深链）。
 // newWindow：开在单独的新窗口里。授权框（chrome.permissions.request）挂在浏览器窗口上、不是标签上：只关标签它还留着，
 // 关掉它所在的窗口才会随之消失（perm-dialog spike 第 4 条），所以发起授权申请的设置页要独占一个窗口
-export async function openOptions(browser, { newWindow = false, hash = "" } = {}) {
+export async function openOptions(browser, { newWindow = false, hash = "", tab = null } = {}) {
   const { client } = browser;
-  const { targetId } = await client.send("Target.createTarget", { url: OPTIONS_URL + hash, ...(newWindow ? { newWindow: true } : {}) });
+  const frag = hash || (tab ? `#tab-${tab}` : "");
+  const { targetId } = await client.send("Target.createTarget", { url: OPTIONS_URL + frag, ...(newWindow ? { newWindow: true } : {}) });
   const sid = await browser.attach(targetId);
   const page = { targetId, sid, dialogs: [], acceptDialogs: true };
   const onDialog = (p, s) => {
@@ -68,10 +70,17 @@ export async function openOptions(browser, { newWindow = false, hash = "" } = {}
   return page;
 }
 
-// 打开设置页执行 fn(page)，无论成败都关闭
-export async function withOptions(browser, fn) {
-  const page = await openOptions(browser);
+// 打开设置页执行 fn(page)，无论成败都关闭；opts 原样交给 openOptions（如 { tab: "engines" }）
+export async function withOptions(browser, fn, opts) {
+  const page = await openOptions(browser, opts);
   try { return await fn(page); } finally { await page.close(); }
+}
+
+// 已打开的设置页中途换 tab：像用户一样聚焦并点 #tabbtn-<key>，等 #panel-<key> 看得见
+export async function showTab(page, key) {
+  const k = JSON.stringify(key);
+  await page.run(`const b = document.getElementById("tabbtn-" + ${k}); b.focus(); b.click(); return true;`);
+  await page.until(`return document.getElementById("panel-" + ${k})?.checkVisibility() === true`);
 }
 
 // 填写并提交新增/编辑对话框里的表单。按对话框的字段顺序（名称 → 网址 → “高级”里的 id）填，每格都派发 input 事件：

@@ -54,7 +54,7 @@ async function popupComplete(ctx, locale) {
 }
 
 async function lookupCard(ctx, locale) {
-  const opt = await openOptions(ctx.browser);
+  const opt = await openOptions(ctx.browser, { tab: "lookup" });
   try {
     await waitPage(opt, `document.documentElement.lang === ${J(htmlLang(locale))}
       && document.querySelector(${J(`${CARD} ${sel("options_lookup_title")}`)})?.textContent === ${J(msgIn(locale, "options_lookup_title"))}

@@ -11,7 +11,7 @@
   <script type="module" src="options.js"></script>
 </head>
 <body class="loading">
-  <main class="page">
+  <div class="page">
     <header class="page-head">
       <div class="page-title">
         <h1 data-i18n="options_title">Split Search</h1>
@@ -22,80 +22,103 @@
       </div>
     </header>
 
-    <section id="setup" class="card setup" role="region" aria-labelledby="setup-title" hidden></section>
-
-    <section class="card" aria-labelledby="pair-title">
-      <h2 id="pair-title" data-i18n="options_pair_title"></h2>
-      <p class="hint" data-i18n="options_pair_hint"></p>
-      <div id="pair-body"></div>
-    </section>
-
-    <section id="guide" class="card" aria-labelledby="guide-title">
-      <h2 id="guide-title" data-i18n="options_guide_title"></h2>
-      <div id="triggers" class="triggers"></div>
-
-      <!-- 5 步说明：“开始使用”卡显示时由 guide.js 收进默认收起的 <details>（renderGuideSteps），不显示时照常展开 -->
-      <div id="guide-steps">
-      <h3 id="guide-steps-title" tabindex="-1" data-i18n="guide_steps_title"></h3>
-      <ol class="steps">
-        <li>
-          <span data-i18n="guide_step_open_settings"></span>
-          <span class="url-line"><code class="url-box mono">chrome://settings/searchEngines</code><span id="settings-url-copy"></span></span>
-        </li>
-        <li data-i18n="guide_step_add"></li>
-        <li id="guide-step-fields"></li>
-        <li data-i18n="guide_step_default"></li>
-        <li data-i18n="guide_step_grant"></li>
-      </ol>
+    <!-- 四个 tab（tabs.js）：静态时都不选中、面板都 hidden，首次渲染的 routeOnce 选中一个；tab 状态只在网址 hash（#tab-<key>）里 -->
+    <div class="tabbar">
+      <div role="tablist" id="tabs" class="tablist" data-i18n-attr="aria-label:options_tabs_label">
+        <button type="button" role="tab" class="tab" id="tabbtn-add" aria-controls="panel-add" aria-selected="false" tabindex="-1">
+          <span id="tabname-add" data-i18n="options_tab_add"></span>
+          <span class="tab-flag" id="tab-flag-add"></span>
+        </button>
+        <button type="button" role="tab" class="tab" id="tabbtn-pair" aria-controls="panel-pair" aria-selected="false" tabindex="-1">
+          <span id="tabname-pair" data-i18n="options_tab_pair"></span>
+        </button>
+        <button type="button" role="tab" class="tab" id="tabbtn-engines" aria-controls="panel-engines" aria-selected="false" tabindex="-1">
+          <span id="tabname-engines" data-i18n="options_tab_engines"></span>
+        </button>
+        <button type="button" role="tab" class="tab" id="tabbtn-lookup" aria-controls="panel-lookup" aria-selected="false" tabindex="-1">
+          <span id="tabname-lookup" data-i18n="options_tab_lookup"></span>
+        </button>
       </div>
+    </div>
 
-      <details class="disclosure">
-        <summary><span data-i18n="guide_caveats_title"></span></summary>
-      <ul class="caveats">
-        <li data-i18n="guide_caveat_degrade"></li>
-        <li data-i18n="guide_caveat_no_suggest"></li>
-        <li data-i18n="guide_caveat_context_menu"></li>
-        <li data-i18n="guide_caveat_sync"></li>
-        <li data-i18n="guide_caveat_template_change"></li>
-        <li data-i18n="guide_caveat_remove"></li>
-      </ul>
-      </details>
-    </section>
-
-    <section class="card" aria-labelledby="lookup-title">
-      <h2 id="lookup-title" data-i18n="options_lookup_title"></h2>
-      <div id="lookup-body"></div>
-    </section>
-
-    <section class="card" aria-labelledby="engines-title">
-      <div class="section-head">
-        <h2 id="engines-title" data-i18n="options_engines_title"></h2>
-        <div class="section-actions">
-          <button type="button" id="engines-reorder" class="btn btn-small" aria-controls="engines" data-i18n="engine_reorder"></button>
-          <button type="button" id="catalog-open" class="btn btn-small" data-i18n="options_add_from_catalog"></button>
-          <button type="button" id="add-engine" class="btn btn-primary btn-small" data-i18n="options_add_engine"></button>
-        </div>
+    <main>
+      <div role="tabpanel" id="panel-add" aria-labelledby="tabname-add" tabindex="0" hidden>
+        <section id="setup" class="card setup" role="region" aria-labelledby="setup-title" hidden></section>
+        <section id="guide" class="card" aria-labelledby="guide-title">
+          <h2 id="guide-title" data-i18n="options_guide_title"></h2>
+          <div id="triggers" class="triggers"></div>
+          <!-- 5 步说明：“开始使用”卡显示时由 guide.js 收进默认收起的 <details>（renderGuideSteps），不显示时照常展开 -->
+          <div id="guide-steps">
+          <h3 id="guide-steps-title" tabindex="-1" data-i18n="guide_steps_title"></h3>
+          <ol class="steps">
+            <li>
+              <span data-i18n="guide_step_open_settings"></span>
+              <span class="url-line"><code class="url-box mono">chrome://settings/searchEngines</code><span id="settings-url-copy"></span></span>
+            </li>
+            <li data-i18n="guide_step_add"></li>
+            <li id="guide-step-fields"></li>
+            <li data-i18n="guide_step_default"></li>
+            <li data-i18n="guide_step_grant"></li>
+          </ol>
+          </div>
+          <details class="disclosure">
+            <summary><span data-i18n="guide_caveats_title"></span></summary>
+          <ul class="caveats">
+            <li data-i18n="guide_caveat_degrade"></li>
+            <li data-i18n="guide_caveat_no_suggest"></li>
+            <li data-i18n="guide_caveat_context_menu"></li>
+            <li data-i18n="guide_caveat_sync"></li>
+            <li data-i18n="guide_caveat_template_change"></li>
+            <li data-i18n="guide_caveat_remove"></li>
+          </ul>
+          </details>
+        </section>
       </div>
-      <p id="engines-hint" class="hint" data-i18n="options_engines_hint"></p>
-      <!-- “调整顺序”模式（reorder.js）的说明与播报：在 #engines 之外，列表重建时不会被清掉 -->
-      <p id="engines-reorder-hint" class="hint" hidden data-i18n="engine_reorder_hint"></p>
-      <p id="engines-status" class="sr-only" role="status"></p>
-      <div id="engines"></div>
-      <h3 data-i18n="options_hidden_title"></h3>
-      <div id="hidden-engines"></div>
-    </section>
+      <div role="tabpanel" id="panel-pair" aria-labelledby="tabname-pair" tabindex="0" hidden>
+        <section class="card" aria-labelledby="pair-title">
+          <h2 id="pair-title" data-i18n="options_pair_title"></h2>
+          <p class="hint" data-i18n="options_pair_hint"></p>
+          <div id="pair-body"></div>
+        </section>
+      </div>
+      <div role="tabpanel" id="panel-engines" aria-labelledby="tabname-engines" tabindex="0" hidden>
+        <section class="card" aria-labelledby="engines-title">
+          <div class="section-head">
+            <h2 id="engines-title" data-i18n="options_engines_title"></h2>
+            <div class="section-actions">
+              <button type="button" id="engines-reorder" class="btn btn-small" aria-controls="engines" data-i18n="engine_reorder"></button>
+              <button type="button" id="catalog-open" class="btn btn-small" data-i18n="options_add_from_catalog"></button>
+              <button type="button" id="add-engine" class="btn btn-primary btn-small" data-i18n="options_add_engine"></button>
+            </div>
+          </div>
+          <p id="engines-hint" class="hint" data-i18n="options_engines_hint"></p>
+          <!-- “调整顺序”模式（reorder.js）的说明与播报：在 #engines 之外，列表重建时不会被清掉 -->
+          <p id="engines-reorder-hint" class="hint" hidden data-i18n="engine_reorder_hint"></p>
+          <p id="engines-status" class="sr-only" role="status"></p>
+          <div id="engines"></div>
+          <h3 data-i18n="options_hidden_title"></h3>
+          <div id="hidden-engines"></div>
+        </section>
+        <section class="card" aria-labelledby="shortcut-title">
+          <h2 id="shortcut-title" data-i18n="options_shortcut_title"></h2>
+          <p class="hint" data-i18n="options_shortcut_hint"></p>
+          <div id="shortcut"></div>
+          <!-- 参与轮换的引擎清单（shortcut.js 的 renderCycleList）：在 #shortcut 之外，重画快捷键一行时不会冲掉它 -->
+          <div id="cycle"></div>
+        </section>
+      </div>
+      <div role="tabpanel" id="panel-lookup" aria-labelledby="tabname-lookup" tabindex="0" hidden>
+        <section class="card" aria-labelledby="lookup-title">
+          <h2 id="lookup-title" data-i18n="options_lookup_title"></h2>
+          <div id="lookup-body"></div>
+        </section>
+      </div>
+    </main>
 
-    <section class="card" aria-labelledby="shortcut-title">
-      <h2 id="shortcut-title" data-i18n="options_shortcut_title"></h2>
-      <p class="hint" data-i18n="options_shortcut_hint"></p>
-      <div id="shortcut"></div>
-      <!-- 参与轮换的引擎清单（shortcut.js 的 renderCycleList）：在 #shortcut 之外，重画快捷键一行时不会冲掉它 -->
-      <div id="cycle"></div>
-    </section>
     <footer class="page-foot">
       <p class="hint" data-i18n="lang_note"></p>
     </footer>
-  </main>
+  </div>
 
   <div id="notices" class="notices" aria-live="polite"></div>
 

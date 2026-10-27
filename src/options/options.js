@@ -4,14 +4,15 @@ import { mergeConfig } from "../lib/engines.js";
 import { h, ht, notify, errorText, authButton, option, isGranted, addChevrons } from "./ui.js";
 import { setDefaultPair, canBeLeft, setNarrowFallback, siblingMoveId } from "./edits.js";
 import { write, act, actions, attention, bindActions, getPendingOrder, flushOrderNow } from "./actions.js";
-import { setupReorder, isReordering } from "./reorder.js";
+import { setupReorder, isReordering, leaveReorder } from "./reorder.js";
 import { renderLookupCard, setupLookupDialogs, refreshImageCatalog } from "./lookup.js";
 import { renderEngineList, renderHiddenList, setupEngineDialog } from "./engine-list.js";
 import { renderRules, setupRuleDialog } from "./rules.js";
 import { setupCatalogDialog, refreshCatalog } from "./catalog.js";
 import { renderShortcut, renderCycleList, SHORTCUT_BUTTON_ID } from "./shortcut.js";
 import { renderTriggers, renderGuideSteps, setupGuide } from "./guide.js";
-import { renderSetup, loadSetupDone, initSetup, revealSetup } from "./setup.js";
+import { renderSetup, loadSetupDone, initSetup, revealSetup, requestReveal } from "./setup.js";
+import { initTabs, routeOnce, setTabFlag, focusIn } from "./tabs.js";
 import { applyRichText, renderLangPicker } from "./locale-ui.js";
 import { initI18n, applyI18n, setLocale, currentPref, currentLocale, t } from "../chrome/i18n.js";
 import { safeArgs } from "../lib/safe-error.js";
@@ -26,7 +27,7 @@ const i18nReady = initI18n().catch(log);
 bindActions({ render: () => render(), current: () => current });
 
 // 重建后焦点原来的元素没了（授权成功后授权按钮消失）：焦点交给这一步的状态行；
-// 卡片整个不见了（重新授权成功后隐藏）就交给默认组合的左侧下拉框。
+// 卡片整个不见了（重新授权成功后隐藏）或目标在别的 tab 里：focusIn 交给当前选中的 tab 按钮。
 // 上移 / 下移移到边缘后被禁用（禁用的按钮 focus() 悄悄不生效）：交给同一行另一个方向的；
 // 两个都没了就交给卡头看得见的那个：模式中是“完成”（“新增引擎”这时隐藏，focus() 不生效），
 // 平时（“调整顺序”自动退出）是“新增引擎”。
@@ -35,10 +36,10 @@ const FOCUS_FALLBACK = { "setup-grant": "setup-grant-status", "setup-grant-right
 function focusAfterRender(focused) {
   const restored = focused.startsWith("restore-") && !$(focused) ? focused.slice("restore-".length) : null;
   const id = restored ? (isReordering() ? `move-up-${restored}` : `edit-${restored}`) : focused;
-  let el = $(id) ?? $(FOCUS_FALLBACK[id]) ?? (id.startsWith("setup-") ? $("pair-left") : null);
+  let el = $(id) ?? $(FOCUS_FALLBACK[id]);
   const sibling = siblingMoveId(id);
   if (sibling && (!el || el.disabled)) el = $(sibling) ?? $(isReordering() ? "engines-reorder" : "add-engine");
-  el?.focus();
+  focusIn(el);
 }
 
 let renderSeq = 0;
@@ -98,6 +99,7 @@ async function render() {
     await localeSwitch;
     applyStatic();
     notify(t("notice_load_failed", errorText(err)), "error");
+    routeOnce("hidden"); // 没有卡片可显示：进“搜索组合”；之后渲染成功也不再换 tab（只判一次）
     document.body.classList.remove("loading");
     revealSetup(); // 卡片没渲染出来（隐藏）：#setup 的待办只是清掉，免得之后哪次渲染成功时突然滚动、抢焦点；#guide-steps 照常展开静态的 5 步说明
     return;
@@ -124,7 +126,10 @@ async function render() {
   const byId = new Map(all.map(e => [e.id, e]));
   // 有意为之：重建下面几个区块会丢掉焦点，记下有 id 的焦点元素（键盘用户刚改的开关、下拉框），重建后还给它
   const focusedId = document.activeElement?.id;
-  const setupShown = renderSetup($("setup"), { cfg, byId, granted });
+  const mode = renderSetup($("setup"), { cfg, byId, granted });
+  const setupShown = mode === "steps" || mode === "regrant";
+  routeOnce(mode); // 默认 tab 只在首次渲染判一次，之后状态变化不换 tab
+  setTabFlag(mode);
   const ctx = { cfg, granted, attention, actions, refresh: render, setupShown };
   $("pair-body").replaceChildren(...pairSection(cfg, byId, granted, setupShown));
   $("lookup-body").replaceChildren(renderLookupCard(cfg, actions));
@@ -208,4 +213,6 @@ chrome.storage.onChanged.addListener((_changes, area) => { if (area === "sync") 
 chrome.permissions.onAdded.addListener(() => render());
 chrome.permissions.onRemoved.addListener(() => render());
 window.addEventListener("focus", () => refreshShortcut());
+// 离开“搜索引擎”tab 时退出“调整顺序”并立刻写出排序，不抢焦点
+initTabs({ onReveal: requestReveal, onLeave: from => { if (from === "engines") leaveReorder({ focus: false }); }, reveals: {} });
 render();

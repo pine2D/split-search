@@ -20,13 +20,14 @@ const fmtPopup = s => `${s.idleTier ?? "无"} 档，显示 ${s.idleShown.join("�
 
 export const verdictOf = (p, detail) => p.length ? { status: "fail", detail: p.join("；") } : { status: "pass", detail };
 
-// 卡片、焦点与本页是不是活动标签（options.js 去掉 loading 之后才按 #setup 给焦点；没渲染完返回 null）
+// 卡片、焦点、选中的 tab、hash 与本页是不是活动标签（options.js 去掉 loading 之后才按 #setup 给焦点；没渲染完返回 null）
 const PAGE_STATE = `(async () => {
   const s = document.getElementById("setup");
   if (!s || document.body.classList.contains("loading") || !s.dataset.mode) return null;
   const a = document.activeElement;
   const tab = await chrome.tabs.getCurrent();
-  return { mode: s.dataset.mode, hidden: s.hidden, focus: a?.id || a?.tagName || "", active: tab?.active ?? null }; })()`;
+  return { mode: s.dataset.mode, hidden: s.hidden, focus: a?.id || a?.tagName || "", active: tab?.active ?? null,
+    tab: document.querySelector('[role="tab"][aria-selected="true"]')?.id ?? null, hash: location.hash }; })()`;
 
 async function evalTarget(ctx, targetId, expr) {
   const sid = await ctx.browser.attach(targetId);
@@ -40,9 +41,12 @@ export const setupFocus = (ctx, targetId) =>
 export const closeTarget = (ctx, targetId) => ctx.browser.client.send("Target.closeTarget", { targetId }).catch(() => {});
 const optionsTargets = async ctx => (await pageTargets(ctx.browser)).filter(t => t.url.startsWith(OPTIONS_URL));
 
-const cardProblems = (f, mode) => [
+// prevHash：点之前这一页的 hash。卡片在“添加到 Chrome”tab：从别的 tab 切过来写 #tab-add，本来就在 ① 时 hash 不动
+const cardProblems = (f, mode, prevHash = "#setup") => [
   ...(f.mode !== mode || f.hidden ? [`设置页的卡片应是 ${mode}，实际 ${f.mode}${f.hidden ? "（隐藏）" : ""}`] : []),
   ...(f.focus !== "setup-title" ? [`设置页的焦点应在卡片标题，实际 ${f.focus}`] : []),
+  ...(f.tab !== "tabbtn-add" ? [`设置页应选中“添加到 Chrome”tab，实际 ${f.tab}`] : []),
+  ...(![`#tab-add`, "#setup", prevHash].includes(f.hash) ? [`设置页的 hash 应为 #tab-add、#setup 或原值 ${J(prevHash)}，实际 ${J(f.hash)}`] : []),
 ];
 
 // reuse：已开着设置页时点 click。标签数不变、没有新开设置页，原有的一个设置页变成活动标签，焦点落在 setup-title
@@ -69,7 +73,7 @@ async function clickReuse(ctx, page, click, mode) {
     p.push(`10 秒内已开的 ${before.length} 个设置页都没有把焦点给卡片标题`);
     return { p, detail: "" };
   }
-  p.push(...cardProblems(hit.f, mode));
+  p.push(...cardProblems(hit.f, mode, new URL(hit.t.url).hash));
   if (hit.f.active !== true) p.push(`被复用的设置页应是活动标签，实际 active ${J(hit.f.active)}`);
   return { p, detail: `点 #${click}：复用已开的设置页（共 ${before.length} 个），没有新开标签，它成了活动标签，卡片 ${hit.f.mode}，焦点 ${hit.f.focus}` };
 }
@@ -125,6 +129,7 @@ export async function readyTier(ctx, tabId) {
     const f = await setupFocus(ctx, targetId);
     if (!f.hidden || f.mode !== "hidden") p.push(`setupDone 为 true 时 #setup 页的卡片应不显示：${f.mode}`);
     if (f.focus !== "BODY") p.push(`卡片不显示时 #setup 不该移动焦点，实际 ${f.focus}`);
+    if (f.tab !== "tabbtn-pair") p.push(`卡片不显示时 #setup 应进“搜索组合”tab，实际 ${f.tab}`);
     return verdictOf(p, `${detail}；直接打开 #setup：卡片 ${f.mode}，焦点 ${f.focus}`);
   } finally { await closeTarget(ctx, targetId); }
 }

@@ -181,7 +181,7 @@ export const B14 = {
       const pc = await checkPage(ctx, { name: "弹窗“补成分屏”区", targetId: complete.targetId, sid: complete.sid, file: join(OUT_DIR, "b14-popup-complete-dark.png") });
       // v0.5：带规则标记的弹窗（#rule-note），同时把设置页的规则区展开再截一张
       const rules = await withRulePopup(ctx, async rp => {
-        await ctx.browser.waitFor(() => page.ev(`(() => { const d = [...document.querySelectorAll("#pair-body details.disclosure")]
+        await ctx.browser.waitFor(() => page.ev(`(() => { document.getElementById("tabbtn-pair").click(); const d = [...document.querySelectorAll("#pair-body details.disclosure")]
           .find(x => x.querySelector('summary [data-i18n="options_rules_summary"]')); if (d) d.open = true; return !!d && !!document.querySelector("#rule-list > li"); })()`), { timeoutMs: 10000 });
         await ctx.browser.waitFor(() => rp.ev(`document.getElementById("rule-note").checkVisibility()`), { timeoutMs: 10000 });
         return [await checkPage(ctx, { name: "设置页规则区", targetId: page.targetId, sid: page.sid, file: join(OUT_DIR, "b14-options-rules-dark.png"), full: true }),

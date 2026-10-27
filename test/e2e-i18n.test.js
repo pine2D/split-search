@@ -92,3 +92,9 @@ test("i18n.mjs 与 v04-i18n.mjs 不互相 import（共用工具在 i18n-audit.mj
   assert.doesNotMatch(src("v04-i18n.mjs"), /from "\.\/i18n\.mjs"/);
   assert.doesNotMatch(src("i18n-audit.mjs"), /from "\.\/(v04-)?i18n\.mjs"/);
 });
+
+test("tabAuditProblems：面板里没有看得见的后代时判失败（隐藏面板的溢出检查会静默通过）", async () => {
+  const { tabAuditProblems } = await import("../scripts/e2e/steps/i18n-audit.mjs");
+  assert.ok(tabAuditProblems("lookup", { visible: 0 }).length === 1);
+  assert.deepEqual(tabAuditProblems("lookup", { visible: 3 }), []);
+});

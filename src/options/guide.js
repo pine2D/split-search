@@ -4,6 +4,7 @@ import { buildTriggerTemplate } from "../lib/trigger.js";
 import { h, ht, copyButton, authButton, option, disclosure } from "./ui.js";
 import { canBeLeft, generatorPick } from "./edits.js";
 import { t } from "../chrome/i18n.js";
+import { showTab } from "./tabs.js";
 
 export const SETTINGS_URL = "chrome://settings/searchEngines";
 
@@ -71,14 +72,14 @@ export function renderTriggers(ctx) {
   rightSel.addEventListener("change", pick);
 
   frag.append(h("div", { class: "trigger-card" },
-    disclosure("guide-other", "guide_other_pairs_title",
+    withId(disclosure("guide-other", "guide_other_pairs_title",
       ht("p", { class: "hint" }, "guide_pair_shortcut_hint", t("guide_example_shortcut_query")),
       lefts.length
         ? h("div", { class: "lookup-pickers" },
           h("label", null, ht("span", null, "common_left"), leftSel),
           h("label", null, ht("span", null, "common_right"), rightSel))
         : ht("p", { class: "hint hint-error" }, "guide_no_left"),
-      out)));
+      out), "guide-other")));
   if (lefts.length) update();
   return frag;
 }
@@ -118,8 +119,10 @@ export function renderGuideSteps(setupShown) {
   else slot.replaceChildren(ht("h3", { id: "guide-steps-title", tabindex: "-1" }, "guide_steps_title"), list);
 }
 
-// “开始使用”卡第 2 步的“详细步骤”：展开默认组合一段和 5 步说明，滚到 5 步说明，焦点给它的 summary（不收起时给小标题）
+// “开始使用”卡第 2 步的“详细步骤”：切到“添加到 Chrome”（已在就不动 hash），展开默认组合一段和 5 步说明，
+// 滚到 5 步说明，焦点给它的 summary（不收起时给小标题）
 export function revealGuideSteps() {
+  showTab("add");
   const slot = document.getElementById("guide-steps");
   if (!slot) return;
   for (const id of ["guide-default", "guide-steps-details"]) {

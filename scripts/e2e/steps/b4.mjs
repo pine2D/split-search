@@ -60,6 +60,7 @@ export const B4 = {
             && document.getElementById("setup-grant")?.textContent`, 8000).catch(() => null);
         if (!label) return { status: "fail", detail: "清掉 setupDone、撤销 Google、Bing 授权后，设置页的“开始使用”卡没有显示第 1 步的授权按钮" };
         const problems = [];
+        if (!(await page.ev(`document.querySelector("#tabbtn-add[aria-selected=true]") !== null`))) problems.push("全新状态（卡片显示）打开设置页时应默认选中“添加到 Chrome”tab（#tabbtn-add）");
         if (!label.includes("Google") || !label.includes("Bing")) problems.push(`授权按钮应同时提到 Google 和 Bing，实际“${label}”`);
         // 引擎列表：只有默认左侧（Google）是警示样式，没授权的右侧（Bing）是中性样式
         const rows = await page.until(`const r = id => { const p = document.querySelector('.engine-row[data-id="' + id + '"] .perm');

@@ -18,12 +18,12 @@ export const isReordering = () => reordering;
 export function setupReorder({ render, flush }) {
   deps = { render, flush };
   const btn = $("engines-reorder");
-  btn.addEventListener("click", () => (reordering ? leave() : enter()));
+  btn.addEventListener("click", () => (reordering ? leaveReorder() : enter()));
   // 监听挂在整张引擎卡上：焦点在“完成”、上移 / 下移、“已隐藏”的“恢复”上按 Esc 都退出；模式外不处理
   btn.closest("section").addEventListener("keydown", (ev) => {
     if (ev.key !== "Escape" || !reordering || ev.defaultPrevented) return;
     ev.preventDefault();
-    leave();
+    leaveReorder();
   });
 }
 
@@ -35,11 +35,13 @@ function enter() {
   deps.render();
 }
 
-// 主动退出：焦点留在（或回到）卡头按钮上，它是静态 DOM，不随列表重建；不依赖 flushOrder 末尾的 render（没有待写排序时它不渲染）
-function leave() {
+// 主动退出：焦点留在（或回到）卡头按钮上，它是静态 DOM，不随列表重建；不依赖 flushOrder 末尾的 render（没有待写排序时它不渲染）。
+// 不在模式中时什么都不做。切走“搜索引擎”tab 时 options.js 以 focus: false 调用：退出并写出排序，不抢焦点
+export function leaveReorder({ focus = true } = {}) {
+  if (!reordering) return;
   reordering = false;
   syncHeader();
-  $("engines-reorder").focus();
+  if (focus) $("engines-reorder").focus();
   deps.flush();
   deps.render();
 }

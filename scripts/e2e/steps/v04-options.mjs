@@ -187,7 +187,7 @@ const B18 = {
     await ctx.ext.eval(`chrome.storage.sync.remove(${J(KEYS)}).then(() => true)`);
     return withOptions(ctx.browser, async page => summarize([
       await render(ctx, page), await lookup(ctx, page), await catalog(ctx, page), await remove(ctx, page), await custom(ctx, page),
-    ]));
+    ]), { tab: "lookup" });
   }),
 };
 

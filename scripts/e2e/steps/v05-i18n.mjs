@@ -27,7 +27,7 @@ const cardClip = page => page.ev(`(() => { const el = document.getElementById("p
 
 const rulesArea = (ctx, locale) => guarded(ctx, ["rightRules"], async () => {
   await ctx.ext.eval(`chrome.storage.sync.set({ rightRules: ${J(SAMPLE_RULES)} }).then(() => true)`);
-  const opt = await openOptions(ctx.browser);
+  const opt = await openOptions(ctx.browser, { tab: "pair" });
   try {
     await waitPage(opt, `document.documentElement.lang === ${J(htmlLang(locale))} && (() => { const d = ${BOX};
       return !!d && d.querySelector("summary").textContent.trim() === ${J(msgIn(locale, "options_rules_summary", SAMPLE_RULES.length))}

@@ -3,12 +3,16 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { OUT_DIR } from "../ext.mjs";
-import { sleep } from "./optpage.mjs";
+import { msgIn } from "../i18n.mjs";
+import { TAB_KEYS } from "../../../src/lib/options-route.js";
+import { sleep, showTab } from "./optpage.mjs";
 import { activate } from "./guided.mjs";
 
 const J = JSON.stringify;
 export const SHOT_DIR = join(OUT_DIR, "i18n");
 export const htmlLang = locale => locale.replace("_", "-");
+// 展开设置页所有折叠区（整页，含隐藏 tab 里的），返回个数
+export const OPEN_ALL = `document.querySelectorAll("details.disclosure").forEach(d => { d.open = true; }); document.querySelectorAll("details.disclosure").length`;
 
 // 页面自查：lang、文字仍是 key 的 [data-i18n]、页面横向溢出、按钮/label 内容溢出
 // 页面自查：原样显示的 key、横向溢出、元素内容溢出。scope 把查找限制在某个容器里（选择器前缀，带空格）；
@@ -89,3 +93,33 @@ export async function shoot(ctx, page, file, { full = false, clip = null, beyond
 }
 
 export const bodyClip = page => page.ev(`(() => { const r = document.body.getBoundingClientRect(); return { x: 0, y: 0, width: Math.ceil(r.width), height: Math.ceil(r.height), scale: 1 }; })()`);
+
+// 纯逻辑：s.visible 是 #panel-<key> 里 checkVisibility() 为 true 的后代个数。为 0 说明面板没显示出来，
+// 这时面板里的溢出检查全会静默通过（隐藏元素的 scrollWidth、clientWidth 都是 0），判失败
+export function tabAuditProblems(key, s) {
+  return s.visible > 0 ? [] : [`#panel-${key} 里没有看得见的元素（面板没显示出来，溢出检查不作数）`];
+}
+
+// 设置页四个 tab 逐一审（1280 宽）：页头与 tab 栏各审一次；每个 tab 切过去、确认面板看得见、审面板、截 <locale>-options-<key>.png；
+// 再展开所有折叠区（OPEN_ALL），逐个 tab 再审一遍、截 <locale>-options-<key>-open.png。走完停在最后一个 tab（④）
+export async function auditTabs(ctx, opt, locale) {
+  const problems = [], shots = [];
+  for (const [name, scope] of [["页头", ".page-head "], ["tab 栏", ".tabbar "]]) {
+    problems.push(...auditProblems(locale, await opt.ev(audit({ scope }))).map(p => `${name}：${p}`));
+  }
+  const name = key => `“${msgIn(locale, `options_tab_${key}`)}”tab`;
+  for (const open of [false, true]) {
+    if (open) await opt.ev(OPEN_ALL);
+    for (const key of TAB_KEYS) {
+      await showTab(opt, key);
+      if (!open) {
+        const visible = await opt.ev(`[...document.querySelectorAll(${J(`#panel-${key} *`)})].filter(el => el.checkVisibility()).length`);
+        problems.push(...tabAuditProblems(key, { visible }));
+      }
+      const found = auditProblems(locale, await opt.ev(audit({ scope: `#panel-${key} ` })));
+      problems.push(...found.map(p => `${name(key)}${open ? "（说明展开）" : ""}：${p}`));
+      shots.push(await shoot(ctx, opt, join(SHOT_DIR, `${locale}-options-${key}${open ? "-open" : ""}.png`), { full: true }));
+    }
+  }
+  return { problems, shots };
+}

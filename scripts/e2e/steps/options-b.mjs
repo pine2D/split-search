@@ -16,7 +16,7 @@ const OPTIONS_PREFIX = `chrome-extension://${EXT_ID}/options/`;
 // 弹窗里的“打开设置”：openOptionsPage 在已有设置页时只把它切到前台、不新开。所以先让设置页标签都退到后台
 // （在它所在的窗口里新开一个 site-x 标签），再点按钮：出现新的设置页目标，或某个设置页标签回到前台，都算打开了。
 // 返回 { problems, how }（how："new" 新开了设置页 | "activated" 已有的设置页回到前台）。made 收集新开的 site-x 标签 id，由 B2 收尾关掉
-async function openOptionsFromPopup(ctx, page, made) {
+export async function openOptionsFromPopup(ctx, page, made) {
   const J = JSON.stringify;
   const blank = siteX(ctx.port, `/b2-open-options?n=${nonce()}`);
   made.push(...await ctx.ext.eval(`(async () => {
@@ -114,7 +114,7 @@ const B6 = {
       if (stored) problems.push("引擎被错误地保存了");
       if (problems.length) return { status: "fail", detail: problems.join("；") };
       return { status: "pass", detail: `id 旁提示“${st.id}”，对话框仍打开，未保存` };
-    });
+    }, { tab: "engines" });
   },
 };
 
@@ -154,7 +154,7 @@ const B7 = {
         if (page.dialogs.length) problems.push(`不该弹 JS 对话框，实际弹了 ${page.dialogs.length} 个`);
         if (problems.length) return { status: "fail", detail: problems.join("；") };
         return { status: "pass", detail: `id 按网址自动生成 baidu（“高级”收起，字段顺序 名称、网址、id）；百度出现在列表末尾，状态是中性的“未授权（可选）”、授权按钮高亮，右下角有未授权提示；${del}；没有弹框` };
-      });
+      }, { tab: "engines" });
     } finally { /* 清理由 guarded 统一恢复 */ }
   },
 };
@@ -261,7 +261,7 @@ const B8 = {
         const failPrefix = msg("notice_copy_failed", "\0").split("\0")[0]; // 提示里错误详情之前的部分
         const err = await page.run(`return [...document.querySelectorAll("#notices .notice-text")].map(n => n.textContent).find(t => t.startsWith(${JSON.stringify(failPrefix)})) || ""`);
         return { status: "fail", detail: `网址正确，但按钮没有变为“${copiedText}”；${err ? "页面提示：" + err : "也没有出现复制失败提示"}` };
-      });
+      }, { tab: "add" });
     } finally { /* 清理由 guarded 统一恢复 */ }
   },
 };
@@ -284,7 +284,7 @@ const B11 = {
       if (JSON.stringify(before) !== JSON.stringify(after)) problems.push("存储被修改了");
       if (problems.length) return { status: "fail", detail: problems.join("；") };
       return { status: "pass", detail: `左侧 ea 改为 ${bad} 被拒绝：${st.url.slice(0, 60)}…；对话框仍打开，存储未变` };
-    });
+    }, { tab: "engines" });
   },
 };
 

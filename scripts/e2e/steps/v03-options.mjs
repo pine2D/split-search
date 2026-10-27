@@ -79,7 +79,7 @@ const subX = (name, fn) => sub(name, async () => {
 });
 
 async function withPage(ctx, fn) {
-  const page = await openOptions(ctx.browser);
+  const page = await openOptions(ctx.browser, { tab: "engines" });
   try { return await fn(page); } finally { await page.close(); }
 }
 const storedCustom = ctx => ctx.ext.eval(`chrome.storage.sync.get(["customEngines", "cycleExclude"])`);

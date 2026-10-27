@@ -28,7 +28,7 @@ const B13 = {
   async run({ browser, ext }) {
     let p1 = null, p2 = null;
     try {
-      p1 = await openOptions(browser);
+      p1 = await openOptions(browser, { tab: "engines" });
       const start = await orderOf(p1);
       if (start.length < 3) return { status: "fail", detail: `引擎少于 3 个：${start.join(",")}` };
       const problems = [];
@@ -97,7 +97,7 @@ const B13 = {
 
       // (5) p1 在模式中；另一页进入模式、把 x 上移一位、在 ↑ 上按 Esc 退出：p1 自动刷新且仍在模式中
       await setReorder(p1, true);
-      p2 = await openOptions(browser);
+      p2 = await openOptions(browser, { tab: "engines" });
       await setReorder(p2, true);
       await click(p2, x, "up");
       await p2.until(`return ids()[1] === ${J(x)}`);

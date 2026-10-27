@@ -57,7 +57,7 @@ const B10 = {
       for (const id of ["ddg", "ea"]) problems.push(...freeProblems(id, await probeEdit(page, id)));
       if (problems.length) return { status: "fail", detail: problems.join("；") };
       return { status: "pass", detail: `默认组合 ea｜eb：ea、eb 的“删除”aria-disabled、原因“${msg("engine_in_pair_delete")}”，点了没有效果（对话框不关、没有出错提示）；ec、ddg 可用。切到 Google｜Bing 后 google、bing 的“隐藏”同样不可用（原因“${msg("engine_in_pair_hide")}”），ddg、ea 可用（已还原默认组合）` };
-    });
+    }, { tab: "engines" });
   },
 };
 
@@ -82,7 +82,7 @@ async function reorderFocusProblems(browser, page, want) {
   let p2 = null;
   try {
     const btn = await page.run(`const b = [moveBtn("ddg", "down"), moveBtn("ddg", "up")].find(b => b && !b.disabled); b.focus(); return b.id;`);
-    p2 = await openOptions(browser);
+    p2 = await openOptions(browser, { tab: "engines" });
     await hideViaDialog(p2);
     await page.until(`return !row("ddg")`);
     if (!(await focusIs("engines-reorder"))) problems.push(`焦点在 #${btn} 上、另一页隐藏 ddg 后焦点应交给“完成”，实际 ${J(await focused())}`);
@@ -168,7 +168,7 @@ const B12 = {
       problems.push(...await reorderFocusProblems(browser, page, want));
       if (problems.length) return { status: "fail", detail: problems.join("；") };
       return { status: "pass", detail: `行上没有“隐藏”，“编辑”的无障碍名称是“${rowState.aria}”；在编辑对话框里隐藏 ddg 不弹框，提示“${want}”带“${undo.text}”且焦点在它上面，点了后 ddg 回到列表、焦点回到“编辑”；再隐藏后用“已隐藏”里的“恢复”同样回到列表；恢复后焦点交给 ddg 的“编辑”；调整顺序模式中点“撤销”、另一页隐藏焦点所在的行，焦点都交给“完成”，模式中“恢复”后焦点交给 ddg 的上移/下移、Esc 能退出；卡头按钮有焦点时可见引擎只剩 1 个，焦点交给“新增引擎”` };
-    });
+    }, { tab: "engines" });
   },
 };
 

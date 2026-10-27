@@ -267,7 +267,7 @@ const B20 = {
   run: ctx => guarded(ctx, ["customEngines", "rightRules", "presetOverrides"], async () => {
     await addCustom(ctx.ext, mockEngineD(ctx.port));
     await ctx.ext.eval(`chrome.storage.sync.remove("rightRules").then(() => true)`);
-    const page = await openOptions(ctx.browser);
+    const page = await openOptions(ctx.browser, { tab: "pair" });
     try { return summarize(await steps(ctx, page)); } finally { await page.close(); }
   }),
 };

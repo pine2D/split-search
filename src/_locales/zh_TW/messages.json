@@ -219,6 +219,34 @@
     "message": "在網址列搜尋，或把文字拖曳到分頁列，一次用兩個搜尋引擎開啟 Chrome 分割畫面。",
     "description": "One-line summary under the settings page heading."
   },
+  "options_tabs_label": {
+    "message": "設定分區",
+    "description": "Accessible name (aria-label) of the tab list at the top of the settings page; not shown on screen."
+  },
+  "options_tab_add": {
+    "message": "新增到 Chrome",
+    "description": "Name of the settings tab that explains how to add the trigger URL to Chrome; same wording as the card heading options_guide_title."
+  },
+  "options_tab_pair": {
+    "message": "搜尋組合",
+    "description": "Name of the settings tab with the default pair (left and right search engines) and the keyword rules."
+  },
+  "options_tab_engines": {
+    "message": "搜尋引擎",
+    "description": "Name of the settings tab with the search engine list and the keyboard shortcut; use Chrome's term for search engines."
+  },
+  "options_tab_lookup": {
+    "message": "右鍵查詢",
+    "description": "Name of the settings tab for right-click lookup (selected text and image search)."
+  },
+  "options_tab_todo": {
+    "message": "尚未完成",
+    "description": "Screen-reader-only text appended to the name of the \"Add to Chrome\" tab while setup is not finished; not shown on screen (a dot is shown instead)."
+  },
+  "options_tab_regrant": {
+    "message": "需要授權",
+    "description": "Screen-reader-only text appended to the name of the \"Add to Chrome\" tab when the left engine has lost its access; not shown on screen (a warning icon is shown instead)."
+  },
   "options_pair_title": {
     "message": "預設組合",
     "description": "Heading of the settings card where the user picks the default engine pair (left and right engine)."

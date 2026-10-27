@@ -16,7 +16,7 @@ body {
   font-family: system-ui, -apple-system, "Segoe UI", "PingFang TC", "Microsoft JhengHei", "Noto Sans CJK TC", sans-serif;
 }
 
-body.loading main { visibility: hidden; }
+body.loading .page { visibility: hidden; }
 
 .page { max-width: 780px; margin: 0 auto; padding: 28px 16px 64px; }
 .page-head {
@@ -350,3 +350,30 @@ dialog:focus { outline: none; }
   position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0;
   overflow: hidden; clip-path: inset(50%); white-space: nowrap;
 }
+
+/* ---- tab 栏（tabs.js）：照 Chrome 的 cr-tabs，纯文字加主色下划线；不吸顶、切换没有动画 ---- */
+.tabbar { border-bottom: 1px solid var(--border); margin: 0 0 16px; }
+/* overflow-x: auto 会把 overflow-y 也算成 auto：显式 hidden，经典滚动条下不冒竖向滚动条 */
+.tablist { display: flex; gap: 2px; padding-inline: 7px; overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; }
+/* 7 + tab 内边距 14 = 21px：第一个 tab 的文字和卡片正文左边对齐（卡片边框 1 + 内边距 20） */
+.tab {
+  flex: none; position: relative; display: inline-flex; align-items: center; gap: 6px;
+  font: inherit; font-size: 14px; font-weight: 500; line-height: 1.4; white-space: nowrap;
+  color: var(--muted); background: none; border: 0; border-radius: 6px 6px 0 0;
+  padding: 12px 14px 11px; cursor: pointer;
+}
+.tab:hover { color: var(--text); background: var(--code-bg); }
+.tab[aria-selected="true"] { color: var(--accent); }          /* 不改字重，切换时标签不变宽 */
+/* 下划线落在 tablist 内边距盒底边上、紧贴 .tabbar 的分隔线之上，不超出 tablist */
+.tab[aria-selected="true"]::after {
+  content: ""; position: absolute; left: 10px; right: 10px; bottom: 0; height: 3px;
+  border-radius: 3px 3px 0 0; background: var(--accent);
+}
+.tab:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+/* 空的 flag 不占 flex 项，① 不会因为 gap 比别的 tab 宽 6px、切档时也不跳 */
+.tab-flag { display: none; }
+.tab-flag.todo, .tab-flag.regrant { display: inline-flex; align-items: center; }
+.tab-flag.todo::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+.tab-flag.regrant { color: var(--warn); }
+@media (forced-colors: active) { .tab[aria-selected="true"]::after, .tab-flag.todo::before { background: Highlight; } }
+[role="tabpanel"]:focus-visible { outline: 2px solid var(--focus); outline-offset: 4px; border-radius: var(--radius); }
