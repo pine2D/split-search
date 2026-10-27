@@ -74,7 +74,7 @@ convert drag-to-tabstrip.png \
 |---|---|
 | `en/options-top.png` | 设置页首屏（英文界面，2026-10-27 第六次重拍，见下文“设置页三张的重拍”）：标题、语言下拉框、“Get started”卡（第 1 步“DuckDuckGo: access granted”，第 2 步的三个编号小步：`chrome://settings/searchEngines` 带“Copy address”、触发网址 `https://duckduckgo.com/?q=%s&_ss=ddg,bing` 带“Copy”、在 ⋮ 菜单里选“Make default”，第 3 步“Try it”）、“Default pair”卡开头的左右两个窗格 |
 | `en/options-engines.png` | 设置页滚动到“Search engines”卡片，卡片上缘在视口顶下约 8 CSS 像素（原图 y≈143）；卡头是“Reorder”“Add from catalog”“Add engine”；五个引擎都是“Access granted”和一个“Edit”按钮，DuckDuckGo、Bing 带“Default left/Default right”标签，行上没有轮换复选框和“不能隐藏”的说明，前四行等高；在 x=700 处，行分隔线在原图 y 333、412、492、571、650（2026-10-27 第六次重拍） |
-| `en/options-fullpage.png` | 设置页整页（CDP `Page.captureScreenshot`），2376×3972（2026-10-27 第六次重拍） |
+| `en/options-fullpage.png` | 设置页整页（CDP `Page.captureScreenshot`），2376×4041（2026-10-27 v0.5 重拍，见下文“设置页三张的重拍”） |
 | `en/split-ddg-bing-rust.png` | 新标签打开触发网址 `https://duckduckgo.com/?q=rust+programming&_ss=ddg,bing`，扩展建成 DuckDuckGo ｜ Bing 拆分视图；标签栏里是“Split Search settings”和两个分屏标签 |
 | `en/drag-to-tabstrip.png` | 英文维基百科“Rust (programming language)”，在正文“Software developer Graydon Hoare created Rust…”里选中“Graydon Hoare”（不是链接），用 xdotool 真实按下拖到标签栏空白处（落点 1460,30），没松手时截图。第一个标签旁同样有 Xvfb 下的黑底插入箭头（397,61），商店截图 3（v2）的裁切包含它，用 `en/patches/` 的修补图盖掉（见“修补”） |
 | `en/drag-result-split.png` | 松手后：默认搜索引擎（触发网址）打开新标签，扩展建成 DuckDuckGo ｜ Bing 拆分视图，查询词“Graydon Hoare” |
@@ -106,5 +106,7 @@ convert drag-to-tabstrip.png \
 商店截图 4 多出的一行空白（同日查明；第六次重拍后行上没有这行说明，四行等高，改回整块裁切，见下文）：DuckDuckGo、Bing 两行右侧多一行“不能隐藏”的说明，所以这两行比 Google、Kagi 高 38 原图像素；商店截图 4 和顶部宣传图的裁切都只到行的左半边，说明在画面外，整块裁切就在这两行的复选框下面各留一行空白。原因在模板的裁切，不在文案。改成按行分段裁切、上下紧接：DuckDuckGo 行与 Bing 行都切在复选框一行之后（与 Google 行同高），切掉的两条带在画面可见范围里是纯白，没有删掉任何看得见的内容（见 `assets/templates-v2/store-4-engines.html`、`promo-marquee.html` 的注释）。
 
 第六次重拍（2026-10-27，引擎行精简，设计见 `docs/superpowers/specs/2026-10-27-engine-row-design.md`）：引擎行上只剩授权状态、授权按钮（没授权时）和“Edit”，隐藏/删除挪进编辑对话框，轮换复选框挪到快捷键卡的“Shortcut rotation”折叠区，↑↓ 只在“Reorder”模式里出现，卡头多一个“Reorder”按钮，卡片说明换成新句子。三张 `en/options-*.png` 都用同一个脚本、同一套环境和状态重拍（私有 Xvfb :131、Chrome 156.0.8078.47、全新临时配置、五个预置引擎在授权框里点“允许”、没有 `setupDone`），扩展是当时 main 上的 `src/`（1db3f95）。`options-top.png` 与上一版只差右边滚动条滑块（整页变矮了）和文字抗锯齿，画面内容相同；`options-engines.png` 里行变矮、前四行等高（79 原图像素），分隔线在 y 333、412、492、571、650；`options-fullpage.png` 变成 2376×3972，快捷键卡多一个收起的“Shortcut rotation: 5 of 5 selected”。各行等高后不再需要分段裁切：商店截图 4 改成整块 `648,334,1120,316`（DuckDuckGo 到 Kagi 四行），顶部宣传图的 02 卡片改成整块 `640,334,678,158`（DuckDuckGo、Bing 两行），重新渲染后这两张图里的引擎行变矮、卡片随之变矮，渲染器没有报溢出。
+
+v0.5（2026-10-27，按关键词换右侧，设计见 `docs/superpowers/specs/2026-10-27-v0.5-keyword-routing-design.md`）：默认组合卡末尾多了收起的“Keyword rules for the right side”折叠区。用同一个脚本、同一套环境和状态（私有 Xvfb :131、Chrome 156.0.8078.47、全新临时配置、五个预置引擎在授权框里点“允许”、没有 `setupDone`）重拍了三张，扩展是 2f6faa6（v0.5.0）的 `src/`，只换了 `options-fullpage.png`：变成 2376×4041，默认组合卡里窄窗口复选框和说明之后多一行收起的规则区。`options-top.png` 的画面截到默认组合卡的左右窗格为止，规则区不在其中，新拍的与上一版只差右边滚动条滑块，保留上一版；`options-engines.png` 的引擎卡在 v0.5 没变，新拍的只有文字抗锯齿和不到 1 CSS 像素的滚动位置差，保留上一版。`--locale en` 重新渲染后商店图和 README 图逐字节不变（它们不用整页图）。
 
 每张都逐一看过：没有中文、没有账号头像（右上角是未登录的默认图标）、没有 Kagi 或其他网站的令牌、IP 和浏览历史。网页内容是网站当时实际返回的结果，没有改过。
