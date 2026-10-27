@@ -4,6 +4,7 @@
 import { PRESETS, ID_PATTERN, validateTemplate, mergeConfig, isIdTaken, engineOrigin, cleanIdList } from "../lib/engines.js";
 import { catalogUrl, uniqueId, isAdded } from "../lib/engine-catalog.js";
 import { spec, fail, errorKey } from "../lib/errors.js";
+import { dropRulesFor } from "./rule-edits.js";
 
 export const NAME_MAX = 40;
 
@@ -160,7 +161,11 @@ export function deleteEngine(raw, id) {
   if (Array.isArray(raw.cycleExclude) && raw.cycleExclude.includes(id)) {
     patch.cycleExclude = cleanIdList(raw.cycleExclude).filter(x => x !== id);
   }
-  return { ok: true, patch, ...dropLookup(raw, id) };
+  // 连带删掉指向它的关键词规则：同名重建会拿回同一个 id，留着的规则会悄悄指向新引擎
+  const { rules, dropped } = dropRulesFor(raw, id);
+  if (dropped && rules.length) patch.rightRules = rules;
+  const remove = [...(dropLookup(raw, id).remove ?? []), ...(dropped && !rules.length ? ["rightRules"] : [])];
+  return { ok: true, patch, ...(remove.length ? { remove } : {}), rulesDropped: dropped };
 }
 
 // null：回到跟随默认组合的右侧（删键）；否则必须是未隐藏的文字引擎

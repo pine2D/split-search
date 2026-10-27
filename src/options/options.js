@@ -7,6 +7,7 @@ import { write, act, actions, attention, bindActions, getPendingOrder, flushOrde
 import { setupReorder, isReordering } from "./reorder.js";
 import { renderLookupCard, setupLookupDialogs, refreshImageCatalog } from "./lookup.js";
 import { renderEngineList, renderHiddenList, setupEngineDialog } from "./engine-list.js";
+import { renderRules, setupRuleDialog } from "./rules.js";
 import { setupCatalogDialog, refreshCatalog } from "./catalog.js";
 import { renderShortcut, renderCycleList, SHORTCUT_BUTTON_ID } from "./shortcut.js";
 import { renderTriggers, renderGuideSteps, setupGuide } from "./guide.js";
@@ -187,6 +188,7 @@ function pairSection(cfg, byId, granted, setupShown) {
       ht("span", null, "options_left_not_granted", left.name),
       authButton([left], ["engine_grant_named", left.name], { cls: "btn btn-small btn-attention", onDone: render })));
   }
+  nodes.push(renderRules(cfg, actions)); // 按关键词换右侧：默认收起，放在最后
   return nodes;
 }
 
@@ -195,6 +197,7 @@ function pairSection(cfg, byId, granted, setupShown) {
 // 对话框和“复制地址”按钮要用 t()，等目录加载完再建；下面的监听只调 render()，render 自己 await i18nReady
 i18nReady.then(() => {
   setupEngineDialog(actions, () => current);
+  setupRuleDialog(actions, () => current);
   setupReorder({ render, flush: flushOrderNow });
   setupCatalogDialog(actions);
   setupLookupDialogs(actions);

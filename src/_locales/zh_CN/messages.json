@@ -553,6 +553,26 @@
     "message": "默认组合在用，不能删除。先在“默认组合”里换成别的引擎。",
     "description": "Visible reason under the unavailable Delete button in the edit engine dialog: the default pair uses this custom engine. The quoted card name must match options_pair_title."
   },
+  "engine_rules_used_preset": {
+    "message": "有 $N$ 条关键词规则用到它。隐藏后它们暂不生效。",
+    "description": "Edit-engine dialog in settings, for a preset engine (presets can only be hidden): shown when N (1 or more) keyword rules send the right side to this engine. N is the number of rules. Hiding the engine pauses those rules; they come back when the engine is restored.",
+    "placeholders": {
+      "N": {
+        "content": "$1",
+        "example": "2"
+      }
+    }
+  },
+  "engine_rules_used_custom": {
+    "message": "有 $N$ 条关键词规则用到它。删除引擎会一起删掉这些规则。",
+    "description": "Edit-engine dialog in settings, for a custom engine (custom engines can only be deleted): shown when N (1 or more) keyword rules send the right side to this engine. N is the number of rules. Deleting the engine deletes those rules too.",
+    "placeholders": {
+      "N": {
+        "content": "$1",
+        "example": "2"
+      }
+    }
+  },
   "engine_edit": {
     "message": "编辑",
     "description": "Button on an engine row that opens the edit dialog."
@@ -811,6 +831,20 @@
       }
     }
   },
+  "notice_deleted_with_rules": {
+    "message": "已删除“$ENGINE$”，以及用到它的 $N$ 条规则",
+    "description": "Notice after deleting a custom engine that keyword rules used; those rules were deleted with it. ENGINE is the engine name, N the number of deleted rules (1 or more).",
+    "placeholders": {
+      "ENGINE": {
+        "content": "$1",
+        "example": "Baidu"
+      },
+      "N": {
+        "content": "$2",
+        "example": "2"
+      }
+    }
+  },
   "notice_restored": {
     "message": "已恢复“$NAME$”",
     "description": "Notice after restoring a hidden preset engine.",
@@ -1064,6 +1098,250 @@
   "options_narrow_hint": {
     "message": "窗口宽度不到 960 像素时，拆分视图会太挤。勾选后，左侧结果留在你搜索的标签页，右侧结果在它旁边的标签页打开。",
     "description": "Hint under the narrow-window checkbox on the settings page, describing what happens when it is checked. Split view is Chrome's feature name; keep the Chrome term. Do not say \"this tab\": the reader is on the settings page."
+  },
+  "options_rules_title": {
+    "message": "按关键词换右侧",
+    "description": "Settings, Default pair card: title of the collapsed section with keyword rules (rules that switch the default pair's right engine when the search contains certain words or a writing system). Used when there are no rules."
+  },
+  "options_rules_summary": {
+    "message": "按关键词换右侧（$COUNT$ 条）",
+    "description": "Same as options_rules_title, with the number of rules (1 or more).",
+    "placeholders": {
+      "COUNT": {
+        "content": "$1",
+        "example": "2"
+      }
+    }
+  },
+  "options_rules_intro": {
+    "message": "搜索命中规则时，默认组合的右侧换成规则里的引擎，左侧不变。从上往下比，用第一条命中的。“其他组合”不受影响。",
+    "description": "Keyword rules section: what the rules do. “Other pairs” refers to the trigger URLs made for other pairs in the Add to Chrome card."
+  },
+  "options_rules_privacy": {
+    "message": "在本机判断，搜索词不会发到别处。规则里的词是你自己写的，和其他设置一样随 Chrome 同步。",
+    "description": "Keyword rules section: privacy note. Matching runs locally; the rules sync with the user's other settings through Chrome sync."
+  },
+  "options_rules_empty": {
+    "message": "还没有规则，右侧总是默认组合的右侧。",
+    "description": "Keyword rules section: shown when there are no rules."
+  },
+  "options_rules_words_row": {
+    "message": "有 $WORDS$",
+    "description": "Keyword rules list: start of a row for a word rule. WORDS is the rule's words joined with options_rules_word_sep. The row continues with a space and one of the options_rules_target* texts.",
+    "placeholders": {
+      "WORDS": {
+        "content": "$1",
+        "example": "mdn, css, js"
+      }
+    }
+  },
+  "options_rules_script_row": {
+    "message": "有$SCRIPT$",
+    "description": "Keyword rules list: start of a row for a writing-system rule. SCRIPT is the writing-system name (script_han, script_kana, script_hangul or script_cyrillic). The row continues with a space and one of the options_rules_target* texts.",
+    "placeholders": {
+      "SCRIPT": {
+        "content": "$1",
+        "example": "汉字"
+      }
+    }
+  },
+  "options_rules_word_sep": {
+    "message": "、",
+    "description": "Keyword rules list: separator between the words of one rule (inserted into options_rules_words_row). Include any space the language needs after it."
+  },
+  "options_rules_target": {
+    "message": "→ $ENGINE$",
+    "description": "Keyword rules list: end of a row, the engine the rule puts on the right side. ENGINE is the engine name (or the text of popup_engine_deleted).",
+    "placeholders": {
+      "ENGINE": {
+        "content": "$1",
+        "example": "MDN"
+      }
+    }
+  },
+  "options_rules_target_default": {
+    "message": "→ $ENGINE$（与默认组合的右侧相同）",
+    "description": "Keyword rules list: end of a row whose engine happens to be the default pair's current right engine. ENGINE is that engine's name.",
+    "placeholders": {
+      "ENGINE": {
+        "content": "$1",
+        "example": "Bing"
+      }
+    }
+  },
+  "options_rules_target_keep": {
+    "message": "→ 默认组合的右侧（现在是 $ENGINE$）",
+    "description": "Keyword rules list: end of a row for an exception rule, which keeps the default pair's right engine (and follows it if the default pair changes). ENGINE is the current right engine's name.",
+    "placeholders": {
+      "ENGINE": {
+        "content": "$1",
+        "example": "Bing"
+      }
+    }
+  },
+  "options_rules_off_hidden": {
+    "message": "暂不生效：$ENGINE$ 已隐藏",
+    "description": "Keyword rules list: shown under a rule that is paused because its engine is hidden. It works again once the engine is restored. ENGINE is the engine name.",
+    "placeholders": {
+      "ENGINE": {
+        "content": "$1",
+        "example": "DuckDuckGo"
+      }
+    }
+  },
+  "options_rules_off_missing": {
+    "message": "暂不生效：右侧引擎已删除",
+    "description": "Keyword rules list: shown under a rule that is paused because its engine no longer exists (deleted, or synced from another device without that engine)."
+  },
+  "options_rules_off_left": {
+    "message": "暂不生效：$ENGINE$ 是默认组合的左侧",
+    "description": "Keyword rules list: shown under a rule that is paused because its engine is now the default pair's left engine. ENGINE is the engine name.",
+    "placeholders": {
+      "ENGINE": {
+        "content": "$1",
+        "example": "Google"
+      }
+    }
+  },
+  "options_rules_shadowed": {
+    "message": "“$WORD$”已被第 $N$ 条用掉，这里不会命中",
+    "description": "Keyword rules list: shown under a rule when one of its words can never match, because an earlier rule already matches every search that has it. WORD is that word; N is the earlier rule's position, counting from 1.",
+    "placeholders": {
+      "WORD": {
+        "content": "$1",
+        "example": "js"
+      },
+      "N": {
+        "content": "$2",
+        "example": "1"
+      }
+    }
+  },
+  "options_rules_shadowed_rule": {
+    "message": "第 $N$ 条已经包括这条，这条不会命中",
+    "description": "Keyword rules list: shown under a writing-system rule that can never match, because an earlier rule checks the same writing system. N is the earlier rule's position, counting from 1.",
+    "placeholders": {
+      "N": {
+        "content": "$1",
+        "example": "1"
+      }
+    }
+  },
+  "options_rules_add": {
+    "message": "新增规则",
+    "description": "Keyword rules section: button that opens the dialog to add a rule."
+  },
+  "options_rules_edit": {
+    "message": "编辑",
+    "description": "Keyword rules list: button on each row that opens the rule dialog."
+  },
+  "options_rules_edit_aria": {
+    "message": "编辑第 $N$ 条规则",
+    "description": "Accessible name of options_rules_edit. Must start with the visible text of options_rules_edit. Position of the rule in the list, counting from 1.",
+    "placeholders": {
+      "N": {
+        "content": "$1",
+        "example": "2"
+      }
+    }
+  },
+  "options_rules_up": {
+    "message": "上移",
+    "description": "Keyword rules list: button that moves the rule up one position."
+  },
+  "options_rules_up_aria": {
+    "message": "上移第 $N$ 条规则",
+    "description": "Accessible name of options_rules_up. Must start with the visible text of options_rules_up. Position of the rule in the list, counting from 1.",
+    "placeholders": {
+      "N": {
+        "content": "$1",
+        "example": "2"
+      }
+    }
+  },
+  "options_rules_down": {
+    "message": "下移",
+    "description": "Keyword rules list: button that moves the rule down one position."
+  },
+  "options_rules_down_aria": {
+    "message": "下移第 $N$ 条规则",
+    "description": "Accessible name of options_rules_down. Must start with the visible text of options_rules_down. Position of the rule in the list, counting from 1.",
+    "placeholders": {
+      "N": {
+        "content": "$1",
+        "example": "2"
+      }
+    }
+  },
+  "options_rules_delete": {
+    "message": "删除规则",
+    "description": "Rule dialog (edit mode only): button that deletes the rule. Needs a second click to confirm."
+  },
+  "options_rules_delete_confirm": {
+    "message": "确认删除？",
+    "description": "Rule dialog: text of the delete button after the first click; clicking again deletes the rule."
+  },
+  "options_rules_delete_hint": {
+    "message": "再点一次就会删除这条规则。",
+    "description": "Rule dialog: status line shown (and read by screen readers) after the first click on the delete button."
+  },
+  "options_rules_dialog_add": {
+    "message": "新增规则",
+    "description": "Title of the rule dialog when adding a rule."
+  },
+  "options_rules_dialog_edit": {
+    "message": "编辑规则",
+    "description": "Title of the rule dialog when editing a rule."
+  },
+  "options_rules_when_legend": {
+    "message": "什么时候换右侧",
+    "description": "Rule dialog: label of the group of two radio buttons that choose the rule's condition."
+  },
+  "options_rules_when_words": {
+    "message": "搜索里有这些词",
+    "description": "Rule dialog: radio button, the rule matches when the search contains one of the listed words."
+  },
+  "options_rules_when_script": {
+    "message": "搜索里有某种文字",
+    "description": "Rule dialog: radio button, the rule matches when the search contains at least one character of a chosen writing system."
+  },
+  "options_rules_words_label": {
+    "message": "词",
+    "description": "Rule dialog: label of the words field."
+  },
+  "options_rules_words_hint": {
+    "message": "用逗号分隔，例如：天气, weather。不分大小写和全角半角；英文按整词算，js 不会命中 jsonl。",
+    "description": "Rule dialog: hint under the words field. The example words are typed by the user, so they may be translated; keep the js/jsonl example as is."
+  },
+  "options_rules_script_label": {
+    "message": "文字",
+    "description": "Rule dialog: label of the writing-system dropdown (options are script_han, script_kana, script_hangul, script_cyrillic). Use the same word as err_rule_script."
+  },
+  "options_rules_script_hint": {
+    "message": "有一个这种字符就算，所以中文搜索几乎都会命中。日文搜索常带汉字，“日文假名”要排在“汉字”前面。",
+    "description": "Rule dialog: hint under the writing-system dropdown. Use the same names as script_kana and script_han."
+  },
+  "options_rules_engine_label": {
+    "message": "右侧用",
+    "description": "Rule dialog: label of the dropdown that chooses the engine for the right side."
+  },
+  "options_rules_engine_keep": {
+    "message": "默认组合的右侧（不换）",
+    "description": "Rule dialog, engine dropdown: option that makes the rule an exception and keeps the default pair's right engine (it follows the default pair if that changes)."
+  },
+  "options_rules_engine_pick": {
+    "message": "选一个引擎",
+    "description": "Rule dialog, engine dropdown: empty placeholder option shown until the user chooses an engine."
+  },
+  "options_rules_engine_hidden": {
+    "message": "$ENGINE$（已隐藏）",
+    "description": "Rule dialog, engine dropdown: extra option for the rule's current engine when that engine is hidden (only while editing that rule). ENGINE is the engine name.",
+    "placeholders": {
+      "ENGINE": {
+        "content": "$1",
+        "example": "DuckDuckGo"
+      }
+    }
   },
   "notice_narrow_saved": {
     "message": "已保存窄窗口设置。",
@@ -1540,6 +1818,24 @@
   "notice_image_engine_saved": {
     "message": "以图搜图引擎已保存。",
     "description": "Notice after choosing the image search engine."
+  },
+  "notice_rule_saved": {
+    "message": "规则已保存",
+    "description": "Notice after adding or editing a keyword rule in settings."
+  },
+  "notice_rule_deleted": {
+    "message": "规则已删除",
+    "description": "Notice after deleting a keyword rule in settings."
+  },
+  "notice_rule_moved": {
+    "message": "已移到第 $N$ 条",
+    "description": "Notice (read by screen readers) after moving a keyword rule up or down. N is the rule's new position, counting from 1.",
+    "placeholders": {
+      "N": {
+        "content": "$1",
+        "example": "2"
+      }
+    }
   },
   "menu_lookup_text": {
     "message": "在拆分视图中用 $ENGINE$ 搜索“%s”",

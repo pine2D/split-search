@@ -1,5 +1,6 @@
 import { test, beforeEach } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 
 // write() 的写入结果要如实：先写 patch、再删键是两次写入，删键失败时 patch 可能已经落地。
 // chrome.storage.sync 用内存桩；fail.<name> 为 true 时对应调用抛错，ghost 为 true 时 remove 抛错但其实删掉了。
@@ -22,7 +23,45 @@ globalThis.chrome = {
     },
   },
 };
-const { write, saveFailure } = await import("../src/options/actions.js");
+// act 的成功提示经 notify 写进 #notices：给 t() 装上真实的 en 目录，给 notify 一个只记文字的极简 DOM
+class FakeNode {
+  constructor() { this.children = []; this.attrs = {}; }
+  append(...c) { this.children.push(...c); }
+  setAttribute(k, v) { this.attrs[k] = v; }
+  getAttribute(k) { return this.attrs[k] ?? null; }
+  addEventListener() {}
+  remove() { this.removed = true; }
+  matches() { return false; }
+  contains() { return false; }
+  get textContent() { return this.children.map(c => c.textContent ?? "").join(""); }
+}
+class FakeText extends FakeNode {
+  constructor(s) { super(); this.text = s; }
+  get textContent() { return this.text; }
+}
+const notices = new FakeNode();
+globalThis.Node = FakeNode;
+globalThis.document = {
+  documentElement: { lang: "" },
+  activeElement: null,
+  getElementById: (id) => (id === "notices" ? notices : null),
+  createElement: () => new FakeNode(),
+  createElementNS: () => new FakeNode(),
+  createTextNode: (s) => new FakeText(s),
+};
+chrome.runtime = { getURL: (p) => `chrome-extension://test-id/${p}` };
+chrome.i18n = { getUILanguage: () => "en-US" };
+globalThis.fetch = async (url) => {
+  const m = /_locales\/([^/]+)\/messages\.json$/.exec(url);
+  const text = readFileSync(new URL(`../src/_locales/${m[1]}/messages.json`, import.meta.url), "utf8");
+  return { ok: true, json: async () => JSON.parse(text) };
+};
+// 提示自动消失的计时器不拖住测试进程
+const realSetTimeout = globalThis.setTimeout;
+globalThis.setTimeout = (fn, ms, ...args) => { const h = realSetTimeout(fn, ms, ...args); h.unref?.(); return h; };
+
+const { write, saveFailure, act } = await import("../src/options/actions.js");
+const { setLocale, t } = await import("../src/chrome/i18n.js");
 
 beforeEach(() => {
   store = new Map([["imageEngine", "bing-img"], ["imageEngines", [{ id: "bing-img" }]]]);
@@ -88,4 +127,24 @@ test("write：一次失败不会让后面的写入卡住", async () => {
   await write(deleteImage).catch(() => {});
   fail.set = false;
   assert.deepEqual(await write(deleteImage), deleteImage());
+});
+
+test("act：ok 是函数时用 compute 的结果算提示；返回 null 就不提示", async () => {
+  await setLocale("en");
+  notices.children = [];
+  const seen = [];
+  const result = await act(() => ({ ok: true, patch: { order: ["bing"] }, position: 3 }),
+    (r) => { seen.push(r); return ["notice_rule_moved", r.position]; });
+  assert.equal(seen.length, 1);
+  assert.equal(seen[0], result);
+  assert.deepEqual(notices.children.map(n => n.textContent), [t("notice_rule_moved", 3)]);
+  await act(() => ({ ok: true, patch: null }), () => null);
+  assert.equal(notices.children.length, 1);
+  // 固定的 LabelSpec 照旧
+  await act(() => ({ ok: true, patch: null }), ["notice_rule_deleted"]);
+  assert.deepEqual(notices.children.map(n => n.textContent).slice(1), [t("notice_rule_deleted")]);
+  // compute 失败时不调 ok
+  let called = false;
+  await act(() => ({ ok: false, error: { code: "rule_gone", args: [] } }), () => { called = true; return null; });
+  assert.equal(called, false);
 });

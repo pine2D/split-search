@@ -299,3 +299,40 @@ test("siblingMoveId：move-up-x 与 move-down-x 互换，其他 id 返回 null",
   assert.equal(siblingMoveId(""), null);
   assert.equal(siblingMoveId(undefined), null);
 });
+
+// v0.5：删除自定义引擎连带删掉指向它的关键词规则（keep 规则不算），提示里带条数
+const ec5 = { id: "ec", name: "Engine C", url: "https://c.example/search?q=%s" };
+const ed5 = { id: "ed", name: "Engine D", url: "https://d.example/?q=%s" };
+const ruleTo = (id, engine) => ({ id, when: "words", words: [id], engine });
+test("deleteEngine：去掉指向它的规则，返回 rulesDropped", () => {
+  const raw = { customEngines: [ec5, ed5], rightRules: [ruleTo("r1", "ed"), ruleTo("r2", "ec"), ruleTo("r3", "ed")] };
+  const r = deleteEngine(raw, "ed");
+  assert.equal(r.ok, true);
+  assert.deepEqual(r.patch.rightRules, [ruleTo("r2", "ec")]);
+  assert.equal(r.rulesDropped, 2);
+  assert.equal(r.remove, undefined);
+});
+test("deleteEngine：没有规则用到它时不写 rightRules，rulesDropped 为 0", () => {
+  const raw = { customEngines: [ec5, ed5], rightRules: [ruleTo("r1", "ec"), { id: "r2", when: "words", words: ["x"], keep: true }] };
+  const r = deleteEngine(raw, "ed");
+  assert.equal(r.rulesDropped, 0);
+  assert.ok(!Object.hasOwn(r.patch, "rightRules"));
+  assert.equal(r.remove, undefined);
+  assert.equal(deleteEngine({ customEngines: [ec5] }, "ec").rulesDropped, 0);
+});
+test("deleteEngine：规则删光时 remove 含 rightRules，与 lookupEngine 合并", () => {
+  const raw = { customEngines: [ec5, ed5], rightRules: [ruleTo("r1", "ed"), ruleTo("r2", "ed")] };
+  const r = deleteEngine(raw, "ed");
+  assert.deepEqual(r.remove, ["rightRules"]);
+  assert.ok(!Object.hasOwn(r.patch, "rightRules"));
+  assert.equal(r.rulesDropped, 2);
+  const both = deleteEngine({ ...raw, lookupEngine: "ed" }, "ed");
+  assert.deepEqual([...both.remove].sort(), ["lookupEngine", "rightRules"]);
+});
+test("deleteEngine：默认组合在用时仍先报 pair_uses_delete，不碰规则", () => {
+  const raw = { customEngines: [ec5, ed5], defaultPair: ["google", "ed"], rightRules: [ruleTo("r1", "ed")] };
+  const r = deleteEngine(raw, "ed");
+  assert.equal(r.ok, false);
+  assert.equal(r.error.code, "pair_uses_delete");
+  assert.equal(r.rulesDropped, undefined);
+});

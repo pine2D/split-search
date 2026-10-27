@@ -6,6 +6,7 @@ import { suggestId, takenIn } from "../lib/engine-id.js";
 import { t, setI18nText } from "../chrome/i18n.js";
 import { icon } from "../ui/icons.js";
 import { isReordering, syncReorder, moveButtons } from "./reorder.js";
+import { countRulesFor } from "./rule-edits.js";
 
 // ctx: { cfg, granted: Map<id, boolean>, attention: Set<id>, actions, refresh }
 export function renderEngineList(ctx) {
@@ -211,12 +212,22 @@ function showDangerZone(engine, preset) {
     b.removeAttribute("aria-disabled");
     b.removeAttribute("aria-describedby");
   }
+  showRulesHint(engine, preset);
   const inPair = !!target && (currentCfg()?.defaultPair ?? []).includes(engine.id);
   reason.hidden = !inPair;
   if (!inPair) return clearI18nText(reason);
   target.setAttribute("aria-disabled", "true");
   target.setAttribute("aria-describedby", "dlg-remove-reason");
   setI18nText(reason, preset ? "engine_in_pair_hide" : "engine_in_pair_delete");
+}
+
+// 有 N 条关键词规则用到这个引擎时写条数：预置引擎只能隐藏（规则暂不生效），自定义引擎只能删除（规则一起删）；keep 规则不算
+function showRulesHint(engine, preset) {
+  const el = field("rules-hint");
+  const n = engine ? countRulesFor(currentCfg(), engine.id) : 0;
+  el.hidden = n === 0;
+  if (n) setI18nText(el, preset ? "engine_rules_used_preset" : "engine_rules_used_custom", n);
+  else clearI18nText(el);
 }
 
 function showTemplateHint(url) {

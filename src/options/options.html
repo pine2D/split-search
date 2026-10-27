@@ -178,11 +178,54 @@
           <button type="button" id="dlg-hide" class="btn" data-i18n="engine_hide" hidden></button>
           <button type="button" id="dlg-delete" class="btn btn-danger" data-i18n="engine_delete" hidden></button>
           <p id="dlg-remove-reason" class="hint" hidden></p>
+          <!-- 有关键词规则用到这个引擎时写条数（engine-list.js 的 showDangerZone） -->
+          <p id="dlg-rules-hint" class="hint" hidden></p>
           <!-- 删除第一次点击后的提醒（confirmStep 的 onArm 写入、复原时清空）；一直留在无障碍树里，写入时才会被播报 -->
           <p id="dlg-delete-hint" class="hint hint-warn" role="status"></p>
         </div>
         <button type="button" id="dlg-cancel" class="btn" data-i18n="common_cancel"></button>
         <button type="submit" id="dlg-save" class="btn btn-primary" data-i18n="common_save"></button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- 关键词规则的新增 / 编辑（rules.js 的 setupRuleDialog）。切换单选只切换两个字段的 hidden，两边的值都保留 -->
+  <dialog id="rule-dialog" aria-labelledby="rule-dlg-title">
+    <form id="rule-form" novalidate>
+      <h2 id="rule-dlg-title"></h2>
+      <fieldset class="rule-when">
+        <legend data-i18n="options_rules_when_legend"></legend>
+        <label class="check-row"><input type="radio" id="rule-when-words" name="when" value="words" checked>
+          <span data-i18n="options_rules_when_words"></span></label>
+        <label class="check-row"><input type="radio" id="rule-when-script" name="when" value="script">
+          <span data-i18n="options_rules_when_script"></span></label>
+      </fieldset>
+      <div id="rule-words-field" class="field">
+        <label for="rule-words" data-i18n="options_rules_words_label"></label>
+        <input id="rule-words" name="words" type="text" autocomplete="off" spellcheck="false" aria-describedby="rule-words-hint">
+        <p id="rule-words-hint" class="hint" data-i18n="options_rules_words_hint"></p>
+        <p class="field-error" data-for="words" hidden></p>
+      </div>
+      <div id="rule-script-field" class="field" hidden>
+        <label for="rule-script" data-i18n="options_rules_script_label"></label>
+        <select id="rule-script" name="script" aria-describedby="rule-script-hint"></select>
+        <p id="rule-script-hint" class="hint" data-i18n="options_rules_script_hint"></p>
+        <p class="field-error" data-for="script" hidden></p>
+      </div>
+      <div class="field">
+        <label for="rule-engine" data-i18n="options_rules_engine_label"></label>
+        <select id="rule-engine" name="engine"></select>
+        <p class="field-error" data-for="engine" hidden></p>
+      </div>
+      <p class="field-error" data-for="form" hidden></p>
+      <div class="dialog-actions">
+        <!-- 只在编辑时显示；删除要点两次，第一次点击的提醒写进 #rule-dlg-delete-hint（模态对话框外的 #notices 是 inert） -->
+        <div id="rule-dlg-danger" class="dlg-danger" hidden>
+          <button type="button" id="rule-dlg-delete" class="btn btn-danger" data-i18n="options_rules_delete" hidden></button>
+          <p id="rule-dlg-delete-hint" class="hint hint-warn" role="status"></p>
+        </div>
+        <button type="button" id="rule-dlg-cancel" class="btn" data-i18n="common_cancel"></button>
+        <button type="submit" id="rule-dlg-save" class="btn btn-primary" data-i18n="common_save"></button>
       </div>
     </form>
   </dialog>

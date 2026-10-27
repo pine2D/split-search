@@ -7,6 +7,7 @@ import {
   setLookupEngine,
 } from "./edits.js";
 import { addImageEngine, addImageFromCatalog, deleteImageEngine, setImageEngine } from "./image-edits.js";
+import { addRule, editRule, moveRule, removeRule, moveNotice, removeNotice } from "./rule-edits.js";
 import { isReordering } from "./reorder.js";
 import { currentLocale, t } from "../chrome/i18n.js";
 
@@ -60,12 +61,15 @@ export function saveFailure(err) {
 }
 const failText = (err) => t(saveFailure(err).key, errorText(err));
 
-// ok 是成功提示的 LabelSpec（[key, ...subs]），null 表示不提示
+// ok 是成功提示的 LabelSpec（[key, ...subs]），或按 compute 的结果算 LabelSpec 的函数；null 表示不提示
 export async function act(compute, ok) {
   try {
     const result = await write(compute);
     if (!result.ok) notify(result.error ? errorText(result.error) : t("notice_action_failed"), "error");
-    else if (ok) notify(t(...ok));
+    else {
+      const label = typeof ok === "function" ? ok(result) : ok;
+      if (label) notify(t(...label));
+    }
     return result;
   } catch (err) {
     notify(failText(err), saveFailure(err).level);
@@ -110,6 +114,16 @@ async function saveImage(compute, okKey) {
   return result;
 }
 
+// 关键词规则的新增 / 编辑：校验错误交给对话框；成功后等重渲染完再返回，对话框据此把焦点交给这一行的“编辑”
+async function saveRule(compute) {
+  let result;
+  try { result = await write(compute); } catch (err) { return { ok: false, errors: { form: failText(err) } }; }
+  if (!result.ok) return result;
+  notify(t("notice_rule_saved"));
+  await (lastRender = Promise.resolve(render()).catch(() => {}));
+  return result;
+}
+
 export const actions = {
   add: (input) => saveEngine(raw => addEngine(raw, input), "notice_added"),
   edit: (id, input) => saveEngine(raw => editEngine(raw, id, input), "notice_saved"),
@@ -125,7 +139,8 @@ export const actions = {
   },
   // 删除按钮自己要点两次（编辑对话框里，engine-list.js），这里不再确认；删掉后焦点交给相邻的一行
   remove: (e) => deleteWithFocus(ENGINE_LIST, e.id, "add-engine",
-    () => act(raw => deleteEngine(raw, e.id), ["notice_deleted", e.name])),
+    () => act(raw => deleteEngine(raw, e.id),
+      r => (r.rulesDropped ? ["notice_deleted_with_rules", e.name, r.rulesDropped] : ["notice_deleted", e.name]))),
   restore: (e) => act(raw => restoreEngine(raw, e.id), ["notice_restored", e.name]),
   // 勾选框本身就是反馈，成功不弹提示；失败照常提示，重渲染后开关退回已保存的状态
   setCycle: (id, included) => act(raw => setCycle(raw, id, included), null),
@@ -134,6 +149,11 @@ export const actions = {
   setImageEngine: (id) => act(raw => setImageEngine(raw, id), ["notice_image_engine_saved"]),
   addImageEngine: (input) => saveImage(raw => addImageEngine(raw, input), "notice_added"),
   addImageFromCatalog: (entry) => act(raw => addImageFromCatalog(raw, entry), ["notice_catalog_added", entry.name]),
+  // 关键词规则（rules.js）：上移 / 下移立即写；删除在规则对话框里点两次，删后焦点交给相邻行的“编辑”
+  addRule: (form) => saveRule(raw => addRule(raw, form)),
+  editRule: (id, form) => saveRule(raw => editRule(raw, id, form)),
+  moveRule: (id, delta) => act(raw => moveRule(raw, id, delta), moveNotice),
+  removeRule: (id) => deleteWithFocus(RULE_LIST, id, "rule-add", () => act(raw => removeRule(raw, id), removeNotice)),
   deleteImageEngine: (e) => deleteWithFocus(IMAGE_LIST, e.id, "image-add-open",
     () => act(raw => deleteImageEngine(raw, e.id), ["notice_deleted", e.name])),
   // 返回移动后的顺序（“调整顺序”模式据此播报位置），没动时返回 null。base 经 reconcileOrder 对齐当前可见引擎：
@@ -155,6 +175,7 @@ export const actions = {
 // list：列表选择器；actions：行里放操作按钮的那一块（文字引擎是 .row-actions，只有编辑按钮）
 const ENGINE_LIST = { list: "#engines .engine-list", actions: ".row-actions" };
 const IMAGE_LIST = { list: "#lookup-body .engine-list", actions: ".engine-side" };
+const RULE_LIST = { list: "#rule-list", actions: ".row-actions" };
 
 // 删除成功后这一行没了，焦点不能落回 body：等列表重建后交给相邻一行（优先下一行）里第一个可用的按钮，
 // 没有相邻行（或那一行没有可用按钮，如内置的 Google Lens）就交给 fallbackId（该列表的添加按钮）

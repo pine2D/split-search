@@ -201,19 +201,28 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 .steps li, .caveats li { margin: 6px 0; }
 
 /* ---- 引擎列表 ---- */
-.engine-list { list-style: none; margin: 10px 0 0; padding: 0; border-top: 1px solid var(--border); }
-.engine-row {
+.engine-list, .rule-list { list-style: none; margin: 10px 0 0; padding: 0; border-top: 1px solid var(--border); }
+.engine-row, .rule-row {
   display: flex; gap: 16px; align-items: flex-start; justify-content: space-between; flex-wrap: wrap;
   padding: 12px 4px;
   border-bottom: 1px solid var(--border);
 }
-.engine-main { flex: 1 1 300px; min-width: 0; }
+.engine-main, .rule-main { flex: 1 1 300px; min-width: 0; }
 .engine-title { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .tag { white-space: nowrap; }
 .engine-name { font-size: 15px; }
 .engine-id { color: var(--muted); }
 .engine-url { color: var(--muted); overflow-wrap: anywhere; margin-top: 2px; }
 .engine-side { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+/* 关键词规则行（rules.js）：编辑、上移、下移排成一行；条件与目标、暂不生效、被挡住的词各占一行 */
+.rule-side { display: flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+.rule-main { display: flex; flex-direction: column; gap: 2px; }
+.rule-text { overflow-wrap: anywhere; }
+.rule-off { display: inline-flex; align-items: center; gap: 4px; font-size: 12.5px; color: var(--warn); }
+.rule-off .icon { flex: none; }
+.rule-shadow { font-size: 12.5px; color: var(--muted); overflow-wrap: anywhere; }
+#rule-add { margin-top: 10px; }
+#rule-empty { margin: 10px 0 0; }
 .perm-line, .row-actions, .row-move { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
 /* 文字引擎行：状态、授权、编辑排成一行（以图搜图列表也用 .engine-side，不受影响） */
 #engines .engine-side { flex-direction: row; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 6px 10px; }
@@ -238,6 +247,7 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 
 @media (max-width: 560px) {
   .engine-side { align-items: flex-start; }
+  .rule-side { justify-content: flex-start; }
   #engines .engine-side { justify-content: flex-start; }
   .perm-line, .row-actions, .row-move { justify-content: flex-start; }
 }
@@ -268,7 +278,11 @@ dialog:focus { outline: none; }
   margin-inline-end: auto; flex: 1 1 220px;
   display: flex; flex-direction: column; align-items: flex-start; gap: 4px;
 }
-#dlg-remove-reason, #dlg-delete-hint { margin: 0; font-size: 12px; max-width: 40ch; }
+#dlg-remove-reason, #dlg-delete-hint, #dlg-rules-hint, #rule-dlg-delete-hint { margin: 0; font-size: 12px; max-width: 40ch; }
+.rule-when { border: 0; margin: 12px 0 0; padding: 0; }
+.rule-when legend { padding: 0; margin-bottom: 4px; font-weight: 600; }
+.rule-when .check-row { margin-top: 6px; }
+#rule-dialog select { max-width: 100%; }
 
 /* ---- 提示 ---- */
 .notices {
