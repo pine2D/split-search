@@ -864,7 +864,7 @@
     "description": "Sentence shown right after notice_added / notice_saved when the engine's site is not granted yet. The quoted button is engine_grant."
   },
   "notice_template_changed": {
-    "message": "「$NAME$」的網址已修改。左側使用它的網站搜尋需要新的觸發網址：請到「新增到 Chrome」重新複製，再到 Chrome 設定中取代那筆網站搜尋的網址。",
+    "message": "「$NAME$」的網址已修改。把它當作左側引擎的網站搜尋，需要換成新的觸發網址：請到「新增到 Chrome」重新複製，再到 Chrome 設定中取代那筆網站搜尋的網址。",
     "description": "Sticky notice after an engine's URL changed: site searches that use it on the left need the trigger URL copied again from the Add to Chrome tab and replaced in Chrome's settings. The quoted tab name must match options_tab_add exactly.",
     "placeholders": {
       "NAME": {
