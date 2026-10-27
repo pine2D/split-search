@@ -4,7 +4,8 @@
 // (d) 撤销左侧（模拟引擎 A）授权后卡片重新出现、只有第 1 步，恢复授权后消失。
 // 第 2 步拆成三个编号小步（先复制设置地址，再复制触发网址，最后设为默认），(a) 核对每步只带自己的复制按钮。
 // 卡片显示时“添加到 Chrome”卡的默认组合一段和 5 步说明都收在默认收起的 <details> 里，(c) 重新打开后卡片不显示时照常显示
-// （def、guideSteps）；(a) 最后点第 2 步的“详细步骤”，两段都展开、焦点落在 5 步说明的 summary 上。
+// （def、guideSteps）；(a) 最后点第 2 步的“详细步骤”，两段都展开、滚到 5 步说明、hash 不变、焦点落在 5 步说明的 summary 上，
+// 之后一次无关的重渲染（临时 sync 键）不重建折叠区、不丢复制按钮上的焦点。
 // 弹窗分屏外的三档（src/lib/popup-view.js 的 idleView）跟着走（子项在 b19-popup.mjs）：(a') try 档（左侧已授权、setupDone 没写），
 // 先关掉所有设置页再点“查看第 2 步”，退回新开 options.html#setup，焦点落在卡片标题；(e) ready 档（setupDone 为 true），
 // 这时直接打开 #setup 卡片不显示、焦点不动；(d) 撤销左侧授权后是 setup 档（只有“完成设置”，不显示说明文字和页脚），
@@ -116,17 +117,58 @@ async function shown(page) {
   return verdictOf(problems, `${fmt(c)}；第 2 步 3 个小步，复制按钮 ${subs.map(x => x.buttons).join("/")}；${link.detail}`);
 }
 
-// 第 2 步的“详细步骤”：点了以后默认组合一段和 5 步说明都展开，焦点落在 5 步说明的 summary 上（会改这一页的展开状态，放在 (a) 最后）
+// 第 2 步的“详细步骤”：点了以后默认组合一段和 5 步说明都展开，页面滚到 5 步说明（容器顶边在视口内），网址的 hash 不变，
+// 焦点落在 5 步说明的 summary 上（会改这一页的展开状态，放在 (a) 最后）。之后把焦点放到折叠区里第 1 步的复制按钮上，
+// 写一个临时的 sync 键触发一次重渲染，核对折叠区没被重建、焦点还在那个按钮上
 async function detailsLink(page) {
+  const hashBefore = await page.ev("location.hash");
   if (!(await page.ev(`(() => { const a = document.querySelector('#setup [data-step="add"] a.step-link'); if (!a) return false; a.click(); return true; })()`))) {
     return { p: ["第 2 步没有“详细步骤”链接"], detail: "" };
   }
-  let c;
   try {
-    c = await waitCard(page, c => c.def === "open" && c.guideSteps === "open", "点“详细步骤”后两段都展开", 3000);
+    await waitCard(page, c => c.def === "open" && c.guideSteps === "open", "点“详细步骤”后两段都展开", 3000);
   } catch (e) { return { p: [e.message], detail: "" }; }
-  const focus = await page.ev(`(() => { const a = document.activeElement; return a?.tagName === "SUMMARY" && !!a.closest("#guide-steps-details"); })()`);
-  return { p: focus ? [] : ["点“详细步骤”后焦点应落在 5 步说明的 summary 上"], detail: "“详细步骤”展开了默认组合一段和 5 步说明，焦点在 summary" };
+  const after = await page.ev(`(() => { const a = document.activeElement, r = document.getElementById("guide-steps").getBoundingClientRect();
+    return { focus: a?.tagName === "SUMMARY" && !!a.closest("#guide-steps-details"), hash: location.hash, top: Math.round(r.top), vh: innerHeight }; })()`);
+  const p = [];
+  if (!after.focus) p.push("点“详细步骤”后焦点应落在 5 步说明的 summary 上");
+  if (after.hash !== hashBefore) p.push(`点“详细步骤”不该改网址的 hash：之前 ${J(hashBefore)}，之后 ${J(after.hash)}`);
+  if (after.top < -2 || after.top >= after.vh) p.push(`点“详细步骤”后 5 步说明的顶边应在视口内：top ${after.top}，视口高 ${after.vh}`);
+  const keep = await keepsFocus(page);
+  p.push(...keep.p);
+  return { p, detail: `“详细步骤”展开了默认组合一段和 5 步说明，焦点在 summary，hash 不变（${J(after.hash)}），5 步说明顶边 ${after.top}px；${keep.detail}` };
+}
+
+const PROBE = "e2eB19Probe";
+async function keepsFocus(page) {
+  const ok = await page.ev(`(() => { const b = document.querySelector("#guide-steps-details #settings-url-copy button");
+    const e = document.getElementById("engines").firstElementChild;
+    if (!b || !e) return false; b.focus(); document.getElementById("guide-steps-details").__b19 = 1; e.__b19 = 1;
+    return document.activeElement === b; })()`);
+  if (!ok) return { p: ["折叠区里第 1 步没有可聚焦的复制按钮"], detail: "" };
+  try {
+    await page.ev(`chrome.storage.sync.set({ ${PROBE}: ${J(nonce())} })`);
+    await waitFor(page, `!document.getElementById("engines").firstElementChild?.__b19`, "写临时 sync 键后设置页重渲染");
+    const r = await page.ev(`(() => { const d = document.getElementById("guide-steps-details"), a = document.activeElement;
+      return { same: d?.__b19 === 1, open: !!d?.open, focus: !!a?.closest("#settings-url-copy") && a.tagName === "BUTTON" }; })()`);
+    const p = [];
+    if (!r.same) p.push("与卡片状态无关的重渲染不该重建 5 步说明的折叠区");
+    if (!r.open) p.push("重渲染后 5 步说明的折叠区应仍展开");
+    if (!r.focus) p.push("重渲染后焦点应仍在第 1 步的复制按钮上");
+    return { p, detail: "无关的重渲染后折叠区原样保留、焦点仍在复制按钮上" };
+  } catch (e) {
+    return { p: [e.message], detail: "" };
+  } finally {
+    await page.ev(`chrome.storage.sync.remove(${J(PROBE)})`).catch(() => {});
+  }
+}
+
+async function waitFor(page, expr, what, timeoutMs = 3000) {
+  const end = Date.now() + timeoutMs;
+  while (!(await page.ev(expr).catch(() => false))) {
+    if (Date.now() >= end) throw new Error(`${timeoutMs / 1000} 秒内没有等到：${what}`);
+    await sleep(100);
+  }
 }
 
 async function tryNotDone(ctx, page) {
