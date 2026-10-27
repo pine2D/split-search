@@ -1131,6 +1131,48 @@
     "message": "这次没有成功，请重新点一下工具栏按钮再试。",
     "description": "Toolbar popup, completing a split view: the extension rejected the request (unknown sender, bad fields, or the chosen engine is no longer available)."
   },
+  "err_rule_no_words": {
+    "message": "至少写一个词",
+    "description": "Keyword rule dialog, words field: the user entered no words."
+  },
+  "err_rule_too_many_words": {
+    "message": "一条规则最多 30 个词",
+    "description": "Keyword rule dialog, words field: one rule has more than 30 words."
+  },
+  "err_rule_words_total": {
+    "message": "所有规则合计最多 60 个词",
+    "description": "Keyword rule dialog, words field: all rules together would have more than 60 words."
+  },
+  "err_rule_word_long": {
+    "message": "“$WORD$”太长，每个词最多 32 个字",
+    "description": "Keyword rule dialog, words field: one word is longer than 32 characters (code points, after normalization). $WORD$ is the first 12 characters of that word.",
+    "placeholders": {
+      "WORD": {
+        "content": "$1",
+        "example": "objective-c"
+      }
+    }
+  },
+  "err_rule_too_many": {
+    "message": "最多 20 条规则",
+    "description": "Keyword rules: the user tried to add a 21st rule (the limit is 20)."
+  },
+  "err_rule_script": {
+    "message": "选一种文字",
+    "description": "Keyword rule dialog: the rule is 'the search contains a writing system' (Han characters, Japanese kana, Hangul, Cyrillic) but none was chosen."
+  },
+  "err_rule_engine": {
+    "message": "选一个右侧引擎",
+    "description": "Keyword rule dialog: no valid engine was chosen for the right side (none chosen, hidden, or it is now the default left engine)."
+  },
+  "err_rule_too_large": {
+    "message": "规则太长，存不下了。删掉一些词再保存。",
+    "description": "Keyword rule dialog: all rules together would be too large to store in Chrome sync (over 8000 bytes)."
+  },
+  "err_rule_gone": {
+    "message": "这条规则已在别处被删除",
+    "description": "Keyword rules: the rule being saved or moved was already deleted on another settings page or synced device."
+  },
   "options_add_from_catalog": {
     "message": "从引擎库添加",
     "description": "Button next to 'Add engine' that opens the engine catalog dialog."

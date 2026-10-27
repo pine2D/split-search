@@ -244,3 +244,15 @@ test("popup.js 换右侧时经 switchTarget 找引擎（接线守门）", async 
   assert.match(src, /switchTarget\(state\?\.pair, state\?\.cfg, engineId\)/);
   assert.match(src, /await switchRight\(state\.pair, engine\)/);
 });
+
+test("switchRight：规则选的右侧（记录带 rule、base）换过之后，写出的记录没有这两个键", async () => {
+  installChrome({ tabs: { 10: L, 11: R },
+    data: { "split:10": rec(11, "google"), "split:11": rec(10, "wiki", { rule: "r2", base: "bing" }) } });
+  const pair = await ownedPair(L, engines);
+  assert.equal(pair.right.record.rule, "r2");                  // 夹具确实带着标记（progress.md F6）
+  calls = [];
+  await switchRight(pair, engines[1]);
+  assert.deepEqual(store.get("split:11"), rec(10, "bing"));
+  assert.equal("rule" in store.get("split:11"), false);
+  assert.equal("base" in store.get("split:11"), false);
+});

@@ -342,3 +342,12 @@ test("reveal-setup：SW 不回复、不处理、不记日志（由设置页回�
   assert.equal(console.info.mock.callCount(), 0);
   assert.deepEqual(state.calls, []);
 });
+
+test("cycle-right：在带 rule/base 的本扩展分屏里换右侧后，记录不再带这两个键", async () => {
+  state.session.set("split:11", { ...rec(10, "bing"), rule: "r2", base: "eb" });
+  await press();
+  const after = state.session.get("split:11");
+  assert.equal(after.engine, "ddg");
+  assert.equal("rule" in after, false);
+  assert.equal("base" in after, false);
+});

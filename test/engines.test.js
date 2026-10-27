@@ -258,3 +258,18 @@ test("originPattern：含 * 或无法解析时不生成（不会申请宽泛权�
   assert.equal(originPattern({ url: "https://*.example.com/?q=%s" }), null);
   assert.equal(originPattern({ url: "not a url" }), null);
 });
+
+test("mergeConfig：rightRules 缺省为 []，读时清洗并重新规范化", () => {
+  assert.deepEqual(mergeConfig({}).rightRules, []);
+  assert.deepEqual(mergeConfig({ rightRules: [{ id: "r1", when: "words", words: ["CSS"], engine: "bing" }] }).rightRules,
+    [{ id: "r1", when: "words", words: ["css"], engine: "bing", off: null }]);
+});
+test("mergeConfig：rightRules 的 off 按隐藏的引擎和默认左侧算", () => {
+  const c = mergeConfig({ presetOverrides: { ddg: { hidden: true } }, rightRules: [
+    { id: "r1", when: "words", words: ["a"], engine: "ddg" },
+    { id: "r2", when: "words", words: ["b"], engine: "google" },
+    { id: "r3", when: "words", words: ["c"], engine: "lens" },
+    { id: "r4", when: "script", script: "han", keep: true },
+  ] });
+  assert.deepEqual(c.rightRules.map(r => r.off), ["hidden", "left", "missing", null]);
+});

@@ -29,11 +29,12 @@ export async function readRecord(tabId) {
 
 // 一次 set 写两个方向，不做读-改-写。roleA/roleB/input 原样交给 makeRecords（不传时是搜索对）；
 // 组合不合法时 makeRecords 抛错，这里记日志、一条都不写（之后按“没有记录”判定，不会覆盖任何标签）。
-// 返回是否写成（true / false），不抛错
-export function writePair({ a, b, splitViewId, mode, engineA, engineB, query, roleA, roleB, input }) {
+// autoA / autoB 是规则选右侧时的 { rule, base }，同样原样交给 makeRecords。返回是否写成（true / false），不抛错
+export function writePair({ a, b, splitViewId, mode, engineA, engineB, query, roleA, roleB, input, autoA, autoB }) {
   return serial(async () => {
     try {
-      await chrome.storage.session.set(makeRecords({ a, b, splitViewId, mode, engineA, engineB, query, roleA, roleB, input }));
+      await chrome.storage.session.set(makeRecords({ a, b, splitViewId, mode, engineA, engineB, query, roleA, roleB, input,
+        autoA, autoB }));
       return true;
     } catch (err) {
       log("failed to record the split tab pair", err);
@@ -42,11 +43,14 @@ export function writePair({ a, b, splitViewId, mode, engineA, engineB, query, ro
   });
 }
 
-// 只改这一条记录显示的引擎，对侧记录不动
+// 只改这一条记录显示的引擎，对侧记录不动。经弹窗或快捷键换过的右侧不再是规则选的：去掉 rule、base
 export function writeEngine(tabId, record, engine) {
+  const rest = { ...record };
+  delete rest.rule;
+  delete rest.base;
   return serial(async () => {
     try {
-      await chrome.storage.session.set({ [recordKey(tabId)]: { ...record, engine } });
+      await chrome.storage.session.set({ [recordKey(tabId)]: { ...rest, engine } });
     } catch (err) {
       log("failed to update the split record", tabId, err);
     }

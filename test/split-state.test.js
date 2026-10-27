@@ -338,3 +338,22 @@ test("writePair：写成返回 true，set 抛错返回 false（不抛）", async
   installChrome({ fail: { set: true } });
   assert.equal(await writePair({ a: 1, b: 2, splitViewId: 7, mode: "split", engineA: "google", engineB: "bing", query: "q" }), false);
 });
+
+const SEARCH = { peer: 2, splitViewId: 7, mode: "split", role: "search", engine: "ec", query: "q" };
+test("writePair：autoB 写进右侧记录，左侧不带", async () => {
+  await writePair({ a: 1, b: 2, splitViewId: 7, mode: "split", engineA: "ea", engineB: "ec", query: "q", autoB: { rule: "r2", base: "eb" } });
+  assert.deepEqual(store.get("split:2"), { peer: 1, splitViewId: 7, mode: "split", role: "search", engine: "ec", query: "q", rule: "r2", base: "eb" });
+  assert.equal("rule" in store.get("split:1"), false);
+  assert.deepEqual(await readRecord(2), store.get("split:2"));
+});
+test("writePair：autoA 写进左侧记录", async () => {
+  await writePair({ a: 1, b: 2, splitViewId: 7, mode: "split", engineA: "ec", engineB: "ea", query: "q", autoA: { rule: "r2", base: "eb" } });
+  assert.equal(store.get("split:1").rule, "r2");
+  assert.equal("rule" in store.get("split:2"), false);
+});
+test("writeEngine：换过引擎的记录去掉 rule、base", async () => {
+  await writeEngine(2, { ...SEARCH, rule: "r2", base: "eb" }, "ed");
+  assert.deepEqual(store.get("split:2"), { ...SEARCH, engine: "ed" });
+  assert.equal("rule" in store.get("split:2"), false);
+  assert.equal("base" in store.get("split:2"), false);
+});

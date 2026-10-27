@@ -1131,6 +1131,48 @@
     "message": "That didn’t work. Click the toolbar button and try again.",
     "description": "Toolbar popup, completing a split view: the extension rejected the request (unknown sender, bad fields, or the chosen engine is no longer available)."
   },
+  "err_rule_no_words": {
+    "message": "Enter at least one word",
+    "description": "Keyword rule dialog, words field: the user entered no words."
+  },
+  "err_rule_too_many_words": {
+    "message": "A rule can have up to 30 words",
+    "description": "Keyword rule dialog, words field: one rule has more than 30 words."
+  },
+  "err_rule_words_total": {
+    "message": "All rules together can have up to 60 words",
+    "description": "Keyword rule dialog, words field: all rules together would have more than 60 words."
+  },
+  "err_rule_word_long": {
+    "message": "“$WORD$” is too long. Each word can be up to 32 characters.",
+    "description": "Keyword rule dialog, words field: one word is longer than 32 characters (code points, after normalization). $WORD$ is the first 12 characters of that word.",
+    "placeholders": {
+      "WORD": {
+        "content": "$1",
+        "example": "objective-c"
+      }
+    }
+  },
+  "err_rule_too_many": {
+    "message": "You can have up to 20 rules",
+    "description": "Keyword rules: the user tried to add a 21st rule (the limit is 20)."
+  },
+  "err_rule_script": {
+    "message": "Choose a writing system",
+    "description": "Keyword rule dialog: the rule is 'the search contains a writing system' (Han characters, Japanese kana, Hangul, Cyrillic) but none was chosen."
+  },
+  "err_rule_engine": {
+    "message": "Choose an engine for the right side",
+    "description": "Keyword rule dialog: no valid engine was chosen for the right side (none chosen, hidden, or it is now the default left engine)."
+  },
+  "err_rule_too_large": {
+    "message": "These rules are too long to save. Remove some words, then save again.",
+    "description": "Keyword rule dialog: all rules together would be too large to store in Chrome sync (over 8000 bytes)."
+  },
+  "err_rule_gone": {
+    "message": "This rule was already deleted elsewhere",
+    "description": "Keyword rules: the rule being saved or moved was already deleted on another settings page or synced device."
+  },
   "options_add_from_catalog": {
     "message": "Add from catalog",
     "description": "Button next to 'Add engine' that opens the engine catalog dialog."

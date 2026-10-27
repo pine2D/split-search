@@ -2,6 +2,7 @@
 import { fail } from "./errors.js";
 import { normalizeLocalePref } from "./i18n.js";
 import { IMAGE_PRESET } from "./image-engines.js";
+import { cleanRules } from "./right-rules.js";
 
 export const PRESETS = [
   { id: "google", name: "Google", url: "https://www.google.com/search?q=%s" },
@@ -105,7 +106,8 @@ export function mergeConfig(stored = {}) {
   const imageEngine = imageEngines.some(e => e.id === stored.imageEngine) ? stored.imageEngine : IMAGE_PRESET.id;
   return { engines, hidden, defaultPair: pair, uiLocale: normalizeLocalePref(stored.uiLocale),
     narrowFallback: stored.narrowFallback !== false, cycleExclude: cleanIdList(stored.cycleExclude),
-    imageEngines, imageEngine, lookupEngine, lookupFollow };
+    imageEngines, imageEngine, lookupEngine, lookupFollow,
+    rightRules: cleanRules(stored.rightRules, { engines, hidden, defaultPair: pair, isEngineId: id => ID_PATTERN.test(id) }) };
 }
 
 // 自定义以图搜图引擎：不是数组当作空；只认 { id, name, url } 三个字段，按 id 去重保留首次。

@@ -1,12 +1,14 @@
 // 分屏归属判定：纯函数，不依赖扩展 API。go.html、弹窗、快捷键、右键共用。
 // 记录（storage.session 的 split:<tabId>）形状：
 //   { peer, splitViewId, mode: "split" | "adjacent",
-//     role: "search" | "page" | "lookup", input?: "text" | "image", engine, query }
+//     role: "search" | "page" | "lookup", input?: "text" | "image", engine, query, rule?, base? }
 // search：本扩展打开的搜索页（搜索对两侧都是它，不带 input）；page：用户的网页（查询对的左侧，engine 为 ""）；
 // lookup：本扩展打开的查询结果（查询对的右侧）。查询对两侧写同一个 input 和 query。
-import { PLACEHOLDER } from "./engines.js";
+import { PLACEHOLDER, ID_PATTERN } from "./engines.js";
 
 export const RECORD_PREFIX = "split:";
+// 规则 id：与 lib/right-rules.js 的 RULE_ID 同源（本文件不 import 它，test/right-rules.test.js 比对两者相同）
+export const RULE_ID = /^r[1-9][0-9]{0,3}$/;
 
 export function recordKey(tabId) {
   return RECORD_PREFIX + tabId;
@@ -22,21 +24,32 @@ export function parseRecord(value) {
   if (typeof engine !== "string" || typeof query !== "string") return null;
   if (role !== "search" && role !== "page" && role !== "lookup") return null;
   if ((engine === "") !== (role === "page")) return null;
-  if (role === "search") return { peer, splitViewId, mode, role, engine, query };
+  if (role === "search") return { peer, splitViewId, mode, role, engine, query, ...autoFields(value, engine) };
   if (input !== "text" && input !== "image") return null;
   return { peer, splitViewId, mode, role, input, engine, query };
+}
+
+// 规则选的右侧带 rule（规则 id）和 base（没有规则时本来的右侧）：三项都合格才保留，否则两个一起丢掉、
+// 记录照常返回（坏的附加字段不能把记录变成“无记录”，那会改变归属判定）。只有 search 角色带
+function autoFields({ rule, base }, engine) {
+  const ok = typeof rule === "string" && RULE_ID.test(rule) &&
+    typeof base === "string" && ID_PATTERN.test(base) && base !== engine;
+  return ok ? { rule, base } : {};
 }
 
 // 两条记录总是写 role；不是搜索对时两条写同一个 input，搜索对不写 input 键。
 // 不合法的组合（role 配不成对：search 只配 search、page 只配 lookup；查询对的 input 不是 text/image；
 // 任一条 parseRecord 不认）直接抛错，不写出读回来会被当成“没有记录”或判 stale 的东西。
-// 调用方 split-state.js 的 writePair 在 try 里调用：抛错时记日志、一条都不写
-export function makeRecords({ a, b, splitViewId, mode, engineA, engineB, query, roleA = "search", roleB = "search", input }) {
+// 调用方 split-state.js 的 writePair 在 try 里调用：抛错时记日志、一条都不写。
+// autoA / autoB（{ rule, base }）只在搜索对时写进对应一侧
+export function makeRecords({ a, b, splitViewId, mode, engineA, engineB, query, roleA = "search", roleB = "search", input,
+  autoA, autoB }) {
   const search = roleA === "search" && roleB === "search";
   const extra = search ? {} : { input };
+  const auto = (x) => (search && x ? { rule: x.rule, base: x.base } : {});
   const out = {
-    [recordKey(a)]: { peer: b, splitViewId, mode, role: roleA, ...extra, engine: engineA, query },
-    [recordKey(b)]: { peer: a, splitViewId, mode, role: roleB, ...extra, engine: engineB, query },
+    [recordKey(a)]: { peer: b, splitViewId, mode, role: roleA, ...extra, engine: engineA, query, ...auto(autoA) },
+    [recordKey(b)]: { peer: a, splitViewId, mode, role: roleB, ...extra, engine: engineB, query, ...auto(autoB) },
   };
   const valid = Number.isInteger(a) && Number.isInteger(b) && partnerRole(roleA) === roleB &&
     (search || input === "text" || input === "image") && Object.values(out).every(r => parseRecord(r) !== null);

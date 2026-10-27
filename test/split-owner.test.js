@@ -224,3 +224,47 @@ test("judgeOwnership：兜底不把用户分屏里的 ChatGPT 首页、Claude �
     assert.equal(judgeOwnership({ tab: t, peer: { id: 2, index: 5, windowId: 9, splitViewId: 7, url }, record: null, peerRecord: null, engines: ai }), "none");
   }
 });
+
+const SEARCH = { peer: 2, splitViewId: 7, mode: "split", role: "search", engine: "ec", query: "q" };
+test("parseRecord：search 记录放行合格的 rule、base", () => {
+  assert.deepEqual(parseRecord({ ...SEARCH, rule: "r2", base: "eb" }), { ...SEARCH, rule: "r2", base: "eb" });
+});
+test("parseRecord：rule、base 有一个不合格就两个都丢，记录照常返回", () => {
+  for (const extra of [{ rule: "x1", base: "eb" }, { rule: "r2", base: "ec" }, { rule: "r2", base: "BAD!" }, { rule: "r2" },
+    { base: "eb" }, { rule: "r0", base: "eb" }, { rule: "r10000", base: "eb" }, { rule: 2, base: "eb" }]) {
+    const r = parseRecord({ ...SEARCH, ...extra });
+    assert.notEqual(r, null, JSON.stringify(extra));
+    assert.equal("rule" in r, false, JSON.stringify(extra));
+    assert.equal("base" in r, false, JSON.stringify(extra));
+  }
+});
+test("parseRecord：查询对上的 rule、base 被忽略", () => {
+  const lookup = parseRecord({ ...SEARCH, role: "lookup", input: "text", rule: "r2", base: "eb" });
+  assert.deepEqual(lookup, { ...SEARCH, role: "lookup", input: "text" });
+  const page = parseRecord({ ...SEARCH, engine: "", role: "page", input: "text", rule: "r2", base: "eb" });
+  assert.deepEqual(page, { ...SEARCH, engine: "", role: "page", input: "text" });
+});
+test("makeRecords：autoB 只写进搜索对的 b 一侧", () => {
+  const out = makeRecords({ a: 1, b: 2, splitViewId: 7, mode: "split", engineA: "ea", engineB: "ec", query: "q", autoB: { rule: "r2", base: "eb" } });
+  assert.deepEqual(out["split:2"], { peer: 1, splitViewId: 7, mode: "split", role: "search", engine: "ec", query: "q", rule: "r2", base: "eb" });
+  assert.equal("rule" in out["split:1"], false);
+  assert.equal("base" in out["split:1"], false);
+  const outA = makeRecords({ a: 1, b: 2, splitViewId: 7, mode: "split", engineA: "ec", engineB: "ea", query: "q", autoA: { rule: "r2", base: "eb" } });
+  assert.equal(outA["split:1"].rule, "r2");
+  assert.equal("rule" in outA["split:2"], false);
+});
+test("makeRecords：查询对传 autoB 时两条都不带", () => {
+  const out = makeRecords({ a: 1, b: 2, splitViewId: 7, mode: "split", engineA: "", engineB: "ec", query: "q",
+    roleA: "page", roleB: "lookup", input: "text", autoB: { rule: "r2", base: "eb" } });
+  for (const r of Object.values(out)) {
+    assert.equal("rule" in r, false);
+    assert.equal("base" in r, false);
+  }
+});
+test("judgeOwnership：带坏 rule/base 的一对仍判 own", () => {
+  const tab = { id: 1, index: 0, windowId: 1, splitViewId: 7 };
+  const peer = { id: 2, index: 1, windowId: 1, splitViewId: 7 };
+  const record = parseRecord({ ...SEARCH, peer: 2, engine: "ea", rule: "bad", base: "eb" });
+  const peerRecord = parseRecord({ ...SEARCH, peer: 1, rule: "r2", base: "ec" });
+  assert.equal(judgeOwnership({ tab, peer, record, peerRecord, engines: [] }), "own");
+});

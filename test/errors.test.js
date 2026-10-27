@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { ERROR_CODES, spec, fail, codedError, errorKey } from "../src/lib/errors.js";
 
-test("ERROR_CODES 恰好是约定的 31 个且只读", () => {
+test("ERROR_CODES 恰好是约定的 40 个且只读", () => {
   assert.deepEqual([...ERROR_CODES], [
     "bad_url", "tpl_no_placeholder", "tpl_bad_scheme", "tpl_no_host", "tpl_wildcard_host", "tpl_ipv6",
     "tpl_reserved_param", "marker_format", "unknown_engine", "not_left", "template_mismatch",
@@ -10,6 +10,8 @@ test("ERROR_CODES 恰好是约定的 31 个且只读", () => {
     "default_left_url", "only_preset_hide", "pair_uses_hide", "only_custom_delete", "pair_uses_delete",
     "pair_missing", "quota_rate", "quota_bytes", "catalog_already_added", "id_exhausted",
     "not_results_page", "window_unsupported", "split_failed", "message_rejected",
+    "rule_too_many", "rule_too_many_words", "rule_words_total", "rule_word_long", "rule_no_words", "rule_script",
+    "rule_engine", "rule_too_large", "rule_gone",
   ]);
   assert.ok(Object.isFrozen(ERROR_CODES));
 });
