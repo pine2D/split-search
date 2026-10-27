@@ -5,7 +5,8 @@
 // 第 2 步拆成三个编号小步（先复制设置地址，再复制触发网址，最后设为默认），(a) 核对每步只带自己的复制按钮。
 // 卡片显示时“添加到 Chrome”卡的默认组合一段和 5 步说明都收在默认收起的 <details> 里，(c) 重新打开后卡片不显示时照常显示
 // （def、guideSteps）；(a) 最后点第 2 步的“详细步骤”，两段都展开、滚到 5 步说明、hash 不变、焦点落在 5 步说明的 summary 上，
-// 之后一次无关的重渲染（临时 sync 键）不重建折叠区、不丢复制按钮上的焦点。
+// 之后一次无关的重渲染（临时 sync 键）不重建折叠区、不丢复制按钮上的焦点；再直接打开 options.html#guide-steps
+// （中键、Ctrl+点这个链接时的网址），效果应与左键点击相同。
 // 弹窗分屏外的三档（src/lib/popup-view.js 的 idleView）跟着走（子项在 b19-popup.mjs）：(a') try 档（左侧已授权、setupDone 没写），
 // 先关掉所有设置页再点“查看第 2 步”，退回新开 options.html#setup，焦点落在卡片标题；(e) ready 档（setupDone 为 true），
 // 这时直接打开 #setup 卡片不显示、焦点不动；(d) 撤销左侧授权后是 setup 档（只有“完成设置”，不显示说明文字和页脚），
@@ -104,7 +105,7 @@ async function item(name, fn) {
   try { return { name, ...(await fn()) }; } catch (e) { return { name, status: "fail", detail: e.message }; }
 }
 
-async function shown(page) {
+async function shown(ctx, page) {
   const c = await waitCard(page, c => !c.hidden && c.mode === "steps" && c.steps.length === 3, "卡片显示三步");
   if (c.steps[0] !== "grant:done") return { status: "fail", detail: `模拟引擎 A 已授权，第 1 步应为 done：${fmt(c)}` };
   if (c.tryDisabled !== false) return { status: "fail", detail: "左侧已授权，“试一下”按钮应可点" };
@@ -114,7 +115,33 @@ async function shown(page) {
   const problems = substepProblems(subs);
   const link = await detailsLink(page);
   problems.push(...link.p);
-  return verdictOf(problems, `${fmt(c)}；第 2 步 3 个小步，复制按钮 ${subs.map(x => x.buttons).join("/")}；${link.detail}`);
+  const direct = await hashOpen(ctx);
+  problems.push(...direct.p);
+  return verdictOf(problems, `${fmt(c)}；第 2 步 3 个小步，复制按钮 ${subs.map(x => x.buttons).join("/")}；${link.detail}；${direct.detail}`);
+}
+
+// 读“详细步骤”的效果：两段的展开状态、焦点是否在 5 步说明的 summary、5 步说明顶边与视口高
+const LINK_STATE = `(() => { const a = document.activeElement, r = document.getElementById("guide-steps").getBoundingClientRect();
+  const open = id => !!document.getElementById(id)?.open;
+  return { def: open("guide-default"), steps: open("guide-steps-details"), focus: a?.tagName === "SUMMARY" && !!a.closest("#guide-steps-details"),
+    hash: location.hash, top: Math.round(r.top), vh: innerHeight }; })()`;
+const offscreen = s => s.top < -2 || s.top >= s.vh;
+
+// 中键或 Ctrl+点“详细步骤”会在新标签打开 options.html#guide-steps：页面显示出来后效果应和左键点击一样
+// （两段都展开、焦点在 5 步说明的 summary、5 步说明顶边在视口内）
+async function hashOpen(ctx) {
+  const page = await openOptions(ctx.browser, { hash: "#guide-steps" });
+  try {
+    await waitFor(page, `!!document.getElementById("guide-steps-details")?.open`, "直接打开 #guide-steps 后 5 步说明展开");
+    const s = await page.ev(LINK_STATE);
+    const p = [];
+    if (!s.def) p.push("直接打开 #guide-steps 后默认组合一段应展开");
+    if (!s.focus) p.push("直接打开 #guide-steps 后焦点应落在 5 步说明的 summary 上");
+    if (offscreen(s)) p.push(`直接打开 #guide-steps 后 5 步说明的顶边应在视口内：top ${s.top}，视口高 ${s.vh}`);
+    return { p, detail: `直接打开 #guide-steps：两段展开、焦点在 summary，5 步说明顶边 ${s.top}px` };
+  } catch (e) {
+    return { p: [e.message], detail: "" };
+  } finally { await page.close().catch(() => {}); }
 }
 
 // 第 2 步的“详细步骤”：点了以后默认组合一段和 5 步说明都展开，页面滚到 5 步说明（容器顶边在视口内），网址的 hash 不变，
@@ -128,12 +155,11 @@ async function detailsLink(page) {
   try {
     await waitCard(page, c => c.def === "open" && c.guideSteps === "open", "点“详细步骤”后两段都展开", 3000);
   } catch (e) { return { p: [e.message], detail: "" }; }
-  const after = await page.ev(`(() => { const a = document.activeElement, r = document.getElementById("guide-steps").getBoundingClientRect();
-    return { focus: a?.tagName === "SUMMARY" && !!a.closest("#guide-steps-details"), hash: location.hash, top: Math.round(r.top), vh: innerHeight }; })()`);
+  const after = await page.ev(LINK_STATE);
   const p = [];
   if (!after.focus) p.push("点“详细步骤”后焦点应落在 5 步说明的 summary 上");
   if (after.hash !== hashBefore) p.push(`点“详细步骤”不该改网址的 hash：之前 ${J(hashBefore)}，之后 ${J(after.hash)}`);
-  if (after.top < -2 || after.top >= after.vh) p.push(`点“详细步骤”后 5 步说明的顶边应在视口内：top ${after.top}，视口高 ${after.vh}`);
+  if (offscreen(after)) p.push(`点“详细步骤”后 5 步说明的顶边应在视口内：top ${after.top}，视口高 ${after.vh}`);
   const keep = await keepsFocus(page);
   p.push(...keep.p);
   return { p, detail: `“详细步骤”展开了默认组合一段和 5 步说明，焦点在 summary，hash 不变（${J(after.hash)}），5 步说明顶边 ${after.top}px；${keep.detail}` };
@@ -262,7 +288,7 @@ export const B19 = {
     let page = await openOptions(ctx.browser);
     const items = [];
     try {
-      items.push(await item("(a) 清掉 setupDone 后卡片显示三步，第 2 步分成三个小步", () => shown(page)));
+      items.push(await item("(a) 清掉 setupDone 后卡片显示三步，第 2 步分成三个小步", () => shown(ctx, page)));
       items.push(await item("(a') 弹窗 try 档：没有设置页时点“查看第 2 步”新开 #setup，焦点在卡片标题", async () => {
         await page.close(); // 关掉所有设置页（其余的由 popupTier 关），测 tabs.create 的退回路径
         const r = await popupTier(ctx, idleTab, "try", { click: "idle-setup-link", via: "fresh", mode: "steps" });

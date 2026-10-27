@@ -19,12 +19,12 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const READY = `document.readyState === "complete" && !!globalThis.chrome?.runtime?.id
   && !document.body.classList.contains("loading") && document.querySelectorAll("#engines .engine-row").length > 0`;
 
-// 打开一个新的设置页并等它渲染完。返回页面对象；用完必须 close()。
+// 打开一个新的设置页并等它渲染完。返回页面对象；用完必须 close()。hash：网址后接的片段（如 "#guide-steps"）。
 // newWindow：开在单独的新窗口里。授权框（chrome.permissions.request）挂在浏览器窗口上、不是标签上：只关标签它还留着，
 // 关掉它所在的窗口才会随之消失（perm-dialog spike 第 4 条），所以发起授权申请的设置页要独占一个窗口
-export async function openOptions(browser, { newWindow = false } = {}) {
+export async function openOptions(browser, { newWindow = false, hash = "" } = {}) {
   const { client } = browser;
-  const { targetId } = await client.send("Target.createTarget", { url: OPTIONS_URL, ...(newWindow ? { newWindow: true } : {}) });
+  const { targetId } = await client.send("Target.createTarget", { url: OPTIONS_URL + hash, ...(newWindow ? { newWindow: true } : {}) });
   const sid = await browser.attach(targetId);
   const page = { targetId, sid, dialogs: [], acceptDialogs: true };
   const onDialog = (p, s) => {
