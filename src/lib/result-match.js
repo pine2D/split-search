@@ -1,6 +1,7 @@
 // 识别搜索结果页（spec 3.2“识别结果页”）：给“补成分屏”用。纯逻辑，不得引用 chrome。
 import { parseTrigger } from "./trigger.js";
 import { validateTemplate, PLACEHOLDER } from "./engines.js";
+import { ruleRight } from "./right-rules.js";
 
 // 网址是否是 engine 的结果页：origin、pathname 与模板相同，模板里除 %s 以外的固定参数都在且值相同
 // （网址多出的参数不影响），%s 所在参数的第一个值去掉首尾空白后非空。
@@ -22,9 +23,17 @@ function suggestFor(engineId, defaultPair) {
   return defaultPair[1] === engineId ? defaultPair[0] : defaultPair[1];
 }
 
-// engines 是未隐藏的文字引擎（显示顺序），defaultPair 来自 mergeConfig。
+// 按关键词换右侧（v0.5）：同一个关键词在 go.html 会去哪个右侧，这里就建议哪个。
+// 是不是默认组合（识别出默认左侧，且没有 _ss 或 _ss 就是默认组合）交给 ruleRight 判断，它是唯一入口。
+function ruleSuggestion(cfg, hit, trig) {
+  const rightId = trig.ok ? trig.right.id : cfg.defaultPair[1];
+  return ruleRight(cfg, { leftId: hit.engine.id, rightId, query: hit.query })?.engine.id ?? null;
+}
+
+// engines 是未隐藏的文字引擎（显示顺序），defaultPair、rightRules 来自 mergeConfig（没有 rightRules 按没有规则）。
 // 返回 { engine, query, suggestedId }，识别不出返回 null。
-export function matchResultPage(url, { engines, defaultPair }) {
+export function matchResultPage(url, cfg) {
+  const { engines, defaultPair } = cfg;
   let u;
   try { u = new URL(url); } catch { return null; }
   // 带合法 _ss 的网址只按 _ss 声明的左侧引擎识别，不通过就是识别不出，不再逐个比对
@@ -32,7 +41,8 @@ export function matchResultPage(url, { engines, defaultPair }) {
   if (trig.ok) {
     const hit = matchEngine(u, trig.left);
     if (!hit) return null;
-    const suggestedId = trig.right.id === hit.engine.id ? suggestFor(hit.engine.id, defaultPair) : trig.right.id;
+    const suggestedId = ruleSuggestion(cfg, hit, trig)
+      ?? (trig.right.id === hit.engine.id ? suggestFor(hit.engine.id, defaultPair) : trig.right.id);
     return { engine: hit.engine, query: hit.query, suggestedId };
   }
   // 多个匹配时：固定参数多的 → 模板 pathname 长的 → 显示顺序靠前的
@@ -42,5 +52,6 @@ export function matchResultPage(url, { engines, defaultPair }) {
     if (hit && (!best || hit.fixed > best.fixed || (hit.fixed === best.fixed && hit.pathLen > best.pathLen))) best = hit;
   }
   if (!best) return null;
-  return { engine: best.engine, query: best.query, suggestedId: suggestFor(best.engine.id, defaultPair) };
+  const suggestedId = ruleSuggestion(cfg, best, trig) ?? suggestFor(best.engine.id, defaultPair);
+  return { engine: best.engine, query: best.query, suggestedId };
 }

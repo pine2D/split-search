@@ -8,6 +8,9 @@ export const RULE_LIMITS = Object.freeze({ rules: 20, wordsPerRule: 30, wordsTot
 // split-owner.js 本地另有一份，test/right-rules.test.js 比对两者相同
 export const RULE_ID = /^r[1-9][0-9]{0,3}$/;
 export const SCRIPTS = Object.freeze(["han", "kana", "hangul", "cyrillic"]);
+// 每种文字的界面名（弹窗说明、设置页规则行）：字面量 key，i18n-catalog 靠它认出引用，不拼接 "script_" + id
+export const SCRIPT_KEYS = Object.freeze({ han: "script_han", kana: "script_kana", hangul: "script_hangul",
+  cyrillic: "script_cyrillic" });
 
 const QUERY_CUT = 4000;
 const SEPARATORS = /[,，、;；\r\n]/u;

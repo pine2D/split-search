@@ -174,3 +174,68 @@ test("idleView：读不出授权或 setupDone（null、缺省）按 ready 处理
   assert.deepEqual(idleView({}), ready);
   assert.deepEqual(idleView(), ready);
 });
+
+// v0.5 按关键词换右侧：右侧记录带 rule、base 时弹窗说明为什么换、提供“换回”
+const RE = (id) => ({ id, name: id.toUpperCase(), url: `https://${id}.test/s?q=%s` });
+const ENG = ["ea", "eb", "ec", "ed"];
+const RW = (id, words, x) => ({ id, when: "words", words, off: null, ...x });
+const ruleCfg = ({ ids = ENG, hidden = [], rules = [RW("r2", ["wiki"], { engine: "ec" })] } = {}) => ({
+  engines: ids.filter(id => !hidden.includes(id)).map(RE), hidden: hidden.map(RE),
+  defaultPair: ["ea", "eb"], rightRules: rules,
+});
+const rulePair = (rightRecord = { rule: "r2", base: "eb" }, x = {}) => ({
+  kind: "search", query: "wiki x",
+  left: { tabId: 10, engineId: "ea", record: { peer: 11, role: "search", engine: "ea", query: "wiki x" } },
+  right: { tabId: 11, engineId: "ec", record: { peer: 10, role: "search", engine: "ec", query: "wiki x", ...rightRecord } },
+  ...x,
+});
+
+test("auto：记录没有 rule → null（没有 record 的旧调用同样是 null）", () => {
+  assert.equal(popupView(rulePair({}), ruleCfg()).auto, null);
+  assert.equal(popupView(pair("ea", "ec"), ruleCfg()).auto, null);
+});
+test("auto：可换回 → base 是 eb、hit 是命中的词，choices 里没有 eb", () => {
+  const v = popupView(rulePair(), ruleCfg());
+  assert.equal(v.auto.base.id, "eb");
+  assert.deepEqual(v.auto.hit, { by: "word", word: "wiki" });
+  assert.deepEqual(v.choices.map(e => e.id), ["ed"]);
+});
+test("auto：base 已隐藏 → base 为 null（choices 照常）", () => {
+  const v = popupView(rulePair(), ruleCfg({ hidden: ["eb"] }));
+  assert.equal(v.auto.base, null);
+  assert.deepEqual(v.auto.hit, { by: "word", word: "wiki" });
+  assert.deepEqual(v.choices.map(e => e.id), ["ed"]);
+});
+test("auto：base 等于当前左侧 → base 为 null", () => {
+  const v = popupView(rulePair({ rule: "r2", base: "ea" }), ruleCfg());
+  assert.equal(v.auto.base, null);
+  assert.deepEqual(v.choices.map(e => e.id), ["eb", "ed"]);
+});
+test("auto：base 已删除 → base 为 null", () => {
+  assert.equal(popupView(rulePair({ rule: "r2", base: "gone" }), ruleCfg()).auto.base, null);
+});
+test("auto：规则已改成 keep → hit 为 null，base 仍是 eb（Review Focus 5）", () => {
+  const v = popupView(rulePair(), ruleCfg({ rules: [RW("r2", ["wiki"], { keep: true })] }));
+  assert.equal(v.auto.hit, null);
+  assert.equal(v.auto.base.id, "eb");
+});
+test("auto：规则的词改了、规则已删 → hit 为 null，base 不变", () => {
+  for (const rules of [[RW("r2", ["mdn"], { engine: "ec" })], []]) {
+    const v = popupView(rulePair(), ruleCfg({ rules }));
+    assert.equal(v.auto.hit, null);
+    assert.equal(v.auto.base.id, "eb");
+  }
+  // cfg 没有 rightRules 也不抛
+  const { rightRules, ...noRules } = ruleCfg();
+  assert.equal(popupView(rulePair(), noRules).auto.hit, null);
+});
+test("auto：查询对（kind \"text\"）记录上即使有 rule 也是 null", () => {
+  const v = popupView(rulePair(undefined, { kind: "text", left: { tabId: 10, engineId: "" } }), ruleCfg());
+  assert.equal(v.auto, null);
+  assert.deepEqual(v.choices.map(e => e.id), ["ea", "eb", "ed"]);
+});
+test("choices：只有 ea、eb、ec 三个引擎时去掉 base 后为 []", () => {
+  const v = popupView(rulePair(), ruleCfg({ ids: ["ea", "eb", "ec"] }));
+  assert.equal(v.auto.base.id, "eb");
+  assert.deepEqual(v.choices, []);
+});

@@ -1365,6 +1365,64 @@
     "message": "無法切換引擎，請再試一次。",
     "description": "Toolbar popup: shown when switching to the clicked engine failed (the split view was closed or split up, or loading the engine failed). Doesn't say \"right side\": in a lookup pair the switched side may be on the left."
   },
+  "popup_rule_word": {
+    "message": "右側依「$WORD$」換成了 $ENGINE$",
+    "description": "Toolbar popup, own search pair: shown under the left/right panes when a keyword rule replaced the default pair's right engine because the search contains one of the rule's words. WORD is the matched word from the user's own rule; ENGINE is the current right-side engine name.",
+    "placeholders": {
+      "WORD": {
+        "content": "$1",
+        "example": "wiki"
+      },
+      "ENGINE": {
+        "content": "$2",
+        "example": "維基百科"
+      }
+    }
+  },
+  "popup_rule_script": {
+    "message": "搜尋內容有$SCRIPT$，右側換成了 $ENGINE$",
+    "description": "Toolbar popup, own search pair: shown when a keyword rule replaced the default pair's right engine because the search contains a writing system. SCRIPT is the writing-system name (script_han, script_kana, script_hangul or script_cyrillic); ENGINE is the current right-side engine name.",
+    "placeholders": {
+      "SCRIPT": {
+        "content": "$1",
+        "example": "漢字"
+      },
+      "ENGINE": {
+        "content": "$2",
+        "example": "Baidu"
+      }
+    }
+  },
+  "popup_rule_generic": {
+    "message": "右側是關鍵字規則選的",
+    "description": "Toolbar popup, own search pair: shown when a keyword rule picked the right-side engine but the rule has since been changed or deleted, so the popup cannot say which word matched."
+  },
+  "popup_rule_revert": {
+    "message": "換回 $ENGINE$",
+    "description": "Toolbar popup: button next to the keyword-rule note; switches the right side back to the default pair's right engine. ENGINE is that engine's name.",
+    "placeholders": {
+      "ENGINE": {
+        "content": "$1",
+        "example": "Bing"
+      }
+    }
+  },
+  "script_han": {
+    "message": "漢字",
+    "description": "Writing-system name (Han characters, used in Chinese and in Japanese kanji). Shown inside popup_rule_script and as an option in the keyword-rule dialog in settings."
+  },
+  "script_kana": {
+    "message": "日文假名",
+    "description": "Writing-system name (Japanese hiragana and katakana). Shown inside popup_rule_script and as an option in the keyword-rule dialog in settings."
+  },
+  "script_hangul": {
+    "message": "韓文",
+    "description": "Writing-system name (Korean Hangul). Shown inside popup_rule_script and as an option in the keyword-rule dialog in settings."
+  },
+  "script_cyrillic": {
+    "message": "西里爾字母",
+    "description": "Writing-system name (Cyrillic letters, used in Russian, Ukrainian and others). Shown inside popup_rule_script and as an option in the keyword-rule dialog in settings."
+  },
   "popup_complete_detected": {
     "message": "偵測到 $ENGINE$ 搜尋：$QUERY$",
     "description": "Toolbar popup, completing a split view: shown when the current tab is a search results page of a configured engine. $ENGINE$ is the engine name, $QUERY$ the recognized search terms.",

@@ -81,3 +81,28 @@ test("非字符串网址 → null", () => {
   assert.equal(matchResultPage(undefined, cfg), null);
   assert.equal(matchResultPage(null, cfg), null);
 });
+
+// v0.5：⑦ 的建议右侧与 go.html 按关键词选的右侧一致（只在默认组合下）
+const RE = (id) => ({ id, name: id.toUpperCase(), url: `https://${id}.test/s?q=%s` });
+const ruleCfg = (x = {}) => ({ engines: ["ea", "eb", "ec", "ed"].map(RE), hidden: [], defaultPair: ["ea", "eb"],
+  rightRules: [{ id: "r1", when: "words", words: ["wiki"], off: null, engine: "ec" }], ...x });
+test("规则：没有 _ss、识别出默认左侧、规则命中 → suggestedId 是规则引擎", () => {
+  assert.equal(matchResultPage("https://ea.test/s?q=wiki+apple", ruleCfg()).suggestedId, "ec");
+  // 没命中照旧建议默认右侧
+  assert.equal(matchResultPage("https://ea.test/s?q=apple", ruleCfg()).suggestedId, "eb");
+});
+test("规则：_ss 等于默认组合 → 规则引擎；_ss 是显式组合 → 按 _ss", () => {
+  assert.equal(matchResultPage("https://ea.test/s?q=wiki&_ss=ea,eb", ruleCfg()).suggestedId, "ec");
+  assert.equal(matchResultPage("https://ea.test/s?q=wiki&_ss=ea%2Ceb", ruleCfg()).suggestedId, "ec");
+  assert.equal(matchResultPage("https://ea.test/s?q=wiki&_ss=ea,ed", ruleCfg()).suggestedId, "ed");
+});
+test("规则：识别出的不是默认左侧 → 沿用原来的建议", () => {
+  assert.equal(matchResultPage("https://ed.test/s?q=wiki", ruleCfg()).suggestedId, "eb");
+  assert.equal(matchResultPage("https://eb.test/s?q=wiki", ruleCfg()).suggestedId, "ea");
+  assert.equal(matchResultPage("https://eb.test/s?q=wiki&_ss=eb,ec", ruleCfg()).suggestedId, "ec");
+});
+test("规则：cfg 没有 rightRules → 不抛，沿用原逻辑", () => {
+  const { rightRules, ...c } = ruleCfg();
+  assert.equal(matchResultPage("https://ea.test/s?q=wiki", c).suggestedId, "eb");
+  assert.equal(matchResultPage("https://ea.test/s?q=wiki&_ss=ea,eb", c).suggestedId, "eb");
+});

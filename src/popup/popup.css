@@ -49,6 +49,12 @@ p { margin: 0 0 10px; }
   max-height: 260px; overflow-y: auto;
 }
 .choices .btn { width: 100%; text-align: start; }
+
+/* 右侧是关键词规则换的：一行说明 + “换回”（按钮宽度随文字，不换行） */
+.rule-note { margin: 10px 0 0; color: var(--muted); }
+.rule-note p { margin: 0 0 6px; overflow-wrap: anywhere; text-wrap: pretty; }
+#rule-revert { white-space: nowrap; }
+
 /* 补成分屏：建议的右侧排第一并高亮 */
 .choices .btn.suggested { border-color: var(--accent); background: var(--accent-soft); font-weight: 600; }
 

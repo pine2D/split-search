@@ -1,5 +1,6 @@
 // 工具栏弹窗的纯逻辑：目标标签参数与显示内容。不得引用 chrome。
 import { enginesFor, engineById } from "./engines.js";
+import { explainRule } from "./right-rules.js";
 
 // ?tabId=<非负整数> 是给 e2e 留的测试接缝（popup.html 不在 web_accessible_resources 里，网页打不开它）。
 // 其余情况返回 null，弹窗改用所在窗口的活动标签。
@@ -16,9 +17,17 @@ export function targetTabId(search) {
 // 按钮是同一类引擎里除当前右侧外的全部引擎：不看 cycleExclude，每一次都是用户亲手点选；
 // 搜索对再去掉当前左侧（左右同一个引擎没有意义），查询对的左侧是网页，不受影响。
 // imageHost 只给图片查询对：弹窗只显示图片网址的 host，不加载图片（不向图片的服务器发请求）。
+// auto：右侧是关键词规则换的（只有搜索对、只认 pair.right 的记录）时为 { base, hit }，否则 null。
+// base 是规则换掉的默认右侧，已隐藏、已删除或成了当前左侧时为 null（不显示“换回”）；
+// hit 是命中的词或文字，规则已删、已改（含改成 keep）解释不出时为 null（弹窗退回笼统的说法）。
+// base 不为 null 时 choices 去掉它：“换回”已经是它的按钮，读屏不读两遍。
 export function popupView(pair, cfg) {
   const c = { ...cfg, hidden: cfg.hidden ?? [] };
   const { kind } = pair;
+  const record = pair.right.record;
+  const auto = kind === "search" && record?.rule
+    ? { base: switchTarget(pair, c, record.base), hit: explainRule(c, record)?.hit ?? null }
+    : null;
   return {
     kind,
     query: pair.query,
@@ -26,7 +35,9 @@ export function popupView(pair, cfg) {
     left: engineById(c, kind, pair.left.engineId),
     right: engineById(c, kind, pair.right.engineId),
     leftIsPage: isQueryPair(pair),
-    choices: enginesFor(c, kind).filter(e => e.id !== pair.right.engineId && !isSearchLeft(pair, e.id)),
+    choices: enginesFor(c, kind).filter(e => e.id !== pair.right.engineId && !isSearchLeft(pair, e.id)
+      && e.id !== auto?.base?.id),
+    auto,
   };
 }
 

@@ -40,6 +40,11 @@
       </dl>
       <!-- 左右两格镜像工具栏图标，由 ui/panes.js 建（idle.js）；查询对的行标签换成“网页”“查询” -->
       <div id="pair-panes"></div>
+      <!-- 右侧是关键词规则换的：说明为什么换（不进 Tab、不是 live region），“换回”默认组合的右侧（popup/rule-note.js） -->
+      <div id="rule-note" class="rule-note" hidden>
+        <p id="rule-note-text"></p>
+        <button id="rule-revert" class="btn" type="button" hidden></button>
+      </div>
       <h2 id="choices-title" data-i18n="popup_switch_title"></h2>
       <ul id="choices" class="choices" aria-labelledby="choices-title"></ul>
       <p id="no-choices" class="muted" data-i18n="popup_no_choices" hidden></p>

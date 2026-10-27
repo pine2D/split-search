@@ -7,6 +7,7 @@ import { popupView, targetTabId, popupMode, completeView, switchTarget } from ".
 import { matchResultPage } from "../lib/result-match.js";
 import { splitWindowType } from "../lib/window-kind.js";
 import { showComplete } from "./complete.js";
+import { showRuleNote } from "./rule-note.js";
 import { buildPairPanes, showIdle, hideIdle, renderShortcut, readSetupState, bindIdle } from "./idle.js";
 import { DONE_KEY } from "../chrome/setup-store.js";
 import { normalizeLocalePref } from "../lib/i18n.js";
@@ -68,7 +69,7 @@ function showError(key) {
 }
 
 function setButtonsDisabled(disabled) {
-  for (const b of $("choices").querySelectorAll("button")) b.disabled = disabled;
+  for (const b of $("pair").querySelectorAll("#choices button, #rule-revert")) b.disabled = disabled;
 }
 
 function show(state) {
@@ -130,7 +131,10 @@ function show(state) {
     li.append(button);
     return li;
   }));
-  $("no-choices").hidden = view.choices.length > 0;
+  // “换回”是唯一的换法时（choices 去掉 base 后为空）不说“没有别的引擎”
+  $("no-choices").hidden = view.choices.length > 0 || !!view.auto?.base;
+  showRuleNote(view.auto, view.right, onSwitch);
+  $("rule-revert").disabled = busy;
 }
 
 // 任何读取或显示错误都落到“不是本扩展的拆分视图”，弹窗不会空白。

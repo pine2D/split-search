@@ -81,7 +81,7 @@ function sourceFiles(dir) {
 }
 
 // 错误码不是 key（如 engine_gone 撞上 engine_ 前缀）：跳过 errors.js 和直接传给 fail/spec/codedError 的字面量。
-const KEY_RE = /(?<!\b(?:fail|spec|codedError)\()["'`]((?:ext|go|options|engine|guide|notice|err|common|lang|catalog|popup|menu|setup)_[a-z0-9_]+)["'`]/g;
+const KEY_RE = /(?<!\b(?:fail|spec|codedError)\()["'`]((?:ext|go|options|engine|guide|notice|err|common|lang|catalog|popup|menu|setup|script)_[a-z0-9_]+)["'`]/g;
 const ATTR_RE = /data-i18n-attr="([^"]*)"/g;
 const ERRORS_JS = join(SRC, "lib", "errors.js");
 
