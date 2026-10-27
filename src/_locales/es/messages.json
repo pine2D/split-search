@@ -527,7 +527,7 @@
   },
   "engine_delete_confirm_hint": {
     "message": "Vuelve a hacer clic para eliminar «$NAME$». Antes de hacerlo, borra en Chrome las búsquedas en el sitio que lo usan: las que lo tienen a la izquierda pasarán a ser búsquedas normales y las que lo tienen a la derecha se quedarán en la página de error «Buscador desconocido».",
-    "description": "Announced (via the live notice area) when the user first clicks Delete on a custom search engine; the button now reads engine_delete_confirm. Keep the warning consistent with guide_caveat_remove.",
+    "description": "Shown and announced inside the edit dialog, under the Delete button, when the user first clicks Delete on a custom search engine; the button now reads engine_delete_confirm. Keep the warning consistent with guide_caveat_remove.",
     "placeholders": {
       "NAME": {
         "content": "$1",

@@ -4,13 +4,16 @@ import { msg } from "../i18n.mjs";
 
 const J = JSON.stringify;
 
-// 打开某一行的编辑对话框读危险区；press 时再点一下看得见的那个按钮（不可用时应没有效果），300 ms 后读回，最后点“取消”
+// 打开某一行的编辑对话框读危险区；press 时再点一下看得见的那个按钮（不可用时应没有效果），300 ms 后读回，最后点“取消”。
+// 读回对话框是否还开着、#notices 里有没有新的出错提示：对话框自己的拦截失效时，edits.js 还会以 pair_uses_* 拒绝，
+// 行照样在、文字不变，只有“对话框被关掉 + 一条出错提示”能说明第一道拦截坏了
 async function probeEdit(page, id, press = false) {
   await openEdit(page, id);
   const s = await dangerState(page);
   if (press && s.btn) {
-    s.pressed = await page.run(`const b = document.getElementById(${J(s.btn?.id)}); b.focus(); b.click(); await sleep(300);
-      return { text: b.textContent, row: !!row(${J(id)}), open: document.getElementById("engine-dialog").open };`);
+    s.pressed = await page.run(`const errs = () => document.querySelectorAll("#notices .notice-error").length;
+      const b = document.getElementById(${J(s.btn?.id)}), before = errs(); b.focus(); b.click(); await sleep(300);
+      return { text: b.textContent, row: !!row(${J(id)}), open: document.getElementById("engine-dialog").open, newErrors: errs() - before };`);
   }
   await closeDialog(page);
   return s;
@@ -25,7 +28,9 @@ function inPairProblems(id, s, kind) {
   if (s.btn.ariaDisabled !== "true") p.push(`${id} 的“${label}”应 aria-disabled="true"，实际 ${J(s.btn.ariaDisabled)}`);
   if (s.btn.describedBy !== "dlg-remove-reason") p.push(`${id} 的“${label}”应 aria-describedby="dlg-remove-reason"，实际 ${J(s.btn.describedBy)}`);
   if (!s.reason || s.reasonText !== wantReason) p.push(`${id} 的原因应可见且为“${wantReason}”，实际 ${s.reason ? "" : "不可见、"}“${s.reasonText}”`);
-  if (s.pressed && (!s.pressed.row || s.pressed.text !== s.btn.text)) p.push(`${id} 的“${label}”不可用时点了有效果：${J(s.pressed)}`);
+  if (s.pressed && (!s.pressed.row || s.pressed.text !== s.btn.text || !s.pressed.open || s.pressed.newErrors !== 0)) {
+    p.push(`${id} 的“${label}”不可用时点了有效果（应保持行、文字不变、对话框开着、没有新的出错提示）：${J(s.pressed)}`);
+  }
   return p;
 }
 
@@ -50,7 +55,7 @@ const B10 = {
       for (const id of ["google", "bing"]) problems.push(...inPairProblems(id, await probeEdit(page, id, true), "hide"));
       for (const id of ["ddg", "ea"]) problems.push(...freeProblems(id, await probeEdit(page, id)));
       if (problems.length) return { status: "fail", detail: problems.join("；") };
-      return { status: "pass", detail: `默认组合 ea｜eb：ea、eb 的“删除”aria-disabled、原因“${msg("engine_in_pair_delete")}”，点了没有效果；ec、ddg 可用。切到 Google｜Bing 后 google、bing 的“隐藏”同样不可用（原因“${msg("engine_in_pair_hide")}”），ddg、ea 可用（已还原默认组合）` };
+      return { status: "pass", detail: `默认组合 ea｜eb：ea、eb 的“删除”aria-disabled、原因“${msg("engine_in_pair_delete")}”，点了没有效果（对话框不关、没有出错提示）；ec、ddg 可用。切到 Google｜Bing 后 google、bing 的“隐藏”同样不可用（原因“${msg("engine_in_pair_hide")}”），ddg、ea 可用（已还原默认组合）` };
     });
   },
 };

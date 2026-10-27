@@ -176,11 +176,13 @@ async function deleteViaDialog(browser, page, problems) {
   await closeDialog(page);
   await openEdit(page, "baidu");
   const once = await page.run(`const b = document.getElementById("dlg-delete"); b.focus(); b.click(); await sleep(300);
-    return { still: !!row("baidu"), open: document.getElementById("engine-dialog").open, text: b.textContent };`);
+    return { still: !!row("baidu"), open: document.getElementById("engine-dialog").open, text: b.textContent, hint: ${DEL_HINT} };`);
   if (!once.still || !once.open) problems.push(`只点一次“删除”：行应还在、对话框应还开着，实际 行${once.still ? "在" : "没了"}、对话框${once.open ? "开着" : "关了"}`);
   if (once.text !== msg("engine_delete_confirm")) problems.push(`点一次后按钮应为“${msg("engine_delete_confirm")}”，实际“${once.text}”`);
+  problems.push(...hintProblems(once.hint));
   const esc = await escTwice(browser, page);
   if (esc.first.text !== msg("engine_delete") || !esc.first.open) problems.push(`确认态下第一次 Esc 应只撤确认、对话框不关，实际 ${J(esc.first)}`);
+  if (esc.first.hint?.text || esc.first.hint?.describedBy) problems.push(`撤销确认后提醒应清空、去掉 aria-describedby，实际 ${J(esc.first.hint)}`);
   if (esc.second.open) problems.push("第二次 Esc 应关掉对话框");
   await openEdit(page, "baidu");
   await page.run(`const b = document.getElementById("dlg-delete"); b.focus(); b.click(); await sleep(100); b.click(); return true;`);
@@ -189,7 +191,28 @@ async function deleteViaDialog(browser, page, problems) {
   const after = await page.until(`return !document.getElementById("engine-dialog").open && document.activeElement?.id === ${J(want)}`, 3000)
     .then(() => null, () => page.run(`return { open: document.getElementById("engine-dialog").open, focus: document.activeElement?.id || document.activeElement?.tagName }`));
   if (after) problems.push(`删除后对话框应关闭、焦点应在 #${want}，实际 ${J(after)}`);
-  return `行上没有“删除”，新增模式下危险区全藏；编辑对话框里点一次“删除”变成“确认删除？”，第一次 Esc 只撤确认、第二次关对话框；再点才删，焦点交给 #${want}`;
+  return `行上没有“删除”，新增模式下危险区全藏；编辑对话框里点一次“删除”变成“确认删除？”，提醒写在对话框里（role="status"，按钮 aria-describedby 指向它），第一次 Esc 只撤确认、第二次关对话框；再点才删，焦点交给 #${want}`;
+}
+
+// 删除第一次点击后的提醒：要写在对话框里（模态对话框开着时对话框外的 #notices 是 inert，读屏听不到，还压在遮罩下），
+// role="status"，由删除按钮的 aria-describedby 指着；滚到可见后用 elementFromPoint 核对没被别的东西盖住
+const DEL_HINT = `(() => { const h = document.getElementById("dlg-delete-hint"), b = document.getElementById("dlg-delete");
+  if (!h) return null;
+  if (h.textContent) h.scrollIntoView({ block: "nearest" });
+  const r = h.getBoundingClientRect(), hit = h.textContent ? h.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)) : false;
+  return { text: h.textContent, visible: h.checkVisibility(), hit, inDialog: !!h.closest("#engine-dialog"), role: h.getAttribute("role"),
+    describedBy: b.getAttribute("aria-describedby"),
+    outside: [...document.querySelectorAll("#notices .notice-text")].some(n => n.textContent === ${JSON.stringify(msg("engine_delete_confirm_hint", BAIDU.name))}) }; })()`;
+
+function hintProblems(h) {
+  const want = msg("engine_delete_confirm_hint", BAIDU.name);
+  if (!h) return ["编辑对话框里没有 #dlg-delete-hint"];
+  const p = [];
+  if (h.text !== want || !h.visible || !h.hit || !h.inDialog) p.push(`点一次后提醒“${want}”应在 #engine-dialog 里可见、没被遮住，实际 ${JSON.stringify(h)}`);
+  if (h.role !== "status") p.push(`#dlg-delete-hint 应 role="status"，实际 ${JSON.stringify(h.role)}`);
+  if (h.describedBy !== "dlg-delete-hint") p.push(`确认态的“删除”应 aria-describedby="dlg-delete-hint"，实际 ${JSON.stringify(h.describedBy)}`);
+  if (h.outside) p.push("提醒不该再写进对话框外的 #notices（模态对话框开着时那里是 inert）");
+  return p;
 }
 
 // 对话框开着、焦点在确认态的“删除”上：经 CDP 发真实的 Esc（页内派发的 keydown 不会触发对话框的 cancel），各按一次后读状态
@@ -199,7 +222,7 @@ async function escTwice(browser, page) {
       await browser.client.send("Input.dispatchKeyEvent", { type, key: "Escape", code: "Escape", windowsVirtualKeyCode: 27, nativeVirtualKeyCode: 27 }, page.sid);
     }
     await sleep(200);
-    return page.run(`return { open: document.getElementById("engine-dialog").open, text: document.getElementById("dlg-delete").textContent }`);
+    return page.run(`return { open: document.getElementById("engine-dialog").open, text: document.getElementById("dlg-delete").textContent, hint: ${DEL_HINT} }`);
   };
   await browser.client.send("Target.activateTarget", { targetId: page.targetId }).catch(() => {});
   return { first: await key(), second: await key() };

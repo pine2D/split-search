@@ -527,7 +527,7 @@
   },
   "engine_delete_confirm_hint": {
     "message": "再点一次就会删除“$NAME$”。删除前，请先删掉 Chrome 里用到它的网站搜索：它作左侧的会退化为普通搜索，作右侧的会停在“未知引擎”错误页。",
-    "description": "Announced (via the live notice area) when the user first clicks Delete on a custom search engine; the button now reads engine_delete_confirm. Keep the warning consistent with guide_caveat_remove.",
+    "description": "Shown and announced inside the edit dialog, under the Delete button, when the user first clicks Delete on a custom search engine; the button now reads engine_delete_confirm. Keep the warning consistent with guide_caveat_remove.",
     "placeholders": {
       "NAME": {
         "content": "$1",

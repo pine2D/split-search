@@ -275,6 +275,34 @@ test("confirmStep：按钮带 aria-disabled=\"true\" 时点击不进入确认、
   assert.equal(confirmed, 1, "去掉 aria-disabled 后照常两步");
 });
 
+test("confirmStep：onArm / onReset 在进入确认、复原（失焦、Esc、确认执行）时各调一次；用了它们可以不经 #notices", async () => {
+  const notices = formFakes();
+  await setLocale("en");
+  const btn = fakeButton();
+  const log = [];
+  let confirmed = 0;
+  confirmStep(btn, "plain", "plain", () => { confirmed++; log.push("confirm"); },
+    { onArm: () => log.push("arm"), onReset: () => log.push("reset") });
+  const before = notices.children.length;
+  btn.fire("click");
+  assert.deepEqual(log, ["arm"]);
+  assert.equal(notices.children.length, before, "没传 armNotice 不经 #notices");
+  btn.fire("blur");
+  assert.deepEqual(log, ["arm", "reset"], "失焦复原");
+  btn.fire("blur");
+  assert.deepEqual(log, ["arm", "reset"], "没在确认态时失焦不再复原");
+  btn.fire("click");
+  btn.fire("keydown", { key: "Escape" });
+  assert.deepEqual(log, ["arm", "reset", "arm", "reset"], "Esc 复原");
+  btn.fire("click");
+  btn.fire("click");
+  assert.deepEqual(log, ["arm", "reset", "arm", "reset", "arm", "reset", "confirm"], "确认时先复原再执行");
+  assert.equal(confirmed, 1);
+  btn.setAttribute("aria-disabled", "true");
+  btn.fire("click");
+  assert.equal(log.length, 7, "aria-disabled 时不进入确认");
+});
+
 // ---- disclosure：summary 的标题可以带参数（[key, ...subs]），切换语言时按 data-i18n-args 重写 ----
 
 import { disclosure } from "../src/options/ui.js";

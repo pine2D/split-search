@@ -269,7 +269,7 @@ dialog:focus { outline: none; }
   margin-inline-end: auto; flex: 1 1 220px;
   display: flex; flex-direction: column; align-items: flex-start; gap: 4px;
 }
-#dlg-remove-reason { margin: 0; font-size: 12px; max-width: 40ch; }
+#dlg-remove-reason, #dlg-delete-hint { margin: 0; font-size: 12px; max-width: 40ch; }
 
 /* ---- 提示 ---- */
 .notices {

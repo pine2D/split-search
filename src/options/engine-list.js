@@ -168,7 +168,8 @@ export function openEngineDialog(mode, engine) {
 }
 
 // 底栏左边的危险区：预置引擎只显示“隐藏”，自定义引擎只显示“删除”。两个是静态按钮：confirmStep 包装时就定死了文字的 key。
-// 隐藏随时能恢复，不确认（提示里带“撤销”）；删除要点两次（ui.js 的 confirmStep），第一次点击经 #notices 播报。
+// 隐藏随时能恢复，不确认（提示里带“撤销”）；删除要点两次（ui.js 的 confirmStep）。第一次点击的提醒写进对话框里的
+// #dlg-delete-hint（role="status"），并经 aria-describedby 挂到删除按钮上：模态对话框开着时对话框外的 #notices 是 inert，读屏听不到。
 // 按钮的处理函数从 dialogState.engine 取当前引擎；新增模式下它是 null，危险区整个藏起来，处理函数也直接返回
 function setupDangerZone(dlg, actions) {
   const hide = field("hide");
@@ -178,12 +179,22 @@ function setupDangerZone(dlg, actions) {
     dlg.close();
     actions.hide(e);
   });
-  confirmStep(field("delete"), "engine_delete", "engine_delete_confirm", () => {
+  const del = field("delete"), hint = field("delete-hint");
+  confirmStep(del, "engine_delete", "engine_delete_confirm", () => {
     const e = dialogState?.engine;
     if (!e) return;
     dlg.close();
     actions.remove(e);
-  }, { armNotice: () => t("engine_delete_confirm_hint", dialogState?.engine?.name ?? "") });
+  }, {
+    onArm: () => {
+      setI18nText(hint, "engine_delete_confirm_hint", dialogState?.engine?.name ?? "");
+      del.setAttribute("aria-describedby", "dlg-delete-hint");
+    },
+    onReset: () => {
+      clearI18nText(hint);
+      if (del.getAttribute("aria-describedby") === "dlg-delete-hint") del.removeAttribute("aria-describedby");
+    },
+  });
 }
 
 // 默认组合在用的引擎：按钮照常显示、能拿到焦点，但 aria-disabled（读屏读“不可用”），下方可见原因写明出路，
