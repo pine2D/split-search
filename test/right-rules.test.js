@@ -170,6 +170,9 @@ test("nextRuleId / rulesBytes / 常量", () => {
   assert.ok(R.rulesBytes([{ id: "r1", when: "words", words: ["a"], engine: "ec" }]) < R.RULE_LIMITS.bytes);
   assert.deepEqual(R.RULE_LIMITS, { rules: 20, wordsPerRule: 30, wordsTotal: 60, wordLength: 32, queryScan: 1000, bytes: 8000 });
   assert.deepEqual(R.SCRIPTS, ["han", "kana", "hangul", "cyrillic"]);
+  // 句中用的名称（SCRIPT_KEYS）与对话框下拉选项（SCRIPT_OPTION_KEYS，es 等语言要首字母大写）各一套，都覆盖全部文字
+  assert.deepEqual(Object.keys(R.SCRIPT_KEYS), R.SCRIPTS);
+  assert.deepEqual(Object.entries(R.SCRIPT_OPTION_KEYS), R.SCRIPTS.map(s => [s, `script_option_${s}`]));
   assert.equal(R.RULE_ID.source, "^r[1-9][0-9]{0,3}$");
   assert.equal(OWNER_RULE_ID.source, R.RULE_ID.source);
 });

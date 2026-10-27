@@ -11,6 +11,9 @@ export const SCRIPTS = Object.freeze(["han", "kana", "hangul", "cyrillic"]);
 // 每种文字的界面名（弹窗说明、设置页规则行）：字面量 key，i18n-catalog 靠它认出引用，不拼接 "script_" + id
 export const SCRIPT_KEYS = Object.freeze({ han: "script_han", kana: "script_kana", hangul: "script_hangul",
   cyrillic: "script_cyrillic" });
+// 规则对话框下拉框里的选项：单独成行，要按列表项的大小写（es 首字母大写），所以与句中用的 SCRIPT_KEYS 分开
+export const SCRIPT_OPTION_KEYS = Object.freeze({ han: "script_option_han", kana: "script_option_kana",
+  hangul: "script_option_hangul", cyrillic: "script_option_cyrillic" });
 
 const QUERY_CUT = 4000;
 const SEPARATORS = /[,，、;；\r\n]/u;
@@ -45,6 +48,7 @@ export function parseWords(text) {
   if (words.length === 0) return wordsError("rule_no_words");
   if (words.length > RULE_LIMITS.wordsPerRule) return wordsError("rule_too_many_words");
   const long = words.find(w => codePoints(w).length > RULE_LIMITS.wordLength);
+  // 只给前 12 个字；词总比 12 个字长，省略号写在文案里（err_rule_word_long）
   if (long) return wordsError("rule_word_long", codePoints(long).slice(0, 12).join(""));
   return { ok: true, words };
 }

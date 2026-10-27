@@ -1315,11 +1315,11 @@
   },
   "options_rules_script_label": {
     "message": "文字",
-    "description": "Rule dialog: label of the writing-system dropdown (options are script_han, script_kana, script_hangul, script_cyrillic). Use the same word as err_rule_script."
+    "description": "Rule dialog: label of the writing-system dropdown (options are script_option_han, script_option_kana, script_option_hangul, script_option_cyrillic). Use the same word as err_rule_script."
   },
   "options_rules_script_hint": {
     "message": "有一个这种字符就算，所以中文搜索几乎都会命中。日文搜索常带汉字，“日文假名”要排在“汉字”前面。",
-    "description": "Rule dialog: hint under the writing-system dropdown. Use the same names as script_kana and script_han."
+    "description": "Rule dialog: hint under the writing-system dropdown. Use the same names as script_option_kana and script_option_han."
   },
   "options_rules_engine_label": {
     "message": "右侧用",
@@ -1422,8 +1422,8 @@
     "description": "Keyword rule dialog, words field: all rules together would have more than 60 words."
   },
   "err_rule_word_long": {
-    "message": "“$WORD$”太长，每个词最多 32 个字",
-    "description": "Keyword rule dialog, words field: one word is longer than 32 characters (code points, after normalization). $WORD$ is the first 12 characters of that word.",
+    "message": "“$WORD$…”太长，每个词最多 32 个字",
+    "description": "Keyword rule dialog, words field: one word is longer than 32 characters (code points, after normalization). $WORD$ is the first 12 characters of that word; the word is always longer, so the message adds the ellipsis after $WORD$.",
     "placeholders": {
       "WORD": {
         "content": "$1",
@@ -1687,19 +1687,35 @@
   },
   "script_han": {
     "message": "汉字",
-    "description": "Writing-system name (Han characters, used in Chinese and in Japanese kanji). Shown inside popup_rule_script and as an option in the keyword-rule dialog in settings."
+    "description": "Writing-system name (Han characters, used in Chinese and in Japanese kanji). Shown mid-sentence inside popup_rule_script and options_rules_script_row, so keep the casing a sentence needs (the dialog option uses script_option_*)."
   },
   "script_kana": {
     "message": "日文假名",
-    "description": "Writing-system name (Japanese hiragana and katakana). Shown inside popup_rule_script and as an option in the keyword-rule dialog in settings."
+    "description": "Writing-system name (Japanese hiragana and katakana). Shown mid-sentence inside popup_rule_script and options_rules_script_row, so keep the casing a sentence needs (the dialog option uses script_option_*)."
   },
   "script_hangul": {
     "message": "韩文",
-    "description": "Writing-system name (Korean Hangul). Shown inside popup_rule_script and as an option in the keyword-rule dialog in settings."
+    "description": "Writing-system name (Korean Hangul). Shown mid-sentence inside popup_rule_script and options_rules_script_row, so keep the casing a sentence needs (the dialog option uses script_option_*)."
   },
   "script_cyrillic": {
     "message": "西里尔字母",
-    "description": "Writing-system name (Cyrillic letters, used in Russian, Ukrainian and others). Shown inside popup_rule_script and as an option in the keyword-rule dialog in settings."
+    "description": "Writing-system name (Cyrillic letters, used in Russian, Ukrainian and others). Shown mid-sentence inside popup_rule_script and options_rules_script_row, so keep the casing a sentence needs (the dialog option uses script_option_*)."
+  },
+  "script_option_han": {
+    "message": "汉字",
+    "description": "Option in the writing-system dropdown of the keyword-rule dialog in settings (Han characters, used in Chinese and in Japanese kanji). Stands alone, so capitalize it as a list item; same name as script_han."
+  },
+  "script_option_kana": {
+    "message": "日文假名",
+    "description": "Option in the writing-system dropdown of the keyword-rule dialog in settings (Japanese kana). Stands alone, so capitalize it as a list item; same name as script_kana."
+  },
+  "script_option_hangul": {
+    "message": "韩文",
+    "description": "Option in the writing-system dropdown of the keyword-rule dialog in settings (Korean Hangul). Stands alone, so capitalize it as a list item; same name as script_hangul."
+  },
+  "script_option_cyrillic": {
+    "message": "西里尔字母",
+    "description": "Option in the writing-system dropdown of the keyword-rule dialog in settings (Cyrillic letters, used in Russian, Ukrainian and others). Stands alone, so capitalize it as a list item; same name as script_cyrillic."
   },
   "popup_complete_detected": {
     "message": "识别到 $ENGINE$ 搜索：$QUERY$",

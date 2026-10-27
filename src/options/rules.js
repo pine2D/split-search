@@ -2,7 +2,7 @@
 // 写入都经 actions（actions.js，串行写入链）；校验、选项、行文字的逻辑在 rule-edits.js。
 import { h, ht, disclosure, confirmStep, clearFieldErrors, showFieldErrors } from "./ui.js";
 import { engineChoices, targetLabel } from "./rule-edits.js";
-import { SCRIPTS, SCRIPT_KEYS, shadowedWords } from "../lib/right-rules.js";
+import { SCRIPTS, SCRIPT_KEYS, SCRIPT_OPTION_KEYS, shadowedWords } from "../lib/right-rules.js";
 import { t, setI18nText } from "../chrome/i18n.js";
 import { icon } from "../ui/icons.js";
 
@@ -120,7 +120,7 @@ export function setupRuleDialog(actions, getCfg) {
   currentCfg = getCfg;
   const dlg = $("rule-dialog");
   const form = $("rule-form");
-  $("rule-script").replaceChildren(...SCRIPTS.map(s => ht("option", { value: s }, SCRIPT_KEYS[s])));
+  $("rule-script").replaceChildren(...SCRIPTS.map(s => ht("option", { value: s }, SCRIPT_OPTION_KEYS[s])));
   for (const radio of [$("rule-when-words"), $("rule-when-script")]) radio.addEventListener("change", showWhenFields);
   $("rule-dlg-cancel").addEventListener("click", () => dlg.close());
   // Esc、取消关掉时焦点还给触发按钮（规则区可能已重渲染，原来的按钮不在了，按 id 找）
