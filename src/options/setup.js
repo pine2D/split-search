@@ -61,7 +61,8 @@ export function initSetup(render) {
     if (area === "local") onLocal(changes);
   });
   window.addEventListener("hashchange", () => {
-    if (location.hash === "#setup") requestReveal();
+    const target = hashTarget(location.hash);
+    if (target) requestReveal(target);
   });
   chrome.tabs.getCurrent().then(tab => { selfTabId = tab?.id ?? null; })
     .catch(err => info("options: reading the current tab failed", err));
@@ -73,7 +74,7 @@ export function initSetup(render) {
 function onRevealMessage(msg, sender, sendResponse) {
   const ctx = { extId: chrome.runtime.id, popupUrl: chrome.runtime.getURL("popup/popup.html"), tabId: selfTabId };
   if (!acceptRevealSetup(msg, sender, ctx)) return undefined;
-  requestReveal();
+  requestReveal("setup");
   sendResponse({ ok: true });
   return undefined;
 }
@@ -176,15 +177,19 @@ const title = (key, props = {}, ...children) => children.length
   : ht("h2", { id: "setup-title", tabindex: "-1", ...props }, key);
 
 // 网址带 #setup（弹窗的“完成设置”“去第 2 步”新开的设置页）：页面第一次显示出来后滚到卡片、焦点给标题；卡片不显示时什么都不做。
-// 只做一次，之后 hash 再变成 #setup 或收到弹窗的 reveal-setup 才再做
-let revealPending = location.hash === "#setup";
-function requestReveal() {
-  revealPending = true;
+// 网址带 #guide-steps（中键或 Ctrl+点“详细步骤”在新标签打开的）：同样等页面显示出来，再做与左键点击相同的 revealGuideSteps。
+// 只做一次，之后 hash 再变成这两者之一或收到弹窗的 reveal-setup 才再做
+const hashTarget = hash => (hash === "#setup" ? "setup" : hash === "#guide-steps" ? "guide-steps" : null);
+let revealPending = hashTarget(location.hash);
+function requestReveal(target) {
+  revealPending = target;
   revealSetup();
 }
 export function revealSetup() {
-  if (!revealPending) return;
-  revealPending = false;
+  const target = revealPending;
+  if (!target) return;
+  revealPending = null;
+  if (target === "guide-steps") return revealGuideSteps();
   const card = document.getElementById("setup");
   if (!card || card.hidden) return;
   card.scrollIntoView({ block: "start" });

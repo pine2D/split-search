@@ -89,7 +89,7 @@ async function render() {
     applyStatic();
     notify(t("notice_load_failed", errorText(err)), "error");
     document.body.classList.remove("loading");
-    revealSetup(); // 卡片没渲染出来（隐藏）：只是清掉 #setup 的待办，免得之后哪次渲染成功时突然滚动、抢焦点
+    revealSetup(); // 卡片没渲染出来（隐藏）：#setup 的待办只是清掉，免得之后哪次渲染成功时突然滚动、抢焦点；#guide-steps 照常展开静态的 5 步说明
     return;
   }
   const pendingOrder = getPendingOrder();
@@ -125,7 +125,7 @@ async function render() {
   if (focusedId && document.activeElement === document.body) focusAfterRender(focusedId);
   refreshShortcut();
   document.body.classList.remove("loading");
-  revealSetup(); // 网址带 #setup：页面显示出来之后才能滚动和给焦点
+  revealSetup(); // 网址带 #setup 或 #guide-steps：页面显示出来之后才能滚动和给焦点
 }
 
 // 快捷键一行只依赖 chrome.commands，不随存储变化；用户去 chrome://extensions/shortcuts 绑完回来时（focus）也重画
