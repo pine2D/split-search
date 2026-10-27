@@ -4,11 +4,12 @@
 import { pane, panes } from "../ui/panes.js";
 import { engineById, originPattern } from "../lib/engines.js";
 import { idleView } from "../lib/popup-view.js";
-import { REVEAL_SETUP, pickOptionsTab } from "../lib/messages.js";
+import { REVEAL_SETUP } from "../lib/messages.js";
 import { safeArgs } from "../lib/safe-error.js";
 import { t, setI18nText } from "../chrome/i18n.js";
 import { currentShortcut, openShortcutsPage } from "../chrome/shortcuts.js";
 import { readSetupDone } from "../chrome/setup-store.js";
+import { findOptionsTab } from "../chrome/options-page.js"; // 已开的设置页：优先弹窗所在窗口里的，其次第一个
 
 const $ = (id) => document.getElementById(id);
 const log = (...args) => console.error("[split-search]", ...safeArgs(args));
@@ -56,12 +57,6 @@ export async function readSetupState(cfg) {
 function createSetup() {
   return Promise.resolve().then(() => chrome.tabs.create({ url: chrome.runtime.getURL(SETUP_PAGE) }))
     .catch((err) => log("popup: opening Get started failed", err));
-}
-
-// 已开的设置页（runtime.getContexts 不需要 tabs 权限）：优先弹窗所在窗口里的，其次第一个；没有返回 null
-async function findOptionsTab() {
-  const [contexts, win] = await Promise.all([chrome.runtime.getContexts({ contextTypes: ["TAB"] }), chrome.windows.getCurrent()]);
-  return pickOptionsTab(contexts, { optionsUrl: chrome.runtime.getURL("options/options.html"), windowId: win?.id });
 }
 
 // 有已开的设置页就切过去，再让它自己滚到卡片、焦点给标题（reveal-setup，设置页回复，SW 不回复）；

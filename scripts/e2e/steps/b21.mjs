@@ -5,7 +5,8 @@
 // (e) 默认 tab 只判一次：停在 ① 时完成设置，卡片换成完成确认，仍在 ①；
 // (i) “调整顺序”模式中切走：1 秒内写出 order，焦点留在新 tab 按钮上，切回时已退出模式；
 // (j) 已开的设置页停在 ③ 时从弹窗点“打开设置”：不新开、不重载，仍是 ③。
-// (f)(g)(h)(k) 跨 tab 链接与焦点兜底、(m) 语言切换、(n) 地址栏手改 hash 见 b21-links.mjs；(l) 宽度见 b21-width.mjs。
+// (f)(g)(h)(h')(k) 跨 tab 链接与焦点兜底、(m) 语言切换、(n) 地址栏手改 hash 见 b21-links.mjs；(l) 宽度见 b21-width.mjs；
+// (o) go.html 出错页“打开设置”按错误码进对应 tab 见 b21-go.mjs。
 // guarded 写回 defaultPair、uiLocale、customEngines、presetOverrides、order；keepSetupDone 写回 setupDone / setupTryTabs；
 // 子项撤销过的授权记进 env.revoked（子项自己恢复成功就删掉），剩下的收尾用 requestGrant 恢复（之前授权过，Chrome 直接批准，不弹框）。
 import { GRANT_TIMEOUT_MS, requestGrant, contains, activate } from "./guided.mjs";
@@ -18,6 +19,7 @@ import { sub, verdict } from "./v03-lib.mjs";
 import { pageTargets, resetTabs, summarize } from "./util.mjs";
 import { NOW, fmtNow, hashLocaleChecks, linkChecks } from "./b21-links.mjs";
 import { widthCheck } from "./b21-width.mjs";
+import { goDeepLink } from "./b21-go.mjs";
 import { msg } from "../i18n.mjs";
 
 const J = JSON.stringify;
@@ -228,6 +230,7 @@ export const B21 = {
       items.push(await sub("(e) 停在 ① 时完成设置，tab 不跳", () => staysOnAdd(ctx)));
       items.push(await sub("(i) “调整顺序”模式中切走：立即写出、焦点不抢、切回已退出", () => reorderLeave(ctx)));
       items.push(await sub("(j) 已开的设置页停在 ③ 时从弹窗“打开设置”", () => openFromPopup(ctx, idleTab)));
+      items.push(await sub("(o) go.html 出错页“打开设置”按错误码进对应 tab", () => goDeepLink(ctx)));
       items.push(...await linkChecks(ctx, env)); // (g)(k) 撤销的授权在各自结束前就地恢复，(l) 要求卡片不显示
       items.push(...await hashLocaleChecks(ctx));
       items.push(await sub("(l) 宽度：四语同一条右边界、600 宽不溢出、引擎行不折", () => widthCheck(ctx)));

@@ -6,6 +6,8 @@ import { loadConfig } from "./chrome/config-store.js";
 import { ACTIONS, leaveTab } from "./chrome/split-actions.js";
 import { inspectTab } from "./chrome/split-state.js";
 import { noteSetupPair } from "./chrome/setup-store.js";
+import { openOptionsTab } from "./chrome/options-page.js";
+import { errorTab } from "./lib/options-route.js";
 import { initI18n, applyI18n, setI18nText } from "./chrome/i18n.js";
 import { errorKey } from "./lib/errors.js";
 import { safeArgs } from "./lib/safe-error.js";
@@ -14,6 +16,7 @@ const log = (...args) => console.error("[split-search]", ...safeArgs(args));
 // 这两个错误码设置页也用，措辞面向设置页；出错页另有带“怎么办”的文案
 const GO_KEYS = { bad_url: "go_err_bad_url", not_left: "go_err_not_left" };
 const $ = (id) => document.getElementById(id);
+let optionsKey = null; // 出错页“打开设置”去哪个 tab（lib/options-route.js 的 errorTab），null 时照旧打开设置页
 
 // 文案并行加载，不 await：分屏路径（解析、读配置、分屏、跳转）不等它。
 // 加载失败也照样 applyI18n（t() 有退路），i18n-pending 一定会被去掉。
@@ -83,6 +86,7 @@ async function main() {
   $("error").hidden = true;
   $("open-options").hidden = true;
   $("left-only").hidden = true;
+  optionsKey = null;
   setStatus("go_status_opening").catch(log);
 
   const original = extractOriginalUrl(location.search);
@@ -105,6 +109,7 @@ async function main() {
   const parsed = parseTrigger(original, cfg.engines);
   if (!parsed.ok) {
     const [key, ...subs] = errorKey(parsed.error) ?? ["go_status_failed"];
+    optionsKey = errorTab(parsed.error.code);
     showError(GO_KEYS[parsed.error.code] ?? key, ...subs).catch(log);
     offerLeftOnly(original).catch(log);
     return;
@@ -116,6 +121,7 @@ async function main() {
     leftUrl = query === "" ? expandTemplate(left.url, "") : stripMarker(original);
   } catch (err) {
     log("failed to build the left URL", err);
+    optionsKey = errorTab("bad_template");
     showError("go_err_bad_template", left.name).catch(log);
     return;
   }
@@ -146,7 +152,7 @@ async function main() {
 
 async function start() {
   $("open-options").addEventListener("click", () => {
-    chrome.runtime.openOptionsPage().catch(err => log("failed to open the options page", err));
+    openOptionsTab(optionsKey).catch(err => log("failed to open the options page", err));
   });
 
   // 防重入：后退/前进/刷新回到本页时不自动分屏，只给“重新执行”按钮。

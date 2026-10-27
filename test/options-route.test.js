@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { TAB_KEYS, tabHash, routeFromHash, initialTab, stepTab } from "../src/lib/options-route.js";
+import { TAB_KEYS, tabHash, routeFromHash, initialTab, stepTab, errorTab } from "../src/lib/options-route.js";
 
 test("TAB_KEYS 与 tabHash", () => {
   assert.deepEqual(TAB_KEYS, ["add", "pair", "engines", "lookup"]);
@@ -46,4 +46,10 @@ test("stepTab：←/→ 循环，Home/End 到首尾，其他键 null（Review Fo
   for (const k of ["ArrowUp", "ArrowDown", "Enter", " ", "PageUp", "Tab"]) assert.equal(stepTab(TAB_KEYS, "pair", k), null, k);
   assert.equal(stepTab(TAB_KEYS, "nope", "ArrowRight"), null);
   assert.equal(stepTab(TAB_KEYS, "nope", "Home"), "add");
+});
+
+test("errorTab：重新复制触发网址的进 ①，检查或重新添加引擎的进 ③，其余为 null", () => {
+  for (const c of ["bad_url", "marker_format", "template_mismatch"]) assert.equal(errorTab(c), "add", c);
+  for (const c of ["unknown_engine", "not_left", "bad_template"]) assert.equal(errorTab(c), "engines", c);
+  for (const c of [undefined, null, "", "no_trigger", "config_unreadable", "toString", "__proto__"]) assert.equal(errorTab(c), null, String(c));
 });
