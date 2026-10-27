@@ -105,7 +105,7 @@ function genOutput(left, right, { cfg, granted, refresh, setupShown }) {
   if (!inSetupCard && granted.get(left.id) !== true) {
     nodes.push(h("div", { class: "callout callout-warn" },
       ht("span", null, "guide_left_not_granted", left.name),
-      authButton([left, right], ["engine_grant_named", left.name], { cls: "btn btn-small btn-attention", onDone: refresh })));
+      withId(authButton([left, right], ["engine_grant_named", left.name], { cls: "btn btn-small btn-attention", onDone: refresh }), "gen-grant")));
   }
   return nodes;
 }

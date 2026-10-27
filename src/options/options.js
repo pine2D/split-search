@@ -11,7 +11,7 @@ import { renderRules, setupRuleDialog } from "./rules.js";
 import { setupCatalogDialog, refreshCatalog } from "./catalog.js";
 import { renderShortcut, renderCycleList, SHORTCUT_BUTTON_ID } from "./shortcut.js";
 import { renderTriggers, renderGuideSteps, setupGuide, revealGenerator } from "./guide.js";
-import { renderSetup, loadSetupDone, initSetup, revealSetup, requestReveal } from "./setup.js";
+import { renderSetup, loadSetupDone, initSetup, listenReveal, revealSetup, requestReveal } from "./setup.js";
 import { initTabs, routeOnce, setTabFlag, focusIn } from "./tabs.js";
 import { applyRichText, renderLangPicker } from "./locale-ui.js";
 import { initI18n, applyI18n, setLocale, currentPref, currentLocale, t } from "../chrome/i18n.js";
@@ -32,8 +32,9 @@ bindActions({ render: () => render(), current: () => current });
 // 两个都没了就交给卡头看得见的那个：模式中是“完成”（“新增引擎”这时隐藏，focus() 不生效），
 // 平时（“调整顺序”自动退出）是“新增引擎”。
 // “已隐藏”里的“恢复”成功后这一行没了：焦点交给这个引擎新出现的那一行，模式中是它的上移（边缘被禁用时照上面交给下移），平时是它的“编辑”
-// “搜索组合”里左侧未授权的提示框授权成功后消失：焦点交给同一 tab 的左侧下拉框
-const FOCUS_FALLBACK = { "setup-grant": "setup-grant-status", "setup-grant-right": "setup-grant-status", "pair-grant": "pair-left" };
+// “搜索组合”里左侧未授权的提示框授权成功后消失：焦点交给同一 tab 的左侧下拉框；“其他组合”生成器的同样交给它自己的左侧下拉框
+const FOCUS_FALLBACK = { "setup-grant": "setup-grant-status", "setup-grant-right": "setup-grant-status", "pair-grant": "pair-left",
+  "gen-grant": "gen-left" };
 function focusAfterRender(focused) {
   const restored = focused.startsWith("restore-") && !$(focused) ? focused.slice("restore-".length) : null;
   const id = restored ? (isReordering() ? `move-up-${restored}` : `edit-${restored}`) : focused;
@@ -169,6 +170,7 @@ async function refreshShortcut() {
 // ---- 启动 ----
 
 // 对话框和“复制地址”按钮要用 t()，等目录加载完再建；下面的监听只调 render()，render 自己 await i18nReady
+listenReveal();
 i18nReady.then(() => {
   setupEngineDialog(actions, () => current);
   setupRuleDialog(actions, () => current);

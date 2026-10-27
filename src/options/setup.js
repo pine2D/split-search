@@ -5,7 +5,7 @@
 import { buildTriggerTemplate, expandTemplate } from "../lib/trigger.js";
 import { setupView } from "../lib/setup-state.js";
 import { safeArgs } from "../lib/safe-error.js";
-import { acceptRevealSetup } from "../lib/messages.js";
+import { acceptRevealSetup, isRevealSetup } from "../lib/messages.js";
 import { routeFromHash } from "../lib/options-route.js";
 import { DONE_KEY, readSetupDone, rememberTryTab } from "../chrome/setup-store.js";
 import { h, ht, notify, errorText, authButton } from "./ui.js";
@@ -23,6 +23,8 @@ let justCompleted = false;  // 本页看到 setupDone 变成 true：卡片换成
 let lastLeft = null;        // 上次渲染时的 { id, granted }，用来播报“左侧授权被取消”
 let rerender = () => {};
 let selfTabId = null;       // 本页所在标签：弹窗的 reveal-setup 只给它选中的那个设置页
+let selfTab = Promise.resolve(null); // 读 selfTabId 的那次 tabs.getCurrent：消息比它先到时等它
+let selfTabRead = false;    // 那次读取已结束（读失败时 selfTabId 仍是 null）
 
 // ---- 状态 ----
 
@@ -62,19 +64,33 @@ export function initSetup(render) {
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area === "local") onLocal(changes);
   });
-  chrome.tabs.getCurrent().then(tab => { selfTabId = tab?.id ?? null; })
-    .catch(err => info("options: reading the current tab failed", err));
+}
+
+// 页面脚本一加载就由 options.js 调用（不等文案）：弹窗经 getContexts 找到这一页时就已经有接收者；定位本身由 revealSetup 的 loading 守卫延后
+export function listenReveal() {
+  selfTab = chrome.tabs.getCurrent().then(tab => (selfTabId = tab?.id ?? null))
+    .catch(err => { info("options: reading the current tab failed", err); return null; })
+    .finally(() => { selfTabRead = true; });
   chrome.runtime.onMessage.addListener(onRevealMessage);
 }
 
 // 弹窗的“完成设置”“去第 2 步”找到已开的设置页时发 reveal-setup（同一 hash 再导航一次不会触发 hashchange）：
-// 与 #setup 一样滚到卡片、焦点给标题，卡片不显示时什么都不做。别的消息（complete-split 等）不回复，留给 SW
+// 与 #setup 一样滚到卡片、焦点给标题，卡片不显示时什么都不做。别的消息（complete-split 等）不回复，留给 SW。
+// 本页刚打开、还没读到自己的标签 id 时先等它（只有这时才返回 true 留着回复通道）；首次渲染前到达的由 revealSetup 留到渲染后再做
 function onRevealMessage(msg, sender, sendResponse) {
-  const ctx = { extId: chrome.runtime.id, popupUrl: chrome.runtime.getURL("popup/popup.html"), tabId: selfTabId };
-  if (!acceptRevealSetup(msg, sender, ctx)) return undefined;
-  requestReveal("setup");
-  sendResponse({ ok: true });
-  return undefined;
+  const handle = tabId => {
+    const ctx = { extId: chrome.runtime.id, popupUrl: chrome.runtime.getURL("popup/popup.html"), tabId };
+    if (!acceptRevealSetup(msg, sender, ctx)) return false;
+    requestReveal("setup");
+    sendResponse({ ok: true });
+    return true;
+  };
+  if (selfTabRead || !isRevealSetup(msg)) {
+    handle(selfTabId);
+    return undefined;
+  }
+  selfTab.then(handle);
+  return true;
 }
 
 // ---- 渲染 ----
@@ -189,7 +205,7 @@ export function requestReveal(target) {
 }
 export function revealSetup() {
   const target = revealPending;
-  if (!target) return;
+  if (!target || document.body.classList.contains("loading")) return; // 首次渲染前：留着，options.js 去掉 loading 后再调
   revealPending = null;
   if (target === "guide-steps") return revealGuideSteps();
   const card = document.getElementById("setup");
