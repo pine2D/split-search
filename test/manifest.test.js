@@ -26,7 +26,7 @@ test("manifest 满足硬约束", () => {
 
 test("manifest 基本信息", () => {
   assert.equal(m.name, "Split Search");
-  assert.equal(m.version, "0.6.0");
+  assert.equal(m.version, "0.6.1");
   assert.equal(m.default_locale, "en");
   assert.equal(m.description, "__MSG_ext_description__");
   assert.equal(m.action.default_title, "__MSG_ext_action_title__");
