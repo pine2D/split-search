@@ -25,7 +25,7 @@ body.loading main { visibility: hidden; }
 }
 .page-title { flex: 1 1 320px; }
 .page-head h1 { margin: 0 0 4px; font-size: 22px; }
-.page-title p { margin: 0; }
+.page-title p { margin: 0; text-wrap: pretty; }
 
 /* ---- 语言 ---- */
 .lang-box { flex: 0 1 300px; }
@@ -37,9 +37,14 @@ body.loading main { visibility: hidden; }
 
 h2 { font-size: 16px; margin: 0 0 6px; }
 h3 { font-size: 14px; margin: 20px 0 6px; }
+h2, h3 { text-wrap: balance; }
 
 .muted, .hint { color: var(--muted); }
 .hint { font-size: 13px; margin: 4px 0; }
+/* 说明文字的行长：780px 的卡片里 13px 的整行有 95–118 个字符。ch 按数字 0 的宽度算，正文字母平均更窄，
+   72ch 实测仍有 87–92 个字符一行，60ch 才在 80 以内（中文约 33 字）；flex 里的提示（.step-actions .hint 等）
+   仍按各自的 flex 分配，只是不会超过这个宽度。窄窗口里末行只剩一个词时 pretty 会从上一行挪一个下来 */
+.hint, .steps li, .caveats li, .step-body p { max-width: 60ch; text-wrap: pretty; }
 .hint-ok { color: var(--ok); }
 .hint-warn { color: var(--warn); }
 .hint-error { color: var(--danger); }
