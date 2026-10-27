@@ -98,6 +98,13 @@ v0.1 的 B/T 表（`docs/acceptance-v0.1.md` 第 3 节）和 v0.3 的表（`docs
 
 与设计第 6 节的推算逐项一致。改前引擎行逐行是：Google 轮换、授权、↓、编辑；Bing 轮换、授权、↑、↓、编辑；DuckDuckGo、Perplexity 各轮换、授权、↑、↓、编辑、隐藏；Kagi 轮换、授权、↑、编辑、隐藏。改后每行是授权、“编辑 <名称>”。排序模式里是 Google ↓，Bing、DuckDuckGo、Perplexity 各 ↑↓，Kagi ↑。
 
+#### 未覆盖（人工项）
+
+设计第 4 节、第 9 节要求的两项，本批没有做，留给人工：
+
+- **ChromeVox 抽查**：没有在真实读屏下听过。要听三处：快捷键卡轮换折叠区的 `fieldset`/`legend`，快速 Tab 时单个复选框是否只读到引擎名、不读分组名；进入“调整顺序”模式时 `#engines-status` 播报的模式说明；每次上移/下移后的“名称：第 N 位，共 M 个”。e2e 只核对了 DOM 结构和 `#engines-status` 的文字（B13、B17），读屏怎么念要人工听。
+- **`/impeccable critique` 复评**：没有重跑。要再跑一次，与 `.impeccable/critique/2026-10-26T16-46-05Z__src.md` 的 P2 第 2 条“引擎行控件过密”对比。impeccable `detect` 静态扫 `src/options` 是 0 条，但它只做正则扫描，代替不了 critique。
+
 ### 验收用例 T20–T24
 
 | 编号 | 操作步骤 | 期望 | 覆盖 |

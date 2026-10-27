@@ -95,7 +95,7 @@ split-search/
 ├── .gitignore
 ├── package.json                  "test": "node --test"、"e2e": "node scripts/e2e/run.mjs"、"pack": "node scripts/pack.mjs"
 ├── dist/                         发布 ZIP（npm run pack 生成，不进 git）
-├── docs/acceptance-v0.4.md       v0.4 验收清单（对应 e2e 步骤 T20–T24、B18、B19，以及扩充的 B14、I18N；T5 重启期望的改动；界面翻新改写的 B2、B4、B6、B7、B12、T18、T19；界面收尾改写的 B4、B7、B8、B18、B19、I18N）
+├── docs/acceptance-v0.4.md       v0.4 验收清单（对应 e2e 步骤 T20–T24、B18、B19，以及扩充的 B14、I18N；T5 重启期望的改动；界面翻新改写的 B2、B4、B6、B7、B12、T18、T19；界面收尾改写的 B4、B7、B8、B18、B19、I18N；引擎行精简改写的 B7、B10、B12、B13、B17、I18N 与 Tab 停靠点实测）
 ├── docs/acceptance-v0.3.md       v0.3 验收清单（对应 e2e 步骤 T16–T19、B16、B17、B2）
 ├── docs/acceptance-v0.1.md       v0.1 验收：跑 e2e（Windows 冒烟 v0.1 不做，2026-10-24 用户决定）；B/T 表注明覆盖方式
 ├── docs/i18n/chrome-terms.md     Chrome 术语表：各语言功能术语以此为准（由 scripts/i18n/chrome-terms.mjs 生成）
