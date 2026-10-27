@@ -1160,7 +1160,7 @@
     "description": "Heading of the keyboard shortcut card on the settings page."
   },
   "options_shortcut_hint": {
-    "message": "En una vista dividida abierta por Split Search, pulsa el acceso directo para cambiar el lado derecho al siguiente buscador de la rotación (elígelos abajo). De forma predeterminada no hay ninguno configurado. Haz clic en «Asignar acceso directo» para elegirlo en la página Accesos directos de Chrome.",
+    "message": "En una vista dividida abierta por Split Search, pulsa el acceso directo para cambiar el lado derecho al siguiente buscador de la rotación (elígelos abajo). De forma predeterminada no hay ningún acceso directo asignado. Haz clic en «Asignar acceso directo» para elegirlo en la página Accesos directos de Chrome.",
     "description": "Hint in the keyboard shortcut card; the rotation checkboxes are below it in the same card. The page name must match Chrome's own title of chrome://extensions/shortcuts (Keyboard shortcuts); the quoted button text must match options_shortcut_open."
   },
   "options_shortcut_label": {
@@ -1190,7 +1190,7 @@
     }
   },
   "options_cycle_hint": {
-    "message": "La rotación sigue el orden de la lista de buscadores y se salta los que no están marcados y el buscador de la izquierda actual.",
+    "message": "La rotación sigue el orden de la lista de buscadores. Se omiten los que no están marcados y el de la izquierda actual.",
     "description": "Legend of the rotation checkbox group in the keyboard shortcut card: the order of rotation and what is skipped."
   },
   "popup_not_ours": {

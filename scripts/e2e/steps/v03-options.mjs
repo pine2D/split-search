@@ -236,7 +236,8 @@ const toggle = ctx => sub("(c) 快捷键卡的轮换开关写入 cycleExclude", 
   if (!s0.name || s0.label !== s0.name) p.push(`#cycle-ec 的 label 文字应是引擎名 ${J(s0.name)}，实际 ${J(s0.label)}`);
   if (!s0.checked) p.push("ec 的开关初始应为打开（基线没有 cycleExclude）");
   if (s0.tag) p.push("ec 还在轮换里，行上不该有“不参与轮换”标签");
-  await page.run(`document.querySelector("#cycle details").open = true; document.getElementById("cycle-ec").click(); return true;`);
+  // 先给焦点再点（元素.click() 不移焦点）：重渲染换掉了这个节点，焦点应回到新建的 #cycle-ec（spec 3.4）
+  await page.run(`document.querySelector("#cycle details").open = true; const b = document.getElementById("cycle-ec"); b.__ssOld = true; b.focus(); b.click(); return true;`);
   const off = await page.until(`return (await chrome.storage.sync.get("cycleExclude")).cycleExclude?.includes("ec") ?? false`, 5000).then(() => true, () => false);
   if (!off) p.push(`关掉 ec 的开关后 cycleExclude 应含 ec，实际 ${J(await ex())}`);
   await page.until(`return !document.getElementById("cycle-ec")?.checked`, 5000).catch(() => p.push("关掉后重画的开关不是关的"));
@@ -244,10 +245,12 @@ const toggle = ctx => sub("(c) 快捷键卡的轮换开关写入 cycleExclude", 
   if (!s1.tag) p.push(`关掉后 ec 的行上应有“${msg("engine_tag_no_cycle")}”标签`);
   if (s1.summary !== msg("options_cycle_title", n - 1, n)) p.push(`关掉后 summary 应为“${msg("options_cycle_title", n - 1, n)}”，实际 ${J(s1.summary)}`);
   if (s1.open !== true) p.push("重渲染后 <details> 应仍展开");
+  const f = await page.until(`const a = document.activeElement; return a?.id === "cycle-ec" && !a.__ssOld && { id: a.id };`, 5000).catch(() => page.run(`const a = document.activeElement; return { id: a?.id || a?.tagName || null, old: !!a?.__ssOld };`));
+  if (f.id !== "cycle-ec" || f.old) p.push(`重渲染后焦点应在新建的 #cycle-ec 上，实际 ${J(f)}`);
   await page.run(`document.getElementById("cycle-ec").click(); return true;`);
   const on = await page.until(`return !((await chrome.storage.sync.get("cycleExclude")).cycleExclude ?? []).includes("ec")`, 5000).then(() => true, () => false);
   if (!on) p.push(`再打开后 cycleExclude 不应含 ec，实际 ${J(await ex())}`);
-  return verdict(p, `清单默认收起、summary“${s0.summary}”、开关在快捷键卡里；关掉 ec → cycleExclude 含 ec、行上出现“${msg("engine_tag_no_cycle")}”、summary 少 1、清单仍展开；再打开 → 不含（${J(await ex())}）`);
+  return verdict(p, `清单默认收起、summary“${s0.summary}”、开关在快捷键卡里；关掉 ec → cycleExclude 含 ec、行上出现“${msg("engine_tag_no_cycle")}”、summary 少 1、清单仍展开、焦点回到新的 #cycle-ec；再打开 → 不含（${J(await ex())}）`);
 }));
 
 const B17 = {

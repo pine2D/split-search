@@ -116,6 +116,7 @@ Google  [默认左侧]                        ⚠ 未授权（必需） [授权]
     <button type="button" id="dlg-hide" class="btn" data-i18n="engine_hide" hidden></button>
     <button type="button" id="dlg-delete" class="btn btn-danger" data-i18n="engine_delete" hidden></button>
     <p id="dlg-remove-reason" class="hint" hidden></p>
+    <p id="dlg-delete-hint" class="hint hint-warn" role="status"></p>
   </div>
   <button type="button" id="dlg-cancel" ...></button>
   <button type="submit" id="dlg-save" ...></button>
@@ -134,9 +135,9 @@ Google  [默认左侧]                        ⚠ 未授权（必需） [授权]
 
 - 两个静态按钮而不是一个：`confirmStep` 在包装时就定死了 `labelKey`，同一个按钮没法在“隐藏”和“删除”之间切换。预置引擎只显示 `#dlg-hide`，自定义引擎只显示 `#dlg-delete`。
 - 新增模式：`openEngineDialog` 把 `#dlg-danger`、`#dlg-hide`、`#dlg-delete`、`#dlg-remove-reason` 四个都设 `hidden`，去掉两个按钮的 `aria-disabled`、`aria-describedby`，清空原因文字。只藏外层不够：先编辑过一个自定义引擎（`#dlg-delete` 已去掉 `hidden`），再打开“新增引擎”，外层的 `hidden` 一旦失效（见 3.5 的 `display` 规则），“删除”就会露出来。
-- `dialogState` 多记一个 `engine`（新增模式下是 `null`），两个按钮的处理函数从它取当前引擎，开头先判断 `if (!dialogState.engine) return;`；`armNotice` 也写成 `dialogState.engine?.name`。这是第二道防线，第一道是上面的 `hidden`。
+- `dialogState` 多记一个 `engine`（新增模式下是 `null`），两个按钮的处理函数从它取当前引擎，开头先判断 `if (!dialogState.engine) return;`；删除确认的提醒文字也取 `dialogState?.engine?.name ?? ""`。这是第二道防线，第一道是上面的 `hidden`。
 - `#dlg-hide`：`setupEngineDialog` 里绑一次 `click`：`aria-disabled="true"` 就直接返回；否则 `dlg.close()`，再 `actions.hide(engine)`。
-- `#dlg-delete`：`setupEngineDialog` 里用 `confirmStep(btn, "engine_delete", "engine_delete_confirm", onConfirm, { armNotice: () => t("engine_delete_confirm_hint", dialogState.engine.name) })` 包一次。`onConfirm`：`dlg.close()`，再 `actions.remove(engine)`。对话框关闭时按钮失焦，`confirmStep` 自动复原，下次打开是原样。
+- `#dlg-delete`：`setupEngineDialog` 调 `setupDangerZone`，里面用 `confirmStep(btn, "engine_delete", "engine_delete_confirm", onConfirm, { onArm, onReset })` 包一次。`onArm`：`setI18nText(#dlg-delete-hint, "engine_delete_confirm_hint", dialogState?.engine?.name ?? "")`，并给按钮设 `aria-describedby="dlg-delete-hint"`；`onReset`：`clearI18nText(#dlg-delete-hint)`，按钮的 `aria-describedby` 是 `dlg-delete-hint` 时去掉。提醒写在对话框里的 `#dlg-delete-hint`（`role="status"`，一直留在无障碍树里，写入时才播报），不经 `#notices`：模态对话框打开时对话框外是 inert（见第 4 节）。`onConfirm`：`dlg.close()`，再 `actions.remove(engine)`。对话框关闭时按钮失焦，`confirmStep` 自动复原（`onReset` 清空提醒），下次打开是原样。
 - Esc：确认态下第一次 Esc 由 `confirmStep` 的 `keydown` 处理（`preventDefault`，只撤确认），第二次 Esc 才关对话框。实施时在 Chrome 156 上实测这个顺序，不成立就在 `cancel` 事件里判断确认态。
 
 **默认组合在用时**（第 10 节第 3 条）：
