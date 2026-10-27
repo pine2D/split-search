@@ -1,6 +1,7 @@
 // 触发网址：默认组合一条 + 自选组合生成器。分步引导和注意事项是 options.html 里的静态文字；
 // “开始使用”卡显示时，默认组合一段和 5 步说明都收进默认收起的 <details>（卡片里已有同样的网址和三个小步）。
 import { buildTriggerTemplate } from "../lib/trigger.js";
+import { urlBreakParts } from "../lib/url-break.js";
 import { h, ht, copyButton, authButton, option, disclosure } from "./ui.js";
 import { canBeLeft, generatorPick } from "./edits.js";
 import { t } from "../chrome/i18n.js";
@@ -27,10 +28,12 @@ function triggerOf(left, right) {
   }
 }
 
-// label 是复制按钮的 LabelSpec，ariaKey 是它带上复制对象的无障碍名称（见 ui.js 的 copyButton）
+// label 是复制按钮的 LabelSpec，ariaKey 是它带上复制对象的无障碍名称（见 ui.js 的 copyButton）。
+// 网址在 / ? & = , 之后插 <wbr>（lib/url-break.js），不从单词中间断开；<wbr> 不进 textContent，复制的仍是原字符串
 export function urlBox(url, label, ariaKey) {
+  const parts = urlBreakParts(url).flatMap((s, i) => (i ? [h("wbr"), s] : [s]));
   return h("div", { class: "url-line" },
-    h("code", { class: "url-box mono" }, url),
+    h("code", { class: "url-box mono" }, ...parts),
     copyButton(() => url, label, ariaKey));
 }
 

@@ -136,7 +136,9 @@ async function render() {
   $("triggers").replaceChildren(renderTriggers(ctx));
   renderGuideSteps(setupShown);
   $("engines").replaceChildren(renderEngineList(ctx));
-  $("hidden-engines").replaceChildren(renderHiddenList(ctx));
+  const hiddenList = renderHiddenList(ctx);
+  $("hidden-engines").replaceChildren(...[hiddenList].filter(Boolean));
+  $("hidden-engines").hidden = $("hidden-title").hidden = !hiddenList;
   $("cycle").replaceChildren(renderCycleList(ctx));
   if (focusedId && document.activeElement === document.body) focusAfterRender(focusedId);
   refreshShortcut();

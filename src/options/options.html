@@ -53,7 +53,7 @@
           <ol class="steps">
             <li>
               <span data-i18n="guide_step_open_settings"></span>
-              <span class="url-line"><code class="url-box mono">chrome://settings/searchEngines</code><span id="settings-url-copy"></span></span>
+              <span class="url-line"><code class="url-box mono">chrome://settings/<wbr>searchEngines</code><span id="settings-url-copy"></span></span>
             </li>
             <li data-i18n="guide_step_add"></li>
             <li id="guide-step-fields"></li>
@@ -96,7 +96,8 @@
           <p id="engines-reorder-hint" class="hint" hidden data-i18n="engine_reorder_hint"></p>
           <p id="engines-status" class="sr-only" role="status"></p>
           <div id="engines"></div>
-          <h3 data-i18n="options_hidden_title"></h3>
+          <!-- 没有隐藏的引擎时小标题和列表都 hidden（options.js） -->
+          <h3 id="hidden-title" data-i18n="options_hidden_title"></h3>
           <div id="hidden-engines"></div>
         </section>
         <section class="card" aria-labelledby="shortcut-title">

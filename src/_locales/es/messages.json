@@ -681,10 +681,6 @@
       }
     }
   },
-  "engine_hidden_empty": {
-    "message": "No hay buscadores predefinidos ocultos.",
-    "description": "Shown when no preset engine is hidden."
-  },
   "engine_left_discouraged_suffix": {
     "message": "$NAME$ (mejor a la derecha)",
     "description": "Option in the left engine picker of the pair generator for an engine better used on the right (e.g. Perplexity). The placeholder is the engine name.",

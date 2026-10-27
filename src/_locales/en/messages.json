@@ -681,10 +681,6 @@
       }
     }
   },
-  "engine_hidden_empty": {
-    "message": "No built-in engines are hidden.",
-    "description": "Shown when no preset engine is hidden."
-  },
   "engine_left_discouraged_suffix": {
     "message": "$NAME$ (better on the right)",
     "description": "Option in the left engine picker of the pair generator for an engine better used on the right (e.g. Perplexity). The placeholder is the engine name.",

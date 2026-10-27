@@ -71,7 +71,7 @@ function engineRow(e, index, total, ctx) {
 
 export function renderHiddenList(ctx) {
   const { cfg, actions } = ctx;
-  if (!cfg.hidden.length) return ht("p", { class: "muted" }, "engine_hidden_empty");
+  if (!cfg.hidden.length) return null; // 没有隐藏的引擎：options.js 把小标题和列表一起藏起来
   return h("ul", { class: "hidden-list" }, cfg.hidden.map(e =>
     h("li", { class: "hidden-row" },
       h("span", null, h("strong", null, e.name), " ", h("code", { class: "engine-id" }, e.id)),

@@ -1,6 +1,7 @@
 /* 颜色变量在 ../styles/tokens.css（options.html 先引用它）；这里的 :root 只放与配色无关的常量 */
 :root {
   --radius: 10px;
+  --page-max: 680px; /* 680 = chrome://settings 主列宽；卡片内宽 680 − 2 − 40 = 638px */
   --mono: ui-monospace, "Cascadia Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 }
 
@@ -16,24 +17,26 @@ body {
   font-family: system-ui, -apple-system, "Segoe UI", "PingFang TC", "Microsoft JhengHei", "Noto Sans CJK TC", sans-serif;
 }
 
+/* 总给竖向滚动条留位：四个 tab 有长有短，有的出滚动条、有的不出，不留位的话切 tab 时居中的内容列会左右跳半个滚动条宽 */
+html { scrollbar-gutter: stable; }
+
 body.loading .page { visibility: hidden; }
 
-.page { max-width: 780px; margin: 0 auto; padding: 28px 16px 64px; }
-.page-head {
-  display: flex; align-items: flex-start; justify-content: space-between; gap: 8px 24px; flex-wrap: wrap;
-  margin-bottom: 20px;
-}
-.page-title { flex: 1 1 320px; }
-.page-head h1 { margin: 0 0 4px; font-size: 22px; }
-.page-title p { margin: 0; text-wrap: pretty; }
+.page { max-width: calc(var(--page-max) + 32px); margin: 0 auto; padding: 28px 16px 64px; }
+/* 页头：标题与语言框同一行，标语独占第二行（.page-title 用 display: contents，HTML 不改）；不设行长上限 */
+.page-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 4px 16px; margin-bottom: 16px; }
+.page-title { display: contents; }
+.page-head h1 { grid-column: 1; grid-row: 1; margin: 0; font-size: 22px; }
+.page-title p { grid-column: 1 / -1; grid-row: 2; margin: 0; text-wrap: pretty; }
 
 /* ---- 语言 ---- */
-.lang-box { flex: 0 1 300px; }
-.lang-picker { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+.lang-box { grid-column: 2; grid-row: 1; }
+.lang-picker { display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; font-size: 13px; color: var(--muted); }
+@media (max-width: 480px) { .page-head { grid-template-columns: minmax(0, 1fr); } .lang-box { grid-column: 1; grid-row: auto; } }
 
 /* ---- 页脚 ---- */
 .page-foot { margin-top: 24px; }
-.page-foot .hint { font-size: 12px; margin: 0; max-width: 65ch; }
+.page-foot .hint { font-size: 12px; margin: 0; }
 
 h2 { font-size: 16px; margin: 0 0 6px; }
 h3 { font-size: 14px; margin: 20px 0 6px; }
@@ -41,10 +44,8 @@ h2, h3 { text-wrap: balance; }
 
 .muted, .hint { color: var(--muted); }
 .hint { font-size: 13px; margin: 4px 0; }
-/* 说明文字的行长：780px 的卡片里 13px 的整行有 95–118 个字符。ch 按数字 0 的宽度算，正文字母平均更窄，
-   72ch 实测仍有 87–92 个字符一行，60ch 才在 80 以内（中文约 33 字）；flex 里的提示（.step-actions .hint 等）
-   仍按各自的 flex 分配，只是不会超过这个宽度。窄窗口里末行只剩一个词时 pretty 会从上一行挪一个下来 */
-.hint, .steps li, .caveats li, .step-body p { max-width: 60ch; text-wrap: pretty; }
+/* 说明文字不设行长上限：四种语言都铺到卡片右边界（同一条右边界，用户 2026-10-27 选定）；末行只剩一个词时 pretty 会从上一行挪一个下来 */
+.hint, .steps li, .caveats li, .step-body p { text-wrap: pretty; }
 .hint-ok { color: var(--ok); }
 .hint-warn { color: var(--warn); }
 .hint-error { color: var(--danger); }
@@ -68,7 +69,7 @@ code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
 .catalog-label { display: flex; flex-direction: column; min-width: 0; }
 .catalog-host { font-size: 12px; color: var(--muted); overflow-wrap: anywhere; }
 #catalog-dialog { max-height: calc(100vh - 48px); overflow-y: auto; }
-.section-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.section-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 12px; } /* 卡头按钮放不下时换行，不挤 h2 */
 
 /* ---- 按钮 ---- */
 .btn {
@@ -83,8 +84,9 @@ code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
 }
 .btn:hover:not(:disabled):not([aria-disabled="true"]) { border-color: var(--accent); }
 .btn:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
-/* aria-disabled：能拿到焦点、读屏读“不可用”的按钮（编辑对话框里默认组合在用的隐藏 / 删除），外观同禁用 */
-.btn:disabled, .btn[aria-disabled="true"] { opacity: 0.45; cursor: not-allowed; }
+/* aria-disabled：能拿到焦点、读屏读“不可用”的按钮（编辑对话框里默认组合在用的隐藏 / 删除），外观同禁用。
+   不用半透明：灰字配浅底，仍看得出是按钮（禁用的“试一下”） */
+.btn:disabled, .btn[aria-disabled="true"] { color: var(--muted); background: var(--code-bg); border-color: var(--border); opacity: 1; cursor: not-allowed; }
 .btn-small { padding: 3px 10px; font-size: 13px; }
 .btn-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 600; }
 .btn-primary:hover:not(:disabled):not([aria-disabled="true"]) { filter: brightness(1.08); }
@@ -108,7 +110,7 @@ div.setup-step { display: block; margin-top: 6px; }
   width: 26px; height: 26px; border-radius: 50%;
   display: grid; place-items: center;
   font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums;
-  border: 1px solid var(--border); color: var(--muted); background: var(--surface);
+  border: 1px solid var(--muted); color: var(--muted); background: var(--surface); /* 未激活的圆圈边框用 --muted，--border 对比度只有约 1.3:1 */
 }
 .setup-step.current .step-mark { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
 .setup-step[data-state="done"] .step-mark { background: var(--ok-soft); border-color: var(--ok-soft); color: var(--ok); }
@@ -143,12 +145,18 @@ a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-r
 .callout > span { flex: 1 1 260px; }
 .callout-warn { background: var(--warn-soft); border: 1px solid var(--warn-border); }
 
-/* ---- 组合选择：左右两个窗格见 styles/panes.css ---- */
-.pair-pickers { margin-top: 8px; max-width: 480px; }
+/* ---- 组合选择：左右两个窗格见 styles/panes.css；撑满内容列，两格各约 316px ---- */
+.pair-pickers { margin-top: 8px; }
 .pair-pickers .pane { cursor: pointer; }
-/* “右键查询”卡与“其他组合”生成器的两个下拉框：小标题在上，放不下时换行（不是左右窗格） */
-.lookup-pickers { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+/* “其他组合”生成器的两个下拉框：小标题在上；与默认组合窗格同一套列线（panes.css：gap 6px，flex-basis 180px），内宽小于 366px 时变单列 */
+.lookup-pickers {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+  gap: 8px 6px; align-items: end; margin-top: 8px;
+}
 .lookup-pickers label { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: var(--muted); min-width: 0; overflow-wrap: break-word; }
+.lookup-pickers select { width: 100%; min-width: 0; }
+/* 右键查询卡（lookup.js 的 div.lookup-card）：两个下拉框各占整行（es 的“跟随默认组合的右侧（当前：X）”半宽会截断） */
+.lookup-card .lookup-pickers { grid-template-columns: minmax(0, 1fr); gap: 10px; }
 
 select, input {
   font: inherit;
@@ -197,6 +205,11 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 .disclosure[open] > summary .chev { transform: rotate(90deg); }
 @media (prefers-reduced-motion: reduce) { .disclosure .chev { transition: none; } }
 
+/* “添加到 Chrome”卡内顶层各段（触发网址、5 步说明、各折叠区）之间一律一条 1px 线、上下 12px */
+#guide > :is(.triggers, #guide-steps, .disclosure) + :is(#guide-steps, .disclosure) { border-top: 1px solid var(--border); margin-top: 12px; padding-top: 12px; }
+#guide > .disclosure { margin-bottom: 0; }
+#guide-steps > h3:first-child { margin-top: 0; }
+
 .steps, .caveats { padding-left: 22px; margin: 4px 0; }
 .steps li, .caveats li { margin: 6px 0; }
 
@@ -207,7 +220,8 @@ input[aria-invalid="true"] { border-color: var(--danger); }
   padding: 12px 4px;
   border-bottom: 1px solid var(--border);
 }
-.engine-main, .rule-main { flex: 1 1 300px; min-width: 0; }
+/* 180px：600 宽视口里右侧控件组（状态 + 授权 + 编辑，es 最宽约 310px）仍与左块同一行，引擎行不折（设计稿 3.4 的算术） */
+.engine-main, .rule-main { flex: 1 1 180px; min-width: 0; }
 .engine-title { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .tag { white-space: nowrap; }
 .engine-name { font-size: 15px; }
@@ -377,3 +391,11 @@ dialog:focus { outline: none; }
 .tab-flag.regrant { color: var(--warn); }
 @media (forced-colors: active) { .tab[aria-selected="true"]::after, .tab-flag.todo::before { background: Highlight; } }
 [role="tabpanel"]:focus-visible { outline: 2px solid var(--focus); outline-offset: 4px; border-radius: var(--radius); }
+
+/* 600px 视口（放在最后：要盖过上面 .page、.card、.tablist、.tab 的同权重规则） */
+@media (max-width: 600px) {
+  .page { padding: 20px 12px 48px; }
+  .card { padding: 16px; }
+  .tablist { padding-inline: 3px; }     /* 3 + 12 = 15 ≈ 卡片边框 1 + 内边距 16 */
+  .tab { padding-inline: 12px; }
+}

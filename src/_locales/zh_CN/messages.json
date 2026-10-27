@@ -681,10 +681,6 @@
       }
     }
   },
-  "engine_hidden_empty": {
-    "message": "没有隐藏的预置引擎。",
-    "description": "Shown when no preset engine is hidden."
-  },
   "engine_left_discouraged_suffix": {
     "message": "$NAME$（建议作右侧）",
     "description": "Option in the left engine picker of the pair generator for an engine better used on the right (e.g. Perplexity). The placeholder is the engine name.",

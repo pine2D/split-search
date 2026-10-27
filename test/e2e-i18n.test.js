@@ -98,3 +98,10 @@ test("tabAuditProblems：面板里没有看得见的后代时判失败（隐藏�
   assert.ok(tabAuditProblems("lookup", { visible: 0 }).length === 1);
   assert.deepEqual(tabAuditProblems("lookup", { visible: 3 }), []);
 });
+
+test("tabAuditProblems：600 宽 tab 截字与选中 tab 不在可视范围各报一条，差 1px 不算截字，字段没给不查", async () => {
+  const { tabAuditProblems } = await import("../scripts/e2e/steps/i18n-audit.mjs");
+  assert.equal(tabAuditProblems("pair", { visible: 2, tabs: [{ id: "tabbtn-pair", sw: 121, cw: 119 }], selectedInView: false }).length, 2);
+  assert.deepEqual(tabAuditProblems("pair", { visible: 2, tabs: [{ id: "tabbtn-pair", sw: 120, cw: 119 }], selectedInView: true }), []);
+  assert.deepEqual(tabAuditProblems("pair", { visible: 2, tabs: undefined, selectedInView: undefined }), []);
+});

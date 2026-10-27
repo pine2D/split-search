@@ -95,13 +95,22 @@ export async function shoot(ctx, page, file, { full = false, clip = null, beyond
 export const bodyClip = page => page.ev(`(() => { const r = document.body.getBoundingClientRect(); return { x: 0, y: 0, width: Math.ceil(r.width), height: Math.ceil(r.height), scale: 1 }; })()`);
 
 // 纯逻辑：s.visible 是 #panel-<key> 里 checkVisibility() 为 true 的后代个数。为 0 说明面板没显示出来，
-// 这时面板里的溢出检查全会静默通过（隐藏元素的 scrollWidth、clientWidth 都是 0），判失败
+// 这时面板里的溢出检查全会静默通过（隐藏元素的 scrollWidth、clientWidth 都是 0），判失败。
+// 600 宽另给两个可选字段（没给就不查）：tabs 是每个 .tab 的 scrollWidth/clientWidth（多出 1px 以上算截字，同 audit），
+// selectedInView 是选中的 tab 是否完全落在 .tablist 的可视范围里
 export function tabAuditProblems(key, s) {
-  return s.visible > 0 ? [] : [`#panel-${key} 里没有看得见的元素（面板没显示出来，溢出检查不作数）`];
+  const out = s.visible > 0 ? [] : [`#panel-${key} 里没有看得见的元素（面板没显示出来，溢出检查不作数）`];
+  for (const t of s.tabs ?? []) {
+    if (t.sw > t.cw + 1) out.push(`#${t.id} 截字：scrollWidth ${t.sw} > clientWidth ${t.cw} + 1`);
+  }
+  if (s.selectedInView === false) out.push(`选中 #tabbtn-${key} 后它没有完全落在 tab 栏的可视范围里`);
+  return out;
 }
 
 // 设置页四个 tab 逐一审（1280 宽）：页头与 tab 栏各审一次；每个 tab 切过去、确认面板看得见、审面板、截 <locale>-options-<key>.png；
-// 再展开所有折叠区（OPEN_ALL），逐个 tab 再审一遍、截 <locale>-options-<key>-open.png。走完停在最后一个 tab（④）
+// 再展开所有折叠区（OPEN_ALL），逐个 tab 再审一遍、截 <locale>-options-<key>-open.png。
+// 最后把视口模拟成 600 宽（折叠区仍展开），四个 tab 各审一次溢出（不截图），并核对每个 tab 不截字、选中的 tab 完全在 tab 栏可视范围里。
+// 走完停在最后一个 tab（④），视口恢复
 export async function auditTabs(ctx, opt, locale) {
   const problems = [], shots = [];
   for (const [name, scope] of [["页头", ".page-head "], ["tab 栏", ".tabbar "]]) {
@@ -121,5 +130,28 @@ export async function auditTabs(ctx, opt, locale) {
       shots.push(await shoot(ctx, opt, join(SHOT_DIR, `${locale}-options-${key}${open ? "-open" : ""}.png`), { full: true }));
     }
   }
+  problems.push(...(await narrowTabs(ctx, opt, locale)).map(([key, p]) => `600 宽 ${name(key)}：${p}`));
   return { problems, shots };
+}
+
+// 每个 .tab 的 scrollWidth/clientWidth，以及选中的 tab 是否完全落在 .tablist 的可视范围（±1px）
+const TAB_FIT = `(() => { const list = document.querySelector(".tablist").getBoundingClientRect();
+  const s = document.querySelector('.tab[aria-selected="true"]').getBoundingClientRect();
+  return { tabs: [...document.querySelectorAll(".tab")].map(b => ({ id: b.id, sw: b.scrollWidth, cw: b.clientWidth })),
+    selectedInView: s.left >= list.left - 1 && s.right <= list.right + 1 }; })()`;
+
+async function narrowTabs(ctx, opt, locale) {
+  const { client } = ctx.browser, out = [];
+  await client.send("Emulation.setDeviceMetricsOverride", { width: 600, height: 1000, deviceScaleFactor: 0, mobile: false }, opt.sid);
+  try {
+    await waitPage(opt, "innerWidth === 600", "视口变成 600 宽", 3000);
+    for (const key of TAB_KEYS) {
+      await showTab(opt, key);
+      const visible = await opt.ev(`[...document.querySelectorAll(${J(`#panel-${key} *`)})].filter(el => el.checkVisibility()).length`);
+      const found = [...tabAuditProblems(key, { visible, ...await opt.ev(TAB_FIT) }),
+        ...auditProblems(locale, await opt.ev(audit({ scope: `#panel-${key} ` })))];
+      out.push(...found.map(p => [key, p]));
+    }
+  } finally { await client.send("Emulation.clearDeviceMetricsOverride", {}, opt.sid).catch(() => {}); }
+  return out;
 }
