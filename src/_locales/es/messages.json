@@ -286,7 +286,7 @@
     "description": "Subheading above the list of caveats."
   },
   "guide_caveat_degrade": {
-    "message": "En estos casos, la URL de activación se queda en una búsqueda normal con el buscador de la izquierda y no abre la vista dividida: en otros dispositivos que sincronizan esta configuración de búsqueda, en ventanas de incógnito, si la extensión está desactivada o ya no tiene acceso, o si el sitio del buscador de la izquierda se encarga él mismo de cargar sus páginas (como Perplexity).",
+    "message": "En estos casos, la URL de activación se queda en una búsqueda normal con el buscador de la izquierda y no abre la vista dividida: en otros dispositivos que sincronizan esta configuración de búsqueda, en ventanas de incógnito, si la extensión está desactivada o ya no tiene acceso, o si el sitio del buscador de la izquierda carga sus páginas por su cuenta (como Perplexity).",
     "description": "Caveat: cases where the trigger URL falls back to a plain search with the left engine. The last case is a site that handles its own page loads (technically, its service worker takes over navigation); say it in plain words, without mentioning service workers."
   },
   "guide_caveat_no_suggest": {
@@ -558,7 +558,7 @@
     "description": "Button on a hidden preset engine that shows it again."
   },
   "engine_left_discouraged_hint": {
-    "message": "Mejor solo a la derecha: este sitio se encarga él mismo de cargar sus páginas, así que a la izquierda suele abrirse una búsqueda normal, sin vista dividida.",
+    "message": "Mejor solo a la derecha: este sitio carga sus páginas por su cuenta, así que a la izquierda suele abrirse una búsqueda normal, sin vista dividida.",
     "description": "Warning on an engine row (e.g. Perplexity): the site handles its own page loads (technically, its service worker takes over navigation), so as the left engine the split view usually doesn't open. Say it in plain words; don't mention service workers."
   },
   "engine_move_up": {
@@ -680,7 +680,7 @@
     }
   },
   "guide_left_discouraged": {
-    "message": "Es mejor usar $NAME$ solo a la derecha: su sitio se encarga él mismo de cargar sus páginas, así que a la izquierda suele abrirse solo una búsqueda normal en $NAME$, sin vista dividida. A la derecha funciona sin problemas.",
+    "message": "Es mejor usar $NAME$ solo a la derecha: su sitio carga sus páginas por su cuenta, así que a la izquierda suele abrirse solo una búsqueda normal en $NAME$, sin vista dividida. A la derecha funciona sin problemas.",
     "description": "Warning when an engine like Perplexity is the left side of a pair: the site handles its own page loads (technically, its service worker takes over navigation), so on the left it usually opens a plain search. Say it in plain words; don't mention service workers.",
     "placeholders": {
       "NAME": {
