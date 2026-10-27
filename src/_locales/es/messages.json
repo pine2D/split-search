@@ -100,8 +100,8 @@
     "description": "Error in the URL template field: the template contains the reserved _ss parameter. Do not translate _ss."
   },
   "err_marker_format": {
-    "message": "El parámetro indicador (_ss) de la URL de activación no tiene un formato válido; debe ser «buscador izquierdo,buscador derecho». Vuelve a copiar la URL desde la configuración.",
-    "description": "Error page after a search: the _ss marker parameter in the trigger URL is malformed."
+    "message": "La URL de activación está incompleta o no tiene un formato válido. Vuelve a copiarla desde la configuración.",
+    "description": "Error page after a search: the trigger URL is incomplete or malformed (its engine marker is not two engine ids). Don't mention the parameter name; tell the user to copy the trigger URL again."
   },
   "err_unknown_engine": {
     "message": "No se encuentra el buscador «$ENGINE_ID$» al que apunta esta búsqueda en el sitio. Puede que se haya eliminado u ocultado, o que se haya editado la URL de esa búsqueda en el sitio. En la configuración de buscadores de Chrome, elimínala o corrígela, o vuelve a añadir el buscador en la configuración de Split Search.",
@@ -286,8 +286,8 @@
     "description": "Subheading above the list of caveats."
   },
   "guide_caveat_degrade": {
-    "message": "En estos casos, la URL de activación se queda en una búsqueda normal con el buscador de la izquierda y no abre la vista dividida: en otros dispositivos que sincronizan esta configuración de búsqueda, en ventanas de incógnito, si la extensión está desactivada o ya no tiene acceso, o si el Service Worker del propio sitio del buscador toma el control de la navegación.",
-    "description": "Caveat: cases where the trigger URL falls back to a plain search with the left engine. Keep Service Worker untranslated."
+    "message": "En estos casos, la URL de activación se queda en una búsqueda normal con el buscador de la izquierda y no abre la vista dividida: en otros dispositivos que sincronizan esta configuración de búsqueda, en ventanas de incógnito, si la extensión está desactivada o ya no tiene acceso, o si el sitio del buscador de la izquierda se encarga él mismo de cargar sus páginas (como Perplexity).",
+    "description": "Caveat: cases where the trigger URL falls back to a plain search with the left engine. The last case is a site that handles its own page loads (technically, its service worker takes over navigation); say it in plain words, without mentioning service workers."
   },
   "guide_caveat_no_suggest": {
     "message": "Las búsquedas en el sitio que añades tú no tienen URL de sugerencias, así que, si eliges una como predeterminada, la barra de direcciones deja de mostrar sugerencias de búsqueda.",
@@ -318,14 +318,8 @@
     "description": "Button that opens the dialog for adding a custom search engine."
   },
   "options_engines_hint": {
-    "message": "En la plantilla de URL, $CODE$ representa las palabras clave. Debes dar acceso al sitio del buscador de la izquierda, y conviene darlo también al de la derecha. El orden de esta lista es el de los menús desplegables.",
-    "description": "Hint under the engine list heading. The placeholder is %s shown as code.",
-    "placeholders": {
-      "CODE": {
-        "content": "$1",
-        "example": "%s"
-      }
-    }
+    "message": "Debes dar acceso al sitio del buscador de la izquierda, y conviene darlo también al de la derecha. El orden de esta lista es el de los menús desplegables.",
+    "description": "Hint under the engine list heading: site access and what the order is for. (How to write a URL template is explained in the add/edit engine dialog.)"
   },
   "options_hidden_title": {
     "message": "Buscadores predefinidos ocultos",
@@ -386,6 +380,10 @@
   "options_dlg_url_placeholder": {
     "message": "https://www.ecosia.org/search?q=%s",
     "description": "Placeholder of the URL template field: the search URL of the engine in options_dlg_id_placeholder with %s as the query. It must be usable as the left engine: lowercase %s once, as the full value of a query parameter, no #."
+  },
+  "options_dlg_url_hint": {
+    "message": "Usa %s donde van las palabras clave.",
+    "description": "Hint under the URL template field of the add/edit engine dialog. Keep %s as is."
   },
   "options_dlg_preset_hint": {
     "message": "Valores predefinidos: $NAME$, $URL$ (vuelve a ponerlos para restaurar el buscador predefinido)",
@@ -560,8 +558,8 @@
     "description": "Button on a hidden preset engine that shows it again."
   },
   "engine_left_discouraged_hint": {
-    "message": "Mejor solo a la derecha: el Service Worker de este sitio puede tomar el control de la navegación, y a la izquierda es posible que no se abra la vista dividida.",
-    "description": "Warning on an engine row (e.g. Perplexity): its site's Service Worker may take over navigation, so as the left engine the split view may not open. Keep Service Worker untranslated."
+    "message": "Mejor solo a la derecha: este sitio se encarga él mismo de cargar sus páginas, así que a la izquierda suele abrirse una búsqueda normal, sin vista dividida.",
+    "description": "Warning on an engine row (e.g. Perplexity): the site handles its own page loads (technically, its service worker takes over navigation), so as the left engine the split view usually doesn't open. Say it in plain words; don't mention service workers."
   },
   "engine_move_up": {
     "message": "Subir",
@@ -682,8 +680,8 @@
     }
   },
   "guide_left_discouraged": {
-    "message": "Es mejor usar $NAME$ solo a la derecha: su sitio usa un Service Worker que toma el control de la navegación, así que a la izquierda suele abrirse solo una búsqueda normal en $NAME$, sin vista dividida. A la derecha funciona sin problemas.",
-    "description": "Warning when an engine like Perplexity is the left side of a pair. Keep Service Worker untranslated.",
+    "message": "Es mejor usar $NAME$ solo a la derecha: su sitio se encarga él mismo de cargar sus páginas, así que a la izquierda suele abrirse solo una búsqueda normal en $NAME$, sin vista dividida. A la derecha funciona sin problemas.",
+    "description": "Warning when an engine like Perplexity is the left side of a pair: the site handles its own page loads (technically, its service worker takes over navigation), so on the left it usually opens a plain search. Say it in plain words; don't mention service workers.",
     "placeholders": {
       "NAME": {
         "content": "$1",

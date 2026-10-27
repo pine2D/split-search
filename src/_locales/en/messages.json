@@ -100,8 +100,8 @@
     "description": "Error in the URL template field: the template contains the reserved _ss parameter. Do not translate _ss."
   },
   "err_marker_format": {
-    "message": "The marker parameter (_ss) in the trigger URL is malformed. It should be “left engine,right engine”. Copy the trigger URL again from the settings page.",
-    "description": "Error page after a search: the _ss marker parameter in the trigger URL is malformed."
+    "message": "The trigger URL is incomplete or malformed. Copy it again from the settings page.",
+    "description": "Error page after a search: the trigger URL is incomplete or malformed (its engine marker is not two engine ids). Don't mention the parameter name; tell the user to copy the trigger URL again."
   },
   "err_unknown_engine": {
     "message": "Split Search can’t find the engine “$ENGINE_ID$” that this site search points to. It may have been deleted or hidden, or the site search’s URL may have been edited. Delete or fix the site search in Chrome’s search engine settings, or add the engine again on the settings page.",
@@ -286,8 +286,8 @@
     "description": "Subheading above the list of caveats."
   },
   "guide_caveat_degrade": {
-    "message": "In these cases the trigger URL runs a normal search on the left engine and no split view opens: on other computers and phones that sync these search settings, in Incognito windows, when the extension is disabled or its access is revoked, and when the engine’s own Service Worker takes over navigation.",
-    "description": "Caveat: cases where the trigger URL falls back to a plain search with the left engine. Keep Service Worker untranslated."
+    "message": "In these cases the trigger URL runs a normal search on the left engine and no split view opens: on other computers and phones that sync these search settings, in Incognito windows, when the extension is disabled or its access is revoked, and when the left engine’s site handles its own page loads (Perplexity, for example).",
+    "description": "Caveat: cases where the trigger URL falls back to a plain search with the left engine. The last case is a site that handles its own page loads (technically, its service worker takes over navigation); say it in plain words, without mentioning service workers."
   },
   "guide_caveat_no_suggest": {
     "message": "Site searches you add yourself have no suggestion URL, so while one is your default, the address bar shows no search suggestions.",
@@ -318,14 +318,8 @@
     "description": "Button that opens the dialog for adding a custom search engine."
   },
   "options_engines_hint": {
-    "message": "In a URL template, $CODE$ stands for the search terms. Split Search needs access to the left engine’s site; for the right engine, access is recommended. The order here is the order in the drop-down menus.",
-    "description": "Hint under the engine list heading. The placeholder is %s shown as code.",
-    "placeholders": {
-      "CODE": {
-        "content": "$1",
-        "example": "%s"
-      }
-    }
+    "message": "Split Search needs access to the left engine’s site; for the right engine, access is recommended. The order here is the order in the drop-down menus.",
+    "description": "Hint under the engine list heading: site access and what the order is for. (How to write a URL template is explained in the add/edit engine dialog.)"
   },
   "options_hidden_title": {
     "message": "Hidden built-in engines",
@@ -386,6 +380,10 @@
   "options_dlg_url_placeholder": {
     "message": "https://www.ecosia.org/search?q=%s",
     "description": "Placeholder of the URL template field: the search URL of the engine in options_dlg_id_placeholder with %s as the query. It must be usable as the left engine: lowercase %s once, as the full value of a query parameter, no #."
+  },
+  "options_dlg_url_hint": {
+    "message": "Use %s where the search terms go.",
+    "description": "Hint under the URL template field of the add/edit engine dialog. Keep %s as is."
   },
   "options_dlg_preset_hint": {
     "message": "Built-in values: $NAME$, $URL$ (change both back to restore the built-in engine)",
@@ -560,8 +558,8 @@
     "description": "Button on a hidden preset engine that shows it again."
   },
   "engine_left_discouraged_hint": {
-    "message": "Better on the right: this site’s Service Worker may take over navigation, so on the left the split view might not open.",
-    "description": "Warning on an engine row (e.g. Perplexity): its site's Service Worker may take over navigation, so as the left engine the split view may not open. Keep Service Worker untranslated."
+    "message": "Better on the right: this site handles its own page loads, so on the left you’ll usually get a normal search instead of a split view.",
+    "description": "Warning on an engine row (e.g. Perplexity): the site handles its own page loads (technically, its service worker takes over navigation), so as the left engine the split view usually doesn't open. Say it in plain words; don't mention service workers."
   },
   "engine_move_up": {
     "message": "Move up",
@@ -682,8 +680,8 @@
     }
   },
   "guide_left_discouraged": {
-    "message": "$NAME$ is better on the right. Its site uses a Service Worker to take over navigation, so on the left you usually get a normal $NAME$ search instead of a split view. On the right it isn’t affected.",
-    "description": "Warning when an engine like Perplexity is the left side of a pair. Keep Service Worker untranslated.",
+    "message": "$NAME$ is better on the right. Its site handles its own page loads, so on the left you usually get a normal $NAME$ search instead of a split view. On the right it isn’t affected.",
+    "description": "Warning when an engine like Perplexity is the left side of a pair: the site handles its own page loads (technically, its service worker takes over navigation), so on the left it usually opens a plain search. Say it in plain words; don't mention service workers.",
     "placeholders": {
       "NAME": {
         "content": "$1",

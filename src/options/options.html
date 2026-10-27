@@ -75,7 +75,7 @@
           <button type="button" id="add-engine" class="btn btn-primary btn-small" data-i18n="options_add_engine"></button>
         </div>
       </div>
-      <p id="engines-hint" class="hint"></p>
+      <p id="engines-hint" class="hint" data-i18n="options_engines_hint"></p>
       <div id="engines"></div>
       <h3 data-i18n="options_hidden_title"></h3>
       <div id="hidden-engines"></div>
@@ -146,7 +146,8 @@
       <div class="field">
         <label for="dlg-url" data-i18n="options_dlg_url_label"></label>
         <input id="dlg-url" name="url" class="mono" autocomplete="off" spellcheck="false"
-               data-i18n-attr="placeholder:options_dlg_url_placeholder">
+               aria-describedby="dlg-url-hint dlg-url-status" data-i18n-attr="placeholder:options_dlg_url_placeholder">
+        <p id="dlg-url-hint" class="hint" data-i18n="options_dlg_url_hint"></p>
         <p id="dlg-url-status" class="hint"></p>
         <p id="dlg-preset-hint" class="hint" hidden></p>
         <p id="dlg-edit-hint" class="hint" hidden data-i18n="options_dlg_edit_hint"></p>

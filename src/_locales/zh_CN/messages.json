@@ -100,8 +100,8 @@
     "description": "Error in the URL template field: the template contains the reserved _ss parameter. Do not translate _ss."
   },
   "err_marker_format": {
-    "message": "触发网址里的标记参数（_ss）格式不对，应为“左引擎,右引擎”。请到设置页重新复制触发网址。",
-    "description": "Error page after a search: the _ss marker parameter in the trigger URL is malformed."
+    "message": "触发网址不完整或格式不对。请到设置页重新复制触发网址。",
+    "description": "Error page after a search: the trigger URL is incomplete or malformed (its engine marker is not two engine ids). Don't mention the parameter name; tell the user to copy the trigger URL again."
   },
   "err_unknown_engine": {
     "message": "找不到这条网站搜索指向的引擎“$ENGINE_ID$”。它可能已被删除或隐藏，也可能是这条网站搜索的网址被改过。请到 Chrome 搜索引擎设置里删掉或改正这条网站搜索，或在设置页重新添加这个引擎。",
@@ -286,8 +286,8 @@
     "description": "Subheading above the list of caveats."
   },
   "guide_caveat_degrade": {
-    "message": "以下情况触发网址会降级为一次普通的左侧引擎搜索，不会打开拆分视图：同步了这套搜索设置的其他电脑和手机、无痕式窗口、扩展被停用、撤销了授权、引擎网站自己的 Service Worker 接管了导航。",
-    "description": "Caveat: cases where the trigger URL falls back to a plain search with the left engine. Keep Service Worker untranslated."
+    "message": "以下情况触发网址会降级为一次普通的左侧引擎搜索，不会打开拆分视图：同步了这套搜索设置的其他电脑和手机、无痕式窗口、扩展被停用、撤销了授权、左侧引擎的网站自己接管了页面跳转（例如 Perplexity）。",
+    "description": "Caveat: cases where the trigger URL falls back to a plain search with the left engine. The last case is a site that handles its own page loads (technically, its service worker takes over navigation); say it in plain words, without mentioning service workers."
   },
   "guide_caveat_no_suggest": {
     "message": "自己添加的网站搜索没有联想网址，设为默认后地址栏不再有搜索联想。",
@@ -318,14 +318,8 @@
     "description": "Button that opens the dialog for adding a custom search engine."
   },
   "options_engines_hint": {
-    "message": "网址模板中用 $CODE$ 代表关键词。左侧引擎的网站必须授权，右侧建议授权。排序决定下拉框里的顺序。",
-    "description": "Hint under the engine list heading. The placeholder is %s shown as code.",
-    "placeholders": {
-      "CODE": {
-        "content": "$1",
-        "example": "%s"
-      }
-    }
+    "message": "左侧引擎的网站必须授权，右侧建议授权。排序决定下拉框里的顺序。",
+    "description": "Hint under the engine list heading: site access and what the order is for. (How to write a URL template is explained in the add/edit engine dialog.)"
   },
   "options_hidden_title": {
     "message": "已隐藏的预置引擎",
@@ -386,6 +380,10 @@
   "options_dlg_url_placeholder": {
     "message": "https://www.baidu.com/s?wd=%s",
     "description": "Placeholder of the URL template field: the search URL of the engine in options_dlg_id_placeholder with %s as the query. It must be usable as the left engine: lowercase %s once, as the full value of a query parameter, no #."
+  },
+  "options_dlg_url_hint": {
+    "message": "用 %s 代表关键词。",
+    "description": "Hint under the URL template field of the add/edit engine dialog. Keep %s as is."
   },
   "options_dlg_preset_hint": {
     "message": "预置值：$NAME$，$URL$（改回这两个值即恢复预置）",
@@ -560,8 +558,8 @@
     "description": "Button on a hidden preset engine that shows it again."
   },
   "engine_left_discouraged_hint": {
-    "message": "建议仅作右侧：该站点的 Service Worker 可能接管导航，作左侧时可能不会打开拆分视图。",
-    "description": "Warning on an engine row (e.g. Perplexity): its site's Service Worker may take over navigation, so as the left engine the split view may not open. Keep Service Worker untranslated."
+    "message": "建议只作右侧：这个网站会自己接管页面跳转，作左侧时多半只打开普通搜索，不会打开拆分视图。",
+    "description": "Warning on an engine row (e.g. Perplexity): the site handles its own page loads (technically, its service worker takes over navigation), so as the left engine the split view usually doesn't open. Say it in plain words; don't mention service workers."
   },
   "engine_move_up": {
     "message": "上移",
@@ -682,8 +680,8 @@
     }
   },
   "guide_left_discouraged": {
-    "message": "$NAME$ 建议只作右侧：它的网站用 Service Worker 接管页面跳转，作左侧时通常只会打开普通的 $NAME$ 搜索，不会打开拆分视图。作右侧不受影响。",
-    "description": "Warning when an engine like Perplexity is the left side of a pair. Keep Service Worker untranslated.",
+    "message": "$NAME$ 建议只作右侧：它的网站会自己接管页面跳转，作左侧时通常只会打开普通的 $NAME$ 搜索，不会打开拆分视图。作右侧不受影响。",
+    "description": "Warning when an engine like Perplexity is the left side of a pair: the site handles its own page loads (technically, its service worker takes over navigation), so on the left it usually opens a plain search. Say it in plain words; don't mention service workers.",
     "placeholders": {
       "NAME": {
         "content": "$1",

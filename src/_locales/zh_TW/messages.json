@@ -100,8 +100,8 @@
     "description": "Error in the URL template field: the template contains the reserved _ss parameter. Do not translate _ss."
   },
   "err_marker_format": {
-    "message": "觸發網址裡的標記參數（_ss）格式不正確，應為「左引擎,右引擎」。請到設定頁重新複製觸發網址。",
-    "description": "Error page after a search: the _ss marker parameter in the trigger URL is malformed."
+    "message": "觸發網址不完整或格式不正確。請到設定頁重新複製觸發網址。",
+    "description": "Error page after a search: the trigger URL is incomplete or malformed (its engine marker is not two engine ids). Don't mention the parameter name; tell the user to copy the trigger URL again."
   },
   "err_unknown_engine": {
     "message": "找不到這筆網站搜尋指向的引擎「$ENGINE_ID$」。這個引擎可能已被刪除或隱藏，也可能是這筆網站搜尋的網址被修改過。請到 Chrome 搜尋引擎設定刪除或修正這筆網站搜尋，或在設定頁重新新增這個引擎。",
@@ -286,8 +286,8 @@
     "description": "Subheading above the list of caveats."
   },
   "guide_caveat_degrade": {
-    "message": "遇到以下情況，觸發網址會變成一般的左側引擎搜尋，不會開啟分割畫面：同步了這組搜尋設定的其他電腦和手機、無痕視窗、擴充功能已停用、授權已撤銷、引擎網站自己的 Service Worker 接管了導覽。",
-    "description": "Caveat: cases where the trigger URL falls back to a plain search with the left engine. Keep Service Worker untranslated."
+    "message": "遇到以下情況，觸發網址會變成一般的左側引擎搜尋，不會開啟分割畫面：同步了這組搜尋設定的其他電腦和手機、無痕視窗、擴充功能已停用、授權已撤銷、左側引擎的網站自行接管了頁面載入（例如 Perplexity）。",
+    "description": "Caveat: cases where the trigger URL falls back to a plain search with the left engine. The last case is a site that handles its own page loads (technically, its service worker takes over navigation); say it in plain words, without mentioning service workers."
   },
   "guide_caveat_no_suggest": {
     "message": "自行新增的網站搜尋沒有搜尋建議網址，設為預設後，網址列就不會再顯示搜尋建議。",
@@ -318,14 +318,8 @@
     "description": "Button that opens the dialog for adding a custom search engine."
   },
   "options_engines_hint": {
-    "message": "網址範本中用 $CODE$ 代表關鍵字。左側引擎的網站必須授權，右側建議授權。排序決定下拉式選單中的順序。",
-    "description": "Hint under the engine list heading. The placeholder is %s shown as code.",
-    "placeholders": {
-      "CODE": {
-        "content": "$1",
-        "example": "%s"
-      }
-    }
+    "message": "左側引擎的網站必須授權，右側建議授權。排序決定下拉式選單中的順序。",
+    "description": "Hint under the engine list heading: site access and what the order is for. (How to write a URL template is explained in the add/edit engine dialog.)"
   },
   "options_hidden_title": {
     "message": "已隱藏的內建引擎",
@@ -386,6 +380,10 @@
   "options_dlg_url_placeholder": {
     "message": "https://tw.search.yahoo.com/search?p=%s",
     "description": "Placeholder of the URL template field: the search URL of the engine in options_dlg_id_placeholder with %s as the query. It must be usable as the left engine: lowercase %s once, as the full value of a query parameter, no #."
+  },
+  "options_dlg_url_hint": {
+    "message": "用 %s 代表關鍵字。",
+    "description": "Hint under the URL template field of the add/edit engine dialog. Keep %s as is."
   },
   "options_dlg_preset_hint": {
     "message": "內建值：$NAME$，$URL$（改回這兩個值即可還原為內建設定）",
@@ -560,8 +558,8 @@
     "description": "Button on a hidden preset engine that shows it again."
   },
   "engine_left_discouraged_hint": {
-    "message": "建議只放右側：這個網站的 Service Worker 可能會接管導覽，放在左側時可能無法開啟分割畫面。",
-    "description": "Warning on an engine row (e.g. Perplexity): its site's Service Worker may take over navigation, so as the left engine the split view may not open. Keep Service Worker untranslated."
+    "message": "建議只放右側：這個網站會自行接管頁面載入，放在左側時多半只會開啟一般搜尋，不會開啟分割畫面。",
+    "description": "Warning on an engine row (e.g. Perplexity): the site handles its own page loads (technically, its service worker takes over navigation), so as the left engine the split view usually doesn't open. Say it in plain words; don't mention service workers."
   },
   "engine_move_up": {
     "message": "上移",
@@ -682,8 +680,8 @@
     }
   },
   "guide_left_discouraged": {
-    "message": "$NAME$ 建議只放右側：它的網站用 Service Worker 接管頁面導覽，放在左側時通常只會開啟一般的 $NAME$ 搜尋，不會開啟分割畫面。放右側則不受影響。",
-    "description": "Warning when an engine like Perplexity is the left side of a pair. Keep Service Worker untranslated.",
+    "message": "$NAME$ 建議只放右側：它的網站會自行接管頁面載入，放在左側時通常只會開啟一般的 $NAME$ 搜尋，不會開啟分割畫面。放右側則不受影響。",
+    "description": "Warning when an engine like Perplexity is the left side of a pair: the site handles its own page loads (technically, its service worker takes over navigation), so on the left it usually opens a plain search. Say it in plain words; don't mention service workers.",
     "placeholders": {
       "NAME": {
         "content": "$1",

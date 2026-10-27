@@ -5,7 +5,6 @@ import { LOCALES, resolveLocale } from "../lib/i18n.js";
 
 // [元素 id, key, 内联节点]：节点按占位符顺序传给 tNodes，每次调用都新建
 const RICH_TEXT = [
-  ["engines-hint", "options_engines_hint", () => [h("code", null, "%s")]],
   ["guide-step-fields", "guide_step_fields", () => [h("code", null, t("guide_example_keyword"))]],
 ];
 
