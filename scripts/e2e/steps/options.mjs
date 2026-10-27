@@ -1,4 +1,4 @@
-// 设置页与规则相关的自动步骤（B 系列）。Task 5 先实现 B5，其余见 options-b.mjs / options-b2.mjs。
+// 设置页与规则相关的自动步骤（B 系列）。Task 5 先实现 B5，其余见 options-b.mjs / options-b2.mjs / options-b3.mjs。
 import { EXT_ID, mockEngines } from "../config.mjs";
 import { B_STEPS_1 } from "./options-b.mjs";
 import { B_STEPS_2 } from "./options-b2.mjs";
