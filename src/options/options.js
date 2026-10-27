@@ -28,9 +28,12 @@ bindActions({ render: () => render(), current: () => current });
 // 卡片整个不见了（重新授权成功后隐藏）就交给默认组合的左侧下拉框。
 // 上移 / 下移移到边缘后被禁用（禁用的按钮 focus() 悄悄不生效）：交给同一行另一个方向的；
 // 两个都没了就交给卡头看得见的那个：模式中是“完成”（“新增引擎”这时隐藏，focus() 不生效），
-// 平时（“调整顺序”自动退出）是“新增引擎”
+// 平时（“调整顺序”自动退出）是“新增引擎”。
+// “已隐藏”里的“恢复”成功后这一行没了：焦点交给这个引擎新出现的那一行，模式中是它的上移（边缘被禁用时照上面交给下移），平时是它的“编辑”
 const FOCUS_FALLBACK = { "setup-grant": "setup-grant-status", "setup-grant-right": "setup-grant-status" };
-function focusAfterRender(id) {
+function focusAfterRender(focused) {
+  const restored = focused.startsWith("restore-") && !$(focused) ? focused.slice("restore-".length) : null;
+  const id = restored ? (isReordering() ? `move-up-${restored}` : `edit-${restored}`) : focused;
   let el = $(id) ?? $(FOCUS_FALLBACK[id]) ?? (id.startsWith("setup-") ? $("pair-left") : null);
   const sibling = siblingMoveId(id);
   if (sibling && (!el || el.disabled)) el = $(sibling) ?? $(isReordering() ? "engines-reorder" : "add-engine");

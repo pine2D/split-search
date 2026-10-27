@@ -55,9 +55,12 @@ export function syncReorder(visible) {
   syncHeader();
 }
 
-// 文字会变的按钮不加 aria-pressed（APG）：状态靠按钮文字和说明文字，不只靠颜色
+// 文字会变的按钮不加 aria-pressed（APG）：状态靠按钮文字和说明文字，不只靠颜色。
+// 按钮自己有焦点时被藏起来（可见引擎不足 2 个，模式中还会自动退出）：它是静态 DOM，不随列表重建，
+// 渲染后 activeElement 仍是这个隐藏的按钮、不是 body，focusAfterRender 管不到，所以在这里把焦点交给“新增引擎”（这时已退出模式，它看得见）
 function syncHeader() {
   const btn = $("engines-reorder");
+  const hadFocus = document.activeElement === btn;
   setI18nText(btn, reordering ? "engine_reorder_done" : "engine_reorder");
   btn.className = reordering ? "btn btn-small btn-primary" : "btn btn-small";
   btn.hidden = !reordering && count < 2;
@@ -67,6 +70,7 @@ function syncHeader() {
   $("engines-hint").hidden = reordering;
   $("engines-reorder-hint").hidden = !reordering;
   if (!reordering) $("engines-status").textContent = "";
+  if (hadFocus && btn.hidden) $("add-engine").focus();
 }
 
 // 模式中一行的上移 / 下移。id 让重渲染后焦点回到同一个按钮（options.js 的 focusAfterRender，移到边缘被禁用时交给另一个方向的）

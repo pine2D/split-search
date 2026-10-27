@@ -74,7 +74,8 @@ export function renderHiddenList(ctx) {
   return h("ul", { class: "hidden-list" }, cfg.hidden.map(e =>
     h("li", { class: "hidden-row" },
       h("span", null, h("strong", null, e.name), " ", h("code", { class: "engine-id" }, e.id)),
-      ht("button", { type: "button", class: "btn btn-small", onclick: () => actions.restore(e) }, "engine_restore"))));
+      // id 让恢复后焦点能交给这个引擎新出现的那一行（options.js 的 focusAfterRender）
+      ht("button", { type: "button", id: `restore-${e.id}`, class: "btn btn-small", onclick: () => actions.restore(e) }, "engine_restore"))));
 }
 
 // ---- 新增 / 编辑对话框（静态 DOM，不随列表重渲染，编辑中的内容不会丢） ----
