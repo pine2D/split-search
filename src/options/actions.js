@@ -10,6 +10,7 @@ import { addImageEngine, addImageFromCatalog, deleteImageEngine, setImageEngine 
 import { addRule, editRule, moveRule, removeRule, moveNotice, removeNotice } from "./rule-edits.js";
 import { isReordering } from "./reorder.js";
 import { focusIn } from "./tabs.js";
+import { revealTriggers } from "./guide.js";
 import { currentLocale, t } from "../chrome/i18n.js";
 
 const ORDER_DEBOUNCE_MS = 500;
@@ -95,7 +96,8 @@ async function saveEngine(compute, okKey) {
   const done = t(okKey, result.engine.name);
   notify(warn ? joinSentences(done, t("notice_needs_grant")) : done, warn ? "warn" : "ok", { sticky: warn });
   if (result.templateChanged) {
-    notify(t("notice_template_changed", result.engine.name), "warn", { sticky: true });
+    notify(t("notice_template_changed", result.engine.name), "warn",
+      { sticky: true, action: { key: "notice_template_changed_go", run: revealTriggers } });
   }
   render();
   return result;

@@ -5,7 +5,7 @@ import { urlBreakParts } from "../lib/url-break.js";
 import { h, ht, copyButton, authButton, option, disclosure } from "./ui.js";
 import { canBeLeft, generatorPick } from "./edits.js";
 import { t } from "../chrome/i18n.js";
-import { showTab } from "./tabs.js";
+import { showTab, focusIn } from "./tabs.js";
 
 export const SETTINGS_URL = "chrome://settings/searchEngines";
 
@@ -134,4 +134,24 @@ export function revealGuideSteps() {
   }
   slot.scrollIntoView({ block: "start" });
   (slot.querySelector("details > summary") ?? document.getElementById("guide-steps-title"))?.focus({ preventScroll: true });
+}
+
+// “搜索组合”末行指引：切到“添加到 Chrome”，展开“其他组合”，滚过去、焦点给它的 summary
+export function revealGenerator() {
+  showTab("add");
+  const d = document.getElementById("guide-other");
+  if (!d) return;
+  d.open = true;
+  d.scrollIntoView({ block: "start" });
+  d.querySelector("summary")?.focus({ preventScroll: true });
+}
+
+// 改了引擎网址后提示里的“查看触发网址”：切到“添加到 Chrome”，默认组合一段收着就展开，焦点给默认组合那条的复制按钮
+// （不能只找 .url-line button：默认组合拼不出网址、“其他组合”又展开时，第一个是生成器的）
+export function revealTriggers() {
+  showTab("add");
+  const d = document.getElementById("guide-default");
+  if (d) d.open = true;
+  document.getElementById("triggers")?.scrollIntoView({ block: "start" });
+  focusIn(document.querySelector("#triggers .trigger-default .url-line button"));
 }

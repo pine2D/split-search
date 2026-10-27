@@ -222,3 +222,12 @@ test("设置页、弹窗、go.html 的静态 lang 都是 en", () => {
     assert.equal(m[1], "en", page);
   }
 });
+
+test("跨 tab 引用的区名一致（设计稿 4、5.5）", () => {
+  for (const l of langs) {
+    const m = k => catalogs[l][k].message;
+    for (const k of ["engine_in_pair_hide", "engine_in_pair_delete"]) assert.ok(m(k).includes(m("options_tab_pair")), `${l} ${k}`);
+    assert.ok(m("notice_template_changed").includes(m("options_tab_add")), `${l} notice_template_changed`);
+    for (const k of ["options_pair_changed_setup", "notice_pair_saved_setup"]) assert.ok(m(k).includes(m("setup_title")), `${l} ${k}`);
+  }
+});

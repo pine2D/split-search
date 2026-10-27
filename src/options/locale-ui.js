@@ -1,4 +1,4 @@
-// 设置页与语言相关的界面：带内联 <code> 的句子、语言下拉框。
+// 设置页与语言相关的界面：带内联 <code> 或链接的句子、语言下拉框。
 import { h, ht, option } from "./ui.js";
 import { t, tNodes } from "../chrome/i18n.js";
 import { LOCALES, resolveLocale } from "../lib/i18n.js";
@@ -6,6 +6,8 @@ import { LOCALES, resolveLocale } from "../lib/i18n.js";
 // [元素 id, key, 内联节点]：节点按占位符顺序传给 tNodes，每次调用都新建
 const RICH_TEXT = [
   ["guide-step-fields", "guide_step_fields", () => [h("code", null, t("guide_example_keyword"))]],
+  // 第 5 步的“搜索引擎”：页内链接，左键由 tabs.js 委托处理（切到“搜索引擎”、焦点给默认左侧的授权按钮）
+  ["guide-step-grant", "guide_step_grant", () => [h("a", { href: "#tab-engines", "data-reveal": "left-grant" }, t("options_tab_engines"))]],
 ];
 
 export function applyRichText() {

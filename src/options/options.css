@@ -131,6 +131,9 @@ div.setup-step { display: block; margin-top: 6px; }
 .setup-substeps .url-line { margin: 4px 0 0; }
 .setup-substeps .callout { margin-top: 6px; }
 .step-link { display: inline-block; margin-top: 8px; font-size: 13px; }
+/* 第 2 步末尾的“详细步骤”“更换组合”：同一行，放不下就折行 */
+.step-links { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 8px; }
+.step-links .step-link { margin-top: 0; }   /* 原 .step-link 的 inline-block + margin-top: 8px 保留给别处 */
 .setup-done-title { display: flex; align-items: center; gap: 8px; }
 .setup-done-title .icon { color: var(--ok); }
 .icon { flex: none; }
@@ -399,3 +402,22 @@ dialog:focus { outline: none; }
   .tablist { padding-inline: 3px; }     /* 3 + 12 = 15 ≈ 卡片边框 1 + 内边距 16 */
   .tab { padding-inline: 12px; }
 }
+
+/* ---- 搜索组合：改了默认组合后的提示（#pair-changed，不是警告）与窄窗口开关行 ---- */
+#pair-changed { display: block; background: var(--accent-soft); border: 1px solid var(--border); }
+#pair-changed > p { margin: 0; }
+#pair-changed .url-line { margin: 6px 0; }
+
+.switch-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px 16px; flex-wrap: wrap; margin-top: 14px; }
+.switch-text { flex: 1 1 260px; min-width: 0; }
+.switch-text label { font-size: 14px; }
+.switch-text .hint { margin: 2px 0 0; }
+.switch {
+  appearance: none; flex: none; position: relative; width: 34px; height: 20px; margin: 2px 0 0; padding: 0;
+  border-radius: 10px; background: var(--muted); cursor: pointer;   /* 轨道关：--muted 对白底约 6:1 */
+}
+.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 50%; background: var(--surface); }
+.switch:checked { background: var(--accent); }
+.switch:checked::after { left: 17px; }
+.switch:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+@media (forced-colors: active) { .switch { border: 1px solid CanvasText; } .switch::after { background: CanvasText; } .switch:checked { background: Highlight; } }

@@ -133,7 +133,10 @@ function addBody({ left, url }) {
         url ? urlBox(url, undefined, "guide_copy_default_aria") : ht("p", { class: "hint hint-error" }, "guide_no_trigger"),
         url && left.leftDiscouraged && leftWarn(left)),
       sub("setup_add_default")),
-    ht("a", { href: "#guide-steps", class: "step-link", onclick: openDetails }, "setup_details_link"),
+    // “更换组合”是 href="#tab-pair" 的页内链接：左键由 tabs.js 委托处理，切到“搜索组合”后焦点给左侧下拉框
+    h("div", { class: "step-links" },
+      ht("a", { href: "#guide-steps", class: "step-link", onclick: openDetails }, "setup_details_link"),
+      ht("a", { href: "#tab-pair", id: "setup-change-pair", class: "step-link", "data-reveal": "pair-left" }, "setup_change_pair")),
   ];
 }
 

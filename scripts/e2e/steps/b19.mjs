@@ -185,7 +185,7 @@ async function regrant(ctx, page, tabId) {
   if (!c.grantButton) problems.push("没有第 1 步的授权按钮");
   if (c.def !== "closed") problems.push(`卡片重新出现后默认组合一段应收起，实际 ${c.def}`);
   if (c.guideSteps !== "closed") problems.push(`卡片重新出现后 5 步说明应收起，实际 ${c.guideSteps}`);
-  if (c.pairCallouts) problems.push(`卡片显示时默认组合卡不应再有左侧未授权的提示框（实际 ${c.pairCallouts} 个）`);
+  if (c.pairCallouts !== 1) problems.push(`左侧未授权时默认组合卡应有 1 个提示框（实际 ${c.pairCallouts} 个）`);
   let pop = "";
   try {
     const r = await popupTier(ctx, tabId, "setup", { click: "idle-setup-open", via: "reuse", mode: "regrant" });

@@ -252,8 +252,40 @@
     "description": "Heading of the settings card where the user picks the default engine pair (left and right engine)."
   },
   "options_pair_hint": {
-    "message": "左側不能選標示「只能放右側」的引擎。變更預設組合後，要把新的觸發網址新增到 Chrome 並設為預設，才會取代舊的那一筆。",
-    "description": "Hint in the default pair card. \"Right only\" refers to the engine tag engine_tag_right_only; keep the same wording."
+    "message": "在網址列搜尋、把文字拖到分頁列時，會用這兩個引擎開啟分割畫面。",
+    "description": "Hint under the default pair card heading: what the default pair is used for. Split view is Chrome's feature name; keep the Chrome term."
+  },
+  "options_pair_other": {
+    "message": "想用別的組合？到「$LINK$」產生它的觸發網址。",
+    "description": "Last line of the default pair card. $LINK$ is a link whose text is the tab name options_tab_add; it opens that tab and expands “Other pairs”.",
+    "placeholders": {
+      "LINK": {
+        "content": "$1",
+        "example": "Add to Chrome"
+      }
+    }
+  },
+  "options_pair_changed": {
+    "message": "預設組合已改成 $PAIR$。Chrome 的網站搜尋仍在使用舊網址，請複製下方的新網址取代它。",
+    "description": "Box shown in the default pair card after the pair was changed on this page and setup was already done: Chrome’s site search still has the old trigger URL. $PAIR$ is the new pair, such as “Google | Bing”.",
+    "placeholders": {
+      "PAIR": {
+        "content": "$1",
+        "example": "Google | Bing"
+      }
+    }
+  },
+  "options_pair_changed_setup": {
+    "message": "「開始使用」中的網址已換成新組合。",
+    "description": "Box shown in the default pair card after the pair was changed during first-run setup. The quoted card name must match setup_title."
+  },
+  "options_pair_changed_steps": {
+    "message": "查看設定步驟",
+    "description": "Link in the changed-pair box; opens the setup steps in the Add to Chrome tab."
+  },
+  "options_pair_changed_continue": {
+    "message": "繼續設定",
+    "description": "Link in the changed-pair box during first-run setup; goes back to the “Get started” card."
   },
   "options_guide_title": {
     "message": "新增到 Chrome",
@@ -306,8 +338,14 @@
     "description": "Setup step 4. \"Make default\" and \"shortcut\" must match Chrome's labels; ⋮ is the More actions menu icon."
   },
   "guide_step_grant": {
-    "message": "確認左側引擎已授權（引擎清單中顯示「已授權」）。",
-    "description": "Setup step 5. The quoted status must match engine_granted."
+    "message": "在「$LINK$」中確認左側引擎顯示「已授權」。",
+    "description": "Setup step 5. $LINK$ is a link whose text is the tab name options_tab_engines. The quoted status must match engine_granted.",
+    "placeholders": {
+      "LINK": {
+        "content": "$1",
+        "example": "Search engines"
+      }
+    }
   },
   "guide_caveats_title": {
     "message": "注意事項",
@@ -574,12 +612,12 @@
     }
   },
   "engine_in_pair_hide": {
-    "message": "預設組合正在使用，無法隱藏。請先在「預設組合」中換成其他引擎。",
-    "description": "Visible reason under the unavailable Hide button in the edit engine dialog: the default pair uses this built-in engine. The quoted card name must match options_pair_title."
+    "message": "預設組合正在使用，無法隱藏。請先到「搜尋組合」把預設組合換成其他引擎。",
+    "description": "Visible reason under the unavailable Hide button in the edit engine dialog: the default pair uses this built-in engine. The quoted tab name must match options_tab_pair exactly."
   },
   "engine_in_pair_delete": {
-    "message": "預設組合正在使用，無法刪除。請先在「預設組合」中換成其他引擎。",
-    "description": "Visible reason under the unavailable Delete button in the edit engine dialog: the default pair uses this custom engine. The quoted card name must match options_pair_title."
+    "message": "預設組合正在使用，無法刪除。請先到「搜尋組合」把預設組合換成其他引擎。",
+    "description": "Visible reason under the unavailable Delete button in the edit engine dialog: the default pair uses this custom engine. The quoted tab name must match options_tab_pair exactly."
   },
   "engine_rules_used_preset": {
     "message": "有 $N$ 條關鍵字規則用到它。隱藏後，這些規則暫不生效。",
@@ -826,14 +864,18 @@
     "description": "Sentence shown right after notice_added / notice_saved when the engine's site is not granted yet. The quoted button is engine_grant."
   },
   "notice_template_changed": {
-    "message": "「$NAME$」的網址已修改：把這個引擎放在左側的網站搜尋，需要在這個頁面重新複製觸發網址，並取代 Chrome 設定中對應網站搜尋的網址。",
-    "description": "Sticky notice after an engine's URL changed: site searches that use it on the left must be copied again and replaced in Chrome's settings.",
+    "message": "「$NAME$」的網址已修改。把它放在左側的網站搜尋要換成新的觸發網址：到「新增到 Chrome」重新複製，再取代 Chrome 設定中那筆網站搜尋的網址。",
+    "description": "Sticky notice after an engine's URL changed: site searches that use it on the left need the trigger URL copied again from the Add to Chrome tab and replaced in Chrome's settings. The quoted tab name must match options_tab_add exactly.",
     "placeholders": {
       "NAME": {
         "content": "$1",
         "example": "Baidu"
       }
     }
+  },
+  "notice_template_changed_go": {
+    "message": "查看觸發網址",
+    "description": "Button in the notice notice_template_changed; opens the Add to Chrome tab at the trigger URLs."
   },
   "notice_hidden": {
     "message": "已隱藏「$NAME$」",
@@ -900,8 +942,16 @@
     }
   },
   "notice_pair_saved": {
-    "message": "預設組合已儲存。記得把新的觸發網址複製到 Chrome 並設為預設。",
-    "description": "Notice after changing the default pair: the new trigger URL must be added to Chrome and made default."
+    "message": "預設組合已儲存。Chrome 的網站搜尋仍在使用舊網址，請用下方的新網址取代它。",
+    "description": "Notice after changing the default pair once setup is done: Chrome’s site search still has the old trigger URL; the new one is shown in the default pair card."
+  },
+  "notice_pair_saved_setup": {
+    "message": "預設組合已儲存，「開始使用」中的網址已換成新組合。",
+    "description": "Notice after changing the default pair during first-run setup. The quoted card name must match setup_title."
+  },
+  "notice_pair_saved_back": {
+    "message": "預設組合已儲存。",
+    "description": "Notice after changing the default pair back to the pair it had before on this page (nothing to update in Chrome)."
   },
   "setup_title": {
     "message": "開始使用",
@@ -1008,6 +1058,10 @@
   "setup_details_link": {
     "message": "詳細步驟",
     "description": "Link in Get started step 2 that jumps to the Add to Chrome card with the full steps."
+  },
+  "setup_change_pair": {
+    "message": "更換組合",
+    "description": "Link at the end of step 2 of the “Get started” card; opens the Search pairs tab and focuses the left engine picker."
   },
   "setup_try_title": {
     "message": "確認分割畫面能開啟",
@@ -1120,8 +1174,8 @@
     "description": "Checkbox label in the default pair card. Narrow means the window is under 960 px wide."
   },
   "options_narrow_hint": {
-    "message": "視窗寬度不到 960 像素時，分割畫面會太擠。勾選後，左側結果會留在你搜尋的分頁，右側結果則在旁邊的分頁開啟。",
-    "description": "Hint under the narrow-window checkbox on the settings page, describing what happens when it is checked. Split view is Chrome's feature name; keep the Chrome term. Do not say \"this tab\": the reader is on the settings page."
+    "message": "視窗寬度不到 960 像素時，分割畫面會太擠。開啟後，左側結果會留在你搜尋的分頁，右側結果則在旁邊的分頁開啟。",
+    "description": "Hint under the narrow-window switch on the settings page, describing what happens when it is on. Split view is Chrome's feature name; keep the Chrome term. Do not say \"this tab\": the reader is on the settings page."
   },
   "options_rules_title": {
     "message": "依關鍵字換右側",

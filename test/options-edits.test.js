@@ -5,6 +5,7 @@ import { CATALOG } from "../src/lib/engine-catalog.js";
 import {
   addEngine, editEngine, hideEngine, deleteEngine, restoreEngine, setDefaultPair, setNarrowFallback, describeTemplate, addFromCatalog,
   setCycle, setLookupEngine, generatorPick, moveId, reconcileOrder, movePosition, siblingMoveId,
+  notePairChange, pairChangedView, pairSavedKey,
 } from "../src/options/edits.js";
 
 const preset = (id) => PRESETS.find(p => p.id === id);
@@ -335,4 +336,30 @@ test("deleteEngine：默认组合在用时仍先报 pair_uses_delete，不碰规
   assert.equal(r.ok, false);
   assert.equal(r.error.code, "pair_uses_delete");
   assert.equal(r.rulesDropped, undefined);
+});
+
+const R = (from, mode) => ({ from, mode });
+test("notePairChange：没有记录时记下 from 与 mode，已记过不覆盖", () => {
+  assert.deepEqual(notePairChange(null, { from: ["ea", "eb"], mode: "done" }), R(["ea", "eb"], "done"));
+  const rec = R(["ea", "eb"], "steps");
+  assert.equal(notePairChange(rec, { from: ["ea", "ec"], mode: "done" }), rec);
+});
+test("pairChangedView：按当前 mode 选文案", () => {
+  assert.deepEqual(pairChangedView(R(["ea", "eb"], "done"), { pair: ["ea", "ec"], mode: "done" }).show, "replace");
+  for (const mode of ["regrant", "hidden"]) assert.equal(pairChangedView(R(["ea", "eb"], "done"), { pair: ["ea", "ec"], mode }).show, "replace");
+  assert.equal(pairChangedView(R(["ea", "eb"], "steps"), { pair: ["ea", "ec"], mode: "steps" }).show, "setup");
+  assert.equal(pairChangedView(R(["ea", "eb"], "done"), { pair: ["eb", "ea"], mode: "done" }).show, "replace"); // 左右对调也算改了
+});
+test("pairChangedView：三种清掉的情况（Review Focus 4 的“改回原组合”与“没保存过的页”）", () => {
+  assert.deepEqual(pairChangedView(null, { pair: ["ea", "ec"], mode: "done" }), { rec: null, show: null });
+  assert.deepEqual(pairChangedView(R(["ea", "eb"], "done"), { pair: ["ea", "eb"], mode: "done" }), { rec: null, show: null });
+  for (const mode of ["done", "hidden", "regrant"]) {
+    assert.deepEqual(pairChangedView(R(["ea", "eb"], "steps"), { pair: ["ea", "ec"], mode }), { rec: null, show: null });
+  }
+});
+test("pairSavedKey：改回原组合 → back；否则按 mode", () => {
+  assert.equal(pairSavedKey(R(["ea", "eb"], "done"), ["ea", "eb"], "done"), "notice_pair_saved_back");
+  assert.equal(pairSavedKey(null, ["ea", "ec"], "steps"), "notice_pair_saved_setup");
+  for (const mode of ["regrant", "done", "hidden"]) assert.equal(pairSavedKey(null, ["ea", "ec"], mode), "notice_pair_saved");
+  assert.equal(pairSavedKey(R(["ea", "eb"], "steps"), ["ea", "ec"], "steps"), "notice_pair_saved_setup");
 });

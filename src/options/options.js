@@ -1,22 +1,22 @@
 // 设置页编排：读配置 → 实时查授权 → 渲染各区块；所有写入串行执行“loadRaw → 改整键 → saveKeys”。
 import { loadRaw } from "../chrome/config-store.js";
 import { mergeConfig } from "../lib/engines.js";
-import { h, ht, notify, errorText, authButton, option, isGranted, addChevrons } from "./ui.js";
-import { setDefaultPair, canBeLeft, setNarrowFallback, siblingMoveId } from "./edits.js";
-import { write, act, actions, attention, bindActions, getPendingOrder, flushOrderNow } from "./actions.js";
+import { notify, errorText, isGranted, addChevrons } from "./ui.js";
+import { siblingMoveId } from "./edits.js";
+import { write, actions, attention, bindActions, getPendingOrder, flushOrderNow } from "./actions.js";
 import { setupReorder, isReordering, leaveReorder } from "./reorder.js";
 import { renderLookupCard, setupLookupDialogs, refreshImageCatalog } from "./lookup.js";
 import { renderEngineList, renderHiddenList, setupEngineDialog } from "./engine-list.js";
-import { renderRules, setupRuleDialog } from "./rules.js";
+import { setupRuleDialog } from "./rules.js";
 import { setupCatalogDialog, refreshCatalog } from "./catalog.js";
 import { renderShortcut, renderCycleList, SHORTCUT_BUTTON_ID } from "./shortcut.js";
-import { renderTriggers, renderGuideSteps, setupGuide } from "./guide.js";
+import { renderTriggers, renderGuideSteps, setupGuide, revealGenerator } from "./guide.js";
 import { renderSetup, loadSetupDone, initSetup, revealSetup, requestReveal } from "./setup.js";
 import { initTabs, routeOnce, setTabFlag, focusIn } from "./tabs.js";
 import { applyRichText, renderLangPicker } from "./locale-ui.js";
 import { initI18n, applyI18n, setLocale, currentPref, currentLocale, t } from "../chrome/i18n.js";
 import { safeArgs } from "../lib/safe-error.js";
-import { pane, panes } from "../ui/panes.js";
+import { pairSection } from "./pair.js";
 
 const $ = (id) => document.getElementById(id);
 const log = (...args) => console.error("[split-search]", ...safeArgs(args));
@@ -32,7 +32,8 @@ bindActions({ render: () => render(), current: () => current });
 // 两个都没了就交给卡头看得见的那个：模式中是“完成”（“新增引擎”这时隐藏，focus() 不生效），
 // 平时（“调整顺序”自动退出）是“新增引擎”。
 // “已隐藏”里的“恢复”成功后这一行没了：焦点交给这个引擎新出现的那一行，模式中是它的上移（边缘被禁用时照上面交给下移），平时是它的“编辑”
-const FOCUS_FALLBACK = { "setup-grant": "setup-grant-status", "setup-grant-right": "setup-grant-status" };
+// “搜索组合”里左侧未授权的提示框授权成功后消失：焦点交给同一 tab 的左侧下拉框
+const FOCUS_FALLBACK = { "setup-grant": "setup-grant-status", "setup-grant-right": "setup-grant-status", "pair-grant": "pair-left" };
 function focusAfterRender(focused) {
   const restored = focused.startsWith("restore-") && !$(focused) ? focused.slice("restore-".length) : null;
   const id = restored ? (isReordering() ? `move-up-${restored}` : `edit-${restored}`) : focused;
@@ -131,7 +132,7 @@ async function render() {
   routeOnce(mode); // 默认 tab 只在首次渲染判一次，之后状态变化不换 tab
   setTabFlag(mode);
   const ctx = { cfg, granted, attention, actions, refresh: render, setupShown };
-  $("pair-body").replaceChildren(...pairSection(cfg, byId, granted, setupShown));
+  $("pair-body").replaceChildren(...pairSection({ cfg, byId, granted, mode, render, actions }));
   $("lookup-body").replaceChildren(renderLookupCard(cfg, actions));
   $("triggers").replaceChildren(renderTriggers(ctx));
   renderGuideSteps(setupShown);
@@ -164,41 +165,6 @@ async function refreshShortcut() {
   }
 }
 
-// 默认组合的左右两个下拉框做成镜像图标的两个窗格（只有默认组合卡用：窗格就代表默认组合）；整个窗格是 <label>，点哪里都聚焦下拉框
-function pickerPanes(leftSel, rightSel) {
-  return panes(
-    pane("left", "label", ht("span", null, "common_left"), leftSel),
-    pane("right", "label", ht("span", null, "common_right"), rightSel),
-    "pair-pickers");
-}
-
-// setupShown：“开始使用”卡显示着时，左侧授权的提示框只留在卡里，这里不重复
-function pairSection(cfg, byId, granted, setupShown) {
-  const lefts = cfg.engines.filter(canBeLeft);
-  const [l, r] = cfg.defaultPair;
-  const leftSel = h("select", { id: "pair-left" }, lefts.map(e => option(e.id, e.name, e.id === l)));
-  const rightSel = h("select", { id: "pair-right" }, cfg.engines.map(e => option(e.id, e.name, e.id === r)));
-  const save = () => act(raw => setDefaultPair(raw, leftSel.value, rightSel.value), ["notice_pair_saved"]);
-  leftSel.addEventListener("change", save);
-  rightSel.addEventListener("change", save);
-
-  const narrow = h("input", { type: "checkbox", id: "narrow-fallback" });
-  narrow.checked = cfg.narrowFallback;
-  narrow.addEventListener("change", () => act(raw => setNarrowFallback(raw, narrow.checked), ["notice_narrow_saved"]));
-
-  const nodes = [pickerPanes(leftSel, rightSel),
-  h("label", { class: "check-row" }, narrow, ht("span", null, "options_narrow_label")),
-  ht("p", { class: "hint" }, "options_narrow_hint")];
-  const left = byId.get(l);
-  if (left && !setupShown && !granted.get(left.id)) {
-    nodes.push(h("div", { class: "callout callout-warn" },
-      ht("span", null, "options_left_not_granted", left.name),
-      authButton([left], ["engine_grant_named", left.name], { cls: "btn btn-small btn-attention", onDone: render })));
-  }
-  nodes.push(renderRules(cfg, actions)); // 按关键词换右侧：默认收起，放在最后
-  return nodes;
-}
-
 // ---- 启动 ----
 
 // 对话框和“复制地址”按钮要用 t()，等目录加载完再建；下面的监听只调 render()，render 自己 await i18nReady
@@ -215,6 +181,16 @@ chrome.storage.onChanged.addListener((_changes, area) => { if (area === "sync") 
 chrome.permissions.onAdded.addListener(() => render());
 chrome.permissions.onRemoved.addListener(() => render());
 window.addEventListener("focus", () => refreshShortcut());
+// 页内 href="#tab-*" 链接切过去之后按 data-reveal 定位：“更换组合”给左侧下拉框；第 5 步的“搜索引擎”给默认左侧的授权按钮
+// （已授权时没有，给它的“编辑”）；“搜索组合”末行指引展开“其他组合”
+const reveals = {
+  "pair-left": () => focusIn($("pair-left")),
+  "left-grant": () => {
+    const l = current?.defaultPair[0];
+    focusIn(document.querySelector(`#engines [data-id="${CSS.escape(l)}"] .perm-line button`) ?? $(`edit-${l}`));
+  },
+  generator: revealGenerator,
+};
 // 离开“搜索引擎”tab 时退出“调整顺序”并立刻写出排序，不抢焦点
-initTabs({ onReveal: requestReveal, onLeave: from => { if (from === "engines") leaveReorder({ focus: false }); }, reveals: {} });
+initTabs({ onReveal: requestReveal, onLeave: from => { if (from === "engines") leaveReorder({ focus: false }); }, reveals });
 render();

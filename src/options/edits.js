@@ -190,6 +190,23 @@ export function setDefaultPair(raw, leftId, rightId) {
   return { ok: true, patch: { defaultPair: [leftId, rightId] } };
 }
 
+// 改了默认组合后“Chrome 里还是旧网址”的提示（设计稿 3.9 第 1 条）。rec 是本页内存的 { from, mode }：
+// from 是第一次改之前的组合，mode 是那时 setupView 的 mode；只记一次，之后再改不覆盖
+const samePair = (a, b) => a[0] === b[0] && a[1] === b[1];
+export function notePairChange(rec, { from, mode }) {
+  return rec ?? { from: [...from], mode };
+}
+// 每次渲染先判要不要清掉：没记录、改回原组合、steps 档记下的而现在已离开 steps（按新网址完成了设置）
+export function pairChangedView(rec, { pair, mode }) {
+  if (!rec || samePair(pair, rec.from) || (rec.mode === "steps" && mode !== "steps")) return { rec: null, show: null };
+  return { rec, show: mode === "steps" ? "setup" : "replace" };
+}
+// 保存成功的提示：改回原组合（提示框随之消失）、还在首次设置、其余
+export function pairSavedKey(rec, pair, mode) {
+  if (rec && samePair(pair, rec.from)) return "notice_pair_saved_back";
+  return mode === "steps" ? "notice_pair_saved_setup" : "notice_pair_saved";
+}
+
 export function setNarrowFallback(_raw, enabled) {
   return { ok: true, patch: { narrowFallback: enabled === true } };
 }

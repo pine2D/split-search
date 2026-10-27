@@ -35,7 +35,7 @@ export function requestProblems(calls, want = GB_ORIGINS) {
 }
 
 // CDP 可信点击（不经 X，headless 也可用）
-async function trustedClick(browser, sid, { x, y }) {
+export async function trustedClick(browser, sid, { x, y }) {
   for (const type of ["mousePressed", "mouseReleased"]) {
     await browser.client.send("Input.dispatchMouseEvent", { type, x, y, button: "left", buttons: type === "mousePressed" ? 1 : 0, clickCount: 1 }, sid);
   }
