@@ -40,3 +40,26 @@ test("revealSetup、revealGuideSteps 的函数体都先 showTab(\"add\")", () =>
   assert.ok(a >= 0 && b >= 0 && a < b, "revealSetup 应在 scrollIntoView 之前 showTab(\"add\")");
   assert.match(fnBody(opt("guide.js"), "export function revealGuideSteps("), /^export function revealGuideSteps\([^)]*\)\s*\{\s*showTab\("add"\);/);
 });
+
+// F1：页内链接的 onclick 只拦普通左键，中键、Ctrl/Shift/Meta+点照常按 href 新开（设计稿 3.7）
+test("pair.js、setup.js 的页内链接 handler 先过 plainLeft（从 tabs.js 导出，不复制）", () => {
+  assert.match(opt("tabs.js"), /export const plainLeft\b/);
+  for (const f of ["pair.js", "setup.js"]) {
+    const s = opt(f);
+    assert.match(s, /import \{[^}]*\bplainLeft\b[^}]*\} from "\.\/tabs\.js"/, `${f} 应从 tabs.js 导入 plainLeft`);
+    assert.doesNotMatch(s, /const plainLeft\b/, `${f} 不应复制 plainLeft`);
+    assert.match(s, /if \(!plainLeft\(ev\)\) return;\s*ev\.preventDefault\(\)/, `${f} 应先判 plainLeft 再 preventDefault`);
+  }
+});
+
+test("F2：默认组合的复制按钮有稳定 id，重建后焦点能找回", () => {
+  assert.match(opt("guide.js"), /trigger-default-copy/);
+});
+
+test("F3：静态 #hidden-title 默认 hidden", () => {
+  assert.match(opt("options.html"), /<h3 id="hidden-title" hidden /);
+});
+
+test("F4：tabs.js 不导出没有外部调用方的 activeTab", () => {
+  assert.doesNotMatch(opt("tabs.js"), /export function activeTab/);
+});

@@ -943,7 +943,7 @@
   },
   "notice_pair_saved": {
     "message": "Default pair saved. The site search you added to Chrome still uses the old URL. Copy the new one from “Default pair” to replace it.",
-    "description": "Notice after changing the default pair once setup is done: Chrome’s site search still has the old trigger URL; the new one is shown in the default pair card."
+    "description": "Notice after changing the default pair once setup is done: Chrome’s site search still has the old trigger URL; the new one is shown in the default pair card. The quoted card name must match options_pair_title."
   },
   "notice_pair_saved_setup": {
     "message": "Default pair saved. The URL in “Get started” now uses the new pair.",

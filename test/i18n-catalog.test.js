@@ -229,5 +229,7 @@ test("跨 tab 引用的区名一致（设计稿 4、5.5）", () => {
     for (const k of ["engine_in_pair_hide", "engine_in_pair_delete"]) assert.ok(m(k).includes(m("options_tab_pair")), `${l} ${k}`);
     assert.ok(m("notice_template_changed").includes(m("options_tab_add")), `${l} notice_template_changed`);
     for (const k of ["options_pair_changed_setup", "notice_pair_saved_setup"]) assert.ok(m(k).includes(m("setup_title")), `${l} ${k}`);
+    assert.ok(m("notice_pair_saved").includes(m("options_pair_title")), `${l} notice_pair_saved`);
+    assert.ok(catalogs[l].notice_pair_saved.description.includes("options_pair_title"), `${l} notice_pair_saved description 要点明引用 options_pair_title`);
   }
 });

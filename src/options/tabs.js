@@ -13,7 +13,7 @@ let flagMode;            // setTabFlag 最近一次按哪一档写的
 
 const $ = (id) => document.getElementById(id);
 const keyOf = (btn) => (btn?.id?.startsWith(BTN) ? btn.id.slice(BTN.length) : null);
-const plainLeft = (ev) => ev.button === 0 && !ev.altKey && !ev.ctrlKey && !ev.metaKey && !ev.shiftKey;
+export const plainLeft = (ev) => ev.button === 0 && !ev.altKey && !ev.ctrlKey && !ev.metaKey && !ev.shiftKey;
 
 // onReveal(target)：hash 变成 #setup / #guide-steps 时调用；onLeave(fromKey)：离开某个 tab 后调用；
 // reveals[name]：href="#tab-*" 的页内链接左键切过去后，按链接的 data-reveal 调用（焦点给目标控件之类）
@@ -49,7 +49,7 @@ export function initTabs({ onReveal, onLeave, reveals }) {
   });
 }
 
-export function activeTab() {
+function activeTab() {
   return keyOf($("tabs")?.querySelector('[role="tab"][aria-selected="true"]'));
 }
 

@@ -7,6 +7,7 @@ import { setDefaultPair, canBeLeft, setNarrowFallback, notePairChange, pairChang
 import { act } from "./actions.js";
 import { urlBox, revealGuideSteps } from "./guide.js";
 import { requestReveal } from "./setup.js";
+import { plainLeft } from "./tabs.js";
 import { pane, panes } from "../ui/panes.js";
 import { t, tNodes } from "../chrome/i18n.js";
 
@@ -30,7 +31,7 @@ function triggerOf(left, right) {
 }
 
 // 左键交给页内的 reveal（切到“添加到 Chrome”并定位）；中键、Ctrl+点照常按 href 新开
-const revealLink = (href, key, run) => ht("a", { href, onclick: (ev) => { ev.preventDefault(); run(); } }, key);
+const revealLink = (href, key, run) => ht("a", { href, onclick: (ev) => { if (!plainLeft(ev)) return; ev.preventDefault(); run(); } }, key);
 
 // 改了默认组合之后：steps 档说“开始使用”里的网址已换成新的；其余档说 Chrome 里还是旧网址，给新网址和设置步骤。
 // 不设 role：它随每次渲染整个重建，播报交给保存时的提示（#notices）

@@ -10,7 +10,7 @@ import { routeFromHash } from "../lib/options-route.js";
 import { DONE_KEY, readSetupDone, rememberTryTab } from "../chrome/setup-store.js";
 import { h, ht, notify, errorText, authButton } from "./ui.js";
 import { urlBox, leftWarn, revealGuideSteps, SETTINGS_URL } from "./guide.js";
-import { showTab } from "./tabs.js";
+import { showTab, plainLeft } from "./tabs.js";
 import { t } from "../chrome/i18n.js";
 import { icon } from "../ui/icons.js";
 
@@ -118,6 +118,7 @@ function grantDone({ left, right, rightPending }) {
 
 // “详细步骤”：“添加到 Chrome”卡的 5 步说明和默认组合一段这时收着，先展开再滚过去（不改 hash，免得和 #setup 定位搅在一起）
 function openDetails(ev) {
+  if (!plainLeft(ev)) return;
   ev.preventDefault();
   revealGuideSteps();
 }

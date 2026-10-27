@@ -37,6 +37,13 @@ export function urlBox(url, label, ariaKey) {
     copyButton(() => url, label, ariaKey));
 }
 
+// 默认组合那条的复制按钮带稳定 id：重建 #triggers 后 focusAfterRender 按 id 把焦点找回（revealTriggers 给它焦点之后可能还有异步渲染）
+function defaultUrlBox(url) {
+  const box = urlBox(url, undefined, "guide_copy_default_aria");
+  box.querySelector("button").id = "trigger-default-copy";
+  return box;
+}
+
 // ctx: { cfg, granted, refresh, setupShown }。setupShown：“开始使用”卡显示着，默认组合左侧的授权入口只留在卡里，
 // 默认组合的触发网址卡里也有，这里收进默认收起的 <details>；卡片不显示时照常展开
 export function renderTriggers(ctx) {
@@ -52,7 +59,7 @@ export function renderTriggers(ctx) {
     h("div", { class: "trigger-head" },
       ht("span", { class: "tag tag-accent" }, "guide_default_tag"),
       dl && dr ? ht("strong", null, "guide_pair_label", dl.name, dr.name) : ht("strong", null, "guide_pair_invalid")),
-    defUrl ? urlBox(defUrl, undefined, "guide_copy_default_aria") : ht("p", { class: "hint hint-error" }, "guide_no_trigger"),
+    defUrl ? defaultUrlBox(defUrl) : ht("p", { class: "hint hint-error" }, "guide_no_trigger"),
     defUrl && dl.leftDiscouraged && leftWarn(dl),
     ht("p", { class: "hint" }, "guide_default_hint"));
   frag.append(h("div", { class: "trigger-card" },
@@ -153,5 +160,5 @@ export function revealTriggers() {
   const d = document.getElementById("guide-default");
   if (d) d.open = true;
   document.getElementById("triggers")?.scrollIntoView({ block: "start" });
-  focusIn(document.querySelector("#triggers .trigger-default .url-line button"));
+  focusIn(document.getElementById("trigger-default-copy"));
 }

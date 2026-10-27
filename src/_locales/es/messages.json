@@ -864,7 +864,7 @@
     "description": "Sentence shown right after notice_added / notice_saved when the engine's site is not granted yet. The quoted button is engine_grant."
   },
   "notice_template_changed": {
-    "message": "«$NAME$» tiene una URL nueva. Si alguna búsqueda en el sitio lo usa a la izquierda, necesita una URL de activación nueva: cópiala en «Añadir a Chrome» y úsala en lugar de la URL de esa búsqueda en la configuración de Chrome.",
+    "message": "«$NAME$» tiene una URL nueva. Si alguna búsqueda en el sitio lo usa a la izquierda, necesita una URL de activación nueva: cópiala desde «Añadir a Chrome» y úsala en lugar de la URL de esa búsqueda en la configuración de Chrome.",
     "description": "Sticky notice after an engine's URL changed: site searches that use it on the left need the trigger URL copied again from the Add to Chrome tab and replaced in Chrome's settings. The quoted tab name must match options_tab_add exactly.",
     "placeholders": {
       "NAME": {
@@ -943,7 +943,7 @@
   },
   "notice_pair_saved": {
     "message": "Combinación predeterminada guardada. La búsqueda en el sitio que añadiste a Chrome sigue usando la URL anterior. Copia la URL nueva de «Combinación predeterminada» y úsala en su lugar.",
-    "description": "Notice after changing the default pair once setup is done: Chrome’s site search still has the old trigger URL; the new one is shown in the default pair card."
+    "description": "Notice after changing the default pair once setup is done: Chrome’s site search still has the old trigger URL; the new one is shown in the default pair card. The quoted card name must match options_pair_title."
   },
   "notice_pair_saved_setup": {
     "message": "Combinación predeterminada guardada. La URL de «Primeros pasos» ya usa la nueva combinación.",

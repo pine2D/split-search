@@ -943,7 +943,7 @@
   },
   "notice_pair_saved": {
     "message": "默认组合已保存。Chrome 里的网站搜索还在用旧网址，复制“默认组合”里的新网址，把旧的换掉。",
-    "description": "Notice after changing the default pair once setup is done: Chrome’s site search still has the old trigger URL; the new one is shown in the default pair card."
+    "description": "Notice after changing the default pair once setup is done: Chrome’s site search still has the old trigger URL; the new one is shown in the default pair card. The quoted card name must match options_pair_title."
   },
   "notice_pair_saved_setup": {
     "message": "默认组合已保存，“开始使用”里的网址已按新组合更新。",

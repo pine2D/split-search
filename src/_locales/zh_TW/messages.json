@@ -943,7 +943,7 @@
   },
   "notice_pair_saved": {
     "message": "預設組合已儲存。Chrome 中的網站搜尋仍在使用舊網址，請複製「預設組合」中的新網址，把舊的換掉。",
-    "description": "Notice after changing the default pair once setup is done: Chrome’s site search still has the old trigger URL; the new one is shown in the default pair card."
+    "description": "Notice after changing the default pair once setup is done: Chrome’s site search still has the old trigger URL; the new one is shown in the default pair card. The quoted card name must match options_pair_title."
   },
   "notice_pair_saved_setup": {
     "message": "預設組合已儲存，「開始使用」中的網址已依新組合更新。",
