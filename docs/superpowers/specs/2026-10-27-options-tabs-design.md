@@ -284,7 +284,7 @@ hash 规则：
 | 入口 | 改后行为 | 代码 |
 |---|---|---|
 | 安装后 `openOptionsPage()`（background.js:60） | 无 hash → 默认 tab；全新安装是 ① | 不改 |
-| 弹窗页脚“打开设置”、go.html 出错页“打开设置” | 已开的页保持当前 tab（按 Chromium 的打开逻辑只是切到前台；B21(j) 实测，#18）；新开的页进默认 tab | 不改。go.html 按错误码深链到 ③ 要把 `openOptionsPage` 换成找已开页那一套，收益小，不做 |
+| 弹窗页脚“打开设置”、go.html 出错页“打开设置” | 已开的页保持当前 tab（按 Chromium 的打开逻辑只是切到前台；B21(j) 实测，#18）；新开的页进默认 tab | 不改。go.html 按错误码深链到 ③ 要把 `openOptionsPage` 换成找已开页那一套，收益小，不做（v0.6.0 之后改为做，见第 8 节第 30 条） |
 | 弹窗“完成设置”“查看第 2 步”，找到已开的设置页 → `reveal-setup` | `revealSetup()`：卡片显示时先 `showTab("add")`（从别的 tab 过来就写 `#tab-add`，刷新不会回到错的 tab），再滚动、焦点给 `#setup-title`；卡片隐藏时什么都不做，不切 tab | setup.js +2 行 |
 | 没找到 → 新开 `options.html#setup` | `initialTab` 选 ①，`revealSetup` 照旧定位 | — |
 | 第 2 步“详细步骤”左键 | 已在 ①，`revealGuideSteps()` 开头的 `showTab("add")` 什么都不做，之后与现状相同；hash 不变 | guide.js +1 行 |
@@ -730,7 +730,7 @@ guarded 键（`optpage.mjs` 的 `guarded` 包住整个步骤）：`defaultPair`�
 27. **e2e 一律用 `openOptions/withOptions({ tab })` 改参数**（嫁接 minimal）：options-b.mjs 只剩 6 行余量；I18N 的逐 tab 循环挪进 i18n-audit.mjs。
 28. **B21 的宽度断言照 minimal 的写法**：计算出的 `max-width`、右缘比例、列线对齐、横向溢出、600 宽引擎行不折行，都能直接量；四种语言都量。
 29. **`options-fullpage.png` 改拍 ① 整页**：一张图只能拍一个 tab，商店图本来只用引擎卡裁切。
-30. **go.html 出错页不按错误码深链到 ③**：要改 `openOptionsPage` 的打开方式，收益小。
+30. **go.html 出错页不按错误码深链到 ③**：要改 `openOptionsPage` 的打开方式，收益小。（v0.6.0 之后改为做：按错误码进 ① 或 ③，见 `docs/acceptance-v0.6.md` 第 8 节。）
 
 ## 9. 线框
 

@@ -13,7 +13,7 @@ v0.1、v0.3、v0.4、v0.5 的表照旧有效，运行方式、显示模式、报
 
 ## 2. B21 设置页 tab 与宽度（新增，auto）
 
-文件：`scripts/e2e/steps/b21.mjs`（入口与 (a)(b)(c)(d)(e)(i)(j)）、`b21-links.mjs`（(f)(g)(h)(k)(m)(n)）、`b21-width.mjs`（(l)）。`guarded` 写回 `defaultPair`、`uiLocale`、`customEngines`、`presetOverrides`、`order`；`keepSetupDone` 写回 `setupDone`、`setupTryTabs`；子项撤销过的授权记进 `env.revoked`，子项自己恢复不了的由收尾 `requestGrant` 恢复（之前授权过，Chrome 直接批准，不弹框）。
+文件：`scripts/e2e/steps/b21.mjs`（入口与 (a)(b)(c)(d)(e)(i)(j)）、`b21-links.mjs`（(f)(g)(h)(h′)(k)(m)(n)）、`b21-width.mjs`（(l)）、`b21-go.mjs`（(o)）。`guarded` 写回 `defaultPair`、`uiLocale`、`customEngines`、`presetOverrides`、`order`；`keepSetupDone` 写回 `setupDone`、`setupTryTabs`；子项撤销过的授权记进 `env.revoked`，子项自己恢复不了的由收尾 `requestGrant` 恢复（之前授权过，Chrome 直接批准，不弹框）。
 
 | 子项 | 做法 | 期望 |
 |---|---|---|
@@ -24,12 +24,14 @@ v0.1、v0.3、v0.4、v0.5 的表照旧有效，运行方式、显示模式、报
 | (e) 不跟状态跳 | 停在 ① 时写 `setupDone: true` | 卡片换成完成确认，仍在 ① |
 | (f) 跨 tab 链接 | steps 档：点 ① 第 2 步“更换组合”；回 ① 展开 5 步说明，点第 5 步“搜索引擎”；在 ② 点末行指引。hidden 档：在 ② 改右侧，点 `#pair-changed` 里的“查看设置步骤” | “更换组合”→ ② 选中、焦点 `#pair-left`；第 5 步链接 → ③ 选中、焦点在默认左侧的 `.perm-line button`（已授权时没有，落到 `#edit-<左>`）；末行指引 → ① 选中、hash `#tab-add`、`#guide-other` 展开、焦点在它的 summary；“查看设置步骤”→ ① 选中、hash `#tab-add`、焦点在 `#guide-steps-title`。steps 档“两段展开、焦点在 summary”由 B19 detailsLink 覆盖 |
 | (g) `#pair-changed` 按档位 | 依次：steps 档改右侧；写 `setupDone: true`（不刷新）；再改右侧；撤销左侧授权（regrant）；改回记下的原组合。补充：hidden 档第一页改右侧后另开第二页，在第二页改回原组合 | steps：`options_pair_changed_setup` 加“继续设置”，没有网址框，保存提示 `notice_pair_saved_setup`；写 `setupDone: true` 后提示框消失；hidden 再改：`options_pair_changed`，网址框等于新组合的触发网址，提示 `notice_pair_saved`；regrant：仍是替换文案；改回后提示框消失、保存提示 `notice_pair_saved_back`；`#pair-changed` 没有 `role`。补充：第二页没有 `#pair-changed`（记录只在第一页内存里）；第二页改回原组合后，第一页重渲染、提示框消失 |
-| (h) 模板变化 | 在 ③ 编辑默认左侧，改网址模板（仍合法）后保存 | 出现常驻的 `notice_template_changed`，带“查看触发网址”；点它后 ① 选中、焦点在 `#triggers` 的复制按钮 |
+| (h) 模板变化 | 在 ③ 编辑默认左侧，改网址模板（仍合法）后保存 | 出现常驻的 `notice_template_changed`，带“查看触发网址”；点它后 ① 选中、焦点在 `#triggers` 的复制按钮；默认组合一段没有收进折叠区 |
+| (h′) steps 档模板变化 | 清掉 `setupDone`（卡片显示，默认组合一段收在 `#guide-default` 里），同 (h) | 同 (h)，另外 `#guide-default` 被展开（`revealTriggers` 的 steps 档分支） |
 | (i) 排序模式 | 进“调整顺序”，移动一次，切到 ② | `storage.onChanged` 在 1 秒内收到 `order`；焦点留在 `#tabbtn-pair`；切回 ③ 时已退出模式 |
 | (j) 已开页 | 已开的设置页切到 `#tab-engines`、写页面标记；从弹窗点“打开设置”（B2 的 `openOptionsFromPopup`） | 没有新标签，原页标记还在（没重载），仍是 ③ |
-| (k) 焦点兜底 | regrant 档在 ① 用 CDP 可信点击点 `#setup-grant`；再撤销一次，在 ② 可信点击 `#pair-grant` | 授权成功、按钮消失后，前者焦点在 `#tabbtn-add`，后者在 `#pair-left`，都不是 BODY |
-| (l) 宽度 | 四种语言 × 1280、600 两档（`setDeviceMetricsOverride`），`setupDone: true`、两侧已授权，加一个模板在 engine-u.localhost 上的自定义引擎（一行“未授权（可选）”）；每个 tab 展开所有折叠区后量 | 说明文字（`.hint`、`.steps li`、`.caveats li`、`.step-body p`、标语）计算出的 `max-width` 都是 `none`；折行的说明块文字右缘 ÷ 父节点内容盒宽度 ≥ 0.9（排除和按钮同行的 `.step-actions > .hint`）；`.steps .url-line` 与 `.trigger-card .url-line` 右缘相差 ≤ 2px；右键查询卡两个下拉框等于卡片内宽 ±1px；“其他组合”生成器两个 label 的左缘与默认组合两个窗格的左缘对齐 ±1px；`documentElement.scrollWidth <= innerWidth`；`.tablist` 没有竖向溢出；600 档每个引擎行（含未授权的行）左块与右侧控件组顶边相同；600 档页头 h1 只有一行，且与 `.lang-box` 同行（竖向中线相差不到较矮一方高度的一半；Task 6 修正第 1 轮加） |
+| (k) 焦点兜底 | regrant 档：展开 5 步说明，点第 5 步“搜索引擎”；在 ① 用 CDP 可信点击点 `#setup-grant`；再撤销一次，在 ② 可信点击 `#pair-grant`；之后撤销模拟引擎 B，在 ① 的“其他组合”选 B 作左侧，可信点击 `#gen-grant` | 第 5 步链接 → ③ 选中、焦点在模拟引擎 A 一行的 `.perm-line button`（left-grant 分支）；授权成功、按钮消失后，焦点依次在 `#tabbtn-add`、`#pair-left`、`#gen-left`，都不是 BODY；结束前恢复 A、B 的授权 |
+| (l) 宽度 | 四种语言 × 1280、600 两档（`setDeviceMetricsOverride`），`setupDone: true`、两侧已授权，加一个模板在 engine-u.localhost 上的自定义引擎（一行“未授权（可选）”）；每个 tab 展开所有折叠区后量 | 说明文字（`.hint`、`.steps li`、`.caveats li`、`.step-body p`、标语）计算出的 `max-width` 都是 `none`；折行的说明块文字右缘 ÷ 父节点内容盒宽度 ≥ 0.9（排除和按钮同行的 `.step-actions > .hint`）；`.steps .url-line` 与 `.trigger-card .url-line` 右缘相差 ≤ 2px；右键查询卡两个下拉框等于卡片内宽 ±1px；“其他组合”生成器两个 label 的左缘与默认组合两个窗格的左缘对齐 ±1px；`documentElement.scrollWidth <= innerWidth`；`.tablist` 没有竖向溢出；600 档每个引擎行（含未授权的行）左块与右侧控件组顶边相同；600 档页头 h1 只有一行，且与 `.lang-box` 同行（竖向中线相差不到较矮一方高度的一半；Task 6 修正第 1 轮加）。空读数判失败：没量到说明文字、没有折行的说明块、右键查询卡不是 2 个下拉框、600 档没量到引擎行 |
 | (m) 换语言 | steps 档打开、切到 ③，写 `uiLocale: "en"` | 仍是 ③、hash `#tab-engines` 不变；`#tabname-engines` 和 ① 标记里的读屏文字（`options_tab_todo`）换成英文 |
+| (o) 出错页深链 | `setupDone: true`；依次：关掉所有设置页，在 `go.html?u=…&_ss=ea,nope`（unknown_engine）点“打开设置”；开一个停在 ② 的设置页并写页面标记，再点同一页的“打开设置”；同上换成 `_ss=ea`（marker_format）；设置页按 `#tab-engines` 打开再点到 ②，在 unknown_engine 页点“打开设置”；设置页停在 ③ 时同样点；关掉所有设置页，在不带 `u` 的 go.html（no_trigger）点“打开设置” | 新开 `options.html#tab-engines`、选中 ③；已开的页切到 ③（hash `#tab-engines`）、页面标记还在、只有这一个设置页且是活动标签；marker_format 换到 ①（`#tab-add`）；先 ③ 后 ② 的页换回 ③（`runtime.getContexts` 的 `documentUrl` 跟着 `replaceState` 变，实测）；本来在 ③ 的页不导航、标记还在；“活动标签”在设置页里用 `tabs.getCurrent()` 判，不受别的窗口影响；no_trigger 新开不带 hash 的设置页、选中 ②（照旧 `openOptionsPage`） |
 | (n) 手改 hash | `setupDone: true`、已授权，停在 ③，焦点 BODY，依次在地址栏改 hash | `#setup`（卡片不显示）→ 仍 ③、焦点 BODY；`#tab-foo` → 仍 ③；`#tab-lookup` → ④；`#guide-steps` → ①、hash 换成 `#tab-add`、焦点在 `#guide-steps-title` |
 
 ## 3. 改写的项目
@@ -43,8 +45,8 @@ v0.1、v0.3、v0.4、v0.5 的表照旧有效，运行方式、显示模式、报
 | B12(4)（期望不变） | “调整顺序”模式中点提示里的“撤销” | 焦点交给“完成”，仍在模式中（`undoHide` 保留 `isReordering()` 兜底） | e2e auto（③） |
 | B14（改写） | 深色模式 | `b14-options-dark.png` 拍的是**默认 tab**（不带 hash 打开；测试配置里 `setupDone` 一直是 true，所以是 ②）；`b14-options-rules-dark.png` 点 `#tabbtn-pair`，等规则卡 `#rules-card` 可见且至少一行规则后拍整个 ②（文件名不变）；其余同 v0.5 | e2e auto |
 | B17（改写） | 快捷键卡与轮换清单 | 快捷键卡挪到 ③，紧跟搜索引擎卡（轮换顺序就是引擎列表的顺序，两者放在一起）；`#cycle details` 仍是默认收起的折叠区；其余同 v0.4 | e2e auto（③） |
-| B19（改写） | “开始使用”卡与弹窗三档 | 卡片在 ①。左侧未授权时 `pairCallouts`（`#pair-body .callout-warn`，`#pair-changed` 不算）期望 **1**：regrant 时 ② 的左侧未授权提示框常驻（带 `#pair-grant`），报错文案“左侧未授权时默认组合卡应有 1 个提示框（实际 N 个）”；弹窗 (a′)(d) 点“查看第 2 步”/“完成设置”后 ① 选中，hash 是 `#tab-add`、`#setup` 或原值；(e) `#setup` 页卡片不显示时 ② 选中、焦点 BODY；detailsLink、keepsFocus、hashOpen 都在 ① 内，期望不变 | e2e auto |
-| B20（改写） | 规则卡 | 规则不再是默认组合卡里的折叠区：“搜索组合”tab 里紧跟默认组合卡有独立的规则卡 `section#rules-card`（`h2#rules-title`），默认展开、卡里没有折叠区，`#rule-list` 的 `aria-labelledby="rules-title"`；第 1 步核对卡片可见、紧跟 `pair-title` 那张卡、标题、空状态；第 4 步改核对列表 `aria-labelledby` 与行数（不再有带条数的 summary）；第 10 步先 `showTab(page, "engines")`（关对话框后焦点还给看得见的 `#edit-ed`），第 11 步先 `showTab(page, "pair")` | e2e auto（②） |
+| B19（改写） | “开始使用”卡与弹窗三档 | 卡片在 ①。左侧未授权时 `pairCallouts`（`#pair-body .callout-warn`，`#pair-changed` 不算）期望 **1**：regrant 时 ② 的左侧未授权提示框常驻（带 `#pair-grant`），报错文案“左侧未授权时默认组合卡应有 1 个提示框（实际 N 个）”；弹窗 (a′)(d) 点“查看第 2 步”/“完成设置”后 ① 选中；hash 按点之前的状态精确判定：新开的页保持 `#setup`，复用的页点之前已在 ① 时 hash 不变、在别的 tab 时变成 `#tab-add`（`b19-popup.mjs` 的 `wantHash`）；(e) `#setup` 页卡片不显示时 ② 选中、焦点 BODY；detailsLink、keepsFocus、hashOpen 都在 ① 内，期望不变 | e2e auto |
+| B20（改写） | 规则卡 | 规则不再是默认组合卡里的折叠区：“搜索组合”tab 里紧跟默认组合卡有独立的规则卡 `section#rules-card`（`h2#rules-title`），默认展开、卡里没有折叠区，`#rule-list` 的 `aria-labelledby="rules-title"`；第 1 步核对卡片可见、紧跟 `pair-title` 那张卡、标题、空状态、“新增规则” `#rule-add` 带 `btn-small`；第 4 步改核对列表 `aria-labelledby` 与行数（不再有带条数的 summary）；第 10 步先 `showTab(page, "engines")`（关对话框后焦点还给看得见的 `#edit-ed`），第 11 步先 `showTab(page, "pair")` | e2e auto（②） |
 | I18N（改写） | 多语言 | 设置页按 tab 审：`auditTabs` 对每个 tab 先确认面板里至少有一个看得见的后代（否则隐藏面板里的溢出检查会静默通过，判失败），审面板，页头和 tab 栏另审一次；展开所有折叠区后逐个 tab 再审；之后视口模拟成 600 宽，四个 tab 各审一次溢出，核对每个 `.tab` 不截字、选中的 tab 完全在 `.tablist` 可视范围里。截图改名：`<语言>-options-<tab>.png`、`<语言>-options-<tab>-open.png`（替代原来的 `-options.png`、`-options-open.png`）；`-options-reorder.png` 在 ③ 拍；`-options-lookup.png` 在 ④ 拍；其余文件名不变 | e2e auto |
 | v05-i18n（改写） | 规则卡四语 | 打开 `{ tab: "pair" }`，等规则卡可见、标题等于 `options_rules_title`、4 行；审计范围、截图裁切都换成 `#rules-card`；`<语言>-options-rules.png` 文件名不变，内容是规则卡的裁切 | e2e auto |
 
@@ -106,18 +108,17 @@ v0.1、v0.3、v0.4、v0.5 的表照旧有效，运行方式、显示模式、报
 
 - Ctrl+F 搜不到其他 tab 里的文字。面板用普通 `hidden`，没用 `hidden="until-found"`：后者会让隐藏面板留下看不见的 Tab 停靠点（设计稿 3.2、3.12）。
 
-e2e 没覆盖的分支：
-
-- 左侧未授权时 `#pair-grant` 授权后焦点落到 `.perm-line button` 的分支（left-grant）。
-- `revealTriggers` 在 steps 档展开 `#guide-default` 的分支。
+原先 e2e 没覆盖的两个分支已补上：左侧未授权时第 5 步“搜索引擎”把焦点给 `.perm-line button`（left-grant，B21(k)）；`revealTriggers` 在 steps 档展开 `#guide-default`（B21(h′)）。
 
 ## 8. 下一轮
 
-整体审查分诊为“以后再说”的小问题，本版不修：
+整体审查分诊为“以后再说”的 7 条小问题，加上第 7 节的 2 个未覆盖分支，都已在 v0.6.0 之后修掉（2026-10-27）：
 
-- e2e：`b19-popup.mjs` 的 `cardProblems` 放行 `prevHash` 偏松；`b21-width.mjs` 的 `widthProblems` 对空读数静默通过；`v05-options.mjs` 第 1 步没断言 `#rule-add` 带 `btn-small`。
-- 文案：zh_CN、zh_TW 的 `notice_template_changed`“左侧用它的网站搜索”有轻微歧义。
-- 行为：弹窗的 `reveal-setup` 赶在设置页首次渲染前到达会丢定位（v0.4 起就有）；“其他组合”生成器的授权按钮没有 id，授权后焦点回到 BODY（设计稿 3.12）；go.html 不深链到 ③。
+- e2e：`b19-popup.mjs` 的 hash 改成按点之前的 tab 精确判定（`wantHash`）；`b21-width.mjs` 的 `widthProblems` 对空读数报失败（1280 档 `rows` 为 null，不量引擎行）；`v05-options.mjs` 第 1 步断言 `#rule-add` 带 `btn-small`。
+- 文案：zh_CN、zh_TW 的 `notice_template_changed` 改成“把它用作左侧引擎的网站搜索，要换成新的触发网址”（繁体同义）。
+- 行为：设置页的 `reveal-setup` 监听改在页面脚本一加载就注册（`setup.js` 的 `listenReveal`，原来要等文案加载完）；消息赶在设置页读到自己的标签 id 之前到达时，等那次 `tabs.getCurrent` 结束再判；首次渲染前到达时留到去掉 loading 之后再定位（`revealSetup` 在 loading 时不清待办）。“其他组合”生成器的授权按钮 id 是 `gen-grant`，授权后焦点给 `#gen-left`（`FOCUS_FALLBACK`）。go.html 出错页“打开设置”按错误码进对应 tab（`lib/options-route.js` 的 `errorTab`，`chrome/options-page.js` 的 `openOptionsTab`；B21(o)）：要重新复制触发网址的（bad_url、marker_format、template_mismatch）进 ①，要检查或重新添加引擎的（unknown_engine、not_left、bad_template）进 ③，其余照旧 `openOptionsPage`；找页或切页出错（如那一页刚被关掉）时新开 `options.html#tab-<key>`。设计稿第 8 节第 30 条原定“不做”，改为做。已开的设置页经 `tabs.update` 改 hash，同一文档内换 tab、不重载；这会在那个标签的历史里多一条（与 tab 栏的 `replaceState` 不同），网址已是目标 hash 时不导航。
+
+只有 `reveal-setup` 的两种时序没有 e2e：要让弹窗的消息恰好落在设置页读到标签 id 之前、或首次渲染之前，CDP 下没有稳定的办法构造。
 
 ## 9. 反馈方式
 
