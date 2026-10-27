@@ -31,15 +31,15 @@ Requires Chrome 155 or later.
 
 ## Setup
 
-The first time you open the settings page, the “Get started” card at the top walks you through these steps and ends with a test search.
+The first time you open the settings page, the “Get started” card on the “Add to Chrome” tab walks you through these steps and ends with a test search.
 
-1. **Grant access**: on the settings page, click “Grant access” for each engine you want to use.
-2. **Copy the URL**: under “Default pair”, pick a left and a right engine, then copy the generated URL from the “Get started” card or from “Add to Chrome”.
+1. **Grant access**: on the “Search engines” tab of the settings page, click “Grant access” for each engine you want to use.
+2. **Copy the URL**: on the “Search pairs” tab, pick a left and a right engine for the default pair. Then copy the generated URL on the “Add to Chrome” tab.
 3. **Add it and make it default**: enter `chrome://settings/searchEngines` in the address bar. Under “Site search”, click “Add”. Enter any name and a shortcut of your choice (for example, `gb`), paste the URL you copied into “URL with %s in place of query” and click “Add”. Then open the ⋮ menu next to the new entry and choose “Make default”.
 
 If you only want the shortcut, skip “Make default” and type “shortcut + space + search terms” in the address bar. Dragged text and Chrome’s own right-click search then still use your current default search engine.
 
-To switch the right side by keyword, expand “Keyword rules for the right side” in the “Default pair” card on the settings page and add a rule. Rules apply only to the default pair.
+To switch the right side by keyword, open the “Search pairs” tab on the settings page and add a rule under “Keyword rules for the right side”. Rules apply only to the default pair.
 
 ## Good to know
 
