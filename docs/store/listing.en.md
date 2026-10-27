@@ -1,6 +1,6 @@
 # 商店详情：English
 
-> 状态：v0.2.0 版已于 2026-10-25 提交；详细说明已按 v0.4 改写（2026-10-25），下次上传时更新控制台。
+> 状态：v0.2.0 版已于 2026-10-25 提交；详细说明已按 v0.4 改写（2026-10-25），2026-10-27 按 v0.5 在 FEATURES 加了 keyword rules 一条，下次上传时更新控制台。
 
 ## 提交说明
 
@@ -40,6 +40,7 @@ FEATURES
 • The engine catalog has translation, reference, video, map and other sites that work well on the right side, plus AI assistants, ready to add
 • Set up several engine pairs, each with its own shortcut. For example, type “gb your search” to compare Google and Bing
 • Click the toolbar button to switch the right side to another engine without searching again
+• Keyword rules can switch the right-side engine for you, for example to Baidu when your search has Chinese characters. Click the toolbar button to see why it switched, or to switch back
 • Or press a keyboard shortcut to switch the right side to the next engine. No shortcut is set by default; set one on Chrome’s Keyboard shortcuts page (chrome://extensions/shortcuts)
 • When the window is narrow, the right side opens in a background tab next to the left one instead. You can turn this off
 • Both sides are regular tabs, so you stay signed in and your site settings still apply
@@ -60,7 +61,7 @@ PRIVACY
 Split Search sends nothing to the developer or any other third party. What you look up goes only to the engines you chose, including one you switch to from the popup or with the keyboard shortcut. It has no servers, analytics or ads. To open the split view, it reads the URL of your search on your device, the current tab’s URL when you click the toolbar button, and the other tab’s URL when needed. It doesn’t store those URLs. It reads the selected text or an image’s address only when you choose one of its right-click menu items, and it doesn’t read the page’s URL or anything else on the page. Some image addresses include access credentials, so the engine can open that image too. What you searched and the two engines are kept in browser memory so the popup can show them and switch engines, and they’re cleared when you close the browser. Split Search doesn’t read your browsing history.
 ```
 
-字数：3068（含换行）
+字数：3255（含换行）
 
 措辞说明：
 
@@ -69,6 +70,7 @@ Split Search sends nothing to the developer or any other third party. What you l
 - 实现细节（`_ss` 参数、授权不随同步、Service Worker 退化等）不写进详情，留给设置页的逐步说明和内部文档。
 - PRIVACY 段与 `privacy.md` 一致（v0.4 改写，2026-10-25）：第一句说不发给开发者或其他第三方、要查的内容只发给所选引擎，不再说“Your data stays on your device”；写明本机读取的网址不保存、只在用户选了菜单项时才读选区和图片网址、查询内容和两侧引擎只暂存在浏览器内存、关闭浏览器即清除，不读浏览记录。数据使用披露勾 Web history 和 Website content，这一段是对此的公开说明，不要删减。v0.4 新增的 FEATURES、GOOD TO KNOW 条目和 PRIVACY 段已过 humanizer。
 - 网站搜索的 Shortcut（Chrome 术语）写作 “shortcut”，扩展的快捷键一律写 “keyboard shortcut”，页面名照 Chrome 界面写 “Keyboard shortcuts”。v0.3 新增的 FEATURES 条目已过 humanizer。
+- v0.5 的 keyword rules 条目按 zh-CN 新条目转写，功能名与设置页 `options_rules_title`（“Keyword rules for the right side”）一致，已过 humanizer。
 
 ## Category / Language
 

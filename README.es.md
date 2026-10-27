@@ -16,6 +16,7 @@ Busca en la barra de direcciones o arrastra texto a la barra de pestañas, y Spl
 - El catálogo de buscadores incluye sitios de traducción, enciclopedias, video, mapas y asistentes de IA, entre otros, pensados para el lado derecho y listos para añadir.
 - Puedes crear varias combinaciones, cada una con su propio atajo. Por ejemplo, escribe «gb palabras clave» para comparar Google y Bing.
 - Haz clic en el botón de la barra de herramientas para cambiar el buscador de la derecha sin volver a buscar.
+- Con reglas de palabras clave, el buscador de la derecha cambia automáticamente; por ejemplo, a Baidu cuando tu búsqueda contiene caracteres chinos. El botón de la barra de herramientas te muestra por qué cambió y te permite volver al de antes.
 - También puedes pulsar un acceso directo de teclado para pasar el lado derecho al siguiente buscador. No viene configurado: elígelo en `chrome://extensions/shortcuts`.
 - Si la ventana es estrecha, el lado derecho se abre en una pestaña en segundo plano junto a la de la izquierda. Puedes desactivarlo en la configuración de Split Search.
 - Los dos lados son pestañas normales, así que conservas tus sesiones iniciadas y la configuración de cada sitio.
@@ -38,6 +39,8 @@ La primera vez que abras la configuración de Split Search, la tarjeta «Primero
 
 Si solo quieres usar el atajo, no hace falta elegir la entrada como predeterminada: escribe «atajo + espacio + palabras clave» en la barra de direcciones. En ese caso, al arrastrar texto o usar la búsqueda del menú contextual de Chrome se sigue usando tu buscador predeterminado de siempre.
 
+Para cambiar el lado derecho según palabras clave, despliega «Reglas de palabras clave para la derecha» en la tarjeta «Combinación predeterminada» de la configuración de Split Search y añade una regla. Las reglas solo se aplican a la combinación predeterminada.
+
 ## Ten en cuenta
 
 - En ventanas de incógnito, en otros dispositivos o si la extensión no está activa, se hace una búsqueda normal.
@@ -46,4 +49,4 @@ Si solo quieres usar el atajo, no hace falta elegir la entrada como predetermina
 
 ## Privacidad
 
-Split Search no envía nada al desarrollador ni a otros terceros: lo que buscas solo llega a los buscadores que elijas. No usa servidores propios ni incluye estadísticas de uso ni publicidad. Solo lee el texto seleccionado o la dirección de una imagen cuando eliges una de sus opciones del menú contextual, y no lee la URL de la página ni nada más de ella. Lo que buscaste y los dos buscadores solo se guardan en la memoria del navegador, para que la ventana emergente y el acceso directo puedan cambiar de buscador, y se borran al cerrar el navegador. Más información en la [política de privacidad](https://pine2d.github.io/split-search/privacy) (en inglés).
+Split Search no envía nada al desarrollador ni a otros terceros: lo que buscas solo llega a los buscadores que elijas. No usa servidores propios ni incluye estadísticas de uso ni publicidad. Solo lee el texto seleccionado o la dirección de una imagen cuando eliges una de sus opciones del menú contextual, y no lee la URL de la página ni nada más de ella. Lo que buscaste y los dos buscadores solo se guardan en la memoria del navegador, para que la ventana emergente y el acceso directo puedan cambiar de buscador, y se borran al cerrar el navegador. Tus búsquedas se comparan con las reglas de palabras clave en tu dispositivo. Las palabras de las reglas las escribes tú y se sincronizan con Chrome como el resto de tu configuración. Más información en la [política de privacidad](https://pine2d.github.io/split-search/privacy) (en inglés).

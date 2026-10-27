@@ -28,6 +28,7 @@ Chrome MV3 扩展：用户在地址栏搜索，或把文字拖到标签栏时，
 - 申请 `<all_urls>` 或宽泛 host 权限、申请 `tabs` 权限、为以图搜图引擎申请 host 权限，或把查询词、选中文字、图片网址发给用户所选引擎以外的任何一方、写进 `storage.sync`（它们只进 `storage.session`）。（`web_accessible_resources` 的 `matches` 写 `<all_urls>` 不算权限申请。）
 - 读取或保存页面网址、注入内容脚本。按功能分开：② 边读边查、⑧ 以图搜图不读、不存、不发 `pageUrl`/`frameUrl`；⑦ 补成分屏只在用户点工具栏图标时经 activeTab 读当前标签网址（识别结果页和关键词），不保存网址本身。不读页面里除选区和被右键图片网址以外的任何内容，不改动 Chrome 原生右键菜单项。
 - 未经允许覆盖用户手动建的分屏里的页面，或用户正在读的网页（② ⑧ 的左侧是任意网页：只有记录确认是本扩展打开的那一侧才允许改写）。
+- 任何界面都不提供把一次查询存成规则（“以后这类搜索都用 X”之类）：关键词规则里的词只来自用户在设置页亲手写的输入，弹窗只提供“换回”。
 
 **路线图（方向，不承诺）**
 - v0.2 多语言（en/zh_CN/zh_TW/es，页内切换，见 `docs/superpowers/specs/2026-10-24-i18n-design.md`），已随 v0.2.0 首次提交 Chrome 网上应用店（2026-10-25）。
@@ -35,7 +36,7 @@ Chrome MV3 扩展：用户在地址栏搜索，或把文字拖到标签栏时，
 - 新功能落地顺序（2026-10-25 用户同意）：
   - v0.3（已实现，2026-10-25 代码完成，尚未上传商店；不加权限，设计见 `docs/superpowers/specs/2026-10-25-v0.3-split-tools-design.md`）：分屏状态加固（记录绑定 `splitViewId`，不监听 `onUpdated`）→ 右侧专用引擎库（设置页一键添加的模板清单）→ 窄窗口降级 → 工具栏弹窗（换右侧引擎）与快捷键（右侧换下一个引擎，默认不绑定）。互换左右、拆开分屏用 Chrome 原生菜单，不重复做（2026-10-25 用户决定）。
   - v0.4（已实现，2026-10-25 代码完成，尚未上传商店；加 `activeTab`、`contextMenus`，设计见 `docs/superpowers/specs/2026-10-25-v0.4-read-and-search-design.md`，验收见 `docs/acceptance-v0.4.md`）：把现有搜索补成分屏（⑦，并入弹窗）→ 边读边查（②，选中文字右键，当前页留左、右侧搜索并复用）→ 以图搜图分屏（⑧）。
-  - 之后：按关键词自动选右侧（go.html 本地判断，不外发查询词）。
+  - v0.5（已实现，2026-10-27 代码完成，尚未上传商店；不加权限，设计见 `docs/superpowers/specs/2026-10-27-v0.5-keyword-routing-design.md`，验收见 `docs/acceptance-v0.5.md`）：按关键词换右侧（⑥）。设置页“默认组合”卡里一个有序规则列表（`storage.sync` 的 `rightRules`），条件是“搜索里有这些词”或“搜索里有某种文字”，右侧是一个文字引擎或“默认组合的右侧（不换）”；只作用于默认组合（`_ss` 两侧都等于 `defaultPair`），go.html 在本机比对，左侧与 DNR 不变；② 右键查词、弹窗换右侧、快捷键轮换不受规则影响，⑦ 只影响建议排序。
 - 无痕窗口内分屏，需要 `incognito: "split"` 并重新设计生命周期。
 - 每个引擎可配置“附加 host”，应对跨 origin 跳转。
 
@@ -55,8 +56,12 @@ Chrome MV3 扩展：用户在地址栏搜索，或把文字拖到标签栏时，
       1. 防重入：导航类型是 back_forward 或 reload 时，不自动分屏，只显示“重新执行”按钮
       2. 解析：取 location.search 中 "u=" 之后的全部文本作为原始网址（\0 未经编码，不能用 URLSearchParams.get('u')）
               → 用 URL + URLSearchParams 读出 _ss（可兼容 %2C）和左侧模板里 %s 所在参数的值作为关键词（+ 会自动还原为空格）
+      2.5 关键词规则：_ss 两侧都等于默认组合时，经 lib/right-rules.js 的 ruleRight 拿关键词（规范化后的前 1000 码点）从上往下比 cfg.rightRules（mergeConfig 读时经 cleanRules 清洗，
+              暂不生效的 off 规则跳过），第一条命中的换掉右侧；命中的规则是 keep（“默认组合的右侧”）或引擎就是原右侧时即停、右侧不变。左侧网址永远是 stripMarker(original)，规则不进 DNR。
+              换了右侧时把 auto = { rule, base }（规则 id、_ss 原来的右侧 id）交给 split-actions，只写在右侧那一条记录上。规则出任何错都退回 _ss 原来的右侧
+              （console.error "keyword rule skipped"，不记规则、词或查询），不落进“只开左侧”。在本扩展的一对里重新搜索按新关键词重新比
       3. 窗口检查：当前窗口不能分屏（popup/app，或 Document PiP：type 为 normal、alwaysOnTop 且只有一个标签，判定经 lib/split-decision.js 的 decideFor）时 → 在一个能分屏的 normal 窗口（lastSplitWindow()）里新建一对标签组成分屏；当前标签 location.replace(左侧网址)
-      4. 分屏（“本扩展的分屏”按 storage.session 里的记录判定，不按网址猜；记录形状 {peer, splitViewId, mode: split|adjacent, role: search|page|lookup, input: text|image（只有 page/lookup 有）, engine, query}，没有 role 按 search 解析；两侧 role 要配对（search↔search 或 page↔lookup）、查询对两侧 input 相同，否则判 stale；见 lib/split-owner.js、chrome/split-state.js）：
+      4. 分屏（“本扩展的分屏”按 storage.session 里的记录判定，不按网址猜；记录形状 {peer, splitViewId, mode: split|adjacent, role: search|page|lookup, input: text|image（只有 page/lookup 有）, engine, query, rule?, base?}（rule、base 只在搜索对的右侧记录上：右侧由哪条关键词规则选的、本来的右侧引擎 id；parseRecord 只在 role 为 search、rule 合 RULE_ID、base 合引擎 id 且不等于 engine 时保留，否则两个一起丢掉、记录照常返回；writeEngine 换右侧时去掉它们；归属判定不看它们），没有 role 按 search 解析；两侧 role 要配对（search↔search 或 page↔lookup）、查询对两侧 input 相同，否则判 stale；见 lib/split-owner.js、chrome/split-state.js）：
           ├─ 窄窗口（windows.get 的 width < 960，且 narrowFallback 不为 false）：不建分屏，右侧在紧邻的后台标签打开，记 adjacent 记录；同标签再触发复用右边那个
           │   窗口变宽或关掉开关后再触发：更新右边那个，再 tabs.createSplit([左, 右]) 拼成分屏、复核后改记 split（decideSplit 返回 join；拼不成退回复用）
           ├─ 当前标签不在分屏中：tabs.create({url: 右侧, splitWithTabId: 当前, index: 当前+1, windowId, active:false})
@@ -67,7 +72,12 @@ Chrome MV3 扩展：用户在地址栏搜索，或把文字拖到标签栏时，
          跳转前经 chrome/setup-store.js 的 noteSetupPair（最多等 500 ms、从不抛错）：storage.local 的 setupDone 还不是 true，且当前标签和这一对都不在 storage.session 的 setupTryTabs（设置页“试一下”打开的标签 id）里，
          就写 setupDone: true（判定 lib/setup-state.js 的 countsAsSetup）。读写失败只记 info 日志。⑦ 补成分屏、右键查询不写；设置页只监听 setupDone 的变化
   工具栏弹窗（popup/）与快捷键 cycle-right（默认不绑定，background.js 的 onCommand）：读记录，经 chrome/right-switch.js 把右侧换成指定/下一个引擎，关键词取自记录（只在 storage.session，不进 sync，不外发）。搜索对的候选与轮换都跳过当前左侧引擎（lib/cycle.js、lib/popup-view.js）；不在本扩展分屏里时弹窗按设置进度分三档（lib/popup-view.js 的 idleView，popup/idle.js 读 storage.local 的 setupDone 和默认组合左侧引擎的授权，origin 用 lib/engines.js 的 originPattern，与设置页共用；读不出来按 ready）：setup（左侧没授权）只显示“还没设置好”（setupDone 已是 true 时 idleView 带 regrant，换成“Split Search 已无权访问 <左侧引擎>”）和主按钮“完成设置”，不显示说明、默认组合和页脚；try（已授权、setupDone 不是 true）显示说明、怎么试、“搜索没分屏就回设置页完成第 2 步”和去第 2 步的入口、默认组合缩小版和快捷键状态；ready（setupDone 为 true）同 try 去掉那一句。“完成设置”和去第 2 步先经 runtime.getContexts（TAB，不需要 tabs 权限；不用 documentUrls 过滤，它要求网址连 hash 一字不差）找已开的设置页，lib/messages.js 的 pickOptionsTab 按路径认 options/options.html（任何 hash、查询串都算），优先弹窗所在窗口里的、其次第一个；找到就同步发出 tabs.update(active)、windows.update(focused) 和 runtime.sendMessage({ type: "reveal-setup", tabId })（同一窗口换活动标签时弹窗会被立即关掉，所以三个调用不逐个 await；不等回复，没有接收者等拒绝只记 info），设置页（options/setup.js）只接受发送方是本扩展 popup/popup.html、tabId 等于 tabs.getCurrent() 的那条（广播会送到所有设置页），做与 #setup 相同的 reveal 后回复 { ok: true }，SW 对这个 type 不回复、不记日志；没找到或切换失败退回 tabs.create 打开 options/options.html#setup。设置页显示出来（或收到 reveal-setup）后若卡片在显示就滚到它、焦点给卡片标题，卡片不显示时什么都不做。查询对换的永远是 role 为 lookup 的一侧（与标签顺序无关），图片查询对在以图搜图引擎里换、轮换不看 cycleExclude。
-  补成分屏（⑦，popup/complete.js）：弹窗经 activeTab 读当前标签网址，lib/result-match.js 认出某个文字引擎的结果页和关键词，且标签不在分屏中、不是本扩展的一对、窗口能分屏、还有别的未隐藏文字引擎可放右侧时显示“补成分屏”区（回复 plain 后本次弹窗不再提供补成）
+    规则选的右侧（v0.5）：搜索对 pair.right 的记录带 rule 时，lib/popup-view.js 的 popupView 给出 auto = { base, hit }：base 经 switchTarget 解析（已隐藏、已删除或成了左侧为 null），
+    hit 由 lib/right-rules.js 的 explainRule 按规则 id 和记录里的 query 在本机重算（规则已删、已改解释不出为 null）；popup/rule-note.js 在左右窗格下显示 #rule-note
+    （popup_rule_word / popup_rule_script / 解释不出时 popup_rule_generic）和 #rule-revert“换回 <base>”（base 为 null 不显示），#choices 里去掉 base（去掉后为空也不显示 #no-choices）。
+    换回就是 onSwitch(base.id)，与手动换、快捷键轮换一样经 writeEngine 去掉 rule/base；不监听 session 变化，靠 onSwitch 的 finally 重绘
+  补成分屏（⑦，popup/complete.js）：弹窗经 activeTab 读当前标签网址，lib/result-match.js 认出某个文字引擎的结果页和关键词，且标签不在分屏中、不是本扩展的一对、窗口能分屏、还有别的未隐藏文字引擎可放右侧时显示“补成分屏”区（回复 plain 后本次弹窗不再提供补成）；
+    建议排序经 ruleRight（result-match.js 的 ruleSuggestion：识别出默认左侧、没有 _ss 或 _ss 等于默认组合时，规则命中的引擎排第一、带 .suggested），只影响排序，不自动建对，记录不写 rule
     → 点引擎：runtime.sendMessage({ type: "complete-split", tabId, engineId })（不带网址和关键词）
     → SW 的 runtime.onMessage（return true 后 sendResponse 异步回复）：lib/messages.js 校验发送方是本扩展的 popup/popup.html、字段合法
     → 在 SW 全局串行链上执行 chrome/complete-actions.js：重新 tabs.get、重新识别、windows.get（populate）必须能分屏、inspectTab 重新判定，条件仍满足才 openRight：
@@ -95,6 +105,7 @@ split-search/
 ├── .gitignore
 ├── package.json                  "test": "node --test"、"e2e": "node scripts/e2e/run.mjs"、"pack": "node scripts/pack.mjs"
 ├── dist/                         发布 ZIP（npm run pack 生成，不进 git）
+├── docs/acceptance-v0.5.md       v0.5 验收清单（对应 e2e 步骤 T25、B20，以及扩充的 I18N、B14；快捷键轮换清标记、窄窗口透传由单测覆盖）
 ├── docs/acceptance-v0.4.md       v0.4 验收清单（对应 e2e 步骤 T20–T24、B18、B19，以及扩充的 B14、I18N；T5 重启期望的改动；界面翻新改写的 B2、B4、B6、B7、B12、T18、T19；界面收尾改写的 B4、B7、B8、B18、B19、I18N；引擎行精简改写的 B7、B10、B12、B13、B17、I18N 与 Tab 停靠点实测）
 ├── docs/acceptance-v0.3.md       v0.3 验收清单（对应 e2e 步骤 T16–T19、B16、B17、B2）
 ├── docs/acceptance-v0.1.md       v0.1 验收：跑 e2e（Windows 冒烟 v0.1 不做，2026-10-24 用户决定）；B/T 表注明覆盖方式
@@ -118,15 +129,17 @@ split-search/
 │                                 ext-shortcuts.mjs 快捷键（chrome://extensions/shortcuts）快照与恢复，steps/v03-*.mjs、xauto-t19.mjs 是 v0.3 步骤，
 │                                 steps/v04-*.mjs 是 v0.4 步骤（v04-lib 页面标记/CDP 读网址/triggerAction 与 MENU_INDEX，v04-complete(-more) T20，
 │                                 v04-lookup/-lookup-image/-lookup-lib T21、T22，v04-guard T23，v04-guard-x/-guard-more T24，v04-options B18，v04-i18n 供 I18N 与 B14；b4.mjs、b19.mjs（弹窗分档子项在 b19-popup.mjs，“详细步骤”子项 detailsLink/keepsFocus/hashOpen 在 b19-guide.mjs）是设置页“开始使用”卡（B19 的 keepSetupDone 也给 B4 用）；i18n-audit.mjs 是 i18n 与 v04-i18n 共用的页面核对工具；options-b/-b2/-b3.mjs 是设置页 B 系列，B13“调整顺序”模式在 -b3，optpage.mjs 的 openEdit/setReorder 打开编辑对话框、切换排序模式）
+│                                 steps/v05-*.mjs 是 v0.5 步骤（v05-lib 模拟引擎 D、ruleTrigger/expectRight、记录与隐私核对、withRulePopup，v05-rules T25，v05-rules-popup T25 的弹窗与 ⑦ 子项，v05-options B20，v05-i18n 供 I18N）
 ├── src/                          扩展根目录（加载这个目录）
 │   ├── manifest.json
 │   ├── _locales/                 界面文案：en、zh_CN（源文案）、zh_TW、es 各一份 messages.json
 │   ├── icons/                    工具栏与扩展管理页图标，16/32/48/128，配色 c6 pine-fog；16/32/48 由按像素对齐的 icon-16|32|48.svg 导出
 │   ├── background.js             SW：重建 DNR 规则与右键菜单、tabs.onRemoved 清理记录、onCommand（cycle-right）、contextMenus.onClicked 与 runtime.onMessage（complete-split，二者共用一条串行链；reveal-setup 不回复、不记日志）；无 action.onClicked
 │   ├── popup/popup.html|css|js   工具栏弹窗（action.default_popup）：显示关键词与左右引擎（查询对按“网页”“查询”）、换右侧、进入设置页
+│   ├── popup/rule-note.js        弹窗的“按关键词换右侧”说明（#rule-note）：右侧是规则换的时说因为哪个词或哪种文字换的，加“换回 <原右侧>”按钮（走 popup.js 的 onSwitch）；只显示，不写记录、不记日志
 │   ├── popup/complete.js         弹窗的“补成分屏”区：显示识别结果与右侧候选，点一个就发 complete-split 给 SW（自己不建标签、不写记录）
 │   ├── popup/idle.js             弹窗的左右窗格（ui/panes.js 建）、分屏外按设置进度分三档的引导（读 setupDone 与左侧授权；“完成设置”/去第 2 步先找已开的设置页切过去并发 reveal-setup，没有或失败才新开 options.html#setup）、默认组合缩小版、底部快捷键状态
-│   ├── go.html / go.js / go.css  触发处理页（解析、判定、出错页与“只打开左侧搜索”兜底；写成一对后经 setup-store 判定“开始使用”是否完成）；go.css 是出错页样式
+│   ├── go.html / go.js / go.css  触发处理页（解析、关键词规则换右侧（ruleRight，只换默认组合的右侧）、判定、出错页与“只打开左侧搜索”兜底；写成一对后经 setup-store 判定“开始使用”是否完成）；go.css 是出错页样式
 │   ├── styles/tokens.css         全部颜色变量（浅色 :root 与 @media (prefers-color-scheme: dark) 两段），设置页、弹窗、go.html 都 <link> 这一份；各界面样式表不定义颜色、不写 prefers-color-scheme
 │   ├── styles/panes.css          左右窗格样式（左松绿、右暖雾灰，镜像工具栏图标），设置页与弹窗共用
 │   ├── ui/panes.js               左右窗格的 DOM 构造（pane/panes），设置页的组合下拉框与弹窗共用
@@ -145,9 +158,12 @@ split-search/
 │   ├── options/actions.js        设置页的写入与动作：串行写入（loadRaw → 改整键 → saveKeys / removeKeys）、提示、各区块的 actions
 │   ├── options/lookup.js         “右键查询”卡片：查词引擎、以图搜图引擎的选择与列表（前有小标题 `#image-list-title`“以图搜图引擎列表”，列表 aria-labelledby 指向它；两个按钮写明对象：“从以图搜图引擎库添加”“新增以图搜图引擎”），以图搜图引擎库与新增对话框（没有授权按钮和轮换开关）
 │   ├── options/image-edits.js    以图搜图引擎的纯逻辑：新增、从引擎库添加、删除、选用
+│   ├── options/rules.js          “默认组合”卡里默认收起的“按关键词换右侧”折叠区（disclosure("rules")，summary 带条数）：规则列表（`#rule-list > li[data-id]`，行内“编辑”“上移”“下移”，暂不生效与被挡住的词各一行说明）与规则对话框（`#rule-dialog`：“这些词”/“某种文字”单选、`#rule-words`、`#rule-script`、`#rule-engine`，编辑时底栏 `#rule-dlg-delete` 经 confirmStep 点两次）；增删改移都调 actions.js 的 addRule/editRule/moveRule/removeRule
+│   ├── options/rule-edits.js     规则的纯逻辑：addRule/editRule/moveRule/removeRule（按最新存储重新校验，另一页已删报 rule_gone，规则删光时 remove rightRules）、dropRulesFor/countRulesFor（删除自定义引擎连带删规则、引擎对话框 `#dlg-rules-hint` 的条数）、engineChoices/targetLabel（右侧下拉与行文字，含 KEEP“默认组合的右侧”）
 │   ├── lib/engines.js            预置引擎、模板校验、配置合并、引擎的精确 origin 与权限模式（engineOrigin、originPattern，设置页与弹窗共用）
 │   ├── lib/trigger.js            触发网址生成与解析、模板展开
 │   ├── lib/rules.js              DNR 规则构造
+│   ├── lib/right-rules.js        关键词规则（v0.5，无 import）：normalizeText（NFKC、小写、拉丁去变音、空白合一）、parseWords、cleanRules（mergeConfig 读时清洗，标 off：hidden/missing/left）、matchWord（英文等按整词、中日韩泰等按子串）、hasScript（han/kana/hangul/cyrillic）、ruleRight（go.html 与 ⑦ 共用的唯一入口）、explainRule（弹窗重算命中）、shadowedWords、nextRuleId、rulesBytes；常量 RULE_LIMITS、RULE_ID、SCRIPTS、SCRIPT_KEYS
 │   ├── lib/split-decision.js     分屏动作判定
 │   ├── lib/split-owner.js        “是否本扩展的分屏”按记录与 splitViewId 判定
 │   ├── lib/narrow.js             窄窗口判定（阈值 960，宽度非数字不判窄）
@@ -168,7 +184,7 @@ split-search/
 │   ├── lib/i18n.js               语言选择、占位符替换等纯逻辑
 │   ├── lib/errors.js             错误码：lib 和设置页逻辑只返回码，页面经 t("err_<code>") 显示
 │   ├── chrome/i18n.js            页内文案加载器：t()，fetch 读包内 _locales，按 uiLocale 切换
-│   ├── chrome/config-store.js    storage.sync 读写封装；顶层键 uiLocale（"auto"|"en"|"zh_CN"|"zh_TW"|"es"）、narrowFallback（缺省 true）、cycleExclude（不参与轮换的引擎 id 数组）、lookupEngine（查词引擎 id，缺省跟随默认组合右侧，不写默认值）、imageEngine（所选以图搜图引擎 id，缺省 lens）、imageEngines（自定义以图搜图引擎 { id, name, url }[]）；自定义引擎可带 leftDiscouraged
+│   ├── chrome/config-store.js    storage.sync 读写封装；顶层键 uiLocale（"auto"|"en"|"zh_CN"|"zh_TW"|"es"）、narrowFallback（缺省 true）、cycleExclude（不参与轮换的引擎 id 数组）、lookupEngine（查词引擎 id，缺省跟随默认组合右侧，不写默认值）、imageEngine（所选以图搜图引擎 id，缺省 lens）、imageEngines（自定义以图搜图引擎 { id, name, url }[]）、rightRules（关键词规则 { id, when: words|script, words?, script?, engine? | keep: true }[]，有序，键不存在即没有规则，删光时 removeKeys）；自定义引擎可带 leftDiscouraged
 │   ├── chrome/split-actions.js   分屏动作执行（tabs / windows 薄封装，记录经 split-state.js）
 │   ├── chrome/split-state.js     记录读写与 inspectTab（对侧已关闭、storage 抛错都按“无记录”处理）；writePair 返回是否写成
 │   ├── chrome/setup-store.js     “开始使用”卡的存储：storage.local 的 setupDone（readSetupDone、go.html 用的 noteSetupPair）与 storage.session 的 setupTryTabs（rememberTryTab）；失败只记 info 日志
@@ -177,7 +193,7 @@ split-search/
 │   ├── chrome/lookup-actions.js  右键查询执行（② ⑧）：按 lookup-decision 建对、复用或开普通标签，记录经 split-state.js
 │   ├── chrome/shortcuts.js       快捷键 cycle-right 的当前绑定与打开 chrome://extensions/shortcuts（设置页、弹窗共用）
 │   └── chrome/complete-actions.js  ⑦ 补成分屏执行：重新读标签、识别、判定后 openRight
-└── test/                         node --test（每个 lib 一个文件，另有 manifest、config-store、split-actions、options-edits、options-ui；i18n.test.js、chrome-i18n.test.js、i18n-catalog.test.js（4 种语言 key 对齐与 fetch 守门、带引擎名的 aria 文案含可见文字）、popup-css.test.js（颜色变量只在 styles/tokens.css 定义，设置页、弹窗、go.html 都引用它，用到的每个变量浅深两段都有）、ui-icons.test.js（SVG 图标统一 viewBox、线宽、aria-hidden，界面源码里没有当图标用的 Unicode 字符）、errors.test.js、i18n-pak.test.js（Chrome 术语表脚本）、store-i18n.test.js（宣传图文案键对齐）；go-wiring.test.js（静态检查 go.js 的判定经 decideFor、读窗口带 populate）；log-wiring.test.js（静态检查打印错误的日志都经 safe-error）；safe-error.test.js；options-actions.test.js（设置页写入：先写后删只成功一半时如实提示）；v0.4 的 menus、lookup-actions、complete-actions（chrome 替身）与 image-edits；e2e-*.test.js 测 e2e 脚本，其中 e2e-i18n.test.js 测 I18N 步骤，e2e-v04.test.js 测 v0.4 的模拟 host、弹窗状态读取、MENU_INDEX 与页面标记核对；pack.test.js 测发布打包）
+└── test/                         node --test（每个 lib 一个文件，另有 manifest、config-store、split-actions、options-edits、options-ui；i18n.test.js、chrome-i18n.test.js、i18n-catalog.test.js（4 种语言 key 对齐与 fetch 守门、带引擎名的 aria 文案含可见文字；KEY_RE 认的前缀含 `script_`，文字类型名经 right-rules.js 的 SCRIPT_KEYS 字面量引用）、popup-css.test.js（颜色变量只在 styles/tokens.css 定义，设置页、弹窗、go.html 都引用它，用到的每个变量浅深两段都有）、ui-icons.test.js（SVG 图标统一 viewBox、线宽、aria-hidden，界面源码里没有当图标用的 Unicode 字符）、errors.test.js、i18n-pak.test.js（Chrome 术语表脚本）、store-i18n.test.js（宣传图文案键对齐）；go-wiring.test.js（静态检查 go.js 的判定经 decideFor、读窗口带 populate）；log-wiring.test.js（静态检查打印错误的日志都经 safe-error）；safe-error.test.js；options-actions.test.js（设置页写入：先写后删只成功一半时如实提示）；v0.4 的 menus、lookup-actions、complete-actions（chrome 替身）与 image-edits；v0.5 的 right-rules.test.js（匹配语义、清洗、上限、性能守门）与 rule-edits.test.js（规则增删改移与校验）；e2e-*.test.js 测 e2e 脚本，其中 e2e-i18n.test.js 测 I18N 步骤，e2e-v04.test.js 测 v0.4 的模拟 host、弹窗状态读取、MENU_INDEX 与页面标记核对；e2e-v05.test.js 测 v0.5 的 ruleTrigger/expectRight 编码、记录与隐私核对函数、collectConsole 的 infos；pack.test.js 测发布打包）
 ```
 
 纯逻辑放 `src/lib/`（不碰 `chrome.*`），`src/chrome/` 是对 `chrome.*` 的薄封装，页面脚本只负责编排。
@@ -257,6 +273,11 @@ split-search/
   - 引擎行精简（设计 `docs/superpowers/specs/2026-10-27-engine-row-design.md`，验收表见 `docs/acceptance-v0.4.md`“引擎行精简”）：隐藏、删除经编辑对话框（`optpage.mjs` 的 `openEdit` 点 `#edit-<id>`、等对话框打开），可见性一律用 `checkVisibility()` 判（作者样式的 `display` 会盖过 `hidden`，读 `.hidden` 会假通过）。B7 在对话框里点两次 `#dlg-delete`，焦点交给相邻行的 `#edit-<id>`；B10 读 `#dlg-hide`/`#dlg-delete` 的 `aria-disabled`、`aria-describedby` 和 `#dlg-remove-reason`；B12 含“调整顺序”模式中的焦点去向（撤销、另一页隐藏、恢复、可见引擎只剩 1 个时自动退出，最后一种直接写存储构造，guarded 键含 `customEngines`）；B13（`options-b3.mjs`）经 `setReorder` 进出模式，按 `#move-<dir>-<id>` 移动，“完成”立即写入的时刻在页内用 `storage.onChanged` 记；B17(c) 先展开 `#cycle details` 再点 `#cycle-ec`；I18N 每种语言打开两次编辑对话框（ea 不可用的删除、ddg 可用的隐藏）并进一次排序模式核对溢出。全新安装的 Tab 停靠点（改前 46、改后 32、排序模式 28）只用 CDP 实测过一次、写在验收表里，不做常驻断言。
   - `setupDone`（`storage.local`）与 `setupTryTabs`（`storage.session`）不在 storage 快照里：B4、B19、I18N 用 `keepSetupDone` 或自己写回步骤前的值，但其他步骤经 go.html 建出的一对都会写入 `setupDone: true`，所以跑过一次完整 e2e 后测试配置里 `setupDone` 一直是 true（只在测试配置里，不影响判定；要看首次状态的卡片，删掉这个键再开设置页）。
   - T5 的重启子项（`flow-restart.mjs`）从 v0.4 起期望不覆盖：恢复出来的本扩展分屏两侧都没有记录，兜底判出的 `fallback-own` 按 `foreign` 处理，在旁边新开一对，原来两侧都不动。
+- v0.5 步骤（`steps/v05-*.mjs`，设计见 v0.5 spec 第 11 节，验收表 `docs/acceptance-v0.5.md`）：T25 按关键词换右侧（auto，`v05-rules.mjs` 管 (a0)–(g) 与 (l)，`v05-rules-popup.mjs` 管弹窗 (h)(i)(j) 与 ⑦ 建议 (k)）；B20 设置页规则区（auto，`v05-options.mjs`，设计稿 11.2 第 1–11 步）；I18N 每种语言另截 `<locale>-options-rules.png`、`<locale>-popup-rule.png`（`v05-i18n.mjs`），B14 另截 `b14-options-rules-dark.png`、`b14-popup-rule-dark.png`。只跑 v0.5：`npm run e2e -- --auto-only --only T25,B20,I18N,B14,B15`。
+  - 模拟引擎 D（`ed`，`v05-lib.mjs` 的 `mockEngineD`，模板 `http://engine-c.localhost:<port>/search?q=%s`）只在步骤里经 `guarded(ctx, ["customEngines", "rightRules", …])` 临时加：与 `ec`（`/wiki/%s`）同 host，按路径区分（`/search` 是 D，`/wiki` 是 C），不加 host、不重新授权。`rightRules` 不进存储基线，T25、B20 自己写、写回，整份 storage.sync 快照兜底。
+  - 编码：`util.mjs` 的 `trigger(port, q, ss)` 要求 q 已编码，`expectPair` 写死右侧是 engine-b；v0.5 步骤一律用 `ruleTrigger(port, raw, ss)`（内部 `encodeURIComponent`）和 `expectRight(port, engineId, raw)`（ec → `/wiki/<编码>`，eb、ed → `/search?q=<编码>`，与 `expandTemplate` 逐字相同，`test/e2e-v05.test.js` 守着）。中文查询经 CDP 打开，不走 xauto 键盘。查询都带一次性 token，(l) 按 token 核对 sync、local、session 记录键（`RECORD_KEYS`）与日志（`privacyProblems`）。
+  - 快捷键路径不在 e2e 里：`cycleRight` 在 SW 里，`ctx.ext.eval` 在设置页执行、调不到，也不 attach SW；它与弹窗共用 `switchRight → writeEngine`，由 T25(h)(j) 与 `test/background.test.js`、`test/right-switch.test.js` 覆盖。窄窗口相邻对、join 的透传由 `test/split-actions.test.js` 覆盖。
+  - 控制台收集器（`console.mjs` 的 `collectConsole`）另有 `infos`：只收带 `[split-search]` 的 info 级消息，供 T25(l) 核对日志不含查询；B15 仍只读 `errors`。
 - I18N（`steps/i18n.mjs`，auto，`--auto-only` 会跑）：en、zh_CN、zh_TW、es 逐一打开设置页和 go.html 出错页，核对 `lang`、没有显示成 key 的文字、没有横向和按钮内容溢出（展开所有 `details.disclosure` 后再查，含“默认组合的触发网址”“其他组合”“设置步骤”“参与快捷键轮换”；“右键查询”卡的以图搜图两个按钮按行框数核对不换行，`i18n-audit.mjs` 的 `lineProblems`）；再测页内切换（不刷新、2 秒内）、连切 en → zh_TW 停在最后一次、第二个设置页跟随，以及 `uiLocale = "auto"` 时 `t()` 与 `chrome.i18n.getMessage` 逐 key 相同。它会改写 `storage.sync` 的 `uiLocale`，用 `guarded` 写回步骤前的值（中断时由 storage 快照兜底）。截图存 `.e2e/i18n/<locale>-*.png`：设置页 `options`、`options-open`（折叠区全部展开）、`options-reorder`（“调整顺序”模式），引擎库 `catalog`，编辑对话框 `engine-dialog`、`engine-dialog-hide`，弹窗 `popup`、`popup-idle`，go.html 出错页 `go-error`；`popup-complete`、`options-lookup` 由 `v04-i18n.mjs` 截。各张对应的检查见各版本验收表。
 - 测试窗口尺寸：第一次改尺寸（`fixWindow`、T17 的 `sizeTo`）前记到 `.e2e/window-snapshot.json`（`window-snap.mjs`），收尾改回，强制退出留下的快照下次启动先改回。快捷键：测试配置里原有绑定是脚本录不回去的（`parseKeys` 不认，如媒体键）时不改动它，B17(a)(b)/T19 记跳过。
 - 运行前快照 `chrome.storage.sync` 到 `.e2e/storage-snapshot.json`，结束（含中断）后恢复；遗留快照下次启动先恢复。报告在 `.e2e/report-*.md|json`，网址里的 token/session/sid/auth/key/code、access_token 等 `*_token`、session_id/sessionid、`google_abuse` 等 `*_abuse` 与含 exemption 的参数值（含一次、两次百分号编码嵌套在 next=、r=、continue= 里的），以及单独出现的 `…ABUSE_EXEMPTION=…`（含用户 IP）、Google 人机验证页 `/sorry/…` 的 `q`（编码了访问者 IP 的令牌）脱敏为 `***`，终端与向导页同样。失败诊断除扩展读到的标签外，还列出 CDP 页面目标网址（扩展读不到的标签按窗口与网址对应）和步骤页面的主框架跳转链（控制台收集器在页面会话上 Network.enable 记录，没有时用 Page.getNavigationHistory）。左侧 Google 停在人机验证页（/sorry，`continue` 解码后是期望的搜索）算分屏已建成（`steps/captcha.mjs`）；脚本自己准备现场的等待，“重试”都会重新准备并重新记下判定用的 id。B4、T8 之后脚本自动核对扩展已启用、授权齐全（扩展不可用先经 chrome://extensions 详情页自动启用，缺授权自动重新申请），恢复不了就跳过剩余步骤（`--auto-only` 不请用户启用扩展）。Kagi 登录检查打开 `https://kagi.com/settings`，只有最终停在 kagi.com/settings 才算已登录；用户登录期间只读现有标签的网址、不再发起导航（未登录时那条跳转链会重写会话 cookie，可能打断登录），用户点“我已完成”后再探测一次。
