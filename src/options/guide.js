@@ -111,6 +111,9 @@ export function renderGuideSteps(setupShown) {
   const slot = document.getElementById("guide-steps");
   const list = slot?.querySelector("ol.steps");
   if (!list) return;
+  // 外壳已经是要的那种就不动：重建会把焦点所在的复制按钮、summary 拿出文档（它们没有 id，还不回来），读屏器也会重读。
+  // 文字随语言切换由 applyStatic 按 data-i18n 更新，不靠重建
+  if (slot.firstElementChild?.id === (setupShown ? "guide-steps-details" : "guide-steps-title")) return;
   if (setupShown) slot.replaceChildren(withId(disclosure("guide-steps", "guide_steps_title", list), "guide-steps-details"));
   else slot.replaceChildren(ht("h3", { id: "guide-steps-title", tabindex: "-1" }, "guide_steps_title"), list);
 }

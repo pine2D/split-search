@@ -136,7 +136,7 @@ split-search/
 │   ├── options/options.js        设置页编排：读配置、查授权、渲染、串行写入；默认组合卡的左右窗格（pickerPanes，只有默认组合卡用窗格）
 │   ├── options/edits.js          设置页纯逻辑：表单校验、算出写回存储的补丁、“其他组合”生成器的初值（generatorPick：左侧取默认左侧，右侧取第一个既不是默认右侧也不是左侧的引擎，没有就退回默认右侧；用户改过且仍有效的选择保留）
 │   ├── options/engine-list.js    引擎列表（每个引擎的“参与快捷键轮换”开关）、已隐藏列表、新增/编辑对话框；没授权时只有默认组合左侧是警示样式（警示图标、“未授权（必需）”），其余是中性样式（空心圆图标、灰字“未授权（可选）”，`.perm-optional`），刚保存还没授权的引擎授权按钮仍高亮
-│   ├── options/guide.js          “添加到 Chrome”卡：触发网址与组合生成器；“开始使用”卡显示时（setupShown）默认组合一段收进默认收起的 `<details>`（“默认组合的触发网址”，id guide-default），5 步说明（options.html 的 #guide-steps：小标题 + 静态的 ol.steps）同样收进 `<details id="guide-steps-details">`（renderGuideSteps 只在两种外壳之间移动 ol，复制按钮和富文本跟着走），不显示时都照常展开；“其他组合”整段收进默认收起的 `<details>`，生成器是两个带“左侧”“右侧”标签的普通下拉框（沿用 `.lookup-pickers` 排版），初值经 edits.js 的 generatorPick，只记用户改过的选择（userGen）
+│   ├── options/guide.js          “添加到 Chrome”卡：触发网址与组合生成器；“开始使用”卡显示时（setupShown）默认组合一段收进默认收起的 `<details>`（“默认组合的触发网址”，id guide-default），5 步说明（options.html 的 #guide-steps：小标题 + 静态的 ol.steps）同样收进 `<details id="guide-steps-details">`（renderGuideSteps 只在两种外壳之间移动 ol，复制按钮和富文本跟着走；外壳已对时直接返回、不重建，免得焦点掉回 body），不显示时都照常展开；“其他组合”整段收进默认收起的 `<details>`，生成器是两个带“左侧”“右侧”标签的普通下拉框（沿用 `.lookup-pickers` 排版），初值经 edits.js 的 generatorPick，只记用户改过的选择（userGen）
 │   ├── options/ui.js             DOM 小工具、提示、复制按钮、host 权限查询与申请（origin 模式用 lib/engines.js 的 originPattern）；折叠区 disclosure（展开状态按 id 记在模块变量里，跨重渲染保留）；行内删除确认 confirmStep（点一次变成“确认删除？”，不限时，再点才执行，失焦或 Esc 复原）
 │   ├── options/catalog.js        右侧引擎库对话框（添加时不申请权限）
 │   ├── options/shortcut.js       快捷键区：显示当前绑定、打开 Chrome 快捷键页（读取与打开在 chrome/shortcuts.js，弹窗共用）
