@@ -28,11 +28,12 @@ export function ht(tag, props, key, ...subs) {
   }, t(key, ...subs));
 }
 
-// 可收起的说明：<details> + 带 SVG 箭头的 <summary>。展开状态按 id 记在模块里，卡片重建后保持
+// 可收起的说明：<details> + 带 SVG 箭头的 <summary>。展开状态按 id 记在模块里，卡片重建后保持。
+// titleKey 是 key 或 LabelSpec（[key, ...subs]，如带计数的标题）
 const openIds = new Set();
 export function disclosure(id, titleKey, ...children) {
   const d = h("details", { class: "disclosure" },
-    h("summary", null, icon("chevron-right", { size: 14, cls: "chev" }), ht("span", null, titleKey)), ...children);
+    h("summary", null, icon("chevron-right", { size: 14, cls: "chev" }), ht("span", null, ...[].concat(titleKey))), ...children);
   d.open = openIds.has(id);
   d.addEventListener("toggle", () => { if (d.open) openIds.add(id); else openIds.delete(id); });
   return d;
@@ -93,7 +94,8 @@ export function notify(text, kind = "ok", { sticky = false, action = null } = {}
 
 // 两步确认的按钮（删除）：第一次点把文字换成 confirmKey，再点一次才执行 onConfirm。
 // 不限时（读屏用户需要时间）：保持到再点、失焦或按 Esc 复原。按钮文字经 setI18nText 切换，切换语言时照当前状态重写。
-// armNotice：第一次点击进入确认时经 #notices（aria-live）播报的一句提醒，读屏用户也能听到要再点一次、删前要注意什么
+// armNotice：第一次点击进入确认时经 #notices（aria-live）播报的一句提醒，读屏用户也能听到要再点一次、删前要注意什么。
+// 按钮带 aria-disabled="true"（能聚焦、读屏读“不可用”，原因写在旁边）时点击什么都不做
 export function confirmStep(btn, labelKey, confirmKey, onConfirm, { armNotice = null } = {}) {
   let armed = false;
   const reset = () => {
@@ -102,6 +104,7 @@ export function confirmStep(btn, labelKey, confirmKey, onConfirm, { armNotice = 
     setI18nText(btn, labelKey);
   };
   btn.addEventListener("click", () => {
+    if (btn.getAttribute("aria-disabled") === "true") return;
     if (!armed) {
       armed = true;
       setI18nText(btn, confirmKey);

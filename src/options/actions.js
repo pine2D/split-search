@@ -114,16 +114,15 @@ export const actions = {
   edit: (id, input) => saveEngine(raw => editEngine(raw, id, input), "notice_saved"),
   // 引擎库条目按右侧用途处理：不进 attention，不显示“需授权”
   addFromCatalog: (entry) => act(raw => addFromCatalog(raw, entry, currentLocale()), ["notice_catalog_added", entry.name]),
-  // 隐藏随时能恢复，不确认：提示里带“撤销”。焦点原来在这一行上（刚点了“隐藏”，这一行马上就没了），
-  // 就把焦点交给“撤销”，键盘用户一按就能撤回
+  // 隐藏随时能恢复，不确认：提示里带“撤销”。隐藏只能从编辑对话框发起，这一行马上就没了，
+  // 所以一律把焦点交给“撤销”，键盘用户一按就能撤回
   async hide(e) {
-    const onRow = document.activeElement?.closest?.(".engine-row")?.dataset.id === e.id;
     const result = await act(raw => hideEngine(raw, e.id), null);
     if (!result.ok) return;
     const toast = notify(t("notice_hidden", e.name), "ok", { action: { key: "common_undo", run: () => undoHide(e) } });
-    if (onRow) toast?.querySelector(".notice-action")?.focus();
+    toast?.querySelector(".notice-action")?.focus();
   },
-  // 删除按钮自己要点两次（engine-list.js），这里不再确认；删掉后焦点交给相邻的一行
+  // 删除按钮自己要点两次（编辑对话框里，engine-list.js），这里不再确认；删掉后焦点交给相邻的一行
   remove: (e) => deleteWithFocus(ENGINE_LIST, e.id, "add-engine",
     () => act(raw => deleteEngine(raw, e.id), ["notice_deleted", e.name])),
   restore: (e) => act(raw => restoreEngine(raw, e.id), ["notice_restored", e.name]),
@@ -149,7 +148,7 @@ export const actions = {
   },
 };
 
-// list：列表选择器；actions：行里放操作按钮的那一块（文字引擎是 .row-actions，不含它前面的“授权”按钮）
+// list：列表选择器；actions：行里放操作按钮的那一块（文字引擎是 .row-actions，只有编辑按钮）
 const ENGINE_LIST = { list: "#engines .engine-list", actions: ".row-actions" };
 const IMAGE_LIST = { list: "#lookup-body .engine-list", actions: ".engine-side" };
 
@@ -168,11 +167,11 @@ async function deleteWithFocus({ list, actions: scope }, id, fallbackId, run) {
   return result;
 }
 
-// 提示里的“撤销”：恢复显示，等列表重建后把焦点放回这一行的“隐藏”按钮（提示已经关掉，焦点不能留在那里）
+// 提示里的“撤销”：恢复显示，等列表重建后把焦点放回这一行的“编辑”按钮（提示已经关掉，焦点不能留在那里）
 async function undoHide(e) {
   const result = await actions.restore(e);
   await lastRender;
-  if (result.ok) document.getElementById(`remove-${e.id}`)?.focus();
+  if (result.ok) document.getElementById(`edit-${e.id}`)?.focus();
 }
 
 export async function flushOrder() {

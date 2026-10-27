@@ -217,19 +217,37 @@ const rowShows = ctx => subX("(b) 设置页“快捷键”一行显示“未设�
   return verdict(p, `显示“${unset}”与“${s0.open}”按钮；绑定后显示“${bound}”，清除后恢复“${unset}”`);
 }));
 
-const toggle = ctx => sub("(c) 引擎行的“参与快捷键轮换”开关写入 cycleExclude", () => withPage(ctx, async page => {
+// 快捷键卡的轮换清单（默认收起的 <details>，summary 带计数）；引擎行上关掉的显示“不参与轮换”标签
+const CYCLE_STATE = `const d = document.querySelector("#cycle details"), box = document.getElementById("cycle-ec");
+  const tag = row("ec")?.querySelector(${keySel("engine_tag_no_cycle")});
+  return { open: d?.open ?? null, summary: d?.querySelector("summary")?.textContent.trim() ?? null, checked: box?.checked ?? null,
+    inCard: !!box?.closest("[aria-labelledby=shortcut-title] fieldset"), label: box?.closest("label")?.textContent.trim() ?? null,
+    name: row("ec")?.querySelector(".engine-name")?.textContent ?? null, tag: !!tag };`;
+
+const toggle = ctx => sub("(c) 快捷键卡的轮换开关写入 cycleExclude", () => withPage(ctx, async page => {
   const ex = async () => (await storedCustom(ctx)).cycleExclude ?? [];
   const p = [];
   await page.until(`return !!document.getElementById("cycle-ec")`, 5000);
-  if (!(await page.run(`return document.getElementById("cycle-ec").checked`))) p.push("ec 的开关初始应为打开（基线没有 cycleExclude）");
-  await page.run(`document.getElementById("cycle-ec").click(); return true;`);
+  const n = await page.run(`return document.querySelectorAll("#engines .engine-row").length`);
+  const s0 = await page.run(CYCLE_STATE);
+  if (s0.open !== false) p.push(`轮换清单应收在默认收起的 <details> 里，实际 ${s0.open === null ? "没有 <details>" : "已展开"}`);
+  if (s0.summary !== msg("options_cycle_title", n, n)) p.push(`summary 应为“${msg("options_cycle_title", n, n)}”，实际 ${J(s0.summary)}`);
+  if (!s0.inCard) p.push("#cycle-ec 应在快捷键卡的 fieldset 里");
+  if (!s0.name || s0.label !== s0.name) p.push(`#cycle-ec 的 label 文字应是引擎名 ${J(s0.name)}，实际 ${J(s0.label)}`);
+  if (!s0.checked) p.push("ec 的开关初始应为打开（基线没有 cycleExclude）");
+  if (s0.tag) p.push("ec 还在轮换里，行上不该有“不参与轮换”标签");
+  await page.run(`document.querySelector("#cycle details").open = true; document.getElementById("cycle-ec").click(); return true;`);
   const off = await page.until(`return (await chrome.storage.sync.get("cycleExclude")).cycleExclude?.includes("ec") ?? false`, 5000).then(() => true, () => false);
   if (!off) p.push(`关掉 ec 的开关后 cycleExclude 应含 ec，实际 ${J(await ex())}`);
   await page.until(`return !document.getElementById("cycle-ec")?.checked`, 5000).catch(() => p.push("关掉后重画的开关不是关的"));
+  const s1 = await page.until(`const s = (() => { ${CYCLE_STATE} })(); return s.tag && s;`, 5000).catch(() => page.run(CYCLE_STATE));
+  if (!s1.tag) p.push(`关掉后 ec 的行上应有“${msg("engine_tag_no_cycle")}”标签`);
+  if (s1.summary !== msg("options_cycle_title", n - 1, n)) p.push(`关掉后 summary 应为“${msg("options_cycle_title", n - 1, n)}”，实际 ${J(s1.summary)}`);
+  if (s1.open !== true) p.push("重渲染后 <details> 应仍展开");
   await page.run(`document.getElementById("cycle-ec").click(); return true;`);
   const on = await page.until(`return !((await chrome.storage.sync.get("cycleExclude")).cycleExclude ?? []).includes("ec")`, 5000).then(() => true, () => false);
   if (!on) p.push(`再打开后 cycleExclude 不应含 ec，实际 ${J(await ex())}`);
-  return verdict(p, `关掉 ec → cycleExclude 含 ec；再打开 → 不含（${J(await ex())}）`);
+  return verdict(p, `清单默认收起、summary“${s0.summary}”、开关在快捷键卡里；关掉 ec → cycleExclude 含 ec、行上出现“${msg("engine_tag_no_cycle")}”、summary 少 1、清单仍展开；再打开 → 不含（${J(await ex())}）`);
 }));
 
 const B17 = {

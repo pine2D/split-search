@@ -318,8 +318,8 @@
     "description": "Button that opens the dialog for adding a custom search engine."
   },
   "options_engines_hint": {
-    "message": "Split Search needs access to the left engine’s site; for the right engine, access is recommended. The order here is the order in the drop-down menus.",
-    "description": "Hint under the engine list heading: site access and what the order is for. (How to write a URL template is explained in the add/edit engine dialog.)"
+    "message": "Split Search needs access to the left engine’s site; for the right engine, access is recommended. To hide or delete an engine, use “Edit”. The order here is the order in the drop-down menus.",
+    "description": "Hint under the engine list heading: site access, where Hide/Delete are, and what the order is for. The quoted button text must match engine_edit word for word. (How to write a URL template is explained in the add/edit engine dialog.)"
   },
   "options_hidden_title": {
     "message": "Hidden built-in engines",
@@ -483,6 +483,10 @@
     "message": "Default right",
     "description": "Tag on the engine row that is the right side of the default pair."
   },
+  "engine_tag_no_cycle": {
+    "message": "Not in rotation",
+    "description": "Neutral tag on an engine row: this engine is unchecked in the shortcut rotation list (keyboard shortcut card)."
+  },
   "engine_granted": {
     "message": "Access granted",
     "description": "Status on an engine row: the extension has access to the engine's site."
@@ -511,15 +515,15 @@
   },
   "engine_hide": {
     "message": "Hide",
-    "description": "Button on a preset engine row that hides it."
+    "description": "Button in the edit engine dialog (built-in engines) that hides the engine."
   },
   "engine_delete": {
     "message": "Delete",
-    "description": "Button on a custom engine row that deletes it."
+    "description": "Button in the edit engine dialog (custom engines) that deletes the engine. Also the Delete button on a custom image search engine row."
   },
   "engine_delete_confirm": {
     "message": "Confirm delete?",
-    "description": "Delete button text after the first click; clicking it again deletes the engine. Blur or Esc restores the button."
+    "description": "Delete button text after the first click (edit engine dialog, image search engine rows); clicking it again deletes the engine. Blur or Esc restores the button."
   },
   "engine_delete_confirm_hint": {
     "message": "Click again to delete “$NAME$”. Before you do, delete the Chrome site searches that use it. Otherwise, the ones with it on the left fall back to a normal search, and the ones with it on the right stop at an “Unknown engine” error page.",
@@ -542,16 +546,26 @@
     }
   },
   "engine_in_pair_hide": {
-    "message": "Used by the default pair, so it can’t be hidden",
-    "description": "Small inline text under a disabled Hide button: the default pair uses this built-in engine."
+    "message": "Used by the default pair, so it can’t be hidden. Choose another engine under “Default pair” first.",
+    "description": "Visible reason under the unavailable Hide button in the edit engine dialog: the default pair uses this built-in engine. The quoted card name must match options_pair_title."
   },
   "engine_in_pair_delete": {
-    "message": "Used by the default pair, so it can’t be deleted",
-    "description": "Small inline text under a disabled Delete button: the default pair uses this custom engine."
+    "message": "Used by the default pair, so it can’t be deleted. Choose another engine under “Default pair” first.",
+    "description": "Visible reason under the unavailable Delete button in the edit engine dialog: the default pair uses this custom engine. The quoted card name must match options_pair_title."
   },
   "engine_edit": {
     "message": "Edit",
     "description": "Button on an engine row that opens the edit dialog."
+  },
+  "engine_edit_label": {
+    "message": "Edit $NAME$",
+    "description": "Accessible label of the Edit button on an engine row. The placeholder is the engine name. Must start with the visible text of engine_edit word for word (WCAG 2.5.3 label in name).",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "Google"
+      }
+    }
   },
   "engine_restore": {
     "message": "Restore",
@@ -1146,8 +1160,8 @@
     "description": "Heading of the keyboard shortcut card on the settings page."
   },
   "options_shortcut_hint": {
-    "message": "In a split view opened by Split Search, press the shortcut to switch the right side to the next engine with “Include in shortcut rotation” checked. No shortcut is set by default. Click “Set shortcut” to choose one on Chrome’s Keyboard shortcuts page.",
-    "description": "Hint in the keyboard shortcut card. The quoted checkbox label must match engine_cycle_label; the page name must match Chrome's own title of chrome://extensions/shortcuts (Keyboard shortcuts)."
+    "message": "In a split view opened by Split Search, press the shortcut to switch the right side to the next engine in the rotation (choose them below). No shortcut is set by default. Click “Set shortcut” to choose one on Chrome’s Keyboard shortcuts page.",
+    "description": "Hint in the keyboard shortcut card; the rotation checkboxes are below it in the same card. The page name must match Chrome's own title of chrome://extensions/shortcuts (Keyboard shortcuts); the quoted button text must match options_shortcut_open."
   },
   "options_shortcut_label": {
     "message": "Current shortcut",
@@ -1161,19 +1175,23 @@
     "message": "Set shortcut",
     "description": "Button that opens chrome://extensions/shortcuts, where the user binds the key combination."
   },
-  "engine_cycle_label": {
-    "message": "Include in shortcut rotation",
-    "description": "Checkbox label on an engine row. Checked means the keyboard shortcut may switch the right side to this engine."
-  },
-  "engine_cycle_aria": {
-    "message": "$NAME$: Include in shortcut rotation",
-    "description": "Accessible label of the rotation checkbox on an engine row. The placeholder is the engine name. Must contain the visible label text of engine_cycle_label word for word (WCAG 2.5.3 label in name).",
+  "options_cycle_title": {
+    "message": "Shortcut rotation: $ON$ of $ALL$ selected",
+    "description": "Collapsible summary in the keyboard shortcut card above the rotation checkboxes. $ON$ = engines included in the rotation, $ALL$ = visible engines. Write it so it reads correctly for any number (no plural forms).",
     "placeholders": {
-      "NAME": {
+      "ON": {
         "content": "$1",
-        "example": "Google"
+        "example": "4"
+      },
+      "ALL": {
+        "content": "$2",
+        "example": "5"
       }
     }
+  },
+  "options_cycle_hint": {
+    "message": "Engines rotate in the order of the engine list, skipping unchecked engines and the current left engine.",
+    "description": "Legend of the rotation checkbox group in the keyboard shortcut card: the order of rotation and what is skipped."
   },
   "popup_not_ours": {
     "message": "This tab isn’t in a split view opened by Split Search.",

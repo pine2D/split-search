@@ -81,16 +81,17 @@ code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
   cursor: pointer;
   overflow-wrap: break-word; /* 译文较长时允许换行，不撑出容器 */
 }
-.btn:hover:not(:disabled) { border-color: var(--accent); }
+.btn:hover:not(:disabled):not([aria-disabled="true"]) { border-color: var(--accent); }
 .btn:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
-.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+/* aria-disabled：能拿到焦点、读屏读“不可用”的按钮（编辑对话框里默认组合在用的隐藏 / 删除），外观同禁用 */
+.btn:disabled, .btn[aria-disabled="true"] { opacity: 0.45; cursor: not-allowed; }
 .btn-small { padding: 3px 10px; font-size: 13px; }
 .btn-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 600; }
-.btn-primary:hover:not(:disabled) { filter: brightness(1.08); }
+.btn-primary:hover:not(:disabled):not([aria-disabled="true"]) { filter: brightness(1.08); }
 .btn-danger { color: var(--danger); }
 /* 删除的第二步（ui.js 的 confirmStep）：再点一次才删，不限时；失焦或 Esc 复原 */
 .btn-confirm { background: var(--danger-soft); border-color: var(--danger); color: var(--danger); font-weight: 600; }
-.btn-confirm:hover:not(:disabled) { border-color: var(--danger); }
+.btn-confirm:hover:not(:disabled):not([aria-disabled="true"]) { border-color: var(--danger); }
 .btn-attention {
   background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 600;
   box-shadow: 0 0 0 3px var(--accent-soft);
@@ -213,7 +214,9 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 .engine-id { color: var(--muted); }
 .engine-url { color: var(--muted); overflow-wrap: anywhere; margin-top: 2px; }
 .engine-side { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
-.perm-line, .row-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.perm-line, .row-actions, .row-move { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+/* 文字引擎行：状态、授权、↑↓、编辑排成一行（以图搜图列表也用 .engine-side，不受影响） */
+#engines .engine-side { flex-direction: row; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 6px 10px; }
 .perm { display: inline-flex; align-items: center; gap: 4px; font-size: 12.5px; }
 .perm-ok { color: var(--ok); }
 .perm-missing { color: var(--warn); }
@@ -235,7 +238,8 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 
 @media (max-width: 560px) {
   .engine-side { align-items: flex-start; }
-  .perm-line, .row-actions { justify-content: flex-start; }
+  #engines .engine-side { justify-content: flex-start; }
+  .perm-line, .row-actions, .row-move { justify-content: flex-start; }
   .row-reason { text-align: start; }
 }
 
@@ -259,7 +263,13 @@ dialog:focus { outline: none; }
 .field label { display: block; font-weight: 600; margin-bottom: 4px; }
 .field input { width: 100%; }
 .field-error { color: var(--danger); font-size: 13px; margin: 4px 0 0; }
-.dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+.dialog-actions { display: flex; justify-content: flex-end; align-items: flex-start; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+/* 编辑对话框底栏左边的隐藏 / 删除与原因；会切换 hidden，所以 display 只写给没有 hidden 的时候 */
+.dlg-danger:not([hidden]) {
+  margin-inline-end: auto; flex: 1 1 220px;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 4px;
+}
+#dlg-remove-reason { margin: 0; font-size: 12px; max-width: 40ch; }
 
 /* ---- 提示 ---- */
 .notices {
@@ -304,6 +314,10 @@ dialog:focus { outline: none; }
 
 /* ---- 快捷键 ---- */
 .cycle-row { margin-top: 6px; }
+/* 参与轮换的引擎清单（shortcut.js）：收在 <details> 里，复选框放不下时换行 */
+.cycle-list { border: 0; padding: 0; margin: 8px 0 0; min-width: 0; display: flex; flex-wrap: wrap; gap: 4px 18px; }
+.cycle-list legend { padding: 0; margin-bottom: 4px; }
+.cycle-list .check-row { margin-top: 0; }
 .shortcut-row { display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap; margin-top: 8px; }
 .shortcut-current { display: flex; align-items: center; gap: 8px; font-size: 13px; }
 .shortcut-key {

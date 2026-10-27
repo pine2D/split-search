@@ -318,8 +318,8 @@
     "description": "Button that opens the dialog for adding a custom search engine."
   },
   "options_engines_hint": {
-    "message": "Debes dar acceso al sitio del buscador de la izquierda, y conviene darlo también al de la derecha. El orden de esta lista es el de los menús desplegables.",
-    "description": "Hint under the engine list heading: site access and what the order is for. (How to write a URL template is explained in the add/edit engine dialog.)"
+    "message": "Debes dar acceso al sitio del buscador de la izquierda, y conviene darlo también al de la derecha. Para ocultar o eliminar un buscador, usa «Editar». El orden de esta lista es el de los menús desplegables.",
+    "description": "Hint under the engine list heading: site access, where Hide/Delete are, and what the order is for. The quoted button text must match engine_edit word for word. (How to write a URL template is explained in the add/edit engine dialog.)"
   },
   "options_hidden_title": {
     "message": "Buscadores predefinidos ocultos",
@@ -483,6 +483,10 @@
     "message": "Derecha predeterminada",
     "description": "Tag on the engine row that is the right side of the default pair."
   },
+  "engine_tag_no_cycle": {
+    "message": "Fuera de la rotación",
+    "description": "Neutral tag on an engine row: this engine is unchecked in the shortcut rotation list (keyboard shortcut card)."
+  },
   "engine_granted": {
     "message": "Con acceso",
     "description": "Status on an engine row: the extension has access to the engine's site."
@@ -511,15 +515,15 @@
   },
   "engine_hide": {
     "message": "Ocultar",
-    "description": "Button on a preset engine row that hides it."
+    "description": "Button in the edit engine dialog (built-in engines) that hides the engine."
   },
   "engine_delete": {
     "message": "Eliminar",
-    "description": "Button on a custom engine row that deletes it."
+    "description": "Button in the edit engine dialog (custom engines) that deletes the engine. Also the Delete button on a custom image search engine row."
   },
   "engine_delete_confirm": {
     "message": "¿Eliminar?",
-    "description": "Delete button text after the first click; clicking it again deletes the engine. Blur or Esc restores the button."
+    "description": "Delete button text after the first click (edit engine dialog, image search engine rows); clicking it again deletes the engine. Blur or Esc restores the button."
   },
   "engine_delete_confirm_hint": {
     "message": "Vuelve a hacer clic para eliminar «$NAME$». Antes de hacerlo, borra en Chrome las búsquedas en el sitio que lo usan: las que lo tienen a la izquierda pasarán a ser búsquedas normales y las que lo tienen a la derecha se quedarán en la página de error «Buscador desconocido».",
@@ -542,16 +546,26 @@
     }
   },
   "engine_in_pair_hide": {
-    "message": "Lo usa la combinación predeterminada; no se puede ocultar",
-    "description": "Small inline text under a disabled Hide button: the default pair uses this built-in engine."
+    "message": "Lo usa la combinación predeterminada; no se puede ocultar. Primero elige otro buscador en «Combinación predeterminada».",
+    "description": "Visible reason under the unavailable Hide button in the edit engine dialog: the default pair uses this built-in engine. The quoted card name must match options_pair_title."
   },
   "engine_in_pair_delete": {
-    "message": "Lo usa la combinación predeterminada; no se puede eliminar",
-    "description": "Small inline text under a disabled Delete button: the default pair uses this custom engine."
+    "message": "Lo usa la combinación predeterminada; no se puede eliminar. Primero elige otro buscador en «Combinación predeterminada».",
+    "description": "Visible reason under the unavailable Delete button in the edit engine dialog: the default pair uses this custom engine. The quoted card name must match options_pair_title."
   },
   "engine_edit": {
     "message": "Editar",
     "description": "Button on an engine row that opens the edit dialog."
+  },
+  "engine_edit_label": {
+    "message": "Editar $NAME$",
+    "description": "Accessible label of the Edit button on an engine row. The placeholder is the engine name. Must start with the visible text of engine_edit word for word (WCAG 2.5.3 label in name).",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "Google"
+      }
+    }
   },
   "engine_restore": {
     "message": "Restaurar",
@@ -1146,8 +1160,8 @@
     "description": "Heading of the keyboard shortcut card on the settings page."
   },
   "options_shortcut_hint": {
-    "message": "En una vista dividida abierta por Split Search, pulsa el acceso directo para cambiar el lado derecho al siguiente buscador que tenga marcada la opción «Incluir en la rotación del acceso directo». De forma predeterminada no hay ninguno configurado. Haz clic en «Asignar acceso directo» para elegirlo en la página Accesos directos de Chrome.",
-    "description": "Hint in the keyboard shortcut card. The quoted checkbox label must match engine_cycle_label; the page name must match Chrome's own title of chrome://extensions/shortcuts (Keyboard shortcuts)."
+    "message": "En una vista dividida abierta por Split Search, pulsa el acceso directo para cambiar el lado derecho al siguiente buscador de la rotación (elígelos abajo). De forma predeterminada no hay ninguno configurado. Haz clic en «Asignar acceso directo» para elegirlo en la página Accesos directos de Chrome.",
+    "description": "Hint in the keyboard shortcut card; the rotation checkboxes are below it in the same card. The page name must match Chrome's own title of chrome://extensions/shortcuts (Keyboard shortcuts); the quoted button text must match options_shortcut_open."
   },
   "options_shortcut_label": {
     "message": "Acceso directo actual",
@@ -1161,19 +1175,23 @@
     "message": "Asignar acceso directo",
     "description": "Button that opens chrome://extensions/shortcuts, where the user binds the key combination."
   },
-  "engine_cycle_label": {
-    "message": "Incluir en la rotación del acceso directo",
-    "description": "Checkbox label on an engine row. Checked means the keyboard shortcut may switch the right side to this engine."
-  },
-  "engine_cycle_aria": {
-    "message": "$NAME$: Incluir en la rotación del acceso directo",
-    "description": "Accessible label of the rotation checkbox on an engine row. The placeholder is the engine name. Must contain the visible label text of engine_cycle_label word for word (WCAG 2.5.3 label in name).",
+  "options_cycle_title": {
+    "message": "Rotación del acceso directo: $ON$ de $ALL$ seleccionados",
+    "description": "Collapsible summary in the keyboard shortcut card above the rotation checkboxes. $ON$ = engines included in the rotation, $ALL$ = visible engines. Write it so it reads correctly for any number (no plural forms).",
     "placeholders": {
-      "NAME": {
+      "ON": {
         "content": "$1",
-        "example": "Google"
+        "example": "4"
+      },
+      "ALL": {
+        "content": "$2",
+        "example": "5"
       }
     }
+  },
+  "options_cycle_hint": {
+    "message": "La rotación sigue el orden de la lista de buscadores y se salta los que no están marcados y el buscador de la izquierda actual.",
+    "description": "Legend of the rotation checkbox group in the keyboard shortcut card: the order of rotation and what is skipped."
   },
   "popup_not_ours": {
     "message": "Esta pestaña no está en una vista dividida abierta por Split Search.",

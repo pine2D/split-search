@@ -66,6 +66,7 @@ class Box {
   setAttribute(k, v) { this.attrs.set(k, String(v)); }
   removeAttribute(k) { this.attrs.delete(k); }
   hasAttribute(k) { return this.attrs.has(k); }
+  getAttribute(k) { return this.attrs.get(k) ?? null; }
   focus() { globalThis.document.activeElement = this; }
   addEventListener() {}
   append(...c) { this.children.push(...c); }
@@ -252,4 +253,56 @@ test("confirmStep：失焦和 Esc 复原，复原后再点重新进入确认；�
     slow.fire("click");
     assert.equal(confirmed, 2);
   } finally { globalThis.setTimeout = realSetTimeout; }
+});
+
+test("confirmStep：按钮带 aria-disabled=\"true\" 时点击不进入确认、不播报、不执行；去掉后照常两步", async () => {
+  const notices = formFakes();
+  await setLocale("en");
+  const btn = fakeButton();
+  let confirmed = 0;
+  confirmStep(btn, "plain", "plain", () => { confirmed++; }, { armNotice: () => "Think twice" });
+  btn.setAttribute("aria-disabled", "true");
+  const before = notices.children.length;
+  btn.fire("click");
+  btn.fire("click");
+  assert.ok(!btn.classList.set.has("btn-confirm"), "不可用时不进入确认");
+  assert.equal(confirmed, 0, "不可用时不执行");
+  assert.equal(notices.children.length, before, "不可用时不播报");
+  btn.removeAttribute("aria-disabled");
+  btn.fire("click");
+  assert.ok(btn.classList.set.has("btn-confirm"));
+  btn.fire("click");
+  assert.equal(confirmed, 1, "去掉 aria-disabled 后照常两步");
+});
+
+// ---- disclosure：summary 的标题可以带参数（[key, ...subs]），切换语言时按 data-i18n-args 重写 ----
+
+import { disclosure } from "../src/options/ui.js";
+
+function disclosureFakes() {
+  installFakes();
+  const base = globalThis.document.createElement;
+  globalThis.document.createElement = (tag) => {
+    const el = base(tag);
+    el.addEventListener = () => {};
+    return el;
+  };
+  globalThis.document.createElementNS = (_ns, tag) => globalThis.document.createElement(tag);
+}
+
+const summarySpan = (d) => d.children[0].children.find(c => c.tag === "span");
+
+test("disclosure：titleKey 是 [key, ...subs] 时 summary 文字带参数并写 data-i18n-args；单个 key 照旧", async () => {
+  disclosureFakes();
+  await setLocale("en");
+  const d = disclosure("t-args", ["greet", "Ann"], "body");
+  assert.equal(d.tag, "details");
+  const span = summarySpan(d);
+  assert.equal(span.textContent, "Hi Ann");
+  assert.equal(span.attrs.get("data-i18n"), "greet");
+  assert.equal(span.attrs.get("data-i18n-args"), JSON.stringify(["Ann"]));
+  const plain = summarySpan(disclosure("t-plain", "plain"));
+  assert.equal(plain.textContent, "Plain");
+  assert.equal(plain.attrs.get("data-i18n"), "plain");
+  assert.equal(plain.attrs.has("data-i18n-args"), false);
 });

@@ -85,6 +85,8 @@
       <h2 id="shortcut-title" data-i18n="options_shortcut_title"></h2>
       <p class="hint" data-i18n="options_shortcut_hint"></p>
       <div id="shortcut"></div>
+      <!-- 参与轮换的引擎清单（shortcut.js 的 renderCycleList）：在 #shortcut 之外，重画快捷键一行时不会冲掉它 -->
+      <div id="cycle"></div>
     </section>
     <footer class="page-foot">
       <p class="hint" data-i18n="lang_note"></p>
@@ -167,6 +169,12 @@
       <p id="dlg-id-readonly" class="hint" hidden></p>
       <p class="field-error" data-for="form" hidden></p>
       <div class="dialog-actions">
+        <!-- 编辑时才有：预置引擎“隐藏”、自定义引擎“删除”；默认组合在用时按钮 aria-disabled，下方写原因（engine-list.js） -->
+        <div id="dlg-danger" class="dlg-danger" hidden>
+          <button type="button" id="dlg-hide" class="btn" data-i18n="engine_hide" hidden></button>
+          <button type="button" id="dlg-delete" class="btn btn-danger" data-i18n="engine_delete" hidden></button>
+          <p id="dlg-remove-reason" class="hint" hidden></p>
+        </div>
         <button type="button" id="dlg-cancel" class="btn" data-i18n="common_cancel"></button>
         <button type="submit" id="dlg-save" class="btn btn-primary" data-i18n="common_save"></button>
       </div>

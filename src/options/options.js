@@ -7,7 +7,7 @@ import { write, act, actions, attention, bindActions, getPendingOrder } from "./
 import { renderLookupCard, setupLookupDialogs, refreshImageCatalog } from "./lookup.js";
 import { renderEngineList, renderHiddenList, setupEngineDialog } from "./engine-list.js";
 import { setupCatalogDialog, refreshCatalog } from "./catalog.js";
-import { renderShortcut, SHORTCUT_BUTTON_ID } from "./shortcut.js";
+import { renderShortcut, renderCycleList, SHORTCUT_BUTTON_ID } from "./shortcut.js";
 import { renderTriggers, renderGuideSteps, setupGuide } from "./guide.js";
 import { renderSetup, loadSetupDone, initSetup, revealSetup } from "./setup.js";
 import { applyRichText, renderLangPicker } from "./locale-ui.js";
@@ -122,6 +122,7 @@ async function render() {
   renderGuideSteps(setupShown);
   $("engines").replaceChildren(renderEngineList(ctx));
   $("hidden-engines").replaceChildren(renderHiddenList(ctx));
+  $("cycle").replaceChildren(renderCycleList(ctx));
   if (focusedId && document.activeElement === document.body) focusAfterRender(focusedId);
   refreshShortcut();
   document.body.classList.remove("loading");

@@ -318,8 +318,8 @@
     "description": "Button that opens the dialog for adding a custom search engine."
   },
   "options_engines_hint": {
-    "message": "左侧引擎的网站必须授权，右侧建议授权。排序决定下拉框里的顺序。",
-    "description": "Hint under the engine list heading: site access and what the order is for. (How to write a URL template is explained in the add/edit engine dialog.)"
+    "message": "左侧引擎的网站必须授权，右侧建议授权。隐藏和删除在“编辑”里。排序决定下拉框里的顺序。",
+    "description": "Hint under the engine list heading: site access, where Hide/Delete are, and what the order is for. The quoted button text must match engine_edit word for word. (How to write a URL template is explained in the add/edit engine dialog.)"
   },
   "options_hidden_title": {
     "message": "已隐藏的预置引擎",
@@ -483,6 +483,10 @@
     "message": "默认右侧",
     "description": "Tag on the engine row that is the right side of the default pair."
   },
+  "engine_tag_no_cycle": {
+    "message": "不参与轮换",
+    "description": "Neutral tag on an engine row: this engine is unchecked in the shortcut rotation list (keyboard shortcut card)."
+  },
   "engine_granted": {
     "message": "已授权",
     "description": "Status on an engine row: the extension has access to the engine's site."
@@ -511,15 +515,15 @@
   },
   "engine_hide": {
     "message": "隐藏",
-    "description": "Button on a preset engine row that hides it."
+    "description": "Button in the edit engine dialog (built-in engines) that hides the engine."
   },
   "engine_delete": {
     "message": "删除",
-    "description": "Button on a custom engine row that deletes it."
+    "description": "Button in the edit engine dialog (custom engines) that deletes the engine. Also the Delete button on a custom image search engine row."
   },
   "engine_delete_confirm": {
     "message": "确认删除？",
-    "description": "Delete button text after the first click; clicking it again deletes the engine. Blur or Esc restores the button."
+    "description": "Delete button text after the first click (edit engine dialog, image search engine rows); clicking it again deletes the engine. Blur or Esc restores the button."
   },
   "engine_delete_confirm_hint": {
     "message": "再点一次就会删除“$NAME$”。删除前，请先删掉 Chrome 里用到它的网站搜索：它作左侧的会退化为普通搜索，作右侧的会停在“未知引擎”错误页。",
@@ -542,16 +546,26 @@
     }
   },
   "engine_in_pair_hide": {
-    "message": "默认组合在用，不能隐藏",
-    "description": "Small inline text under a disabled Hide button: the default pair uses this built-in engine."
+    "message": "默认组合在用，不能隐藏。先在“默认组合”里换成别的引擎。",
+    "description": "Visible reason under the unavailable Hide button in the edit engine dialog: the default pair uses this built-in engine. The quoted card name must match options_pair_title."
   },
   "engine_in_pair_delete": {
-    "message": "默认组合在用，不能删除",
-    "description": "Small inline text under a disabled Delete button: the default pair uses this custom engine."
+    "message": "默认组合在用，不能删除。先在“默认组合”里换成别的引擎。",
+    "description": "Visible reason under the unavailable Delete button in the edit engine dialog: the default pair uses this custom engine. The quoted card name must match options_pair_title."
   },
   "engine_edit": {
     "message": "编辑",
     "description": "Button on an engine row that opens the edit dialog."
+  },
+  "engine_edit_label": {
+    "message": "编辑 $NAME$",
+    "description": "Accessible label of the Edit button on an engine row. The placeholder is the engine name. Must start with the visible text of engine_edit word for word (WCAG 2.5.3 label in name).",
+    "placeholders": {
+      "NAME": {
+        "content": "$1",
+        "example": "Google"
+      }
+    }
   },
   "engine_restore": {
     "message": "恢复",
@@ -1146,8 +1160,8 @@
     "description": "Heading of the keyboard shortcut card on the settings page."
   },
   "options_shortcut_hint": {
-    "message": "在 Split Search 打开的拆分视图里按快捷键，右侧会换成下一个勾选了“参与快捷键轮换”的引擎。快捷键默认未设置，点“设置快捷键”到 Chrome 的“键盘快捷键”页面设置。",
-    "description": "Hint in the keyboard shortcut card. The quoted checkbox label must match engine_cycle_label; the page name must match Chrome's own title of chrome://extensions/shortcuts (Keyboard shortcuts)."
+    "message": "在 Split Search 打开的拆分视图里按快捷键，右侧会换成下一个参与轮换的引擎（在下面选）。快捷键默认未设置，点“设置快捷键”到 Chrome 的“键盘快捷键”页面设置。",
+    "description": "Hint in the keyboard shortcut card; the rotation checkboxes are below it in the same card. The page name must match Chrome's own title of chrome://extensions/shortcuts (Keyboard shortcuts); the quoted button text must match options_shortcut_open."
   },
   "options_shortcut_label": {
     "message": "当前快捷键",
@@ -1161,19 +1175,23 @@
     "message": "设置快捷键",
     "description": "Button that opens chrome://extensions/shortcuts, where the user binds the key combination."
   },
-  "engine_cycle_label": {
-    "message": "参与快捷键轮换",
-    "description": "Checkbox label on an engine row. Checked means the keyboard shortcut may switch the right side to this engine."
-  },
-  "engine_cycle_aria": {
-    "message": "$NAME$：参与快捷键轮换",
-    "description": "Accessible label of the rotation checkbox on an engine row. The placeholder is the engine name. Must contain the visible label text of engine_cycle_label word for word (WCAG 2.5.3 label in name).",
+  "options_cycle_title": {
+    "message": "参与快捷键轮换：已选 $ON$ 个，共 $ALL$ 个",
+    "description": "Collapsible summary in the keyboard shortcut card above the rotation checkboxes. $ON$ = engines included in the rotation, $ALL$ = visible engines. Write it so it reads correctly for any number (no plural forms).",
     "placeholders": {
-      "NAME": {
+      "ON": {
         "content": "$1",
-        "example": "Google"
+        "example": "4"
+      },
+      "ALL": {
+        "content": "$2",
+        "example": "5"
       }
     }
+  },
+  "options_cycle_hint": {
+    "message": "按引擎列表的顺序轮换，跳过没勾选的引擎和当前左侧引擎。",
+    "description": "Legend of the rotation checkbox group in the keyboard shortcut card: the order of rotation and what is skipped."
   },
   "popup_not_ours": {
     "message": "当前标签页不在 Split Search 打开的拆分视图中。",

@@ -1,4 +1,4 @@
-// I18N 多语言冒烟（auto）：4 种语言逐一打开设置页（含引擎库对话框）、工具栏弹窗（本扩展的一对与分屏外的 try 档）和 go.html 出错页，核对 lang、原样 key、溢出并截图；
+// I18N 多语言冒烟（auto）：4 种语言逐一打开设置页（含引擎库对话框、编辑对话框的隐藏/删除）、工具栏弹窗（本扩展的一对与分屏外的 try 档）和 go.html 出错页，核对 lang、原样 key、溢出并截图；
 // 设置页含“开始使用”卡（每种语言前清掉 setupDone，结束时写回）；页内切换、连切、两个设置页跟随；uiLocale = "auto" 时 t() 与 chrome.i18n.getMessage 的替换结果逐 key 相同。
 // uiLocale 由 guarded 写回步骤前的值（基线 zh_CN），中断时由快照恢复兜底。截图存 .e2e/i18n/。v0.4 的弹窗“补成分屏”区与设置页“右键查询”卡片见 v04-i18n.mjs。
 import { join } from "node:path";
@@ -10,7 +10,7 @@ import { pairOn } from "./v03-lib.mjs";
 import { POPUP_URL, popupPage, plainTab } from "./v03-popup.mjs";
 import { v04I18nChecks } from "./v04-i18n.mjs";
 import { keepSetupDone, setDone } from "./b19.mjs";
-import { SHOT_DIR, htmlLang, audit, auditProblems, waitPage, shoot, bodyClip } from "./i18n-audit.mjs";
+import { SHOT_DIR, htmlLang, audit, auditProblems, lineCount, lineProblems, waitPage, shoot, bodyClip } from "./i18n-audit.mjs";
 
 const LOCALES = ["en", "zh_CN", "zh_TW", "es"];
 const GO_URL = `chrome-extension://${EXT_ID}/go.html?u=https://a.test/?q=x&_ss=ea,nope`;
@@ -88,6 +88,23 @@ async function catalogDialog(ctx, opt, locale) {
   return { problems, shot };
 }
 
+// 编辑对话框：ea（默认组合里的自定义引擎：“删除”不可用、下方有原因）和 ddg（预置引擎：可用的“隐藏”）各开一次，
+// 核对原样 key、对话框不横向溢出、“隐藏”“删除”按钮不换行（es 最长），截图后点“取消”
+const ENGINE_DLG_AUDIT = audit({ scope: "#engine-dialog ", items: "button, label, #dlg-remove-reason", box: "#engine-dialog" });
+async function engineDialog(ctx, opt, locale) {
+  const problems = [], shots = [];
+  for (const [id, btn, file] of [["ea", "dlg-delete", "engine-dialog"], ["ddg", "dlg-hide", "engine-dialog-hide"]]) {
+    await waitPage(opt, `(() => { const d = document.getElementById("engine-dialog"); if (!d.open) document.getElementById(${J(`edit-${id}`)})?.click();
+      return d.open && document.getElementById(${J(btn)}).checkVisibility(); })()`, `${id} 的编辑对话框打开、显示 #${btn}`);
+    const found = [...auditProblems(locale, await opt.ev(ENGINE_DLG_AUDIT)), ...lineProblems(await opt.ev(lineCount([`#${btn}`])))];
+    problems.push(...found.map(p => `编辑对话框（${id}）：${p}`));
+    await opt.ev(`document.getElementById("engine-dialog").scrollTop = 1e6; true`); // 截图要看到底栏的危险区
+    shots.push(await shoot(ctx, opt, join(SHOT_DIR, `${locale}-${file}.png`)));
+    await opt.ev(`document.getElementById("dlg-cancel").click(); true`);
+  }
+  return { problems, shots };
+}
+
 async function perLocale(ctx, locale, pairTab, idleTab) {
   const n0 = ctx.consoleCollector?.errors?.length ?? 0;
   await setPref(ctx, locale);
@@ -108,6 +125,9 @@ async function perLocale(ctx, locale, pairTab, idleTab) {
     const cat = await catalogDialog(ctx, opt, locale).catch(e => ({ problems: [`引擎库对话框：${e.message}`], shot: null }));
     problems.push(...cat.problems);
     if (cat.shot) shots.push(cat.shot);
+    const dlg = await engineDialog(ctx, opt, locale).catch(e => ({ problems: [`编辑对话框：${e.message}`], shots: [] }));
+    problems.push(...dlg.problems);
+    shots.push(...dlg.shots);
   } finally { await opt.close(); }
   let pop = null;
   try {

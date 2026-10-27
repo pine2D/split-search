@@ -90,6 +90,21 @@ export const dialogState = page => page.run(`
 
 export const closeDialog = page => page.run(`document.getElementById("dlg-cancel").click(); return true;`);
 
+// 点引擎行的“编辑”（#edit-<id>），等编辑对话框打开。隐藏 / 删除都在这个对话框里
+export async function openEdit(page, id) {
+  await page.run(`document.getElementById(${JSON.stringify(`edit-${id}`)}).click(); return true;`);
+  await page.until(`return document.getElementById("engine-dialog").open`);
+}
+
+// 编辑对话框底栏的危险区：可见性一律用 checkVisibility()（hidden 被作者样式盖掉时 .hidden 会假通过）。
+// btn 是“隐藏”“删除”里看得见的那个（没有就是 null）
+export const dangerState = page => page.run(`
+  const v = id => document.getElementById(id).checkVisibility();
+  const b = ["dlg-hide", "dlg-delete"].map(id => document.getElementById(id)).find(el => el.checkVisibility());
+  const reason = document.getElementById("dlg-remove-reason");
+  return { danger: v("dlg-danger"), hide: v("dlg-hide"), del: v("dlg-delete"), reason: v("dlg-remove-reason"), reasonText: reason.textContent,
+    btn: b ? { id: b.id, text: b.textContent, disabled: b.disabled, ariaDisabled: b.getAttribute("aria-disabled"), describedBy: b.getAttribute("aria-describedby") } : null };`);
+
 // ---- 经设置页读写存储（只动指定键，其余保持不变）----
 export const readKeys = (ext, keys) => ext.eval(`chrome.storage.sync.get(${JSON.stringify(keys)})`);
 

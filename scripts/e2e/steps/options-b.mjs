@@ -1,10 +1,10 @@
-// 设置页自动步骤（一）：B2（工具栏图标出现弹窗）B3 B6 B7 B8 B10 B11
+// 设置页自动步骤（一）：B2（工具栏图标出现弹窗）B3 B6 B7 B8 B11（B10 在 options-b2.mjs）
 import { EXT_ID } from "../config.mjs";
 import { pageTargets, siteX, nonce } from "./util.mjs";
 import { POPUP_URL, popupPage } from "./v03-popup.mjs";
 import {
-  withOptions, fillDialog, dialogState, closeDialog,
-  readKeys, BAIDU, hasEngine, addCustom, guarded, keySel,
+  withOptions, fillDialog, dialogState, closeDialog, openEdit, dangerState,
+  readKeys, BAIDU, hasEngine, addCustom, guarded, keySel, sleep,
 } from "./optpage.mjs";
 import { msg } from "../i18n.mjs";
 
@@ -119,7 +119,7 @@ const B6 = {
 };
 
 const B7 = {
-  id: "B7", title: "新增百度：id 按网址自动生成、列表末尾出现且授权按钮高亮；删除要点两次", kind: "auto", needs: [],
+  id: "B7", title: "新增百度：id 按网址自动生成、列表末尾出现且授权按钮高亮；删除在编辑对话框里、要点两次", kind: "auto", needs: [],
   async run({ browser, ext }) {
     try {
       return await withOptions(browser, async page => {
@@ -150,20 +150,60 @@ const B7 = {
         if (!r.perm.split(" ").includes("perm-optional") || r.permText !== msg("engine_not_granted_optional"))
           problems.push(`状态应是 perm-optional“${msg("engine_not_granted_optional")}”，实际 ${r.perm}“${r.permText}”`);
         if (!r.notice) problems.push("没有“尚未授权”的提示");
-        // 顺带验证两步删除：点一次只变成“确认删除？”、不删；再点一次才删
-        const once = await page.run(`row("baidu").querySelector(${keySel("engine_delete")}).click(); await sleep(300);
-          return { still: !!row("baidu"), text: row("baidu")?.querySelector("#remove-baidu")?.textContent ?? "" };`);
-        if (!once.still) problems.push("只点一次“删除”就删掉了");
-        if (once.text !== msg("engine_delete_confirm")) problems.push(`点一次后按钮应为“${msg("engine_delete_confirm")}”，实际“${once.text}”`);
-        await page.run(`document.getElementById("remove-baidu").click(); return true;`);
-        await page.until(`return !row("baidu")`);
+        const del = await deleteViaDialog(browser, page, problems);
         if (page.dialogs.length) problems.push(`不该弹 JS 对话框，实际弹了 ${page.dialogs.length} 个`);
         if (problems.length) return { status: "fail", detail: problems.join("；") };
-        return { status: "pass", detail: "id 按网址自动生成 baidu（“高级”收起，字段顺序 名称、网址、id）；百度出现在列表末尾，状态是中性的“未授权（可选）”、授权按钮高亮，右下角有未授权提示；删除点一次变成“确认删除？”，再点才删，没有弹框" };
+        return { status: "pass", detail: `id 按网址自动生成 baidu（“高级”收起，字段顺序 名称、网址、id）；百度出现在列表末尾，状态是中性的“未授权（可选）”、授权按钮高亮，右下角有未授权提示；${del}；没有弹框` };
       });
     } finally { /* 清理由 guarded 统一恢复 */ }
   },
 };
+
+// 删除在编辑对话框里：行上没有“删除”；新增模式下危险区全藏；点一次只变成“确认删除？”（Esc 先撤确认、再按才关对话框），
+// 再点才删，对话框关闭、焦点交给相邻一行（baidu 在末尾，即前一行）的“编辑”。返回通过时的说明，问题追加到 problems
+async function deleteViaDialog(browser, page, problems) {
+  const J = JSON.stringify;
+  const pre = await page.run(`const a = ids(); return { prev: a[a.indexOf("baidu") - 1] ?? null, inline: !!row("baidu").querySelector(${keySel("engine_delete")}) };`);
+  if (pre.inline) problems.push("引擎行上不该再有“删除”按钮");
+  await openEdit(page, "baidu");
+  const edit = await dangerState(page);
+  if (!edit.del || edit.hide || edit.btn?.ariaDisabled) problems.push(`百度的编辑对话框应只显示可用的“删除”，实际 ${J(edit)}`);
+  await closeDialog(page);
+  await page.run(`document.getElementById("add-engine").click(); return true;`);
+  await page.until(`return document.getElementById("engine-dialog").open`);
+  const add = await dangerState(page);
+  if (add.danger || add.hide || add.del || add.reason) problems.push(`先编辑过自定义引擎再打开“新增引擎”，危险区应全部不可见，实际 ${J(add)}`);
+  await closeDialog(page);
+  await openEdit(page, "baidu");
+  const once = await page.run(`const b = document.getElementById("dlg-delete"); b.focus(); b.click(); await sleep(300);
+    return { still: !!row("baidu"), open: document.getElementById("engine-dialog").open, text: b.textContent };`);
+  if (!once.still || !once.open) problems.push(`只点一次“删除”：行应还在、对话框应还开着，实际 行${once.still ? "在" : "没了"}、对话框${once.open ? "开着" : "关了"}`);
+  if (once.text !== msg("engine_delete_confirm")) problems.push(`点一次后按钮应为“${msg("engine_delete_confirm")}”，实际“${once.text}”`);
+  const esc = await escTwice(browser, page);
+  if (esc.first.text !== msg("engine_delete") || !esc.first.open) problems.push(`确认态下第一次 Esc 应只撤确认、对话框不关，实际 ${J(esc.first)}`);
+  if (esc.second.open) problems.push("第二次 Esc 应关掉对话框");
+  await openEdit(page, "baidu");
+  await page.run(`const b = document.getElementById("dlg-delete"); b.focus(); b.click(); await sleep(100); b.click(); return true;`);
+  await page.until(`return !row("baidu")`);
+  const want = pre.prev && `edit-${pre.prev}`;
+  const after = await page.until(`return !document.getElementById("engine-dialog").open && document.activeElement?.id === ${J(want)}`, 3000)
+    .then(() => null, () => page.run(`return { open: document.getElementById("engine-dialog").open, focus: document.activeElement?.id || document.activeElement?.tagName }`));
+  if (after) problems.push(`删除后对话框应关闭、焦点应在 #${want}，实际 ${J(after)}`);
+  return `行上没有“删除”，新增模式下危险区全藏；编辑对话框里点一次“删除”变成“确认删除？”，第一次 Esc 只撤确认、第二次关对话框；再点才删，焦点交给 #${want}`;
+}
+
+// 对话框开着、焦点在确认态的“删除”上：经 CDP 发真实的 Esc（页内派发的 keydown 不会触发对话框的 cancel），各按一次后读状态
+async function escTwice(browser, page) {
+  const key = async () => {
+    for (const type of ["rawKeyDown", "keyUp"]) {
+      await browser.client.send("Input.dispatchKeyEvent", { type, key: "Escape", code: "Escape", windowsVirtualKeyCode: 27, nativeVirtualKeyCode: 27 }, page.sid);
+    }
+    await sleep(200);
+    return page.run(`return { open: document.getElementById("engine-dialog").open, text: document.getElementById("dlg-delete").textContent }`);
+  };
+  await browser.client.send("Target.activateTarget", { targetId: page.targetId }).catch(() => {});
+  return { first: await key(), second: await key() };
+}
 
 const B8 = {
   id: "B8", title: "其他组合：默认收起、初值不等于默认组合；百度｜Google 触发网址与复制", kind: "auto", needs: [],
@@ -203,37 +243,6 @@ const B8 = {
   },
 };
 
-const B10 = {
-  id: "B10", title: "默认组合引用的引擎不能隐藏/删除", kind: "auto", needs: [],
-  async run({ browser, ext }) {
-    const probe = ids => `
-      const out = {};
-      for (const id of ${JSON.stringify(ids)}) {
-        const rw = row(id), b = rw && (rw.querySelector(${keySel("engine_hide")}) || rw.querySelector(${keySel("engine_delete")}));
-        out[id] = !rw ? "无此行" : !b ? "无按钮" : b.disabled ? "禁用" : "可用";
-      }
-      return out;`;
-    return withOptions(browser, async page => {
-      try {
-        const cur = await page.run(probe(["ea", "eb", "ec", "ddg"]));
-        const problems = [];
-        for (const id of ["ea", "eb"]) if (cur[id] !== "禁用") problems.push(`${id} 的隐藏/删除应禁用，实际 ${cur[id]}`);
-        for (const id of ["ec", "ddg"]) if (cur[id] !== "可用") problems.push(`${id} 的隐藏/删除应可用，实际 ${cur[id]}`);
-        // 再把默认组合切到 Google ｜ Bing，验证预置引擎的“隐藏”同样被禁用
-        await page.run(`
-          const set = (id, v) => { const s = document.getElementById(id); s.value = v; s.dispatchEvent(new Event("change")); };
-          set("pair-left", "google"); set("pair-right", "bing"); return true;`);
-        await page.until(`return document.getElementById("pair-left").value === "google" && row("google")?.querySelector(${keySel("engine_hide")})?.disabled === true`);
-        const gb = await page.run(probe(["google", "bing", "ddg", "ea"]));
-        for (const id of ["google", "bing"]) if (gb[id] !== "禁用") problems.push(`默认组合为 Google ｜ Bing 时 ${id} 的隐藏应禁用，实际 ${gb[id]}`);
-        for (const id of ["ddg", "ea"]) if (gb[id] !== "可用") problems.push(`默认组合为 Google ｜ Bing 时 ${id} 应可用，实际 ${gb[id]}`);
-        if (problems.length) return { status: "fail", detail: problems.join("；") };
-        return { status: "pass", detail: `当前默认组合 ea｜eb：ea、eb 禁用，ec、ddg 可用；切到 Google｜Bing 后：google、bing 的“隐藏”禁用，ddg、ea 可用（已还原默认组合）` };
-      } finally { /* 默认组合由 guarded 恢复 */ }
-    });
-  },
-};
-
 const B11 = {
   id: "B11", title: "默认左侧改成非左侧模板被拒绝", kind: "auto", needs: [],
   async run({ browser, ext, port }) {
@@ -259,4 +268,4 @@ const B11 = {
 // 每个步骤涉及的存储键：无论成败都恢复成步骤前的值
 const wrap = (step, keys) => ({ ...step, run: ctx => guarded(ctx, keys, () => step.run(ctx)) });
 export const B_STEPS_1 = [B2, B3, wrap(B6, ["customEngines", "order"]), wrap(B7, ["customEngines", "order"]),
-  wrap(B8, ["customEngines", "order"]), wrap(B10, ["defaultPair"]), wrap(B11, ["customEngines"])];
+  wrap(B8, ["customEngines", "order"]), wrap(B11, ["customEngines"])];
