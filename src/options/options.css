@@ -32,6 +32,14 @@ body.loading .page { visibility: hidden; }
 /* ---- 语言 ---- */
 .lang-box { grid-column: 2; grid-row: 1; }
 .lang-picker { display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; font-size: 13px; color: var(--muted); }
+/* 481–600px：en、es 的标题加语言框原本放不下一行（es 标题约 321px，“跟随浏览器”那一项让下拉框约 271px 宽）。
+   标题缩到 20px、不折行，语言框占剩下的宽度、靠右；还放不下时下拉框变窄，选中项的文字截掉尾部（展开的列表不受影响）。480 以下照旧换行 */
+@media (min-width: 481px) and (max-width: 600px) {
+  .page-head { grid-template-columns: auto minmax(0, 1fr); }
+  .page-head h1 { font-size: 20px; white-space: nowrap; }
+  .lang-picker { justify-content: flex-end; }
+  .lang-picker select { min-width: 0; }
+}
 @media (max-width: 480px) { .page-head { grid-template-columns: minmax(0, 1fr); } .lang-box { grid-column: 1; grid-row: auto; } }
 
 /* ---- 页脚 ---- */
@@ -212,6 +220,8 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 #guide > :is(.triggers, #guide-steps, .disclosure) + :is(#guide-steps, .disclosure) { border-top: 1px solid var(--border); margin-top: 12px; padding-top: 12px; }
 #guide > .disclosure { margin-bottom: 0; }
 #guide-steps > h3:first-child { margin-top: 0; }
+/* “开始使用”卡显示时 5 步说明收进 <details>：间距由上面那条分隔线规则负责，不要 .disclosure 的外边距 */
+#guide-steps > .disclosure { margin: 0; }
 
 .steps, .caveats { padding-left: 22px; margin: 4px 0; }
 .steps li, .caveats li { margin: 6px 0; }
@@ -397,9 +407,9 @@ dialog:focus { outline: none; }
 
 /* 600px 视口（放在最后：要盖过上面 .page、.card、.tablist、.tab 的同权重规则） */
 @media (max-width: 600px) {
-  .page { padding: 20px 12px 48px; }
+  .page { padding: 20px 16px 48px; }   /* 左右与宽视口相同的 16px：页头、页脚的文字离视口边缘不少于 16px */
   .card { padding: 16px; }
-  .tablist { padding-inline: 3px; }     /* 3 + 12 = 15 ≈ 卡片边框 1 + 内边距 16 */
+  .tablist { padding-inline: 3px; }     /* tab 文字缩进 3 + 12 = 15 ≈ 卡片边框 1 + 内边距 16 */
   .tab { padding-inline: 12px; }
 }
 

@@ -3,7 +3,7 @@
 // 说明文字计算出的 max-width 都是 none；折行的说明块文字右缘 ÷ 父节点内容盒宽度 ≥ 0.9（同一条右边界）；
 // 5 步说明里的网址行与触发网址行右缘相差 ≤ 2px；右键查询卡的两个下拉框等于卡片内宽 ±1px；
 // “其他组合”生成器两个 label 的左缘与默认组合两个窗格的左缘对齐 ±1px；页面没有横向溢出、tab 栏没有竖向溢出；
-// 600 档每个引擎行（含一行“未授权（可选）”）左块与右侧控件组顶边相同（没折行）。
+// 600 档每个引擎行（含一行“未授权（可选）”）左块与右侧控件组顶边相同（没折行）；600 档页头 h1 只有一行、与语言框同行（竖向中线相差不到较矮一方高度的一半）。
 // 状态：setupDone 为 true、默认组合两侧已授权（卡片不显示）；加一个模板在没授权的 engine-u.localhost 上的自定义引擎（模拟引擎 U）。
 // customEngines、uiLocale 用 guarded 写回（B21 外层也 guarded 着它们）。
 import { mockEngineU } from "../config.mjs";
@@ -37,6 +37,18 @@ export function widthProblems(m) {
   if (!(m.tablist.sh <= m.tablist.ch)) p.push(`tab 栏竖向溢出：scrollHeight ${m.tablist.sh} > clientHeight ${m.tablist.ch}`);
   const folded = m.rows.filter(r => !(Math.abs(r.mainTop - r.sideTop) <= 1));
   if (folded.length) p.push(`引擎行折行（左块与右侧控件组顶边不同）：${list(folded, r => `${r.id} ${r1(r.mainTop)} / ${r1(r.sideTop)}`)}`);
+  if (m.head) p.push(...headProblems(m.head));
+  return p;
+}
+
+// 页头（head 只在 600 档填）：h1 一行，且与 .lang-box 同行
+function headProblems({ h1Lines, h1, lang }) {
+  if (!h1 || !lang) return ["没量到页头的 h1 或 .lang-box"];
+  const p = [];
+  if (h1Lines !== 1) p.push(`页头 h1 折成 ${h1Lines} 行（应为 1 行）`);
+  const mid = ([t, b]) => (t + b) / 2;
+  if (!(Math.abs(mid(h1) - mid(lang)) < Math.min(h1[1] - h1[0], lang[1] - lang[0]) / 2))
+    p.push(`页头 h1 与语言框不在同一行：h1 ${h1.map(r1).join("–")}，语言框 ${lang.map(r1).join("–")}`);
   return p;
 }
 
@@ -82,11 +94,14 @@ const MEASURE = key => `(() => {
     .map(s => ({ w: s.getBoundingClientRect().width, inner: content(s.closest(".card")).width }));
   const leftOf = el => (el && vis(el) ? el.getBoundingClientRect().left : null);
   const t = document.querySelector(".tablist");
+  const h1 = document.querySelector(".page-head h1"), lb = document.querySelector(".lang-box");
+  const tb = el => { if (!el || !vis(el)) return null; const r = el.getBoundingClientRect(); return [r.top, r.bottom]; };
   return { key: ${J(key)}, maxWidths, ratios, urlLineDiff: a != null && b != null ? Math.abs(a - b) : null, lookupSelects,
     gen: ["gen-left", "gen-right"].map(id => leftOf(document.getElementById(id)?.closest("label"))),
     panes: [".pair-pickers .pane-left", ".pair-pickers .pane-right"].map(s => leftOf(panel.querySelector(s))),
     scrollWidth: document.documentElement.scrollWidth, innerWidth,
     tablist: { sh: t.scrollHeight, ch: t.clientHeight },
+    head: { h1Lines: h1 ? lines(h1).n : 0, h1: tb(h1), lang: tb(lb) },
     rows: [...panel.querySelectorAll("#engines .engine-row")].filter(vis).map(r => ({ id: r.dataset.id,
       mainTop: r.querySelector(".engine-main").getBoundingClientRect().top, sideTop: r.querySelector(".engine-side").getBoundingClientRect().top })) };
 })()`;
@@ -102,6 +117,7 @@ function combine(byKey, width) {
     scrollWidth: Math.max(...all.map(x => x.scrollWidth)), innerWidth: Math.min(...all.map(x => x.innerWidth)),
     tablist: all.reduce((w, x) => (x.tablist.sh - x.tablist.ch > w.sh - w.ch ? x.tablist : w), all[0].tablist),
     rows: width === 600 ? byKey.engines?.rows ?? [] : [],
+    head: width === 600 ? byKey.add?.head ?? { h1Lines: 0, h1: null, lang: null } : null,
   };
 }
 
@@ -112,6 +128,7 @@ function brief(m, byKey) {
   return `说明 ${m.maxWidths.length} 块、折行 ${m.ratios.length} 块最小比 ${min("ratio")?.toFixed(3)}（自然折行 ${min("natural")?.toFixed(3)}），网址行差 ${r1(m.urlLineDiff)}px，`
     + `④ 下拉框 ${sel}px，生成器左缘差 ${m.genDiffs.map(r1).join("/")}px，scrollWidth ${m.scrollWidth}/${m.innerWidth}，`
     + `tab 栏 ${m.tablist.sh}/${m.tablist.ch}` + (m.rows.length ? `，引擎行 ${m.rows.length} 行不折` : "")
+    + (m.head ? `，页头 h1 ${m.head.h1Lines} 行` : "")
     + (byKey.engines?.rows?.length ? "" : "（③ 没量到引擎行）");
 }
 

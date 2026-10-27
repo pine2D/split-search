@@ -28,7 +28,7 @@ v0.1、v0.3、v0.4、v0.5 的表照旧有效，运行方式、显示模式、报
 | (i) 排序模式 | 进“调整顺序”，移动一次，切到 ② | `storage.onChanged` 在 1 秒内收到 `order`；焦点留在 `#tabbtn-pair`；切回 ③ 时已退出模式 |
 | (j) 已开页 | 已开的设置页切到 `#tab-engines`、写页面标记；从弹窗点“打开设置”（B2 的 `openOptionsFromPopup`） | 没有新标签，原页标记还在（没重载），仍是 ③ |
 | (k) 焦点兜底 | regrant 档在 ① 用 CDP 可信点击点 `#setup-grant`；再撤销一次，在 ② 可信点击 `#pair-grant` | 授权成功、按钮消失后，前者焦点在 `#tabbtn-add`，后者在 `#pair-left`，都不是 BODY |
-| (l) 宽度 | 四种语言 × 1280、600 两档（`setDeviceMetricsOverride`），`setupDone: true`、两侧已授权，加一个模板在 engine-u.localhost 上的自定义引擎（一行“未授权（可选）”）；每个 tab 展开所有折叠区后量 | 说明文字（`.hint`、`.steps li`、`.caveats li`、`.step-body p`、标语）计算出的 `max-width` 都是 `none`；折行的说明块文字右缘 ÷ 父节点内容盒宽度 ≥ 0.9（排除和按钮同行的 `.step-actions > .hint`）；`.steps .url-line` 与 `.trigger-card .url-line` 右缘相差 ≤ 2px；右键查询卡两个下拉框等于卡片内宽 ±1px；“其他组合”生成器两个 label 的左缘与默认组合两个窗格的左缘对齐 ±1px；`documentElement.scrollWidth <= innerWidth`；`.tablist` 没有竖向溢出；600 档每个引擎行（含未授权的行）左块与右侧控件组顶边相同 |
+| (l) 宽度 | 四种语言 × 1280、600 两档（`setDeviceMetricsOverride`），`setupDone: true`、两侧已授权，加一个模板在 engine-u.localhost 上的自定义引擎（一行“未授权（可选）”）；每个 tab 展开所有折叠区后量 | 说明文字（`.hint`、`.steps li`、`.caveats li`、`.step-body p`、标语）计算出的 `max-width` 都是 `none`；折行的说明块文字右缘 ÷ 父节点内容盒宽度 ≥ 0.9（排除和按钮同行的 `.step-actions > .hint`）；`.steps .url-line` 与 `.trigger-card .url-line` 右缘相差 ≤ 2px；右键查询卡两个下拉框等于卡片内宽 ±1px；“其他组合”生成器两个 label 的左缘与默认组合两个窗格的左缘对齐 ±1px；`documentElement.scrollWidth <= innerWidth`；`.tablist` 没有竖向溢出；600 档每个引擎行（含未授权的行）左块与右侧控件组顶边相同；600 档页头 h1 只有一行，且与 `.lang-box` 同行（竖向中线相差不到较矮一方高度的一半；Task 6 修正第 1 轮加） |
 | (m) 换语言 | steps 档打开、切到 ③，写 `uiLocale: "en"` | 仍是 ③、hash `#tab-engines` 不变；`#tabname-engines` 和 ① 标记里的读屏文字（`options_tab_todo`）换成英文 |
 | (n) 手改 hash | `setupDone: true`、已授权，停在 ③，焦点 BODY，依次在地址栏改 hash | `#setup`（卡片不显示）→ 仍 ③、焦点 BODY；`#tab-foo` → 仍 ③；`#tab-lookup` → ④；`#guide-steps` → ①、hash 换成 `#tab-add`、焦点在 `#guide-steps-title` |
 
@@ -83,6 +83,12 @@ v0.1、v0.3、v0.4、v0.5 的表照旧有效，运行方式、显示模式、报
   2. 600 宽 en 页头的 h1“Split Search settings”折成两行。设计稿 3.5 按 h1 约 140px 估算一行放得下；实测语言下拉框约 261px 宽，留给 h1 的宽度不够一行。B21 (l) 不量页头，所以没报（第 8 节已列“600 宽 en 页头一行没有断言”）。
   3. 上面 600 宽页脚 12px 的 body-text-viewport-edge（轻微）。
 
+修正（Task 6 修正第 1 轮，控制方裁定三条都在打标签前修）：
+
+  1. `#guide-steps > .disclosure { margin: 0; }`：steps 档四个收起标题的间距变成 56、55、55 CSS 像素（修前 55、71、55）；卡片不显示时 `#guide-steps` 里没有折叠区，不受影响。
+  2. 481–600px 视口里页头标题缩到 20px、不折行，语言框占剩下的宽度并靠右，下拉框可以变窄（`@media (min-width: 481px) and (max-width: 600px)`；480 及以下照旧换行）。实测 600 宽四语 h1 都是一行、与语言框同行：en 标题 203px、下拉框保持 255px 全宽；es 标题 292px、下拉框从 271px 收到 193px，481 宽时收到 75px。下拉框变窄时，选中项是较长的“跟随浏览器（当前：…）”那一项，文字尾部会被截掉；选中具体语言时看得全，展开的列表不受影响。B21 (l) 600 档加了这项读数断言（先 RED：en、es 600 报“页头 h1 折成 2 行”，修后 GREEN）。
+  3. 600px 视口的 `.page` 左右内边距从 12px 改成 16px，页头、tab 栏、卡片、页脚共用这条边界。复跑 20 页 detect：body-text-viewport-edge 消失，只剩 en 的 line-length（① 2 条，② 1280 与 600 各 1 条，③ 1280 1 条）。代价是 600 档内容宽少 8px：tab 栏 en 还余 44px，引擎行在 Linux 字体下 B21 (l) 照常通过。
+
 ## 7. 手测项与未覆盖
 
 手测（e2e 判定不了）：
@@ -91,7 +97,7 @@ v0.1、v0.3、v0.4、v0.5 的表照旧有效，运行方式、显示模式、报
 - 读配置失败时 `routeOnce("hidden")` 的实际效果（只有静态接线检查）。
 - 真实 Chrome 里 Ctrl+点、中键点“继续设置”“查看设置步骤”“详细步骤”在新标签打开，hash 正确（只有静态守门）。
 - “调整顺序”模式中点常驻提示里的“查看触发网址”后，焦点落在默认组合一段的复制按钮 `#trigger-default-copy` 上（只有静态守门）。
-- Windows 字体（Segoe UI）与 macOS 覆盖式滚动条下：600 宽 tab 栏（en 在 Linux 字体下只余约 3.5px）、引擎行（es 未授权行在 Windows 下估计只余 13px）、600 宽 en 页头一行。
+- Windows 字体（Segoe UI）与 macOS 覆盖式滚动条下：600 宽 tab 栏（en 在 Linux 字体下只余约 3.5px）、引擎行（es 未授权行在 Windows 下原估计只余 13px，修正第 1 轮把 600 宽的页面边距加到 16px 后再少 8px）、481–600 宽页头一行（Windows 字体下标题与下拉框的宽度不同，下拉框靠变窄兜底）。
 - 禁用按钮与步骤圆圈的实际对比度；forced-colors 下的开关与 tab 栏。
 - `#pair-changed` 在深色模式下的观感（B14 不截这块）。
 - es、zh_TW 文案请母语者复核。
@@ -109,7 +115,7 @@ e2e 没覆盖的分支：
 
 整体审查分诊为“以后再说”的小问题，本版不修：
 
-- e2e：`b19-popup.mjs` 的 `cardProblems` 放行 `prevHash` 偏松；`b21-width.mjs` 的 `widthProblems` 对空读数静默通过；600 宽 en 页头一行没有断言；`v05-options.mjs` 第 1 步没断言 `#rule-add` 带 `btn-small`。
+- e2e：`b19-popup.mjs` 的 `cardProblems` 放行 `prevHash` 偏松；`b21-width.mjs` 的 `widthProblems` 对空读数静默通过；`v05-options.mjs` 第 1 步没断言 `#rule-add` 带 `btn-small`。
 - 文案：zh_CN、zh_TW 的 `notice_template_changed`“左侧用它的网站搜索”有轻微歧义。
 - 行为：弹窗的 `reveal-setup` 赶在设置页首次渲染前到达会丢定位（v0.4 起就有）；“其他组合”生成器的授权按钮没有 id，授权后焦点回到 BODY（设计稿 3.12）；go.html 不深链到 ③。
 

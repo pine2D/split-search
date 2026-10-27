@@ -25,17 +25,24 @@ test("tabStateProblems：逐条报出", () => {
 const widthProblems = async m => (await import("../scripts/e2e/steps/b21-width.mjs")).widthProblems(m);
 const good = { maxWidths: [{ sel: ".hint", value: "none" }], ratios: [{ sel: ".hint", ratio: 0.93 }], urlLineDiff: 1,
   lookupSelects: [{ w: 638, inner: 638.5 }], genDiffs: [0.5, 0], scrollWidth: 1280, innerWidth: 1280,
-  tablist: { sh: 44, ch: 44 }, rows: [{ id: "ea", mainTop: 100, sideTop: 100.5 }] };
+  tablist: { sh: 44, ch: 44 }, rows: [{ id: "ea", mainTop: 100, sideTop: 100.5 }],
+  head: { h1Lines: 1, h1: [20, 55.2], lang: [22.3, 53] } };
 test("widthProblems：全部合格为空", async () => assert.deepEqual(await widthProblems(good), []));
 test("widthProblems：每类越界各报一条", async () => {
   const bad = [
     { maxWidths: [{ sel: ".hint", value: "446px" }] }, { ratios: [{ sel: ".hint", ratio: 0.89 }] }, { urlLineDiff: 2.5 },
     { lookupSelects: [{ w: 316, inner: 638 }] }, { genDiffs: [1.5, 0] }, { scrollWidth: 1281 },
     { tablist: { sh: 45, ch: 44 } }, { rows: [{ id: "eu", mainTop: 100, sideTop: 124 }] },
+    { head: { h1Lines: 2, h1: [20, 90.4], lang: [39.9, 70.6] } },   // 600 档 h1 折成两行（与语言框仍同行）
+    { head: { h1Lines: 1, h1: [20, 55.2], lang: [108, 138.7] } },   // 语言框掉到下一行
   ];
   for (const patch of bad) assert.equal((await widthProblems({ ...good, ...patch })).length, 1, JSON.stringify(patch));
 });
 test("widthProblems：urlLineDiff 为 null（没量到）报一条，rows 为空不报", async () => {
   assert.equal((await widthProblems({ ...good, urlLineDiff: null })).length, 1);
   assert.deepEqual(await widthProblems({ ...good, rows: [] }), []);
+});
+test("widthProblems：head 为 null（1280 档不量页头）不报，没量到 h1 报一条", async () => {
+  assert.deepEqual(await widthProblems({ ...good, head: null }), []);
+  assert.equal((await widthProblems({ ...good, head: { h1Lines: 0, h1: null, lang: [22.3, 53] } })).length, 1);
 });
