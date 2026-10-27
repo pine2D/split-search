@@ -1,11 +1,10 @@
 // “搜索组合”tab 的默认组合卡（#pair-body）：左右两个窗格、改了组合后的提示（#pair-changed）、窄窗口开关、
-// 左侧未授权的提示框、末行指向“添加到 Chrome”的指引；最后是关键词规则区（renderRules）。
-// render、actions 由 options.js 传入（不 import options.js，免得循环）。
+// 左侧未授权的提示框、末行指向“添加到 Chrome”的指引。关键词规则在紧跟其后的规则卡里（options.js 渲染 #rules-body）。
+// render 由 options.js 传入（不 import options.js，免得循环）。
 import { buildTriggerTemplate } from "../lib/trigger.js";
 import { h, ht, authButton, option } from "./ui.js";
 import { setDefaultPair, canBeLeft, setNarrowFallback, notePairChange, pairChangedView, pairSavedKey } from "./edits.js";
 import { act } from "./actions.js";
-import { renderRules } from "./rules.js";
 import { urlBox, revealGuideSteps } from "./guide.js";
 import { requestReveal } from "./setup.js";
 import { pane, panes } from "../ui/panes.js";
@@ -62,7 +61,7 @@ function narrowRow(cfg) {
 }
 
 // mode 是 setupView 的 mode（steps / regrant / done / hidden）；返回 #pair-body 的子节点
-export function pairSection({ cfg, byId, granted, mode, render, actions }) {
+export function pairSection({ cfg, byId, granted, mode, render }) {
   let show;
   ({ rec: pairChanged, show } = pairChangedView(pairChanged, { pair: cfg.defaultPair, mode }));
   const lefts = cfg.engines.filter(canBeLeft);
@@ -89,6 +88,5 @@ export function pairSection({ cfg, byId, granted, mode, render, actions }) {
   }
   nodes.push(h("p", { class: "hint" },
     ...tNodes("options_pair_other", [h("a", { href: "#tab-add", "data-reveal": "generator" }, t("options_tab_add"))])));
-  nodes.push(renderRules(cfg, actions)); // 按关键词换右侧：默认收起，放在最后
   return nodes;
 }

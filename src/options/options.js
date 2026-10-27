@@ -7,7 +7,7 @@ import { write, actions, attention, bindActions, getPendingOrder, flushOrderNow 
 import { setupReorder, isReordering, leaveReorder } from "./reorder.js";
 import { renderLookupCard, setupLookupDialogs, refreshImageCatalog } from "./lookup.js";
 import { renderEngineList, renderHiddenList, setupEngineDialog } from "./engine-list.js";
-import { setupRuleDialog } from "./rules.js";
+import { renderRules, setupRuleDialog } from "./rules.js";
 import { setupCatalogDialog, refreshCatalog } from "./catalog.js";
 import { renderShortcut, renderCycleList, SHORTCUT_BUTTON_ID } from "./shortcut.js";
 import { renderTriggers, renderGuideSteps, setupGuide, revealGenerator } from "./guide.js";
@@ -132,7 +132,8 @@ async function render() {
   routeOnce(mode); // 默认 tab 只在首次渲染判一次，之后状态变化不换 tab
   setTabFlag(mode);
   const ctx = { cfg, granted, attention, actions, refresh: render, setupShown };
-  $("pair-body").replaceChildren(...pairSection({ cfg, byId, granted, mode, render, actions }));
+  $("pair-body").replaceChildren(...pairSection({ cfg, byId, granted, mode, render }));
+  $("rules-body").replaceChildren(...renderRules(cfg, actions));
   $("lookup-body").replaceChildren(renderLookupCard(cfg, actions));
   $("triggers").replaceChildren(renderTriggers(ctx));
   renderGuideSteps(setupShown);

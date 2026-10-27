@@ -1,6 +1,6 @@
-// “默认组合”卡里的“按关键词换右侧”：默认收起的规则区（renderRules）和规则对话框（setupRuleDialog）。
+// “搜索组合”tab 的规则卡（#rules-card）：“按关键词换右侧”的规则列表（renderRules）和规则对话框（setupRuleDialog）。
 // 写入都经 actions（actions.js，串行写入链）；校验、选项、行文字的逻辑在 rule-edits.js。
-import { h, ht, disclosure, confirmStep, clearFieldErrors, showFieldErrors } from "./ui.js";
+import { h, ht, confirmStep, clearFieldErrors, showFieldErrors } from "./ui.js";
 import { engineChoices, targetLabel } from "./rule-edits.js";
 import { SCRIPTS, SCRIPT_KEYS, SCRIPT_OPTION_KEYS, shadowedWords } from "../lib/right-rules.js";
 import { t, setI18nText } from "../chrome/i18n.js";
@@ -9,22 +9,23 @@ import { icon } from "../ui/icons.js";
 const $ = (id) => document.getElementById(id);
 const OFF_KEYS = { hidden: "options_rules_off_hidden", missing: "options_rules_off_missing", left: "options_rules_off_left" };
 
-// ---- 规则区 ----
+// ---- 规则卡 ----
 
+// 返回 #rules-body 的子节点（0 条时 list 是 false、有规则时空状态是 false，先滤掉）
 export function renderRules(cfg, actions) {
   const rules = cfg.rightRules;
   const n = rules.length;
   const posOf = new Map(rules.map((r, i) => [r.id, i + 1]));
   const shadows = shadowedWords(rules);
-  // 列表不加 aria-labelledby：disclosure() 的 summary 没有 id，列表就在它下面
-  const list = n > 0 && h("ol", { id: "rule-list", class: "rule-list" },
+  const list = n > 0 && h("ol", { id: "rule-list", class: "rule-list", "aria-labelledby": "rules-title" },
     rules.map((rule, i) => ruleRow(cfg, rule, i, n, shadows.filter(s => s.ruleId === rule.id), posOf, actions)));
-  return disclosure("rules", n ? ["options_rules_summary", n] : "options_rules_title",
+  return [
     ht("p", { class: "hint" }, "options_rules_intro"),
     ht("p", { class: "hint" }, "options_rules_privacy"),
     list,
     !n && ht("p", { id: "rule-empty", class: "muted" }, "options_rules_empty"),
-    ht("button", { type: "button", id: "rule-add", class: "btn", onclick: () => openRuleDialog(null, "rule-add") }, "options_rules_add"));
+    ht("button", { type: "button", id: "rule-add", class: "btn btn-small", onclick: () => openRuleDialog(null, "rule-add") }, "options_rules_add"),
+  ].filter(Boolean);
 }
 
 function ruleRow(cfg, rule, index, total, shadows, posOf, actions) {

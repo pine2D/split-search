@@ -1179,21 +1179,11 @@
   },
   "options_rules_title": {
     "message": "按关键词换右侧",
-    "description": "Settings, Default pair card: title of the collapsed section with keyword rules (rules that switch the default pair's right engine when the search contains certain words or a writing system). Used when there are no rules."
-  },
-  "options_rules_summary": {
-    "message": "按关键词换右侧（$COUNT$ 条）",
-    "description": "Same as options_rules_title, with the number of rules (1 or more).",
-    "placeholders": {
-      "COUNT": {
-        "content": "$1",
-        "example": "2"
-      }
-    }
+    "description": "Settings, Search pairs tab: heading of the keyword rules card (rules that switch the default pair's right engine when the search contains certain words or a writing system)."
   },
   "options_rules_intro": {
-    "message": "搜索命中规则时，默认组合的右侧换成规则里的引擎，左侧不变。从上往下比，用第一条命中的。“其他组合”不受影响。",
-    "description": "Keyword rules section: what the rules do. “Other pairs” refers to the trigger URLs made for other pairs in the Add to Chrome card."
+    "message": "搜索命中规则时，默认组合的右侧换成规则里的引擎，左侧不变。从上往下比，用第一条命中的。用其他组合的触发网址搜索时，规则不起作用。",
+    "description": "Keyword rules card: what the rules do. The last sentence says searches made with the trigger URL of a pair other than the default pair don't use the rules."
   },
   "options_rules_privacy": {
     "message": "在本机判断，搜索词不会发到别处。规则里的词是你自己写的，和其他设置一样随 Chrome 同步。",

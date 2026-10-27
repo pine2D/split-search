@@ -1,4 +1,4 @@
-// I18N 步骤（i18n.mjs）在每种语言下调用的 v0.5 检查：设置页“按关键词换右侧”规则区（展开、几种行）与规则对话框的两种单选状态，
+// I18N 步骤（i18n.mjs）在每种语言下调用的 v0.5 检查：设置页“按关键词换右侧”规则卡（几种行）与规则对话框的两种单选状态，
 // 以及带规则标记的工具栏弹窗（#rule-note，经 withRulePopup）。沿用 i18n-audit.mjs 的自查（lang、原样 key、溢出）与截图；
 // “换回”按钮要求一行。截图存 .e2e/i18n/<语言>-options-rules.png、<语言>-popup-rule.png。rightRules 由 guarded 写回。
 import { join } from "node:path";
@@ -16,12 +16,12 @@ const SAMPLE_RULES = [
   { id: "r3", when: "words", words: ["百科全书"], engine: "eb" },
   { id: "r4", when: "words", words: ["gone"], engine: "zz-gone" },
 ];
-const BOX = `[...document.querySelectorAll("#pair-body details.disclosure")].find(d => d.querySelector('summary [data-i18n="options_rules_summary"]'))`;
-const AREA_AUDIT = audit({ scope: "#pair-body ", items: "button, label, summary", box: "#pair-body" });
+const CARD = 'document.getElementById("rules-card")';
+const AREA_AUDIT = audit({ scope: "#rules-card ", items: "button, label", box: "#rules-card" });
 const DIALOG_AUDIT = audit({ scope: "#rule-dialog ", items: "button, label, legend, select", box: "#rule-dialog" });
 
-// 默认组合卡在文档里的矩形（先滚到可视区）
-const cardClip = page => page.ev(`(() => { const el = document.getElementById("pair-body").closest("section"); el.scrollIntoView({ block: "start" });
+// 规则卡在文档里的矩形（先滚到可视区）
+const cardClip = page => page.ev(`(() => { const el = document.getElementById("rules-card"); el.scrollIntoView({ block: "start" });
   const r = el.getBoundingClientRect();
   return { x: Math.floor(r.x + scrollX), y: Math.floor(r.y + scrollY), width: Math.ceil(r.width), height: Math.ceil(r.height), scale: 1 }; })()`);
 
@@ -29,11 +29,10 @@ const rulesArea = (ctx, locale) => guarded(ctx, ["rightRules"], async () => {
   await ctx.ext.eval(`chrome.storage.sync.set({ rightRules: ${J(SAMPLE_RULES)} }).then(() => true)`);
   const opt = await openOptions(ctx.browser, { tab: "pair" });
   try {
-    await waitPage(opt, `document.documentElement.lang === ${J(htmlLang(locale))} && (() => { const d = ${BOX};
-      return !!d && d.querySelector("summary").textContent.trim() === ${J(msgIn(locale, "options_rules_summary", SAMPLE_RULES.length))}
-        && document.querySelectorAll("#rule-list > li[data-id]").length === ${SAMPLE_RULES.length}; })()`, `规则区按 ${locale} 渲染出 ${SAMPLE_RULES.length} 条`);
-    await opt.ev(`${BOX}.open = true`);
-    const problems = auditProblems(locale, await opt.ev(AREA_AUDIT)).map(p => `规则区：${p}`);
+    await waitPage(opt, `document.documentElement.lang === ${J(htmlLang(locale))} && ${CARD}?.checkVisibility() === true
+      && document.getElementById("rules-title").textContent === ${J(msgIn(locale, "options_rules_title"))}
+      && document.querySelectorAll("#rule-list > li[data-id]").length === ${SAMPLE_RULES.length}`, `规则卡按 ${locale} 渲染出 ${SAMPLE_RULES.length} 条`);
+    const problems = auditProblems(locale, await opt.ev(AREA_AUDIT)).map(p => `规则卡：${p}`);
     const shots = [await shoot(ctx, opt, join(SHOT_DIR, `${locale}-options-rules.png`), { clip: await cardClip(opt), beyond: true })];
     // 对话框：“这些词”与“某种文字”两种状态各查一次
     for (const [radio, what] of [["rule-when-words", "这些词"], ["rule-when-script", "某种文字"]]) {
@@ -63,7 +62,7 @@ const popupRule = (ctx, locale) => withRulePopup(ctx, async page => {
 // 返回 { problems, shots }；某一块打不开记成问题，不抛出。guarded 写回失败时返回 { status, detail }，也记成问题
 export async function v05I18nChecks(ctx, locale) {
   const problems = [], shots = [];
-  for (const [what, fn] of [["规则区", rulesArea], ["弹窗规则说明", popupRule]]) {
+  for (const [what, fn] of [["规则卡", rulesArea], ["弹窗规则说明", popupRule]]) {
     try {
       const r = await fn(ctx, locale);
       if (r?.status) { problems.push(`${what}：${r.detail}`); continue; }

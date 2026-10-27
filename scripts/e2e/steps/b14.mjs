@@ -1,6 +1,6 @@
 // B14 深色模式（auto）：经 CDP Emulation.setEmulatedMedia 把设置页、向导页、工具栏弹窗页（说明文字，以及 v0.4 的“补成分屏”区）和 go.html 出错页切到 prefers-color-scheme: dark，
 // 断言 body 的背景色、文字色变成样式表里深色 :root 定义的值，再切到 light 断言回到浅色值，最后清除模拟。
-// 期望值从页面实际加载的样式表源码里读（schemeTokens，含 <link> 与 @import 进来的共享变量表 styles/tokens.css），不写死颜色；深色截图存到 .e2e/ 供报告引用（设置页截整页，含“右键查询”卡片；v0.5 另截规则区展开的设置页与带规则标记的弹窗，规则由 withRulePopup 写、写回）。
+// 期望值从页面实际加载的样式表源码里读（schemeTokens，含 <link> 与 @import 进来的共享变量表 styles/tokens.css），不写死颜色；深色截图存到 .e2e/ 供报告引用（设置页截整页，含“右键查询”卡片；v0.5 另截“搜索组合”tab（规则卡）与带规则标记的弹窗，规则由 withRulePopup 写、写回）。
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { OUT_DIR } from "../ext.mjs";
@@ -179,12 +179,11 @@ export const B14 = {
       result = await openResultTab(ctx);
       complete = await openCompletePopup(ctx, result, { locale: E2E_LOCALE, engine: mockEngines(ctx.port).find(e => e.id === "ea").name });
       const pc = await checkPage(ctx, { name: "弹窗“补成分屏”区", targetId: complete.targetId, sid: complete.sid, file: join(OUT_DIR, "b14-popup-complete-dark.png") });
-      // v0.5：带规则标记的弹窗（#rule-note），同时把设置页的规则区展开再截一张
+      // v0.5：带规则标记的弹窗（#rule-note），同时把设置页的“搜索组合”tab（规则卡）再截一张
       const rules = await withRulePopup(ctx, async rp => {
-        await ctx.browser.waitFor(() => page.ev(`(() => { document.getElementById("tabbtn-pair").click(); const d = [...document.querySelectorAll("#pair-body details.disclosure")]
-          .find(x => x.querySelector('summary [data-i18n="options_rules_summary"]')); if (d) d.open = true; return !!d && !!document.querySelector("#rule-list > li"); })()`), { timeoutMs: 10000 });
+        await ctx.browser.waitFor(() => page.ev('(() => { document.getElementById("tabbtn-pair").click(); return document.getElementById("rules-card").checkVisibility() && !!document.querySelector("#rule-list > li"); })()'), { timeoutMs: 10000 });
         await ctx.browser.waitFor(() => rp.ev(`document.getElementById("rule-note").checkVisibility()`), { timeoutMs: 10000 });
-        return [await checkPage(ctx, { name: "设置页规则区", targetId: page.targetId, sid: page.sid, file: join(OUT_DIR, "b14-options-rules-dark.png"), full: true }),
+        return [await checkPage(ctx, { name: "设置页‘搜索组合’tab", targetId: page.targetId, sid: page.sid, file: join(OUT_DIR, "b14-options-rules-dark.png"), full: true }),
           await checkPage(ctx, { name: "弹窗规则说明", targetId: rp.targetId, sid: rp.sid, file: join(OUT_DIR, "b14-popup-rule-dark.png") })];
       });
       if (!Array.isArray(rules)) throw new Error(`规则现场写回失败：${rules?.detail}`);
@@ -193,7 +192,7 @@ export const B14 = {
       const ge = await checkPage(ctx, { name: "go.html 出错页", targetId: go.targetId, sid: go.sid, file: join(OUT_DIR, "b14-go-dark.png") });
       const problems = [...opt.problems, ...gd.problems, ...pp.problems, ...pc.problems, ...orr.problems, ...pr.problems, ...ge.problems];
       const shots = [opt.shot, gd.shot, pp.shot, pc.shot, orr.shot, pr.shot, ge.shot].filter(Boolean);
-      const tail = `设置页 ${opt.tokens}；向导页 ${gd.tokens}；弹窗 ${pp.tokens}；“补成分屏”区 ${pc.tokens}；规则区 ${orr.tokens}；弹窗规则说明 ${pr.tokens}；go.html 出错页 ${ge.tokens}${shots.length ? `；深色截图：${shots.join("、")}` : "；截图没有保存成功"}`;
+      const tail = `设置页 ${opt.tokens}；向导页 ${gd.tokens}；弹窗 ${pp.tokens}；“补成分屏”区 ${pc.tokens}；规则卡 ${orr.tokens}；弹窗规则说明 ${pr.tokens}；go.html 出错页 ${ge.tokens}${shots.length ? `；深色截图：${shots.join("、")}` : "；截图没有保存成功"}`;
       return problems.length ? { status: "fail", detail: `${problems.join("；")}\n${tail}` }
         : { status: "pass", detail: `设置页、向导页、弹窗与 go.html 出错页在深色/浅色下 body 背景色与文字色都等于样式表里的变量值。${tail}` };
     } finally {

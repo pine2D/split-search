@@ -1,7 +1,7 @@
-// v0.5 自动步骤 B20（设计稿 11.2）：设置页“默认组合”卡里的“按关键词换右侧”规则区与规则对话框。
+// v0.5 自动步骤 B20（设计稿 11.2）：设置页“搜索组合”tab 的规则卡（#rules-card）与规则对话框。
 // 1–11 步按顺序在同一个设置页上做，后一步沿用前一步留下的规则；按钮先 focus 再 click（模拟用户，焦点恢复按 activeElement 算）。
 // 期望文字一律用 msg(key, …) 从 zh_CN 目录算。customEngines、rightRules、presetOverrides 由 guarded 写回。
-import { guarded, openOptions, addCustom, openEdit, readKeys, sleep } from "./optpage.mjs";
+import { guarded, openOptions, addCustom, openEdit, readKeys, sleep, showTab } from "./optpage.mjs";
 import { summarize } from "./util.mjs";
 import { sub, verdict } from "./v03-lib.mjs";
 import { mockEngineD, engineName } from "./v05-lib.mjs";
@@ -12,8 +12,7 @@ const J = JSON.stringify;
 
 // 页内脚本前缀（拼在 page.run 的 body 前面）
 const P = `
-const box = () => [...document.querySelectorAll("#pair-body details.disclosure")]
-  .find(d => d.querySelector('summary [data-i18n="options_rules_title"], summary [data-i18n="options_rules_summary"]'));
+const card = () => document.getElementById("rules-card");
 const rrow = id => document.querySelector('#rule-list > li[data-id="' + id + '"]');
 const dlg = () => document.getElementById("rule-dialog");
 const press = id => { const b = document.getElementById(id); b.focus(); b.click(); return true; };
@@ -74,18 +73,20 @@ async function steps(ctx, page) {
   const items = [];
   const step = async (name, fn) => { const r = await sub(name, fn); items.push(r); if (r.status === "fail") await cancel(page).catch(() => {}); };
 
-  await step("1 没有规则：默认组合卡里有收起的规则区，summary 没有条数，展开后有空状态", async () => {
-    const s = await run(page, `const d = box(); if (!d) return null;
-      const r = { open: d.open, summary: d.querySelector("summary").textContent.trim() }; d.open = true;
-      const e = document.getElementById("rule-empty");
-      return { ...r, empty: e && e.checkVisibility() ? e.textContent : null, list: !!document.getElementById("rule-list") };`);
-    if (!s) return { status: "fail", detail: "#pair-body 里找不到规则区（details.disclosure）" };
+  await step("1 没有规则：“搜索组合”tab 里紧跟默认组合卡有独立的规则卡，默认展开，没有折叠区，有空状态", async () => {
+    const s = await run(page, `const c = card(); if (!c) return null; const e = document.getElementById("rule-empty");
+      return { shown: c.checkVisibility(), prev: c.previousElementSibling?.getAttribute("aria-labelledby"),
+        title: document.getElementById("rules-title").textContent, folded: !!c.querySelector("details"),
+        empty: e && e.checkVisibility() ? e.textContent : null, list: !!document.getElementById("rule-list") };`);
+    if (!s) return { status: "fail", detail: "#panel-pair 里找不到 #rules-card" };
     const p = [];
-    if (s.open) p.push("规则区应默认收起");
-    if (s.summary !== msg("options_rules_title")) p.push(`summary 应为“${msg("options_rules_title")}”，实际“${s.summary}”`);
+    if (!s.shown) p.push("规则卡应看得见");
+    if (s.prev !== "pair-title") p.push(`规则卡应紧跟在默认组合卡后面，实际前一个是 ${J(s.prev)}`);
+    if (s.folded) p.push("规则卡里不该有折叠区");
+    if (s.title !== msg("options_rules_title")) p.push(`标题应为“${msg("options_rules_title")}”，实际“${s.title}”`);
     if (s.empty !== msg("options_rules_empty")) p.push(`展开后应有空状态“${msg("options_rules_empty")}”，实际 ${J(s.empty)}`);
     if (s.list) p.push("0 条时不该有 #rule-list");
-    return verdict(p, `收起，summary“${s.summary}”；展开后“${s.empty}”`);
+    return verdict(p, `展开，标题“${s.title}”；“${s.empty}”`);
   });
 
   await step("2 新增：焦点在选中的单选；右侧下拉不含左侧 ea、默认留空、第一项是“默认组合的右侧”；文字字段隐藏；没有删除按钮", async () => {
@@ -117,20 +118,20 @@ async function steps(ctx, page) {
     return verdict(p, `“${e}”`);
   });
 
-  await step("4 填 ＷＩＫＩ，百科、选 ec 保存：存储里是规范化后的词；行文字、焦点、summary（1 条）", async () => {
+  await step("4 填 ＷＩＫＩ，百科、选 ec 保存：存储里是规范化后的词；行文字、焦点、列表 aria-labelledby 与行数", async () => {
     await fill(page, { words: "ＷＩＫＩ，百科", engine: "ec" });
     const now = await saveOk(ctx, page, "第一条规则");
     const p = [];
     const want = [{ id: "r1", when: "words", words: ["wiki", "百科"], engine: "ec" }];
     if (!same(now, want)) p.push(`存储应为 ${J(want)}，实际 ${J(now)}`);
     const s = await until(page, `return rrow("r1") && { text: rrow("r1").querySelector(".rule-text").textContent, focus: focusId(),
-      summary: box().querySelector("summary").textContent.trim() };`, "r1 这一行出现");
+      labelled: document.getElementById("rule-list")?.getAttribute("aria-labelledby"), rows: document.querySelectorAll("#rule-list > li").length };`, "r1 这一行出现");
     const words = msg("options_rules_words_row", ["wiki", "百科"].join(msg("options_rules_word_sep")));
     const target = msg("options_rules_target", engineName(port, "ec"));
     if (!s.text.includes(words) || !s.text.includes(target)) p.push(`行文字应含“${words}”“${target}”，实际“${s.text}”`);
     if (s.focus !== "rule-edit-r1") p.push(`焦点应在 #rule-edit-r1，实际 ${s.focus}`);
-    if (s.summary !== msg("options_rules_summary", 1)) p.push(`summary 应为“${msg("options_rules_summary", 1)}”，实际“${s.summary}”`);
-    return verdict(p, `行“${s.text}”，焦点 ${s.focus}，summary“${s.summary}”`);
+    if (s.labelled !== "rules-title" || s.rows !== 1) p.push(`#rule-list 应 aria-labelledby="rules-title" 且只有 1 行，实际 ${J(s.labelled)}、${s.rows} 行`);
+    return verdict(p, `行“${s.text}”，焦点 ${s.focus}，列表 aria-labelledby=${s.labelled}，${s.rows} 行`);
   });
 
   await step("5 新增文字规则（汉字 → ed）再上移：存储顺序变；焦点留在同一按钮（现在 aria-disabled）；提示“已移到第 1 条”", async () => {
@@ -221,6 +222,7 @@ async function steps(ctx, page) {
     const p = [];
     const users = (await rulesOf(ctx)).filter(r => r.engine === "ed").length;
     if (users !== 1) throw new Error(`前提不成立：应只有 1 条规则用 ed（第 5 步的 r2），实际 ${users}`);
+    await showTab(page, "engines"); // 关对话框后焦点要还给看得见的 #edit-ed
     await openEdit(page, "ed");
     const hint = await run(page, `const h = document.getElementById("dlg-rules-hint"); return h.checkVisibility() ? h.textContent : null;`);
     if (hint !== msg("engine_rules_used_custom", 1)) p.push(`#dlg-rules-hint 应为“${msg("engine_rules_used_custom", 1)}”，实际 ${J(hint)}`);
@@ -234,6 +236,7 @@ async function steps(ctx, page) {
   });
 
   await step("11 “默认组合的右侧”存成 keep；编辑指向已隐藏 ddg 的规则原样保存成功；编辑指向 ea 的规则必须重选", async () => {
+    await showTab(page, "pair"); // 之后的 openDialog(page, "rule-add") 要聚焦看得见的按钮
     const p = [];
     await openDialog(page, "rule-add");
     await fill(page, { when: "words", words: "keepme", engine: "@keep" });
@@ -262,7 +265,7 @@ async function steps(ctx, page) {
 }
 
 const B20 = {
-  id: "B20", title: "设置页“按关键词换右侧”：规则区、规则对话框、上移、删除、暂不生效与被挡提示、引擎对话框的规则条数（自动判定）",
+  id: "B20", title: "设置页“按关键词换右侧”：规则卡、规则对话框、上移、删除、暂不生效与被挡提示、引擎对话框的规则条数（自动判定）",
   kind: "auto", needs: [], timeoutMs: 180000,
   run: ctx => guarded(ctx, ["customEngines", "rightRules", "presetOverrides"], async () => {
     await addCustom(ctx.ext, mockEngineD(ctx.port));

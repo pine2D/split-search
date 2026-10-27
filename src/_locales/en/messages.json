@@ -1179,21 +1179,11 @@
   },
   "options_rules_title": {
     "message": "Keyword rules for the right side",
-    "description": "Settings, Default pair card: title of the collapsed section with keyword rules (rules that switch the default pair's right engine when the search contains certain words or a writing system). Used when there are no rules."
-  },
-  "options_rules_summary": {
-    "message": "Keyword rules for the right side ($COUNT$)",
-    "description": "Same as options_rules_title, with the number of rules (1 or more).",
-    "placeholders": {
-      "COUNT": {
-        "content": "$1",
-        "example": "2"
-      }
-    }
+    "description": "Settings, Search pairs tab: heading of the keyword rules card (rules that switch the default pair's right engine when the search contains certain words or a writing system)."
   },
   "options_rules_intro": {
-    "message": "When a search matches a rule, the default pair’s right side switches to that rule’s engine. The left side stays the same. Rules are checked from top to bottom, and the first match is used. Other pairs aren’t affected.",
-    "description": "Keyword rules section: what the rules do. “Other pairs” refers to the trigger URLs made for other pairs in the Add to Chrome card."
+    "message": "When a search matches a rule, the default pair’s right side switches to that rule’s engine. The left side stays the same. Rules are checked from top to bottom, and the first match is used. Searches made with another pair’s trigger URL ignore the rules.",
+    "description": "Keyword rules card: what the rules do. The last sentence says searches made with the trigger URL of a pair other than the default pair don't use the rules."
   },
   "options_rules_privacy": {
     "message": "Matching happens on this device, and your searches aren’t sent anywhere else. You write the words in your rules yourself, and they sync with Chrome like your other settings.",

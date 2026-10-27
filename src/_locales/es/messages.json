@@ -1179,21 +1179,11 @@
   },
   "options_rules_title": {
     "message": "Reglas de palabras clave para la derecha",
-    "description": "Settings, Default pair card: title of the collapsed section with keyword rules (rules that switch the default pair's right engine when the search contains certain words or a writing system). Used when there are no rules."
-  },
-  "options_rules_summary": {
-    "message": "Reglas de palabras clave para la derecha ($COUNT$)",
-    "description": "Same as options_rules_title, with the number of rules (1 or more).",
-    "placeholders": {
-      "COUNT": {
-        "content": "$1",
-        "example": "2"
-      }
-    }
+    "description": "Settings, Search pairs tab: heading of the keyword rules card (rules that switch the default pair's right engine when the search contains certain words or a writing system)."
   },
   "options_rules_intro": {
-    "message": "Cuando una búsqueda coincide con una regla, el lado derecho de la combinación predeterminada cambia al buscador de esa regla y el izquierdo se mantiene. Las reglas se revisan de arriba abajo y se aplica la primera que coincida. Las otras combinaciones no cambian.",
-    "description": "Keyword rules section: what the rules do. “Other pairs” refers to the trigger URLs made for other pairs in the Add to Chrome card."
+    "message": "Cuando una búsqueda coincide con una regla, el lado derecho de la combinación predeterminada cambia al buscador de esa regla y el izquierdo se mantiene. Las reglas se revisan de arriba abajo y se aplica la primera que coincida. Las búsquedas con la URL de activación de otra combinación no usan las reglas.",
+    "description": "Keyword rules card: what the rules do. The last sentence says searches made with the trigger URL of a pair other than the default pair don't use the rules."
   },
   "options_rules_privacy": {
     "message": "La comparación se hace en este dispositivo y tus búsquedas no se envían a ningún otro sitio. Las palabras de las reglas las escribes tú y se sincronizan con Chrome como el resto de tu configuración.",
