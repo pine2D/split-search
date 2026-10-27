@@ -12,6 +12,7 @@ A Chrome extension that opens search results side by side in Chrome's split view
 - On a results page from one of your engines, open another engine's results next to it from the toolbar popup.
 - Right-click selected text or an image to look it up or search it next to the page you're reading.
 - Switch engines from the toolbar popup, or switch the right side with a keyboard shortcut you set yourself.
+- Keyword rules can switch the right-side engine for you, for example to Baidu when your search has Chinese characters.
 - Nothing goes to the developer or other third parties: no servers, no analytics. What you look up is sent only to the engines you pick, and kept in browser memory only until you close the browser.
 
 [Privacy Policy](privacy)
