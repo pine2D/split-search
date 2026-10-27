@@ -41,19 +41,25 @@ export const setupFocus = (ctx, targetId) =>
 export const closeTarget = (ctx, targetId) => ctx.browser.client.send("Target.closeTarget", { targetId }).catch(() => {});
 const optionsTargets = async ctx => (await pageTargets(ctx.browser)).filter(t => t.url.startsWith(OPTIONS_URL));
 
-// prevHash：点之前这一页的 hash。卡片在“添加到 Chrome”tab：从别的 tab 切过来写 #tab-add，本来就在 ① 时 hash 不动
-const cardProblems = (f, mode, prevHash = "#setup") => [
+// 卡片在“添加到 Chrome”tab：从别的 tab 切过来写 #tab-add，本来就在 ① 时 hash 不动。prev 是点之前这一页的 PAGE_STATE（复用路径），
+// 新开的页没有 prev，hash 应保持 #setup
+export const wantHash = prev => (!prev ? "#setup" : prev.tab === "tabbtn-add" ? prev.hash : "#tab-add");
+export const cardProblems = (f, mode, prev = null) => [
   ...(f.mode !== mode || f.hidden ? [`设置页的卡片应是 ${mode}，实际 ${f.mode}${f.hidden ? "（隐藏）" : ""}`] : []),
   ...(f.focus !== "setup-title" ? [`设置页的焦点应在卡片标题，实际 ${f.focus}`] : []),
   ...(f.tab !== "tabbtn-add" ? [`设置页应选中“添加到 Chrome”tab，实际 ${f.tab}`] : []),
-  ...(![`#tab-add`, "#setup", prevHash].includes(f.hash) ? [`设置页的 hash 应为 #tab-add、#setup 或原值 ${J(prevHash)}，实际 ${J(f.hash)}`] : []),
+  ...(f.hash !== wantHash(prev) ? [`设置页的 hash 应为 ${J(wantHash(prev))}（点之前选中 ${prev?.tab ?? "无"}、hash ${J(prev?.hash ?? null)}），实际 ${J(f.hash)}`] : []),
 ];
 
 // reuse：已开着设置页时点 click。标签数不变、没有新开设置页，原有的一个设置页变成活动标签，焦点落在 setup-title
 async function clickReuse(ctx, page, click, mode) {
   const before = await optionsTargets(ctx);
   if (!before.length) throw new Error("点之前应至少开着一个设置页");
-  for (const t of before) await evalTarget(ctx, t.targetId, "document.activeElement?.blur(); true");
+  const prev = new Map();
+  for (const t of before) {
+    await evalTarget(ctx, t.targetId, "document.activeElement?.blur(); true");
+    prev.set(t.targetId, await evalTarget(ctx, t.targetId, PAGE_STATE).catch(() => null));
+  }
   const count = (await pageTargets(ctx.browser)).length;
   await page.ev(`document.getElementById(${J(click)}).click(); true`);
   const hit = await ctx.browser.waitFor(async () => {
@@ -73,7 +79,9 @@ async function clickReuse(ctx, page, click, mode) {
     p.push(`10 秒内已开的 ${before.length} 个设置页都没有把焦点给卡片标题`);
     return { p, detail: "" };
   }
-  p.push(...cardProblems(hit.f, mode, new URL(hit.t.url).hash));
+  const was = prev.get(hit.t.targetId);
+  if (!was) p.push("点之前没读到被复用的设置页的 tab 与 hash");
+  else p.push(...cardProblems(hit.f, mode, was));
   if (hit.f.active !== true) p.push(`被复用的设置页应是活动标签，实际 active ${J(hit.f.active)}`);
   return { p, detail: `点 #${click}：复用已开的设置页（共 ${before.length} 个），没有新开标签，它成了活动标签，卡片 ${hit.f.mode}，焦点 ${hit.f.focus}` };
 }

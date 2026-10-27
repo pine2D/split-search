@@ -73,11 +73,12 @@ async function steps(ctx, page) {
   const items = [];
   const step = async (name, fn) => { const r = await sub(name, fn); items.push(r); if (r.status === "fail") await cancel(page).catch(() => {}); };
 
-  await step("1 没有规则：“搜索组合”tab 里紧跟默认组合卡有独立的规则卡，默认展开，没有折叠区，有空状态", async () => {
+  await step("1 没有规则：“搜索组合”tab 里紧跟默认组合卡有独立的规则卡，默认展开，没有折叠区，有空状态，“新增规则”是小按钮", async () => {
     const s = await run(page, `const c = card(); if (!c) return null; const e = document.getElementById("rule-empty");
       return { shown: c.checkVisibility(), prev: c.previousElementSibling?.getAttribute("aria-labelledby"),
         title: document.getElementById("rules-title").textContent, folded: !!c.querySelector("details"),
-        empty: e && e.checkVisibility() ? e.textContent : null, list: !!document.getElementById("rule-list") };`);
+        empty: e && e.checkVisibility() ? e.textContent : null, list: !!document.getElementById("rule-list"),
+        small: document.getElementById("rule-add")?.classList.contains("btn-small") ?? null };`);
     if (!s) return { status: "fail", detail: "#panel-pair 里找不到 #rules-card" };
     const p = [];
     if (!s.shown) p.push("规则卡应看得见");
@@ -86,7 +87,8 @@ async function steps(ctx, page) {
     if (s.title !== msg("options_rules_title")) p.push(`标题应为“${msg("options_rules_title")}”，实际“${s.title}”`);
     if (s.empty !== msg("options_rules_empty")) p.push(`展开后应有空状态“${msg("options_rules_empty")}”，实际 ${J(s.empty)}`);
     if (s.list) p.push("0 条时不该有 #rule-list");
-    return verdict(p, `展开，标题“${s.title}”；“${s.empty}”`);
+    if (s.small !== true) p.push(s.small === null ? "找不到“新增规则”按钮 #rule-add" : "“新增规则” #rule-add 应是小按钮（btn-small）");
+    return verdict(p, `展开，标题“${s.title}”；“${s.empty}”；#rule-add 是小按钮`);
   });
 
   await step("2 新增：焦点在选中的单选；右侧下拉不含左侧 ea、默认留空、第一项是“默认组合的右侧”；文字字段隐藏；没有删除按钮", async () => {

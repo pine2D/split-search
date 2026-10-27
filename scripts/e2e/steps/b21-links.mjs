@@ -2,7 +2,7 @@
 // (m) 停在 ③ 时切换界面语言：tab 不变、hash 不变，tab 名与 ① 的读屏标记换成新语言；
 // (n) 地址栏手改 hash：#setup（卡片不显示）、#tab-foo 什么都不做，#tab-lookup 换到 ④，#guide-steps 换到 ① 并写 #tab-add、焦点给 5 步说明的小标题。
 // 跨 tab 链接与焦点兜底：(f) 页内链接切 tab 并定位；(g) #pair-changed 按 setupView 的 mode 选文案、何时清掉；
-// (h) 改引擎网址后提示里的“查看触发网址”；(k) 授权成功、授权按钮消失后的焦点。
+// (h)(h') 改引擎网址后提示里的“查看触发网址”（卡片不显示 / 显示）；(k) 第 5 步“搜索引擎”在左侧未授权时的焦点、授权成功后按钮消失的焦点。
 // (g)(k) 撤销的左侧授权记进 env.revoked，并在子项结束前就地恢复（之后的 (l) 要求卡片不显示），恢复不了才留给 b21.mjs 收尾。
 import { HOSTS, mockEngines } from "../config.mjs";
 import { openOptions, showTab, sleep, openEdit, fillDialog, readKeys, restoreKey } from "./optpage.mjs";
@@ -76,6 +76,7 @@ export async function hashLocaleChecks(ctx) {
 
 const NAME = Object.fromEntries(mockEngines(0).map(e => [e.id, e.name]));
 const originA = ctx => `http://${HOSTS.a}:${ctx.port}/*`;
+const originB = ctx => `http://${HOSTS.b}:${ctx.port}/*`;
 const triggerA = (ctx, right) => `http://${HOSTS.a}:${ctx.port}/search?q=%s&_ss=ea,${right}`;
 const setPair = (ctx, pair) => ctx.ext.eval(`chrome.storage.sync.set({ defaultPair: ${J(pair)} }).then(() => true)`);
 const click = (page, selector) => page.ev(`(() => { const el = document.querySelector(${J(selector)}); el?.click(); return !!el; })()`);
@@ -91,15 +92,14 @@ const CHANGED = `(() => { const c = document.getElementById("pair-changed");
 const waitChanged = (page, { shown, notice = false, mode = null }) => page.until(`const s = ${CHANGED};
   return (${notice} ? s.notices.length > 0 : true) && !!s.box === ${shown} && (${J(mode)} === null || s.mode === ${J(mode)}) && s;`, 5000);
 
-// 撤销 / 恢复默认左侧（模拟引擎 A）的授权。恢复先等页面自己的授权按钮生效，没有就 requestGrant（之前授权过，不弹框）
-async function revokeA(ctx, env) {
-  env.revoked.add(originA(ctx));
-  await ctx.ext.eval(`chrome.permissions.remove({ origins: ${J([originA(ctx)])} })`);
+// 撤销 / 恢复默认左侧（模拟引擎 A，或给定 origin）的授权。恢复先等页面自己的授权按钮生效，没有就 requestGrant（之前授权过，不弹框）
+async function revokeA(ctx, env, o = originA(ctx)) {
+  env.revoked.add(o);
+  await ctx.ext.eval(`chrome.permissions.remove({ origins: ${J([o])} })`);
 }
-async function restoreA(ctx, env) {
-  const o = originA(ctx);
+async function restoreA(ctx, env, o = originA(ctx)) {
   if (!env.revoked.has(o)) return true;
-  const ok = (await contains(ctx.browser, [o])) === true || await requestGrant(ctx, [o], { title: "B21 恢复模拟引擎 A 的授权" }).catch(() => false);
+  const ok = (await contains(ctx.browser, [o])) === true || await requestGrant(ctx, [o], { title: "B21 恢复授权" }).catch(() => false);
   if (ok) env.revoked.delete(o);
   return ok;
 }
@@ -195,9 +195,10 @@ async function changedByMode(ctx, env) {
   return verdict(p, seen.join("；"));
 }
 
-// (h) 在 ③ 改默认左侧的网址模板（仍合法、同 origin）：sticky 提示带“查看触发网址”，点它进 ①、焦点给默认组合那条的复制按钮
-async function templateChanged(ctx) {
-  await setDone(ctx, true);
+// (h) 在 ③ 改默认左侧的网址模板（仍合法、同 origin）：sticky 提示带“查看触发网址”，点它进 ①、焦点给默认组合那条的复制按钮。
+// steps：卡片显示时默认组合一段收在 #guide-default 里，点后要展开
+async function templateChanged(ctx, { steps = false } = {}) {
+  await setDone(ctx, steps ? null : true);
   const { customEngines } = await readKeys(ctx.ext, ["customEngines"]);
   const page = await openOptions(ctx.browser, { tab: "engines" });
   try {
@@ -215,18 +216,23 @@ async function templateChanged(ctx) {
     const n = await page.until(`const n = ${NOW}; return n.tab === "add" && n;`, 3000).catch(() => page.ev(NOW));
     const onCopy = await page.ev(`document.activeElement === document.querySelector("#triggers .trigger-default .url-line button")`);
     if (n.tab !== "add" || n.hash !== "#tab-add" || !onCopy) p.push(`点“${btn}”后应进 ①、hash #tab-add、焦点在默认组合那条的复制按钮：${fmtNow(n)}`);
-    return verdict(p, `sticky 提示带“${btn}”，点后 ${fmtNow(n)}（默认组合的复制按钮）`);
+    const fold = await page.ev(`(() => { const d = document.getElementById("guide-default"); return d ? (d.open ? "open" : "closed") : "none"; })()`);
+    if (fold !== (steps ? "open" : "none")) p.push(`默认组合一段应${steps ? "收在 #guide-default 里并被展开" : "不收进折叠区"}，实际 ${fold}`);
+    return verdict(p, `${steps ? "steps 档，" : ""}sticky 提示带“${btn}”，点后 ${fmtNow(n)}（默认组合的复制按钮，#guide-default ${fold}）`);
   } finally {
     await page.close();
     await restoreKey(ctx.ext, "customEngines", customEngines);
   }
 }
 
-// (k) regrant 时在 ① 点 #setup-grant、在 ② 点 #pair-grant（CDP 可信点击，带用户激活）：授权成功、按钮消失后焦点分别给 #tabbtn-add、#pair-left
+// (k) regrant 时 ① 第 5 步的“搜索引擎”链接进 ③、焦点给左侧那行的授权按钮（left-grant）；在 ① 点 #setup-grant、在 ② 点 #pair-grant
+// （CDP 可信点击，带用户激活）：授权成功、按钮消失后焦点分别给 #tabbtn-add、#pair-left；
+// 再撤销模拟引擎 B，在 ① 的“其他组合”选 B 作左侧，点 #gen-grant：焦点给 #gen-left
 async function grantFocus(ctx, env) {
   const p = [], seen = [];
-  const grantAt = async (page, id, want) => {
-    await revokeA(ctx, env);
+  const grantAt = async (page, id, want, o = originA(ctx), before = null) => {
+    await revokeA(ctx, env, o);
+    if (before) await before();
     // 先清掉右下角的提示（授权、撤销的播报），免得盖住按钮；点之前核对落点就是这个按钮
     const at = await page.until(`const b = document.getElementById(${J(id)}); if (!b?.checkVisibility()) return false;
       document.getElementById("notices").replaceChildren(); b.scrollIntoView({ block: "center" });
@@ -236,10 +242,10 @@ async function grantFocus(ctx, env) {
     if (!at.hit) return p.push(`#${id} 的中心点被别的元素盖住了（${Math.round(at.x)},${Math.round(at.y)}）`);
     await activate(ctx, page.targetId);
     await trustedClick(ctx.browser, page.sid, at);
-    const ok = await ctx.browser.waitFor(async () => (await contains(ctx.browser, [originA(ctx)])) === true, { timeoutMs: AUTO_GRANT_MS, intervalMs: 300 })
+    const ok = await ctx.browser.waitFor(async () => (await contains(ctx.browser, [o])) === true, { timeoutMs: AUTO_GRANT_MS, intervalMs: 300 })
       .then(() => true, () => false);
     if (!ok) return p.push(`点 #${id} 后 ${AUTO_GRANT_MS / 1000} 秒内授权没有生效`);
-    env.revoked.delete(originA(ctx));
+    env.revoked.delete(o);
     const focus = await page.until(`return !document.getElementById(${J(id)}) && document.activeElement?.id === ${J(want)} && ${J(want)}`, 3000)
       .catch(() => page.ev(`document.activeElement?.id || document.activeElement?.tagName`));
     seen.push(`#${id}→${focus}`);
@@ -248,13 +254,29 @@ async function grantFocus(ctx, env) {
   await setDone(ctx, true);
   const page = await openOptions(ctx.browser, { newWindow: true }); // 万一弹授权框，它挂在窗口上：关掉这个窗口就随之关闭
   try {
+    await revokeA(ctx, env);
+    await showTab(page, "add");
+    const LEFT_BTN = `document.querySelector('#engines [data-id="ea"] .perm-line button')`;
+    await page.until(`return !!${LEFT_BTN} && !!document.getElementById("guide-steps-details")`, 5000)
+      .catch(() => p.push("撤销左侧授权后 ③ 的模拟引擎 A 一行没有授权按钮，或 5 步说明没收进折叠区"));
+    await page.ev(`document.getElementById("guide-steps-details").open = true; true`);
+    if (!(await click(page, '#guide-step-grant a[href="#tab-engines"]'))) p.push("第 5 步没有指向“搜索引擎”的链接");
+    const lg = await page.until(`const n = ${NOW}; return n.tab === "engines" && document.activeElement === ${LEFT_BTN} && n;`, 3000)
+      .then(n => ({ n, ok: true }), async () => ({ n: await page.ev(NOW), ok: false }));
+    seen.push(`第 5 步“搜索引擎”→${fmtNow(lg.n)}`);
+    if (!lg.ok) p.push(`左侧未授权时点第 5 步“搜索引擎”应进 ③、焦点给模拟引擎 A 一行的授权按钮：${fmtNow(lg.n)}`);
     await showTab(page, "add");
     await grantAt(page, "setup-grant", "tabbtn-add");
     await showTab(page, "pair");
     await grantAt(page, "pair-grant", "pair-left");
+    await showTab(page, "add");
+    // 先等撤销 B 之后的重渲染（B 那一行出现授权按钮）：之前展开的折叠区会被它重建、收起
+    await grantAt(page, "gen-grant", "gen-left", originB(ctx), () => page.until(`const d = document.getElementById("guide-other"), s = document.getElementById("gen-left");
+      if (!d || !s || !document.querySelector('#engines [data-id="eb"] .perm-line button')) return false; d.open = true; if (s.value !== "eb") { s.value = "eb"; s.dispatchEvent(new Event("change")); } return s.value === "eb";`, 5000));
   } finally {
     await page.close();
     if (!(await restoreA(ctx, env))) p.push("恢复模拟引擎 A 的授权没有成功");
+    if (!(await restoreA(ctx, env, originB(ctx)))) p.push("恢复模拟引擎 B 的授权没有成功");
   }
   return verdict(p, seen.join("；"));
 }
@@ -269,6 +291,7 @@ export async function linkChecks(ctx, env) {
     await run("(f) 跨 tab 链接：更换组合、第 5 步、② 末行指引、查看设置步骤", () => crossLinks(ctx)),
     await run("(g) #pair-changed 按 mode 选文案，改回原组合或离开 steps 时清掉", () => changedByMode(ctx, env)),
     await run("(h) 改引擎网址：sticky 提示带“查看触发网址”", () => templateChanged(ctx)),
-    await run("(k) 授权成功后的焦点兜底", () => grantFocus(ctx, env)),
+    await run("(h') steps 档改引擎网址：“查看触发网址”展开 #guide-default", () => templateChanged(ctx, { steps: true })),
+    await run("(k) 第 5 步链接与授权成功后的焦点兜底（含 left-grant、#gen-grant）", () => grantFocus(ctx, env)),
   ];
 }
