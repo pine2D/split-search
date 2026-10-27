@@ -117,7 +117,7 @@ split-search/
 │                                 ext-source.mjs 让测试配置里的扩展装自本检出的 src/、
 │                                 ext-shortcuts.mjs 快捷键（chrome://extensions/shortcuts）快照与恢复，steps/v03-*.mjs、xauto-t19.mjs 是 v0.3 步骤，
 │                                 steps/v04-*.mjs 是 v0.4 步骤（v04-lib 页面标记/CDP 读网址/triggerAction 与 MENU_INDEX，v04-complete(-more) T20，
-│                                 v04-lookup/-lookup-image/-lookup-lib T21、T22，v04-guard T23，v04-guard-x/-guard-more T24，v04-options B18，v04-i18n 供 I18N 与 B14；b4.mjs、b19.mjs（弹窗分档子项在 b19-popup.mjs）是设置页“开始使用”卡（B19 的 keepSetupDone 也给 B4 用）；i18n-audit.mjs 是 i18n 与 v04-i18n 共用的页面核对工具；options-b/-b2/-b3.mjs 是设置页 B 系列，B13“调整顺序”模式在 -b3，optpage.mjs 的 openEdit/setReorder 打开编辑对话框、切换排序模式）
+│                                 v04-lookup/-lookup-image/-lookup-lib T21、T22，v04-guard T23，v04-guard-x/-guard-more T24，v04-options B18，v04-i18n 供 I18N 与 B14；b4.mjs、b19.mjs（弹窗分档子项在 b19-popup.mjs，“详细步骤”子项 detailsLink/keepsFocus/hashOpen 在 b19-guide.mjs）是设置页“开始使用”卡（B19 的 keepSetupDone 也给 B4 用）；i18n-audit.mjs 是 i18n 与 v04-i18n 共用的页面核对工具；options-b/-b2/-b3.mjs 是设置页 B 系列，B13“调整顺序”模式在 -b3，optpage.mjs 的 openEdit/setReorder 打开编辑对话框、切换排序模式）
 ├── src/                          扩展根目录（加载这个目录）
 │   ├── manifest.json
 │   ├── _locales/                 界面文案：en、zh_CN（源文案）、zh_TW、es 各一份 messages.json
