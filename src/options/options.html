@@ -34,7 +34,9 @@
       <h2 id="guide-title" data-i18n="options_guide_title"></h2>
       <div id="triggers" class="triggers"></div>
 
-      <h3 data-i18n="guide_steps_title"></h3>
+      <!-- 5 步说明：“开始使用”卡显示时由 guide.js 收进默认收起的 <details>（renderGuideSteps），不显示时照常展开 -->
+      <div id="guide-steps">
+      <h3 id="guide-steps-title" tabindex="-1" data-i18n="guide_steps_title"></h3>
       <ol class="steps">
         <li>
           <span data-i18n="guide_step_open_settings"></span>
@@ -45,6 +47,7 @@
         <li data-i18n="guide_step_default"></li>
         <li data-i18n="guide_step_grant"></li>
       </ol>
+      </div>
 
       <details class="disclosure">
         <summary><span data-i18n="guide_caveats_title"></span></summary>

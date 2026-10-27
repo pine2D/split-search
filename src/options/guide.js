@@ -1,4 +1,5 @@
-// 触发网址：默认组合一条 + 自选组合生成器。分步引导和注意事项是 options.html 里的静态文字。
+// 触发网址：默认组合一条 + 自选组合生成器。分步引导和注意事项是 options.html 里的静态文字；
+// “开始使用”卡显示时，默认组合一段和 5 步说明都收进默认收起的 <details>（卡片里已有同样的网址和三个小步）。
 import { buildTriggerTemplate } from "../lib/trigger.js";
 import { h, ht, copyButton, authButton, option, disclosure } from "./ui.js";
 import { canBeLeft, generatorPick } from "./edits.js";
@@ -9,6 +10,8 @@ export const SETTINGS_URL = "chrome://settings/searchEngines";
 // 用户在生成器里亲手选过的 [leftId, rightId]，跨重渲染保留（仍有效时，见 generatorPick）。
 // 只在下拉框的 change 里记下；没改过时每次渲染都按当前默认组合重新取初值，默认组合改了初值跟着变
 let userGen = null;
+
+const withId = (el, id) => { el.id = id; return el; };
 
 export function setupGuide() {
   const slot = document.getElementById("settings-url-copy");
@@ -49,7 +52,7 @@ export function renderTriggers(ctx) {
     defUrl && dl.leftDiscouraged && leftWarn(dl),
     ht("p", { class: "hint" }, "guide_default_hint"));
   frag.append(h("div", { class: "trigger-card" },
-    setupShown ? disclosure("guide-default", "guide_default_url_title", def) : def));
+    setupShown ? withId(disclosure("guide-default", "guide_default_url_title", def), "guide-default") : def));
 
   // 其他组合：普通的左右两个下拉框（不用默认组合卡的窗格，免得看起来像在改默认组合），整段默认收起
   const lefts = cfg.engines.filter(canBeLeft);
@@ -100,4 +103,26 @@ function genOutput(left, right, { cfg, granted, refresh, setupShown }) {
 export function leftWarn(e) {
   return h("div", { class: "callout callout-warn" },
     ht("span", null, "guide_left_discouraged", e.name));
+}
+
+// 5 步说明（options.html 的 #guide-steps：小标题 + ol.steps）。ol 是静态节点，只在两种外壳之间移动，
+// 里面的复制按钮（settings-url-copy）和 guide-step-fields 的富文本跟着走；小标题每次按 key 新建，切换语言时 applyI18n 照常重写
+export function renderGuideSteps(setupShown) {
+  const slot = document.getElementById("guide-steps");
+  const list = slot?.querySelector("ol.steps");
+  if (!list) return;
+  if (setupShown) slot.replaceChildren(withId(disclosure("guide-steps", "guide_steps_title", list), "guide-steps-details"));
+  else slot.replaceChildren(ht("h3", { id: "guide-steps-title", tabindex: "-1" }, "guide_steps_title"), list);
+}
+
+// “开始使用”卡第 2 步的“详细步骤”：展开默认组合一段和 5 步说明，滚到 5 步说明，焦点给它的 summary（不收起时给小标题）
+export function revealGuideSteps() {
+  const slot = document.getElementById("guide-steps");
+  if (!slot) return;
+  for (const id of ["guide-default", "guide-steps-details"]) {
+    const d = document.getElementById(id);
+    if (d) d.open = true;
+  }
+  slot.scrollIntoView({ block: "start" });
+  (slot.querySelector("details > summary") ?? document.getElementById("guide-steps-title"))?.focus({ preventScroll: true });
 }

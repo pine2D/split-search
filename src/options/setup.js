@@ -8,7 +8,7 @@ import { safeArgs } from "../lib/safe-error.js";
 import { acceptRevealSetup } from "../lib/messages.js";
 import { DONE_KEY, readSetupDone, rememberTryTab } from "../chrome/setup-store.js";
 import { h, ht, notify, errorText, authButton } from "./ui.js";
-import { urlBox, leftWarn, SETTINGS_URL } from "./guide.js";
+import { urlBox, leftWarn, revealGuideSteps, SETTINGS_URL } from "./guide.js";
 import { t } from "../chrome/i18n.js";
 import { icon } from "../ui/icons.js";
 
@@ -117,6 +117,12 @@ function grantDone({ left, right, rightPending }) {
   ];
 }
 
+// “详细步骤”：“添加到 Chrome”卡的 5 步说明和默认组合一段这时收着，先展开再滚过去（不改 hash，免得和 #setup 定位搅在一起）
+function openDetails(ev) {
+  ev.preventDefault();
+  revealGuideSteps();
+}
+
 // 第 2 步按操作顺序拆成三个编号小步（<ol> 的序号），每步只带它自己要复制的东西：剪贴板一次只装一样，
 // 先复制设置地址打开设置页，再复制触发网址粘进“网站搜索”，最后设为默认
 function addBody({ left, url }) {
@@ -128,7 +134,7 @@ function addBody({ left, url }) {
         url ? urlBox(url, undefined, "guide_copy_default_aria") : ht("p", { class: "hint hint-error" }, "guide_no_trigger"),
         url && left.leftDiscouraged && leftWarn(left)),
       sub("setup_add_default")),
-    ht("a", { href: "#guide", class: "step-link" }, "setup_details_link"),
+    ht("a", { href: "#guide-steps", class: "step-link", onclick: openDetails }, "setup_details_link"),
   ];
 }
 

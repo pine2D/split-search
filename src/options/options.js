@@ -8,7 +8,7 @@ import { renderLookupCard, setupLookupDialogs, refreshImageCatalog } from "./loo
 import { renderEngineList, renderHiddenList, setupEngineDialog } from "./engine-list.js";
 import { setupCatalogDialog, refreshCatalog } from "./catalog.js";
 import { renderShortcut, SHORTCUT_BUTTON_ID } from "./shortcut.js";
-import { renderTriggers, setupGuide } from "./guide.js";
+import { renderTriggers, renderGuideSteps, setupGuide } from "./guide.js";
 import { renderSetup, loadSetupDone, initSetup, revealSetup } from "./setup.js";
 import { applyRichText, renderLangPicker } from "./locale-ui.js";
 import { initI18n, applyI18n, setLocale, currentPref, currentLocale, t } from "../chrome/i18n.js";
@@ -119,6 +119,7 @@ async function render() {
   $("pair-body").replaceChildren(...pairSection(cfg, byId, granted, setupShown));
   $("lookup-body").replaceChildren(renderLookupCard(cfg, actions));
   $("triggers").replaceChildren(renderTriggers(ctx));
+  renderGuideSteps(setupShown);
   $("engines").replaceChildren(renderEngineList(ctx));
   $("hidden-engines").replaceChildren(renderHiddenList(ctx));
   if (focusedId && document.activeElement === document.body) focusAfterRender(focusedId);
