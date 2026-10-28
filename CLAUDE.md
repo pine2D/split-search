@@ -109,6 +109,7 @@ split-search/
 ├── README.md                     面向用户的简介与安装（英文，默认）；README.zh-CN.md / README.zh-TW.md / README.es.md 是同结构的其他语言版，改一份四份同改，标题下的语言切换行保持一致
 ├── CHANGELOG.md                  更新日志（中文，Keep a Changelog 2.0.0）：每次发版的 chore: release 提交用 changelog-zh skill 加一节，与 manifest、package.json 的版本同改
 ├── .gitignore
+├── .github/workflows/release.yml  推送 v* 标签时打包（不带 key）并发布 GitHub Release，说明取 CHANGELOG 对应一节
 ├── package.json                  "test": "node --test"、"e2e": "node scripts/e2e/run.mjs"、"pack": "node scripts/pack.mjs"
 ├── dist/                         发布 ZIP（npm run pack 生成，不进 git）
 ├── docs/acceptance-v0.7.md       v0.7 验收清单（新增 e2e 步骤 T26、B22、B23，扩充的 I18N；开关滑块 A1 的本机验证记录、Windows 手测项与完整 e2e 结果）
@@ -242,6 +243,7 @@ split-search/
 - `bash scripts/gen-key.sh`：打印扩展 ID（`alngkkgnobglnfbhcplhpaflcgfiajnj`）。只有 manifest 里没有 `key` 时才会生成一把一次性密钥并写入公钥；已有 `key` 时绝不改动。源码始终保留这把开发公钥（开发 ID）。上架 CWS 的 ID 分层：首次上传用不带 key 的包（`npm run pack`），商店分配 ID；上传后在 CWS 后台“软件包 → 公钥”复制商店公钥，存到 git 以外的本地文件；之后的版本都用 `npm run pack -- --store-key <文件>` 打包，商店 ID 保持不变，开发版与商店版可并存。
 - `npm run pack`：发布打包，生成 `dist/split-search-<版本>.zip`（`dist/` 不进 git），打印大小、sha256 和 key 情况；同一份源码打出的 ZIP 逐字节相同（时间戳取最近一次改动 `src/` 的提交）。不改动 `src/`：复制到临时目录，manifest 默认去掉 `key`；`--store-key <文件>` 改写成商店公钥（相对路径按执行命令的目录解析；PEM 或 base64，校验是 DER 编码的 RSA 公钥，打印对应扩展 ID；给的是开发公钥会中止）。发布前检查（不过即中止）：manifest 与 `package.json` 版本一致；硬约束里的 manifest 字段（版本、无痕、权限、可选 host 权限、`web_accessible_resources`）与上文一致，且没有 `host_permissions`；每种语言的 `messages.json` 能解析、有 manifest 引用的全部 `__MSG_…__`，`name` ≤75、`description` ≤132 字符；manifest 引用的图标、SW、设置页、go.html 存在；`src/` 里只有运行时文件（没有点文件、测试、`.DS_Store` 之类）；`src/` 在 git 里没有未提交改动（`--allow-dirty` 改为警告）。
 - 商店信息（2026-10-25 首次提交 v0.2.0）：商店 ID `ebefmgpipceocigodihbbbhdiagmjdak`；商店公钥存在 `~/.config/split-search/cws-public-key.pem`（不进 git，丢了从 CWS 后台“软件包”页重新复制）。首次上传的包不带 key；之后每个版本都用 `npm run pack -- --store-key ~/.config/split-search/cws-public-key.pem --smoke`。
+- GitHub 发布（`.github/workflows/release.yml`）：推送 `v*` 标签时自动跑 `node scripts/pack.mjs`（不带 key，用户解压后“加载未打包的扩展程序”选解压出的文件夹即可），把 `dist/split-search-<版本>.zip` 附到同名 Release，说明取 CHANGELOG.md 里这一版的那一节，前面加一段中英安装说明；已有的标签用 `gh workflow run release.yml -f tag=<标签>` 补发或重发（已存在的 Release 覆盖附件和说明）。商店上传包仍用本地 `--store-key` 打。
 - `npm run pack -- --smoke`：打包后把 ZIP 解压到临时目录，在一次性 Chrome 配置（无头、`--disable-sync`、no-first-run、管道 CDP，参数与字体配置同 e2e 的 `launch()`）里用 `Extensions.loadUnpacked` 装上，核对：没有 manifest 错误、安装警告和运行时错误（chrome://extensions 的 `developerPrivate.getExtensionInfo`）、权限警告与 v0.3 相同（只有 DNR 一条 `Block content on any page`，`activeTab`、`contextMenus` 不带来新警告）、SW 起得来、SW 里菜单文案加载正常（切 `uiLocale` 让 SW 重建菜单后没有 `[split-search]` 错误）、设置页以英文渲染且没有显示成 key 的文字、工具栏弹窗以英文渲染且全新安装是分屏外的 setup 档（只有“还没设置好”和“完成设置”）、DNR 动态规则 1 的 `regexSubstitution` 指向本次装出的 ID、全程没有 `[split-search]` 控制台错误、go.html 收到格式不对的 `_ss` 显示出错页；带 `--store-key` 时核对装出的 ID 等于商店 ID，不带时核对它不是开发 ID（key 确实去掉了）。临时配置和解压目录用完即删（SIGINT/SIGTERM/SIGHUP 同样清理；被强杀留下的 `split-search-smoke-*`，下次冒烟开头在 Chrome 已退出且超过 10 分钟时删掉），只关自己起的浏览器，不碰 e2e 测试配置或真实配置。
 
 ## 测试纪律

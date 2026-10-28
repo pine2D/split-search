@@ -1,0 +1,64 @@
+# Pushing a v* tag builds the ZIP with `npm run pack` (no key) and publishes a GitHub release
+# whose notes are that version's CHANGELOG.md section. Run it by hand to (re)publish an existing tag.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing tag to release, e.g. v0.7.0
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ inputs.tag || github.ref_name }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref_name }}
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Build the extension ZIP
+        run: node scripts/pack.mjs
+
+      - name: Write release notes from CHANGELOG.md
+        run: |
+          version="${TAG#v}"
+          zip="split-search-${version}.zip"
+          test -f "dist/${zip}"
+          {
+            echo "**Install:** download \`${zip}\`, unzip it, then in \`chrome://extensions\` turn on Developer mode, click Load unpacked and select the unzipped folder. Or [install from the Chrome Web Store](https://chromewebstore.google.com/detail/Split%20Search/ebefmgpipceocigodihbbbhdiagmjdak)."
+            echo
+            echo "**安装：**下载 \`${zip}\` 并解压，在 \`chrome://extensions\` 开启开发者模式，点“加载未打包的扩展程序”，选择解压出的文件夹。"
+            echo
+            awk -v head="## [${version}]" '
+              index($0, head) == 1 { found = 1; next }
+              found && /^## \[/ { exit }
+              found && /^\[[^]]+\]: / { exit }
+              found { print }
+            ' CHANGELOG.md
+          } > notes.md
+          grep -q '^### ' notes.md
+
+      - name: Publish the release
+        run: |
+          version="${TAG#v}"
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            gh release upload "$TAG" "dist/split-search-${version}.zip" --clobber
+            gh release edit "$TAG" --title "Split Search ${version}" --notes-file notes.md
+          else
+            gh release create "$TAG" "dist/split-search-${version}.zip" --verify-tag \
+              --title "Split Search ${version}" --notes-file notes.md
+          fi

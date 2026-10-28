@@ -17,9 +17,15 @@
 
 需要 Chrome 155 以上版本。
 
-1. 下載這個儲存庫，前往 `chrome://extensions`，開啟右上角的「開發人員模式」。
-2. 點選「載入未封裝項目」，選擇儲存庫裡的 `src` 資料夾。
+**[從 Chrome 線上應用程式商店安裝](https://chromewebstore.google.com/detail/Split%20Search/ebefmgpipceocigodihbbbhdiagmjdak)**
+
+手動安裝：
+
+1. 在 [Releases](https://github.com/pine2D/split-search/releases/latest) 下載 `split-search-<版本>.zip` 並解壓縮。
+2. 前往 `chrome://extensions`，開啟右上角的「開發人員模式」，點選「載入未封裝項目」，選擇解壓縮後的資料夾。
 3. 安裝完成後會自動開啟設定頁。
+
+更新時把新版本解壓縮到同一個資料夾，再點選擴充功能卡片上的「重新載入」。換了資料夾會被視為另一個擴充功能，原本的設定不會帶過去。
 
 ## 設定
 

@@ -17,9 +17,15 @@ Search from the address bar or drag text to the tab strip, and Split Search open
 
 Requires Chrome 155 or later.
 
-1. Download this repository, open `chrome://extensions` and turn on “Developer mode” in the top-right corner.
-2. Click “Load unpacked” and select the `src` folder in the repository.
+**[Install from the Chrome Web Store](https://chromewebstore.google.com/detail/Split%20Search/ebefmgpipceocigodihbbbhdiagmjdak)**
+
+To install it manually:
+
+1. Download `split-search-<version>.zip` from [Releases](https://github.com/pine2D/split-search/releases/latest) and unzip it.
+2. Open `chrome://extensions`, turn on “Developer mode” in the top-right corner, click “Load unpacked” and select the unzipped folder.
 3. The settings page opens automatically after installation.
+
+To update, unzip the new version into the same folder and click “Reload” on the extension’s card. A different folder counts as a different extension, and your settings won’t carry over.
 
 ## Setup
 

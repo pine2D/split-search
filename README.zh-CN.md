@@ -17,9 +17,15 @@
 
 需要 Chrome 155 或更高版本。
 
-1. 下载本仓库，打开 `chrome://extensions`，开启右上角的“开发者模式”。
-2. 点“加载未打包的扩展程序”，选择仓库里的 `src` 文件夹。
+**[从 Chrome 应用商店安装](https://chromewebstore.google.com/detail/Split%20Search/ebefmgpipceocigodihbbbhdiagmjdak)**
+
+手动安装：
+
+1. 在 [Releases](https://github.com/pine2D/split-search/releases/latest) 下载 `split-search-<版本>.zip` 并解压。
+2. 打开 `chrome://extensions`，开启右上角的“开发者模式”，点“加载未打包的扩展程序”，选择解压出的文件夹。
 3. 安装后会自动打开设置页。
+
+更新时把新版本解压到同一个文件夹，再点扩展卡片上的“重新加载”。换了文件夹会被当成另一个扩展，原来的设置不会带过去。
 
 ## 设置
 

@@ -17,9 +17,15 @@ Busca en la barra de direcciones o arrastra texto a la barra de pestañas, y Spl
 
 Requiere Chrome 155 o posterior.
 
-1. Descarga este repositorio, abre `chrome://extensions` y activa el «Modo Desarrollador» («Modo de desarrollador») en la esquina superior derecha.
-2. Haz clic en «Cargar descomprimida» («Cargar extensión sin empaquetar») y selecciona la carpeta `src` del repositorio.
+**[Instalar desde Chrome Web Store](https://chromewebstore.google.com/detail/Split%20Search/ebefmgpipceocigodihbbbhdiagmjdak)**
+
+Para instalarla a mano:
+
+1. Descarga `split-search-<versión>.zip` desde [Releases](https://github.com/pine2D/split-search/releases/latest) y descomprímelo.
+2. Abre `chrome://extensions`, activa el «Modo Desarrollador» («Modo de desarrollador») en la esquina superior derecha, haz clic en «Cargar descomprimida» («Cargar extensión sin empaquetar») y selecciona la carpeta descomprimida.
 3. Al terminar la instalación, se abrirá automáticamente la configuración de Split Search.
+
+Para actualizarla, descomprime la nueva versión en la misma carpeta y haz clic en «Volver a cargar» en la tarjeta de la extensión. Si usas otra carpeta, Chrome la trata como otra extensión y no conserva tu configuración.
 
 ## Configuración
 

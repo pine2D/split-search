@@ -16,7 +16,7 @@
 - [x] “界面仅提供简体中文”的旧说法已删除；精简版详细说明（2026-10-24）不提界面语言，4 种语言的商店说明都一样。
 - [x] `listing.en.md`、`listing.zh-TW.md`、`listing.es.md` 已按精炼版中文写好（2026-10-24 用户确认）。
 - [x] 隐私政策已托管（2026-10-24）：公开仓库 `pine2D/split-search`，GitHub Pages 发布 main 分支的 `/docs`；`https://pine2d.github.io/split-search/privacy`、`…/privacy.zh-CN.html` 和仓库 Issues 页均已确认可访问，内部文档（superpowers、store、验收文档）返回 404。
-- [ ] 上架后在 `docs/index.md` 末尾加商店链接（`[Install from the Chrome Web Store](https://chromewebstore.google.com/detail/<商店 ID>)`）。
+- [x] 商店链接已加进 `docs/index.md` 和 4 种语言的 README（2026-10-28）。
 - [ ] 先更新 GitHub Pages 上的隐私政策：把改好的 `docs/privacy.md`、`docs/privacy.zh-CN.md` 推上 main，确认 `https://pine2d.github.io/split-search/privacy` 已是新版，再去控制台改“隐私做法”。
 - [ ] 隐私做法标签页：数据使用披露**勾“网页浏览记录”（Web history）和“网站内容”（Website content），其余不勾**；单一用途换成 `privacy.md` (a) 的新文字；给新增的 `activeTab`、`contextMenus` 两个权限填 (b) 的理由，`storage`、host 权限的理由也换成 (b) 的新文字（`storage` 理由和 (d) 已含 v0.5 的 `rightRules` 与记录里的 `rule`/`base`）；附上 (d) 的英文审核说明。v0.2.0 提交时一项都没勾。
 - [ ] 4 种语言的详细说明换成本文件和 `listing.en|zh-TW|es.md` 的新版。
