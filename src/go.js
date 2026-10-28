@@ -1,7 +1,8 @@
 // 触发处理页：解析 go.html?u=<原始网址>，判定分屏动作并执行。只做编排。
-import { extractOriginalUrl, parseTrigger, expandTemplate, stripMarker } from "./lib/trigger.js";
+import { extractOriginalUrl, parseTrigger, expandTemplate, stripMarker, replaceQuery } from "./lib/trigger.js";
 import { decideFor } from "./lib/split-decision.js";
 import { ruleRight } from "./lib/right-rules.js";
+import { validateTemplate } from "./lib/engines.js";
 import { loadConfig } from "./chrome/config-store.js";
 import { ACTIONS, leaveTab } from "./chrome/split-actions.js";
 import { inspectTab } from "./chrome/split-state.js";
@@ -115,7 +116,8 @@ async function main() {
     return;
   }
 
-  const { left, query } = parsed;
+  const { left } = parsed;
+  let query = parsed.query;
   let leftUrl;
   try {
     leftUrl = query === "" ? expandTemplate(left.url, "") : stripMarker(original);
@@ -133,11 +135,22 @@ async function main() {
   let auto = null;
   try {
     const pick = ruleRight(cfg, { leftId: left.id, rightId: right.id, query });
-    // engine 为 null：命中的规则不换右侧（keep 或引擎就是当前右侧）
-    if (pick?.engine) {
-      rightUrl = expandTemplate(pick.engine.url, query);
-      right = pick.engine;
-      auto = { rule: pick.ruleId, base: parsed.right.id };
+    if (pick) {
+      // 用临时变量算，全部成功才提交；去词时左侧只改查询参数（路径型模板没有参数，replaceQuery 会抛错，整条规则不生效）
+      let nextLeft = leftUrl;
+      if (pick.query !== query) {
+        nextLeft = stripMarker(replaceQuery(original, validateTemplate(left.url).leftParam, pick.query));
+      }
+      // engine 为 null：命中的规则不换右侧（keep 或引擎就是当前右侧）
+      const nextRight = pick.engine ?? null;
+      const nextRightUrl = nextRight ? expandTemplate(nextRight.url, pick.query) : null;
+      leftUrl = nextLeft;
+      query = pick.query;
+      if (nextRight) {
+        rightUrl = nextRightUrl;
+        right = nextRight;
+        auto = { rule: pick.ruleId, base: parsed.right.id };
+      }
     }
   } catch (err) {
     log("keyword rule skipped", err);

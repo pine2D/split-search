@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { PRESETS, mergeConfig } from "../src/lib/engines.js";
 import { TRIGGER_REGEX } from "../src/lib/rules.js";
-import { buildTriggerTemplate, extractOriginalUrl, stripMarker, parseTrigger, expandTemplate } from "../src/lib/trigger.js";
+import { buildTriggerTemplate, extractOriginalUrl, stripMarker, parseTrigger, expandTemplate, replaceQuery } from "../src/lib/trigger.js";
 
 const kagi = PRESETS.find(e => e.id === "kagi");
 const wiki = { id: "wiki", name: "Wiki", url: "https://en.wikipedia.org/wiki/%s" };
@@ -97,4 +97,15 @@ test("关键词全链路往返：buildTriggerTemplate → Chrome 展开 → DNR 
     assert.equal(lu.searchParams.has("_ss"), false, q);
     assert.ok(!left.includes("_ss=kagi"), q);
   }
+});
+
+test("replaceQuery swaps only the query value", () => {
+  const u = "https://kagi.com/search?token=AbC%2B1&q=vd+test&_ss=kagi,yt#x";
+  assert.equal(replaceQuery(u, "q", "test cats"), "https://kagi.com/search?token=AbC%2B1&q=test%20cats&_ss=kagi,yt#x");
+});
+test("replaceQuery throws when the parameter is missing or repeated", () => {
+  assert.throws(() => replaceQuery("https://a.test/s?x=1", "q", "a"));
+  assert.throws(() => replaceQuery("https://a.test/s?q=1&q=2", "q", "a"));
+  assert.throws(() => replaceQuery("https://a.test/wiki/vd", "q", "a"));
+  assert.throws(() => replaceQuery("https://a.test/s?q=1", null, "a"));
 });

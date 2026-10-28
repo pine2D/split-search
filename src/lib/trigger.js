@@ -56,3 +56,20 @@ export function expandTemplate(template, query) {
   if (query === "") return new URL(template.replace("%s", "x")).origin + "/";
   return template.replaceAll("%s", encodeURIComponent(query));
 }
+
+// 只换查询参数的值，其余段、顺序和 # 之后逐字保留；参数必须恰好出现一次
+export function replaceQuery(originalUrl, param, query) {
+  const q = originalUrl.indexOf("?");
+  if (q === -1 || typeof param !== "string") throw new Error("replaceQuery: parameter not found once");
+  const head = originalUrl.slice(0, q + 1);
+  let rest = originalUrl.slice(q + 1);
+  let hash = "";
+  const h = rest.indexOf("#");
+  if (h !== -1) { hash = rest.slice(h); rest = rest.slice(0, h); }
+  const parts = rest.split("&");
+  const nameOf = (p) => { const i = p.indexOf("="); return i === -1 ? p : p.slice(0, i); };
+  const hits = parts.filter(p => nameOf(p) === param).length;
+  if (hits !== 1) throw new Error("replaceQuery: parameter not found once");
+  const next = parts.map(p => nameOf(p) === param ? `${param}=${encodeURIComponent(query)}` : p);
+  return head + next.join("&") + hash;
+}

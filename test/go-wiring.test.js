@@ -54,3 +54,17 @@ test("go.js：关键词规则经 ruleRight，在展开右侧模板之前；出�
   assert.match(src, /ACTIONS\[action\]\(\{[^}]*\bauto\b[^}]*\}\)/);
   assert.doesNotMatch(src, /\b(?:log|console\.\w+)\([^;]*\b(?:query|pick)\b/);
 });
+
+// v0.7 去词：左侧只改查询参数，规则块用临时变量算好再提交
+test("go.js：replaceQuery 在规则 try 内、ruleRight 之后、展开右侧模板之前；出错不改 leftUrl 与 query", () => {
+  const at = src.indexOf("ruleRight("), rq = src.indexOf("replaceQuery(", at);
+  assert.ok(rq > at && rq < src.indexOf("expandTemplate(right.url"), "replaceQuery 的位置");
+  const tryAt = src.lastIndexOf("try {", at), catchAt = src.indexOf("} catch", at);
+  assert.ok(rq > tryAt && rq < catchAt, "replaceQuery 在同一个 try 里");
+  const tryBody = src.slice(tryAt, catchAt);
+  assert.ok(tryBody.indexOf("leftUrl = nextLeft") > rq - tryAt, "成功后才提交 leftUrl");
+  assert.ok(tryBody.indexOf("query = pick.query") > rq - tryAt, "成功后才提交 query");
+  const nextTry = src.indexOf("try {", catchAt);
+  assert.doesNotMatch(src.slice(catchAt, nextTry), /leftUrl\s*=|query\s*=/, "catch 不改 leftUrl、query");
+  assert.doesNotMatch(src, /\blog\([^;]*\b(?:pick|query|stripped)\b/);
+});
