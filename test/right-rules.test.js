@@ -90,16 +90,50 @@ test("ruleRight", () => {
   assert.equal(pick([W("r1", ["wiki"], { engine: "ec" })], "   "), null);
   assert.equal(pick([], "wiki"), null);
   assert.equal(R.ruleRight({ engines: ENGINES, defaultPair: ["ea", "eb"] }, { leftId: "ea", rightId: "eb", query: "wiki" }), null); // 没有 rightRules 字段
-  assert.deepEqual(pick([W("r1", ["wiki"], { engine: "ec" }), S("r2", "han", { engine: "ed" })], "wiki 百科"), { engine: ENGINES[2], ruleId: "r1" });
+  assert.deepEqual(pick([W("r1", ["wiki"], { engine: "ec" }), S("r2", "han", { engine: "ed" })], "wiki 百科"), { engine: ENGINES[2], ruleId: "r1", query: "wiki 百科" });
   assert.equal(pick([W("r1", ["wiki"], { engine: "ec" }), W("r2", ["wiki"], { engine: "ed" })], "wiki").ruleId, "r1");
   assert.equal(pick([W("r1", ["wiki"], { engine: "ec", off: "hidden" }), W("r2", ["wiki"], { engine: "ed" })], "wiki").ruleId, "r2");
-  assert.equal(pick([W("r1", ["keep"], { keep: true }), W("r2", ["wiki"], { engine: "ec" })], "keep wiki"), null);
-  assert.equal(pick([W("r1", ["wiki"], { engine: "eb" }), W("r2", ["wiki"], { engine: "ec" })], "wiki"), null);
+  assert.deepEqual(pick([W("r1", ["keep"], { keep: true }), W("r2", ["wiki"], { engine: "ec" })], "keep wiki"), { ruleId: "r1", engine: null, query: "keep wiki" });
+  assert.deepEqual(pick([W("r1", ["wiki"], { engine: "eb" }), W("r2", ["wiki"], { engine: "ec" })], "wiki"), { ruleId: "r1", engine: null, query: "wiki" });
   assert.equal(pick([W("r1", ["zz"], { engine: "ec" })], "a ".repeat(500) + "zz"), null);        // 第 1001 码点之后
   assert.equal(pick([W("r1", ["zz"], { engine: "ec" })], "a ".repeat(499) + "zz").ruleId, "r1");
   assert.equal(pick([S("r1", "han", { engine: "ed" }), W("r2", ["wiki"], { engine: "ec" })], "wiki 百科").ruleId, "r1");
   assert.equal(pick([W("r1", ["c++"], { engine: "ec" })], "objective-c++ 模板").ruleId, "r1");   // RF2
   assert.equal(pick([W("r1", ["c++"], { engine: "ec" })], "Objective-C++ 模板").engine.url, "https://c.test/wiki/%s");
+});
+
+const EC = ENGINES.find(e => e.id === "ec");
+test("ruleRight returns engine and stripped query", () => {
+  assert.deepEqual(pick([W("r1", ["vd"], { engine: "ec", strip: true })], "vd test"), { ruleId: "r1", engine: EC, query: "test" });
+});
+test("keep or same-engine rules still strip, engine null", () => {
+  assert.deepEqual(pick([W("r1", ["vd"], { keep: true, strip: true })], "vd test"), { ruleId: "r1", engine: null, query: "test" });
+  assert.deepEqual(pick([W("r1", ["vd"], { engine: "eb", strip: true })], "vd test"), { ruleId: "r1", engine: null, query: "test" });
+});
+test("rules without strip keep the query", () => {
+  assert.deepEqual(pick([W("r1", ["vd"], { engine: "ec" })], "vd test"), { ruleId: "r1", engine: EC, query: "vd test" });
+  assert.deepEqual(pick([W("r1", ["vd"], { keep: true })], "vd test"), { ruleId: "r1", engine: null, query: "vd test" });
+});
+test("ruleRight：只删命中那一条规则的词；去完为空用原查询、照常换右侧", () => {
+  const rules = [W("r1", ["vd"], { engine: "ec", strip: true }), W("r2", ["cats"], { engine: "ed", strip: true })];
+  assert.deepEqual(pick(rules, "vd cats"), { ruleId: "r1", engine: EC, query: "cats" });
+  assert.deepEqual(pick(rules, "vd"), { ruleId: "r1", engine: EC, query: "vd" });
+  // 跳过的规则（暂不生效、引擎找不到）不删词
+  assert.deepEqual(pick([W("r1", ["vd"], { engine: "ec", strip: true, off: "hidden" }), W("r2", ["cats"], { engine: "ed" })], "vd cats"),
+    { ruleId: "r2", engine: ENGINES[3], query: "vd cats" });
+  assert.deepEqual(pick([W("r1", ["vd"], { engine: "gone", strip: true }), W("r2", ["cats"], { engine: "ed" })], "vd cats"),
+    { ruleId: "r2", engine: ENGINES[3], query: "vd cats" });
+});
+test("cleanRules keeps strip only on words rules set to true", () => {
+  const opts = { engines: ENGINES, hidden: [], defaultPair: ["ea", "eb"], isEngineId: () => true };
+  const out = R.cleanRules([
+    { id: "r1", when: "words", words: ["a"], engine: "ec", strip: true },
+    { id: "r2", when: "words", words: ["b"], engine: "ec", strip: "yes" },
+    { id: "r3", when: "words", words: ["c"], engine: "ec", strip: false },
+    { id: "r4", when: "script", script: "han", engine: "ec", strip: true },
+  ], opts);
+  assert.deepEqual(out.map(r => r.strip), [true, undefined, undefined, undefined]);
+  assert.deepEqual(out.map(r => Object.hasOwn(r, "strip")), [true, false, false, false]);
 });
 
 test("explainRule（RF5）", () => {

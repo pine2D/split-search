@@ -27,7 +27,7 @@ function suggestFor(engineId, defaultPair) {
 // 是不是默认组合（识别出默认左侧，且没有 _ss 或 _ss 就是默认组合）交给 ruleRight 判断，它是唯一入口。
 function ruleSuggestion(cfg, hit, trig) {
   const rightId = trig.ok ? trig.right.id : cfg.defaultPair[1];
-  return ruleRight(cfg, { leftId: hit.engine.id, rightId, query: hit.query })?.engine.id ?? null;
+  return ruleRight(cfg, { leftId: hit.engine.id, rightId, query: hit.query })?.engine?.id ?? null;
 }
 
 // engines 是未隐藏的文字引擎（显示顺序），defaultPair、rightRules 来自 mergeConfig（没有 rightRules 按没有规则）。

@@ -101,6 +101,13 @@ test("规则：识别出的不是默认左侧 → 沿用原来的建议", () => 
   assert.equal(matchResultPage("https://eb.test/s?q=wiki", ruleCfg()).suggestedId, "ea");
   assert.equal(matchResultPage("https://eb.test/s?q=wiki&_ss=eb,ec", ruleCfg()).suggestedId, "ec");
 });
+test("规则：命中 keep 或引擎就是当前右侧的规则（带不带 strip）→ 沿用原来的建议", () => {
+  for (const x of [{ keep: true }, { keep: true, strip: true }, { engine: "eb" }, { engine: "eb", strip: true }]) {
+    const c = ruleCfg({ rightRules: [{ id: "r1", when: "words", words: ["wiki"], off: null, ...x }, { id: "r2", when: "words", words: ["wiki"], off: null, engine: "ec" }] });
+    assert.equal(matchResultPage("https://ea.test/s?q=wiki+apple", c).suggestedId, "eb", JSON.stringify(x));
+    assert.equal(matchResultPage("https://ea.test/s?q=wiki&_ss=ea,eb", c).suggestedId, "eb", JSON.stringify(x));
+  }
+});
 test("规则：cfg 没有 rightRules → 不抛，沿用原逻辑", () => {
   const { rightRules, ...c } = ruleCfg();
   assert.equal(matchResultPage("https://ea.test/s?q=wiki", c).suggestedId, "eb");

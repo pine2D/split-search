@@ -133,7 +133,8 @@ async function main() {
   let auto = null;
   try {
     const pick = ruleRight(cfg, { leftId: left.id, rightId: right.id, query });
-    if (pick) {
+    // engine 为 null：命中的规则不换右侧（keep 或引擎就是当前右侧）
+    if (pick?.engine) {
       rightUrl = expandTemplate(pick.engine.url, query);
       right = pick.engine;
       auto = { rule: pick.ruleId, base: parsed.right.id };
