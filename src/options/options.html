@@ -260,5 +260,8 @@
       </div>
     </form>
   </dialog>
+
+  <!-- 表单对话框改过时点外部的保存确认（dialogs.js 的 lightDismiss）。叠在表单对话框上面；Esc、点它外部等同“继续编辑” -->
+  <dialog id="discard-dialog" aria-labelledby="discard-title"><h2 id="discard-title" data-i18n="options_discard_title"></h2><div class="dialog-actions"><button type="button" id="discard-keep" class="btn" data-i18n="options_discard_keep"></button><button type="button" id="discard-drop" class="btn" data-i18n="options_discard_drop"></button><button type="button" id="discard-save" class="btn btn-primary" data-i18n="common_save"></button></div></dialog>
 </body>
 </html>

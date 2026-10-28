@@ -2,6 +2,7 @@
 import { CATALOG, CATEGORIES, isAdded, catalogUrl } from "../lib/engine-catalog.js";
 import { h, ht, focusedRow, restoreRowFocus, catalogLabel, showDialog } from "./ui.js";
 import { currentLocale, t } from "../chrome/i18n.js";
+import { lightDismiss } from "./dialogs.js";
 
 let actionsRef = null;
 let lastCfg = null;
@@ -48,6 +49,7 @@ export function setupCatalogDialog(actions) {
   // detail 为 0：用键盘（Enter / 空格）按的按钮
   document.getElementById("catalog-open").addEventListener("click", (ev) => { if (lastCfg) openCatalogDialog(lastCfg, ev.detail === 0); });
   document.getElementById("catalog-close").addEventListener("click", () => dialog().close());
+  lightDismiss(dialog(), { onClose: () => dialog().close() }); // 点外部同“关闭”
 }
 
 export function openCatalogDialog(cfg, viaKeyboard = true) {

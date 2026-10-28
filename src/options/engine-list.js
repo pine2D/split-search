@@ -7,6 +7,7 @@ import { t, setI18nText } from "../chrome/i18n.js";
 import { icon } from "../ui/icons.js";
 import { isReordering, syncReorder, moveButtons } from "./reorder.js";
 import { countRulesFor } from "./rule-edits.js";
+import { lightDismiss } from "./dialogs.js";
 
 // ctx: { cfg, granted: Map<id, boolean>, attention: Set<id>, actions, refresh }
 export function renderEngineList(ctx) {
@@ -85,6 +86,7 @@ export function renderHiddenList(ctx) {
 
 let dialogState = null; // { mode, id, engine（新增时为 null）, idEdited }
 let currentCfg = () => null;
+let outside = null; // 点外部（dialogs.js）：打开时记下初值快照
 const field = (name) => document.getElementById(`dlg-${name}`);
 
 function followName() {
@@ -108,6 +110,7 @@ export function setupEngineDialog(actions, getCfg) {
     if (!dialogState.idEdited) followName();
   });
   document.getElementById("dlg-cancel").addEventListener("click", () => dlg.close());
+  outside = lightDismiss(dlg, { form, onClose: () => dlg.close() }); // 没改过同“取消”，改过先问
   setupDangerZone(dlg, actions);
   document.getElementById("add-engine").addEventListener("click", () => openEngineDialog("add", null));
   form.addEventListener("submit", async (ev) => {
@@ -168,6 +171,7 @@ export function openEngineDialog(mode, engine) {
   showTemplateHint(field("url").value);
   dlg.showModal();
   field("name").focus();
+  outside?.mark();
 }
 
 // 底栏左边的危险区：预置引擎只显示“隐藏”，自定义引擎只显示“删除”。两个是静态按钮：confirmStep 包装时就定死了文字的 key。

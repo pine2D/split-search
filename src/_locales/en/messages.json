@@ -1389,6 +1389,18 @@
     "message": "For example, if the word is vd, searching “vd cats” searches just “cats” on both sides. If the search contains only these words, it runs as typed.",
     "description": "Rule dialog: hint under the strip checkbox."
   },
+  "options_discard_title": {
+    "message": "Save changes?",
+    "description": "Confirm dialog shown when clicking outside a settings dialog with unsaved edits: title."
+  },
+  "options_discard_drop": {
+    "message": "Don't save",
+    "description": "Confirm dialog: button that closes the form and drops the edits."
+  },
+  "options_discard_keep": {
+    "message": "Keep editing",
+    "description": "Confirm dialog: button that returns to the form to keep editing."
+  },
   "options_rules_strip_row": {
     "message": "· removes these words",
     "description": "Rule row: note after the target engine when the rule removes its words."

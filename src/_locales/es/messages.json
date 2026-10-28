@@ -1389,6 +1389,18 @@
     "message": "Por ejemplo, si la palabra es vd, al buscar «vd gatos» se busca solo «gatos» en ambos lados. Si la búsqueda solo contiene estas palabras, se hace tal cual.",
     "description": "Rule dialog: hint under the strip checkbox."
   },
+  "options_discard_title": {
+    "message": "¿Guardar los cambios?",
+    "description": "Confirm dialog shown when clicking outside a settings dialog with unsaved edits: title."
+  },
+  "options_discard_drop": {
+    "message": "No guardar",
+    "description": "Confirm dialog: button that closes the form and drops the edits."
+  },
+  "options_discard_keep": {
+    "message": "Seguir editando",
+    "description": "Confirm dialog: button that returns to the form to keep editing."
+  },
   "options_rules_strip_row": {
     "message": "· quita estas palabras",
     "description": "Rule row: note after the target engine when the rule removes its words."

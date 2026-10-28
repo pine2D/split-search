@@ -5,6 +5,7 @@ import { engineChoices, targetLabel } from "./rule-edits.js";
 import { SCRIPTS, SCRIPT_KEYS, SCRIPT_OPTION_KEYS, shadowedWords } from "../lib/right-rules.js";
 import { t, setI18nText } from "../chrome/i18n.js";
 import { icon } from "../ui/icons.js";
+import { lightDismiss } from "./dialogs.js";
 
 const $ = (id) => document.getElementById(id);
 const OFF_KEYS = { hidden: "options_rules_off_hidden", missing: "options_rules_off_missing", left: "options_rules_off_left" };
@@ -70,6 +71,7 @@ function ruleRow(cfg, rule, index, total, shadows, posOf, actions) {
 
 let dialogState = null; // { id（新增时为 null）, opener: 触发按钮的 id, done: 保存或删除后由它们自己安排焦点 }
 let currentCfg = () => null;
+let outside = null; // 点外部（dialogs.js）：打开时记下初值快照
 
 const whenValue = () => ($("rule-when-script").checked ? "script" : "words");
 
@@ -116,6 +118,7 @@ function openRuleDialog(id, openerId) {
   $("rule-dlg-delete").hidden = !rule;
   dlg.showModal();
   (script ? $("rule-when-script") : $("rule-when-words")).focus();
+  outside?.mark();
 }
 
 // getCfg：设置页最近一次渲染用的配置
@@ -126,6 +129,7 @@ export function setupRuleDialog(actions, getCfg) {
   $("rule-script").replaceChildren(...SCRIPTS.map(s => ht("option", { value: s }, SCRIPT_OPTION_KEYS[s])));
   for (const radio of [$("rule-when-words"), $("rule-when-script")]) radio.addEventListener("change", showWhenFields);
   $("rule-dlg-cancel").addEventListener("click", () => dlg.close());
+  outside = lightDismiss(dlg, { form, onClose: () => dlg.close() }); // 没改过同“取消”，改过先问
   // Esc、取消关掉时焦点还给触发按钮（规则区可能已重渲染，原来的按钮不在了，按 id 找）
   dlg.addEventListener("close", () => {
     if (dialogState && !dialogState.done) $(dialogState.opener)?.focus();

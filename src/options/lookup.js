@@ -5,6 +5,7 @@ import { h, ht, option, disclosure, clearFieldErrors, showFieldErrors, focusedRo
 import { IMAGE_PRESET, IMAGE_CATALOG } from "../lib/image-engines.js";
 import { engineById, engineOrigin } from "../lib/engines.js";
 import { t } from "../chrome/i18n.js";
+import { lightDismiss } from "./dialogs.js";
 
 const FOLLOW = "";
 const $ = (id) => document.getElementById(id);
@@ -107,11 +108,14 @@ export function setupLookupDialogs(actions) {
   const catalog = $("image-catalog-dialog");
   const dlg = $("image-dialog");
   const form = $("image-form");
+  // 点外部：引擎库同“关闭”；新增对话框没改过同“取消”，改过先问
+  lightDismiss(catalog, { onClose: () => catalog.close() });
+  const outside = lightDismiss(dlg, { form, onClose: () => dlg.close() });
   // 按钮在卡片里，卡片每次渲染都重建：监听挂在不会重建的卡片容器上
   $("lookup-body").addEventListener("click", (ev) => {
     const id = ev.target.closest?.("button")?.id;
     if (id === "image-catalog-open") { renderCatalogBody(); if (!catalog.open) showDialog(catalog, ev.detail === 0); }
-    else if (id === "image-add-open") { form.reset(); clearFieldErrors(form); dlg.showModal(); form.elements.name.focus(); }
+    else if (id === "image-add-open") { form.reset(); clearFieldErrors(form); dlg.showModal(); form.elements.name.focus(); outside.mark(); }
   });
   $("image-catalog-close").addEventListener("click", () => catalog.close());
   $("image-cancel").addEventListener("click", () => dlg.close());

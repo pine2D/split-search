@@ -1389,6 +1389,18 @@
     "message": "例如詞是 vd：搜尋「vd 貓」時，兩側都只搜尋「貓」。搜尋裡只有這些詞時照常搜尋。",
     "description": "Rule dialog: hint under the strip checkbox."
   },
+  "options_discard_title": {
+    "message": "要儲存變更嗎？",
+    "description": "Confirm dialog shown when clicking outside a settings dialog with unsaved edits: title."
+  },
+  "options_discard_drop": {
+    "message": "不儲存",
+    "description": "Confirm dialog: button that closes the form and drops the edits."
+  },
+  "options_discard_keep": {
+    "message": "繼續編輯",
+    "description": "Confirm dialog: button that returns to the form to keep editing."
+  },
   "options_rules_strip_row": {
     "message": "· 去掉這些詞",
     "description": "Rule row: note after the target engine when the rule removes its words."
