@@ -53,6 +53,13 @@ test("没命中、原文空白与变音只在删到时才动", () => {
   assert.equal(S("éclair vd", ["vd"]), "éclair");       // 组合字符写法：变音留在原文里
 });
 
+test("并进字母的变音符跟着字母一起删（NFD 写法）", () => {
+  assert.equal(S("cafe\u0301 x", ["cafe"]), "x");
+  assert.equal(S("e\u0301clair vd", ["eclair"]), "vd");
+  assert.equal(S("x cafe\u0301", ["cafe"]), "x");
+  assert.equal(S("cafe\u0301 vd", ["vd"]), "cafe\u0301");          // 没删到的字母，变音符留着
+});
+
 test("规范化对不上时不删", () => {
   // 希腊文词尾 σ/ς：整串小写与逐字小写不同
   assert.equal(S("ΟΔΟΣ vd", ["vd"]), "ΟΔΟΣ vd");

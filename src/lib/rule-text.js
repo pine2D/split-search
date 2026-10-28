@@ -66,15 +66,20 @@ function normalizeOne(c, prevLatin) {
 }
 
 // 逐码点规范化 cps，得到与 normalizeText 同样的串 text，以及 text 每个 UTF-16 单元来自原文第几个码点（owner）
-// 和每个原文码点产出的区间（spans，产出为空时是 null）
+// 和每个原文码点产出的区间（spans，产出为空时是 null）；产出为空的非空白码点（被并进前一个拉丁字母的变音符）
+// 记下它跟着哪个码点（attach，最近一个有产出的码点，没有时是 -1），删那个码点时一起删
 function mapped(cps) {
   let text = "";
   const owner = [];
   const spans = [];
+  const attach = [];
+  let lastOut = -1;
   cps.forEach((c, k) => {
     let p = normalizeOne(c, k > 0 && LATIN.test(cps[k - 1]));
     if (p.startsWith(" ") && (text === "" || text.endsWith(" "))) p = p.slice(1);
     spans.push(p ? [text.length, text.length + p.length] : null);
+    attach.push(p || /\s/u.test(c) ? -1 : lastOut);
+    if (p) lastOut = k;
     text += p;
     for (let j = 0; j < p.length; j++) owner.push(k);
   });
@@ -84,7 +89,7 @@ function mapped(cps) {
     const k = owner.pop();
     if (spans[k] && spans[k][1] > text.length) spans[k] = spans[k][0] >= text.length ? null : [spans[k][0], text.length];
   }
-  return { text, owner, spans };
+  return { text, owner, spans, attach };
 }
 
 // 区间正好由若干个原文码点的完整产出组成（不切开一个码点的产出，例如“½”规范化成的三个字符）
@@ -114,6 +119,7 @@ export function stripWords(query, words) {
     }
   }
   if (removed.size === 0) return q;
+  map.attach.forEach((to, k) => { if (to >= 0 && removed.has(to)) removed.add(k); });
   const kept = cut.filter((_, k) => !removed.has(k)).join("") + rest;
   const out = kept.replace(/\s+/gu, " ").trim();
   return out === "" ? q : out;
