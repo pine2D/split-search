@@ -70,8 +70,10 @@ function setupConfirm() {
   document.getElementById("discard-drop").addEventListener("click", () => choose("drop"));
   document.getElementById("discard-keep").addEventListener("click", () => choose("keep"));
   watchBackdrop(dlg, () => choose("keep"));
-  // Esc 关掉确认框：等同“继续编辑”（按钮路径已先清掉 confirmCtx）
+  // Esc 关掉确认框：等同“继续编辑”（按钮路径已先清掉 confirmCtx）。
+  // close 事件是异步派发的：上一次关掉的 close 可能在确认框又被打开之后才到，那时它已经属于新的一次，不能吞掉新的 confirmCtx
   dlg.addEventListener("close", () => {
+    if (dlg.open) return;
     const ctx = confirmCtx;
     confirmCtx = null;
     if (ctx) keepEditing(ctx);
