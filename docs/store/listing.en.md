@@ -32,45 +32,28 @@ Search from the address bar or drag text to the tab strip to compare two search 
 Search from the address bar or drag selected text onto the tab strip, and Split Search opens results from two search engines side by side in Chrome’s split view, so you can compare them.
 
 FEATURES
-• Works from the address bar, from text dragged onto the tab strip, and from the Search [engine] for “…” item in Chrome’s right-click menu
-• On a results page from one of your engines, click the toolbar button and pick another engine to open the same search next to it in a split view
-• Select text on a web page and right-click to look it up in a split view, with the page staying on the left
-• Right-click an image to search it with Google Lens or another image search engine, next to the page you’re on
-• Google, Bing, DuckDuckGo, Perplexity and Kagi are built in, and you can add other search engines
-• The engine catalog has translation, reference, video, map and other sites that work well on the right side, plus AI assistants, ready to add
-• Set up several engine pairs, each with its own shortcut. For example, type “gb your search” to compare Google and Bing
+• Compare two engines from the address bar or by dragging text onto the tab strip. Pick your engines, add your own, and set up several pairs, each with its own shortcut
+• Right-click selected text or an image to look it up next to the page you’re on
 • Click the toolbar button to switch the right side to another engine without searching again
-• Keyword rules can switch the right-side engine for you, for example to YouTube when your search contains “video”, and they can also remove that word from the search. Click the toolbar button to see why it switched, or to switch back
-• Or press a keyboard shortcut to switch the right side to the next engine. No shortcut is set by default; set one on Chrome’s Keyboard shortcuts page (chrome://extensions/shortcuts)
-• When the window is narrow, the right side opens in a background tab next to the left one instead. You can turn this off
-• Both sides are regular tabs, so you stay signed in and your site settings still apply
+• The right-side engine can switch automatically by keyword, for example to YouTube when your search contains “video”
 
 SETUP
-1. On the settings page, grant access to the engines you want to use
-2. Pick a left and a right engine, then copy the generated URL
-3. In Chrome settings, add that URL under “Site search” and choose “Make default”
+1. On the settings page, grant access to your search engines
+2. Copy the URL the settings page generates, add it under “Site search” in Chrome settings, and choose “Make default”
 The settings page walks you through each step.
 
 GOOD TO KNOW
 • Requires Chrome 155 or later
-• In Incognito windows, on other devices, or when the extension isn’t active, you get a normal search
 • After you choose “Make default”, the address bar no longer shows search suggestions
-• Only images with a public address can be searched, and engines usually can’t get images that need a sign-in
+• In Incognito windows or on other devices, you get a normal search
 
 PRIVACY
-Split Search sends nothing to the developer or any other third party. What you look up goes only to the engines you chose, including one you switch to from the popup or with the keyboard shortcut. It has no servers, analytics or ads. To open the split view, it reads the URL of your search on your device, the current tab’s URL when you click the toolbar button, and the other tab’s URL when needed. It doesn’t store those URLs. It reads the selected text or an image’s address only when you choose one of its right-click menu items, and it doesn’t read the page’s URL or anything else on the page. Some image addresses include access credentials, so the engine can open that image too. What you searched and the two engines are kept in browser memory so the popup can show them and switch engines, and they’re cleared when you close the browser. Split Search doesn’t read your browsing history.
+What you look up goes only to the search engines you choose, never to the developer or any other third party. Split Search has no servers, analytics or ads. To open the split view, it reads your search URL and the current tab’s URL on your device and doesn’t store them. It reads selected text or an image’s address only when you use its right-click menu. Your searches are kept in browser memory and cleared when you close the browser.
 ```
 
-字数：3303（含换行）
+字数：1536（含换行）
 
-措辞说明：
-
-- 按 `listing.zh-CN.md` 的新版详细说明转写（2026-10-24），结构相同：开头一句、FEATURES、SETUP、GOOD TO KNOW、PRIVACY；已过 humanizer。
-- 术语取 Chrome 英文界面（`docs/i18n/chrome-terms.md`）：split view、address bar、tab strip、Site search、Make default、Search [engine] for “…”（Chrome 自带的右键菜单项；本扩展自己的两项按功能写成 look it up、search it，不写菜单原文）。引号用弯引号，与 `src/_locales/en` 一致。
-- 实现细节（`_ss` 参数、授权不随同步、Service Worker 退化等）不写进详情，留给设置页的逐步说明和内部文档。
-- PRIVACY 段与 `privacy.md` 一致（v0.4 改写，2026-10-25）：第一句说不发给开发者或其他第三方、要查的内容只发给所选引擎，不再说“Your data stays on your device”；写明本机读取的网址不保存、只在用户选了菜单项时才读选区和图片网址、查询内容和两侧引擎只暂存在浏览器内存、关闭浏览器即清除，不读浏览记录。数据使用披露勾 Web history 和 Website content，这一段是对此的公开说明，不要删减。v0.4 新增的 FEATURES、GOOD TO KNOW 条目和 PRIVACY 段已过 humanizer。
-- 网站搜索的 Shortcut（Chrome 术语）写作 “shortcut”，扩展的快捷键一律写 “keyboard shortcut”，页面名照 Chrome 界面写 “Keyboard shortcuts”。v0.3 新增的 FEATURES 条目已过 humanizer。
-- v0.5 的 keyword rules 条目按 zh-CN 新条目转写，功能名与设置页 `options_rules_title`（“Keyword rules for the right side”）一致，已过 humanizer。
+措辞说明：2026-10-28 按用户要求精简为核心内容：四条功能、两步设置、三条须知，次要功能和实现细节不写。隐私段仍写明本机读取哪些网址且不保存、只在用户用右键菜单时读选区和图片网址、查询只暂存在内存；不说“不收集”“不读取网页内容”，与 privacy.md 和数据使用披露（网页浏览记录、网站内容）一致，再删要先对照 privacy.md。术语沿用此前各版核实过的 Chrome 界面叫法。
 
 ## Category / Language
 
