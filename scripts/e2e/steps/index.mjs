@@ -33,6 +33,9 @@ import { V04_GUARD_STEPS } from "./v04-guard.mjs";
 import { T24 } from "./v04-guard-x.mjs";
 import { V05_RULE_STEPS } from "./v05-rules.mjs";
 import { V05_OPTIONS_STEPS } from "./v05-options.mjs";
+import { V07_STRIP_STEPS } from "./v07-strip.mjs";
+import { V07_DIALOG_STEPS } from "./v07-dialogs.mjs";
+import { V07_OPTIONS_STEPS } from "./v07-options.mjs";
 
 // B 系列在前，CORE-* 其次，T 系列最后；同类按数字排序
 const GROUP = { B: 0, CORE: 1, T: 2 };
@@ -52,7 +55,8 @@ const replaced = new Set(XAUTO.map(x => x.id));
 const MANUAL = [...ASSISTED_STEPS, ...DRAG_STEPS, ...ASSISTED_2].filter(s => !replaced.has(s.id));
 export const STEPS = sortSteps([...OPTIONS_STEPS, ...FLOW_STEPS, B1, B4, B14, B19, B21, ...MANUAL, T8, I18N,
   ...V03_SPLIT_STEPS, ...V03_NARROW_STEPS, ...V03_POPUP_STEPS, ...V03_OPTIONS_STEPS,
-  ...V04_COMPLETE_STEPS, ...V04_OPTIONS_STEPS, ...V04_GUARD_STEPS, ...V05_RULE_STEPS, ...V05_OPTIONS_STEPS].map(withNeeds).concat(XAUTO));
+  ...V04_COMPLETE_STEPS, ...V04_OPTIONS_STEPS, ...V04_GUARD_STEPS, ...V05_RULE_STEPS, ...V05_OPTIONS_STEPS,
+  ...V07_STRIP_STEPS, ...V07_DIALOG_STEPS, ...V07_OPTIONS_STEPS].map(withNeeds).concat(XAUTO));
 
 // xinput：真实输入可用（xinput.available().ok）。可用 → xauto 版本，否则换成 fallback（不算失败）。
 // autoOnly 只留不需要人的步骤：auto，以及（可用时的）xauto
