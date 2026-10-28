@@ -352,6 +352,9 @@ dialog:focus { outline: none; }
 
 .check-row { display: flex; align-items: flex-start; gap: 8px; margin-top: 12px; font-size: 13px; }
 .check-row input { margin-top: 2px; flex: none; }
+/* 字段里的复选框行（规则对话框的 #rule-strip）：盖掉 .field label 的块级加粗与 .field input 的整行宽 */
+.field .check-row { display: flex; font-weight: normal; margin: 8px 0 0; }
+.field .check-row input { width: auto; }
 
 /* ---- 快捷键 ---- */
 /* 参与轮换的引擎清单（shortcut.js）：收在 <details> 里，复选框放不下时换行 */
