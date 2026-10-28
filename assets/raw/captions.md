@@ -9,13 +9,13 @@
 - 扩展从本仓库 `src/` 用 CDP `Extensions.loadUnpacked` 加载，版本 0.1.0。
 - 用 `import -window root` 截取整个屏幕，包括标签栏和分屏。Xvfb 截图里没有鼠标指针。
 - 除 `options-fullpage.png` 外，其余都是 2400×1500 的整窗截图。
+- `drag-result-split.png`、`omnibox-suggest.png`、`omnibox-result-split.png` 三张是 2026-10-28 用 Chrome 156 重拍的，环境见下文“中文结果截图的重拍”。
 
 ## 设置页的状态
 
 - 默认组合：DuckDuckGo ｜ Bing。
 - 引擎排序：DuckDuckGo、Bing、Google、Kagi、Perplexity。
 - 授权：只授权了 `https://duckduckgo.com/*` 和 `https://www.bing.com/*`，是在设置页点“点此授权”后，在 Chrome 授权框里点“允许”授予的。
-- 拍完设置页之后，又添加了一个自定义引擎“百度”（id `baidu`，`https://www.baidu.com/s?wd=%s`），百度没有授权。`options-*.png` 是添加百度之前拍的，所以里面没有百度。
 
 ## 截图清单
 
@@ -26,11 +26,10 @@
 | `options-fullpage.png` | 2378×2876 | 设置页整页，用 CDP `Page.captureScreenshot` 拍，只有页面内容、不含浏览器界面。状态和上面两张相同。 |
 | `permission-prompt.png` | 2400×1500 | 设置页点“点此授权 DuckDuckGo（必需）和 Bing（建议）”后弹出的 Chrome 授权框，内容是“读取和更改您在 duckduckgo.com 和 www.bing.com 上的数据”。这时默认组合已经改成 DuckDuckGo ｜ Bing，但还没授权，所以页面上有黄色提示。 |
 | `split-ddg-bing-rust.png` | 2400×1500 | 原生分屏：左边是 DuckDuckGo，右边是 Bing，查询词“rust programming”。新开一个标签访问触发网址 `https://duckduckgo.com/?q=rust+programming&_ss=ddg,bing`，由扩展的 DNR 规则和 go.html 建成分屏，和真实使用的路径相同。页面缩放 100%。两个网页在约 800 CSS 像素宽的窗格里都有横向滚动条，这是两个网站本身的问题。 |
-| `split-ddg-baidu-weather.png` | 2400×1500 | 原生分屏：左边是 DuckDuckGo，右边是百度（自定义引擎），查询词“北京 天气”。在已有的扩展分屏左侧访问触发网址 `…&_ss=ddg,baidu`，扩展在原分屏里直接更新两侧。 |
 | `drag-to-tabstrip.png` | 2400×1500 | 拖拽过程中：在中文维基百科“Rust (编程语言)”页面选中正文里的“Graydon Hoare”，用 xdotool 真实按下鼠标，把选中的文字拖到标签栏空白处，在还没松手时截图。可以看到标签栏上方的拖拽影像“Graydon Hoare”；第一个标签右下方还有一个黑底白色“↑”方块，应该是 Chrome 的标签插入位置箭头，Xvfb 没有合成器，它的透明背景变成了黑色（合成时已盖掉，见“修补”）。拍之前用页面自带的关闭按钮关掉了维基百科的活动横幅。 |
-| `drag-result-split.png` | 2400×1500 | 上一张松手之后的结果：Chrome 用默认搜索引擎打开新标签，扩展把它变成分屏，左边 DuckDuckGo、右边百度，查询词“Graydon Hoare”。 |
-| `omnibox-suggest.png` | 2400×1500 | 在分屏左侧的地址栏输入“rust ownership”，下拉建议显示“rust ownership - DuckDuckGo ｜ 百度 搜索”。这是 Chrome 用默认搜索引擎（触发网址做成的网站搜索）给出的建议。 |
-| `omnibox-result-split.png` | 2400×1500 | 上一张按回车后的结果：扩展在原分屏里更新两侧，左边 DuckDuckGo、右边百度，查询词“rust ownership”。 |
+| `drag-result-split.png` | 2400×1500 | 拖拽松手之后的结果（2026-10-28 重拍，拖拽过程同上一张）：Chrome 用默认搜索引擎打开新标签，扩展把它变成分屏，左边 DuckDuckGo、右边 Bing，查询词“Graydon Hoare”。标签栏里是维基百科和分屏的两个标签。 |
+| `omnibox-suggest.png` | 2400×1500 | 在上一张分屏左侧的地址栏输入“rust ownership”，下拉建议显示“rust ownership - DuckDuckGo ｜ Bing 搜索”。这是 Chrome 用默认搜索引擎（触发网址做成的网站搜索）给出的建议（2026-10-28 重拍）。 |
+| `omnibox-result-split.png` | 2400×1500 | 上一张按回车后的结果：扩展在原分屏里更新两侧，左边 DuckDuckGo、右边 Bing，查询词“rust ownership”（2026-10-28 重拍）。 |
 
 ## 修补
 
@@ -51,13 +50,28 @@ convert drag-to-tabstrip.png \
 
 ## 拍摄时的默认搜索引擎
 
-拖拽和地址栏两组截图需要把触发网址设成 Chrome 默认搜索引擎。做法是用 e2e 脚本的 `settings-se.mjs` 操作 `chrome://settings/searchEngines`，添加网站搜索“DuckDuckGo ｜ 百度”，网址 `https://duckduckgo.com/?q=%s&_ss=ddg,baidu`，快捷字词是脚本专用的 `sse2e`，再设为默认。这和设置页引导用户手动做的步骤效果相同，只是快捷字词不一样；快捷字词不出现在任何截图里。
+拖拽和地址栏两组截图需要把触发网址设成 Chrome 默认搜索引擎。做法是用 e2e 脚本的 `settings-se.mjs` 操作 `chrome://settings/searchEngines`，添加网站搜索“DuckDuckGo ｜ Bing”，网址 `https://duckduckgo.com/?q=%s&_ss=ddg,bing`，快捷字词是脚本专用的 `sse2e`，再设为默认（2026-10-24 的 `drag-to-tabstrip.png` 拍摄时这条网站搜索的右侧是当时的自定义引擎，拖拽中的画面里看不到它）。这和设置页引导用户手动做的步骤效果相同，只是快捷字词不一样；快捷字词不出现在任何截图里。
 
 ## 已知限制（以后补拍时注意）
 
-- 这台机器上 Bing 对中文查询会弹出人机验证（“最后一步 / 请验证您是真人”），所以中文场景的右侧换成了百度。补拍时，中文查询不要用 Bing 作右侧。
-- 截图里引擎页面的内容（DuckDuckGo 的 Search Assist、百度的 AI 摘要、“大家还在搜”等）都是网站当时实际返回的结果，没有改过。
+- 2026-10-24 这台机器上 Bing 对中文查询弹过人机验证（“最后一步 / 请验证您是真人”）。2026-10-28 重拍用的是英文查询词“Graydon Hoare”“rust ownership”，Bing 没有弹。补拍时尽量用英文查询词；Bing 弹验证时改用 `en/` 的同名截图，并在这里写明。
+- 截图里引擎页面的内容（DuckDuckGo 的 Search Assist、Bing 的结果和结果数、第一条结果标题的下划线等）都是网站当时实际返回的结果，没有改过。
 - 横向滚动条是 Linux 版 Chrome 的普通滚动条。Windows 上的效果以实拍为准。
+
+## 中文结果截图的重拍（2026-10-28，v0.7 去掉百度）
+
+v0.7 起百度不再出现在任何面向用户的地方（设计见 `docs/superpowers/specs/2026-10-28-v0.7-design.md` A2）。画面里有百度的三张 `drag-result-split.png`、`omnibox-suggest.png`、`omnibox-result-split.png` 换成 DuckDuckGo ｜ Bing 重拍，原来没被任何模板用到的 `split-ddg-baidu-weather.png` 删掉。`drag-to-tabstrip.png` 画面里没有百度，没有重拍。
+
+- Google Chrome 156.0.8078.47（Linux），界面语言中文：启动参数加 `--lang=zh-CN`、环境变量 `LANGUAGE=zh_CN:zh`，另加 `--disable-features=LcdTextAntialiasing,Translate`（包装脚本自带的 `LcdTextAntialiasing` 一起写上，同名开关只认最后一个），并往临时配置的 `Default/Preferences` 写 `translate.enabled: false`。私有 Xvfb（:90，2400×1500），`/opt/google/chrome/google-chrome` 固定缩放 1.5，窗口经 CDP 设成 1600×1000 CSS 像素铺满屏幕，`import -window root` 截整屏，没有鼠标指针。
+- 全新的一次性配置（`--disable-sync`，没有登录 Chrome 账号和任何网站），拍完删除；没有用 e2e 测试配置。启动、字体配置、Xvfb 都经 `scripts/e2e` 的 `browser.mjs`（`launch()`）、`display.mjs`。Accept-Language 是全新配置按 `--lang` 给的中文，DuckDuckGo 和 Bing（`www.bing.com`）都返回中文界面，没有加 `kl`、`setlang` 之类的参数。
+- 扩展从本仓库 `src/` 用 CDP `Extensions.loadUnpacked` 加载，版本 0.6.1（main 上 ecc7961 之后的工作区）。`storage.sync` 写成默认组合 DuckDuckGo ｜ Bing、引擎排序 DuckDuckGo、Bing、Google、Kagi、Perplexity；只授权 `https://duckduckgo.com/*` 和 `https://www.bing.com/*`，在设置页发起申请，Chrome 授权框里用 xdotool 按 Tab、回车点“允许”。
+- 网站搜索：`settings-se.mjs` 添加“DuckDuckGo ｜ Bing”（设置页建议的名称）、网址 `https://duckduckgo.com/?q=%s&_ss=ddg,bing`、快捷字词 `sse2e`，设为默认；之后关掉设置页和 `chrome://settings` 窗口，标签栏只剩一个标签。
+- 拍摄过程：这个标签打开中文维基百科“Rust (编程语言)”，用页面自带的关闭按钮关掉活动横幅，在正文“…员工Graydon Hoare的个人项目…”里选中“Graydon Hoare”（不是链接），用 xdotool 真实按下鼠标拖到标签栏空白处（落点 1509,30，与 `drag-to-tabstrip.png` 相同）松手，等两侧结果都出来后截 `drag-result-split.png`；指针挪到标签栏右侧空白处（1900,30），按 Ctrl+L 在分屏左侧的地址栏输入“rust ownership”、按 Delete 去掉行内补全，截 `omnibox-suggest.png`；回车后扩展在原分屏里更新两侧，等两侧结果都出来后截 `omnibox-result-split.png`。
+- Bing 两次都直接出结果，没有人机验证，所以没用 `en/` 的截图顶替。
+- 与 `drag-to-tabstrip.png` 不同之处：那张是 2026-10-24 用 Chrome 155 拍的（拖拽中的画面），这三张是 Chrome 156，浏览器界面的细节（标签图标、配色）略有差别，只用在不上传的 zh_CN、zh_TW、es 套图里。
+- 模板随之改的：`readme-how-it-works.html` 第 3 栏的裁切高度原来是 1127（百度截图的空白行），新截图在 x 0–1640 范围内的空白行是 1100–1120，改成与英文截图共用的 1102；`store-2-omnibox.html` 的下拉框细框（246,132,504,56）和两张模板的结果分屏裁切不用改。`node scripts/store/render-assets.mjs --locale zh_CN`、`zh_TW`、`es` 重新渲染，渲染器没有报溢出或超行；`--locale en` 重新渲染后英文图逐字节不变。
+
+三张都逐一看过：没有百度，右侧是 Bing；地址栏下拉建议是“rust ownership - DuckDuckGo ｜ Bing 搜索”；没有账号头像（右上角是未登录的默认图标）、令牌、IP 和其他浏览历史。
 
 ## 英文截图（en/）
 
@@ -68,7 +82,7 @@ convert drag-to-tabstrip.png \
 - Google Chrome 155.0.8059.84（Linux），界面语言英文：启动参数加 `--lang=en-US`、环境变量 `LANGUAGE=en_US:en`。独立 Xvfb 屏幕 2400×1500、缩放 1.5，窗口 1600×1000 CSS 像素，`import -window root` 截整屏，没有鼠标指针。
 - 用 e2e 的隔离测试配置 `~/.cache/split-search-e2e/profile`（`--disable-sync`，不登录 Chrome 账号），全程经 `scripts/e2e` 的模块：`display.mjs` 起私有 Xvfb，`browser.mjs` 启动，`ext-source.mjs` 改装本检出（feat/v0.2）的 `src/`，`settings-se.mjs` 加网站搜索并设默认，`xinput.mjs` 真实拖拽和键盘输入，`teardown.mjs` 的恢复步骤收尾：`storage.sync` 读回与快照一致，默认搜索引擎改回运行前的那个、删掉 `sse2e` 条目，扩展改回运行前装自的目录。测试配置的 Accept-Language 是 `en-US,en,zh-CN`，DuckDuckGo 和 Bing 都返回英文页面，没有加 `kl`、`setlang` 之类的参数。
 - 扩展版本 0.2（带 c6 正式图标），`storage.sync` 临时写成 `uiLocale: "en"`、默认组合 DuckDuckGo ｜ Bing、引擎排序 DuckDuckGo、Bing、Google、Kagi、Perplexity。测试配置里五个预置引擎都已授权，所以设置页里全部显示“Access granted”。
-- 网站搜索：名称 `DuckDuckGo | Bing`（设置页建议的名称）、网址 `https://duckduckgo.com/?q=%s&_ss=ddg,bing`、快捷字词 `sse2e`，设为默认。右侧全部是预置的 Bing，没有百度。
+- 网站搜索：名称 `DuckDuckGo | Bing`（设置页建议的名称）、网址 `https://duckduckgo.com/?q=%s&_ss=ddg,bing`、快捷字词 `sse2e`，设为默认。右侧全部是预置的 Bing。
 
 | 文件 | 内容 |
 |---|---|

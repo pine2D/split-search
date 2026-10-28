@@ -53,7 +53,7 @@ node scripts/store/render-assets.mjs --icon assets/icon-proposals/<方案目录>
 | 文件 | 尺寸 | 模板 | 内容 |
 |---|---|---|---|
 | `screenshot-1.png` | 1280×800 | `store-1-split` | “一次搜索，两个引擎左右对比”：DuckDuckGo ｜ Bing（预置组合）拆分视图整窗 |
-| `screenshot-2.png` | 1280×800 | `store-2-omnibox` | “地址栏照常搜索，回车就打开拆分视图”：上方是输入“rust ownership”时的下拉建议（只取下拉框，框出“DuckDuckGo ｜ 百度 搜索”），下方是回车后的拆分视图整窗（同一查询词）；右下角注明“百度”为自行添加的引擎 |
+| `screenshot-2.png` | 1280×800 | `store-2-omnibox` | “地址栏照常搜索，回车就打开拆分视图”：上方是输入“rust ownership”时的下拉建议（只取下拉框，框出“DuckDuckGo ｜ Bing 搜索”），下方是回车后的拆分视图整窗（同一查询词） |
 | `screenshot-3.png` | 1280×800 | `store-3-drag` | “选中文字，拖到标签栏”（副标题写明前提“触发网址设为默认后”）：拖拽中的真实画面加箭头，右下角小图是松手后的拆分视图；Xvfb 下黑底的插入箭头用修补图盖掉（见 `assets/raw/captions.md`“修补”） |
 | `screenshot-4.png` | 1280×800 | `store-4-engines` | “引擎自己选，组合随意配”：设置页的引擎列表，叠一张放大到约 0.67 的“添加到 Chrome”默认组合块（触发网址 + 复制） |
 | `screenshot-5.png` | 1280×800 | `store-5-fallback` | “其他设备与无痕窗口：自动退化为普通搜索”：同一个触发网址，装了扩展是拆分视图，没生效时是普通 DuckDuckGo 结果页（左图只取两个窗格上半部分，缩放约 0.31；右图只取网页区域，约 0.51） |
@@ -93,9 +93,10 @@ node scripts/store/render-assets.mjs --icon assets/icon-proposals/<方案目录>
 
   四种语言并排对照：`assets/proposals/locales-compare.png`（源文件 `locales-compare.html`，无头 Chrome 宽 1800 整页截图；图片改了要重截）。共用模板与 `base.css` 没有为译文改动，zh_CN 重渲后与提交的图逐字节一致。
 - **宣传截图暂时只做英文（2026-10-24 用户决定）**：取代原来“4 种语言都要重拍真实截图”的计划。
-  - `assets/raw/en/` 是英文的真实截图（拍法见 `assets/raw/captions.md`“英文截图”）：英文 Chrome 界面（`--lang=en-US`）、扩展界面语言 `en`、c6 正式图标、英文结果页，右侧全部是预置的 Bing，没有百度。`render-assets.mjs` 渲染某种语言时，`assets/raw/<语言>/` 里有同名截图就用它，没有就用 `assets/raw/` 根下共用的；画面位置不同的地方，模板用 `data-crop-en`、`data-box-en`、`data-d-en`、`data-text-en` 写英文截图的坐标和网址（`crop.js`）。目前只有 `en` 有自己的截图。
+  - `assets/raw/en/` 是英文的真实截图（拍法见 `assets/raw/captions.md`“英文截图”）：英文 Chrome 界面（`--lang=en-US`）、扩展界面语言 `en`、c6 正式图标、英文结果页，右侧全部是预置的 Bing。`render-assets.mjs` 渲染某种语言时，`assets/raw/<语言>/` 里有同名截图就用它，没有就用 `assets/raw/` 根下共用的；画面位置不同的地方，模板用 `data-crop-en`、`data-box-en`、`data-d-en`、`data-text-en` 写英文截图的坐标和网址（`crop.js`）。目前只有 `en` 有自己的截图。
   - 上传：截图、小宣传图、顶部宣传图都用 `assets/store/en/`。CWS 对所有语言显示同一组截图，除非为某种语言另行上传本地化截图；这次不上传其他语言的截图。
-  - 其他语言（zh_CN、zh_TW、es）的截图暂不维护：`assets/store/zh_CN|zh_TW|es/` 的画面仍是中文 Chrome、旧字母图标、右侧百度，不要上传。以后要做，再按 `en` 的办法为该语言拍 `assets/raw/<语言>/` 并补对应的 `data-*-<语言>` 坐标。
+  - 其他语言（zh_CN、zh_TW、es）的截图暂不维护：`assets/store/zh_CN|zh_TW|es/` 的画面仍是中文 Chrome 和旧字母图标，不要上传。以后要做，再按 `en` 的办法为该语言拍 `assets/raw/<语言>/` 并补对应的 `data-*-<语言>` 坐标。
+  - 2026-10-28（v0.7，百度不再出现在任何面向用户的地方）：共用中文截图里右侧是百度的三张（`omnibox-suggest.png`、`omnibox-result-split.png`、`drag-result-split.png`）已用中文 Chrome 156 换成 DuckDuckGo ｜ Bing 重拍（拍法见 `assets/raw/captions.md`“中文结果截图的重拍”），zh_CN、zh_TW、es 的商店图和 README 图都已重渲，画面里不再有百度。只维护 `en` 商店截图的政策不变：这三种语言的图仍不上传。重渲时 zh_TW 和 es 另有几张与模板、截图无关的图也变了（zh_TW 的截图 1、4、5 与两张宣传图，es 的截图 1），是之前的文案或模板改动（如 df4769c 改了 `i18n/zh_TW.json`、`es.json`）之后没有重渲，这次一起更新。
 - **宣传图不能按语言区分**：CWS 的小宣传图（440×280）和顶部宣传图（1400×560）全站只有一张，但 d1 的这两张都带一句文案（`small.tag`、`marquee.*`），渲染会每种语言各出一张。i18n 方案第 11 节写的是“宣传图不分语言，图上尽量不放文字，必须放就只放英文产品名”。按上一条的决定上传 `en` 版本（与 `default_locale` 一致）；要完全不带文案，还得另做一版。
 
 ## Review fixes（2026-10-24）
@@ -110,7 +111,7 @@ node scripts/store/render-assets.mjs --icon assets/icon-proposals/<方案目录>
 4. **v3 / v5 在 16px 下撞车**：v3 的 16px 每格加 1px 白色横条（搜索框）；v5 的 16px 改为每块 6×10、错开 4px、对角圆角 5。对比图每行加了一条“16px 下长什么样”的说明，并注明宣传图里的图标是占位。
 5. **隐私政策概要**与 Web history 披露矛盾：中英概要改为“只在你的设备上处理完成功能所需的数据，不发送给开发者或第三方，也不出售”。（这一条对应的“勾选 Web history”已被 2026-10-24 的决定取代：Web history 不勾，见 `privacy.md` (d)。）
 6. **DNR 域名范围**：权限理由和代码事实速查改为“可作左侧的引擎的 hostname（及其子域名）”。
-7. **百度不在预置引擎里**：`screenshot-1` 和 marquee 换成预置组合 DuckDuckGo ｜ Bing；`screenshot-2`、`screenshot-3` 仍用百度（中文场景 Bing 会弹人机验证），右下角加注“示例右侧‘百度’为自行添加的引擎”，中英详细说明的引擎条目也加了一句。
+7. **百度不在预置引擎里**：`screenshot-1` 和 marquee 换成预置组合 DuckDuckGo ｜ Bing；`screenshot-2`、`screenshot-3` 当时仍用百度（中文场景 Bing 会弹人机验证），右下角加注“示例右侧‘百度’为自行添加的引擎”，中英详细说明的引擎条目也加了一句。2026-10-28（v0.7）起百度不再出现：这两张图的原始截图换成 DuckDuckGo ｜ Bing 重拍（英文查询词，Bing 没有弹人机验证），注记随之去掉（d1 模板里已经没有它），见第 4 节。
 8. **manifest 缺 icons**：在 `listing.zh-CN.md` 开头新增“提交前必做”清单（manifest 图标、选定图标后重渲、隐私政策托管）。manifest 本身未改，需要你确认。
 9. **v6 放在白色底板上成“板中板”**：`render-assets.mjs` 新增 `--no-tile`，去掉白底板并让图标自带的底板铺满；上文“任何一个方案都能用”的说法已更正。
 10. **橙色对比度**：图标提案的橙色从 `#F26B3A` 加深到 `#E0561F`（对 `#f1f3f4` 约 3.4:1，对 `#202124` 约 4.2:1），v3/v4/v5 的 notes 都写明了；v5 的 128 母版仍用橙色渐变（大尺寸不受影响）。
