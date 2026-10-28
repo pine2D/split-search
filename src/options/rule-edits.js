@@ -17,7 +17,7 @@ function base(raw) {
 
 const wordCount = (rules) => rules.reduce((n, r) => n + (r.when === "words" ? r.words.length : 0), 0);
 
-// form：{ when, words, script, engine }；prev：编辑时原来那条（清洗后，带 off），新增时为 null。
+// form：{ when, words, script, engine, strip? }；prev：编辑时原来那条（清洗后，带 off），新增时为 null。
 // 返回 { rule }（不带 id）或 { errors }
 function buildRule(cfg, form, prev) {
   const errors = {};
@@ -31,6 +31,7 @@ function buildRule(cfg, form, prev) {
     const parsed = parseWords(form.words);
     if (parsed.ok) rule.words = parsed.words;
     else errors.words = spec(parsed.error.code, ...parsed.error.args);
+    if (form.strip === true) rule.strip = true;
   }
   const engine = form.engine;
   // 编辑一条原引擎已隐藏的规则：照原样保存放行；原引擎是默认左侧或已删除时必须重新选

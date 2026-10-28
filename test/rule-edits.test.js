@@ -270,3 +270,13 @@ test("moveNotice / removeNotice：真的写了才提示（RF3）", () => {
   assert.deepEqual(removeNotice({ ok: true, patch: null, remove: ["rightRules"] }), ["notice_rule_deleted"]);
   assert.equal(removeNotice({ ok: true, patch: null }), null);
 });
+
+test("addRule writes strip only for checked words rules", () => {
+  assert.equal(addRule(raw, form({ strip: true })).patch.rightRules.at(-1).strip, true);
+  assert.equal("strip" in addRule(raw, form({ strip: false })).patch.rightRules.at(-1), false);
+  assert.equal("strip" in addRule(raw, form({ when: "script", strip: true })).patch.rightRules.at(-1), false);
+});
+test("editRule can clear strip", () => {
+  const r0 = withRules([{ id: "r1", when: "words", words: ["vd"], engine: "ec", strip: true }]);
+  assert.equal("strip" in editRule(r0, "r1", form({ words: "vd", strip: false })).patch.rightRules[0], false);
+});

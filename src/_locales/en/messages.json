@@ -1381,6 +1381,18 @@
     "message": "Separate words with commas, for example: weather, forecast. Case and full-width or half-width forms don’t matter. English words match only as whole words, so js doesn’t match jsonl.",
     "description": "Rule dialog: hint under the words field. The example words are typed by the user, so they may be translated; keep the js/jsonl example as is."
   },
+  "options_rules_strip_label": {
+    "message": "Remove these words from the search",
+    "description": "Rule dialog: checkbox label under the words field."
+  },
+  "options_rules_strip_hint": {
+    "message": "For example, if the word is vd, searching “vd cats” searches just “cats” on both sides. If the search contains only these words, it runs as typed.",
+    "description": "Rule dialog: hint under the strip checkbox."
+  },
+  "options_rules_strip_row": {
+    "message": "· removes these words",
+    "description": "Rule row: note after the target engine when the rule removes its words."
+  },
   "options_rules_script_label": {
     "message": "Writing system",
     "description": "Rule dialog: label of the writing-system dropdown (options are script_option_han, script_option_kana, script_option_hangul, script_option_cyrillic). Use the same word as err_rule_script."

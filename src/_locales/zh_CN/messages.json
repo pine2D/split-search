@@ -1381,6 +1381,18 @@
     "message": "用逗号分隔，例如：天气, weather。不分大小写和全角半角；英文按整词算，js 不会命中 jsonl。",
     "description": "Rule dialog: hint under the words field. The example words are typed by the user, so they may be translated; keep the js/jsonl example as is."
   },
+  "options_rules_strip_label": {
+    "message": "搜索时去掉这些词",
+    "description": "Rule dialog: checkbox label under the words field."
+  },
+  "options_rules_strip_hint": {
+    "message": "例如词是 vd：搜“vd 猫”时，两侧都只搜“猫”。搜索里只有这些词时照常搜索。",
+    "description": "Rule dialog: hint under the strip checkbox."
+  },
+  "options_rules_strip_row": {
+    "message": "· 去掉这些词",
+    "description": "Rule row: note after the target engine when the rule removes its words."
+  },
   "options_rules_script_label": {
     "message": "文字",
     "description": "Rule dialog: label of the writing-system dropdown (options are script_option_han, script_option_kana, script_option_hangul, script_option_cyrillic). Use the same word as err_rule_script."

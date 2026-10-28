@@ -48,7 +48,8 @@ function ruleRow(cfg, rule, index, total, shadows, posOf, actions) {
   };
   return h("li", { class: "rule-row", "data-id": rule.id },
     h("div", { class: "rule-main" },
-      h("span", { class: "rule-text" }, cond, " ", ht("span", null, target.key, name)),
+      h("span", { class: "rule-text" }, cond, " ", ht("span", null, target.key, name),
+        rule.strip === true && ht("span", { class: "rule-strip" }, "options_rules_strip_row")),
       off, shadowNotes),
     h("div", { class: "rule-side" },
       // “编辑”在 .row-actions 里：删除后 deleteWithFocus 把焦点交给相邻行的这个按钮
@@ -106,6 +107,7 @@ function openRuleDialog(id, openerId) {
   $("rule-when-words").checked = !script;
   $("rule-when-script").checked = script;
   $("rule-words").value = rule?.when === "words" ? rule.words.join(", ") : "";
+  $("rule-strip").checked = rule?.strip === true;
   $("rule-script").value = script ? rule.script : SCRIPTS[0];
   fillEngines(cfg, rule);
   showWhenFields();
@@ -132,7 +134,7 @@ export function setupRuleDialog(actions, getCfg) {
     ev.preventDefault();
     if (!dialogState) return;
     clearFieldErrors(form);
-    const input = { when: whenValue(), words: $("rule-words").value, script: $("rule-script").value, engine: $("rule-engine").value };
+    const input = { when: whenValue(), words: $("rule-words").value, script: $("rule-script").value, engine: $("rule-engine").value, strip: $("rule-strip").checked };
     const save = $("rule-dlg-save");
     save.disabled = true;
     try {

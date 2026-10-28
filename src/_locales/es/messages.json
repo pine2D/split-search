@@ -1381,6 +1381,18 @@
     "message": "Sepáralas con comas, por ejemplo: clima, weather. No importan las mayúsculas ni el ancho completo o medio. Las palabras en inglés solo coinciden completas: js no coincide con jsonl.",
     "description": "Rule dialog: hint under the words field. The example words are typed by the user, so they may be translated; keep the js/jsonl example as is."
   },
+  "options_rules_strip_label": {
+    "message": "Quitar estas palabras de la búsqueda",
+    "description": "Rule dialog: checkbox label under the words field."
+  },
+  "options_rules_strip_hint": {
+    "message": "Por ejemplo, si la palabra es vd, al buscar «vd gatos» se busca solo «gatos» en ambos lados. Si la búsqueda solo contiene estas palabras, se hace tal cual.",
+    "description": "Rule dialog: hint under the strip checkbox."
+  },
+  "options_rules_strip_row": {
+    "message": "· quita estas palabras",
+    "description": "Rule row: note after the target engine when the rule removes its words."
+  },
   "options_rules_script_label": {
     "message": "Sistema de escritura",
     "description": "Rule dialog: label of the writing-system dropdown (options are script_option_han, script_option_kana, script_option_hangul, script_option_cyrillic). Use the same word as err_rule_script."
