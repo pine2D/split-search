@@ -1,5 +1,5 @@
 # Pushing a v* tag builds the ZIP with `npm run pack` (no key) and publishes a GitHub release
-# whose notes are that version's CHANGELOG.md section. Run it by hand to (re)publish an existing tag.
+# whose notes are that version's section of CHANGELOG.md on the default branch. Run it by hand to (re)publish an existing tag.
 name: Release
 
 on:
@@ -31,12 +31,24 @@ jobs:
           node-version: 24
 
       - name: Build the extension ZIP
-        run: node scripts/pack.mjs
+        run: |
+          if [ -f scripts/pack.mjs ]; then
+            node scripts/pack.mjs
+          else
+            # v0.1.0 and v0.2.0 predate pack.mjs: zip src/ with the key removed, like pack.mjs does.
+            stage="$(mktemp -d)"
+            cp -r src/. "$stage"
+            node -e 'const f=process.argv[1],fs=require("fs"),m=JSON.parse(fs.readFileSync(f));delete m.key;fs.writeFileSync(f,JSON.stringify(m,null,2)+"\n")' "$stage/manifest.json"
+            mkdir -p dist
+            (cd "$stage" && zip -X -q -r -9 "$GITHUB_WORKSPACE/dist/split-search-${TAG#v}.zip" .)
+          fi
 
       - name: Write release notes from CHANGELOG.md
         run: |
           version="${TAG#v}"
           zip="split-search-${version}.zip"
+          # Notes come from the default branch, so older tags get the CHANGELOG as it reads today.
+          git show "origin/${{ github.event.repository.default_branch }}:CHANGELOG.md" > changelog.md
           test -f "dist/${zip}"
           {
             echo "**Install:** download \`${zip}\`, unzip it, then in \`chrome://extensions\` turn on Developer mode, click Load unpacked and select the unzipped folder. Or [install from the Chrome Web Store](https://chromewebstore.google.com/detail/Split%20Search/ebefmgpipceocigodihbbbhdiagmjdak)."
@@ -48,17 +60,19 @@ jobs:
               found && /^## \[/ { exit }
               found && /^\[[^]]+\]: / { exit }
               found { print }
-            ' CHANGELOG.md
+            ' changelog.md
           } > notes.md
           grep -q '^### ' notes.md
 
       - name: Publish the release
         run: |
           version="${TAG#v}"
+          latest=true
+          [ "$TAG" = "$(git tag -l 'v*' --sort=-v:refname | head -1)" ] || latest=false
           if gh release view "$TAG" > /dev/null 2>&1; then
             gh release upload "$TAG" "dist/split-search-${version}.zip" --clobber
-            gh release edit "$TAG" --title "Split Search ${version}" --notes-file notes.md
+            gh release edit "$TAG" --title "Split Search ${version}" --notes-file notes.md --latest="$latest"
           else
             gh release create "$TAG" "dist/split-search-${version}.zip" --verify-tag \
-              --title "Split Search ${version}" --notes-file notes.md
+              --title "Split Search ${version}" --notes-file notes.md --latest="$latest"
           fi
