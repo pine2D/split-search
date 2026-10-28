@@ -424,10 +424,15 @@ dialog:focus { outline: none; }
 .switch-text .hint { margin: 2px 0 0; }
 .switch {
   appearance: none; flex: none; position: relative; width: 34px; height: 20px; margin: 2px 0 0; padding: 0;
-  border-radius: 10px; background: var(--muted); cursor: pointer;   /* 轨道关：--muted 对白底约 6:1 */
+  border: 0; border-radius: 10px; background: var(--muted); cursor: pointer;   /* 轨道关：--muted 对白底约 6:1 */
 }
-.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 50%; background: var(--surface); }
+/* 滑块的大小和位置都从轨道推出（上下各留 3px、宽随高），开启时贴右边：
+   Windows Chrome 上复选框带默认边框时，写死的 left/top 会让滑块往右下偏 */
+.switch::after {
+  content: ""; position: absolute; top: 3px; bottom: 3px; left: 3px; aspect-ratio: 1;
+  border-radius: 50%; background: var(--surface);
+}
 .switch:checked { background: var(--accent); }
-.switch:checked::after { left: 17px; }
+.switch:checked::after { left: auto; right: 3px; }
 .switch:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 @media (forced-colors: active) { .switch { border: 1px solid CanvasText; } .switch::after { background: CanvasText; } .switch:checked { background: Highlight; } }
