@@ -40,7 +40,7 @@ FEATURES
 • The engine catalog has translation, reference, video, map and other sites that work well on the right side, plus AI assistants, ready to add
 • Set up several engine pairs, each with its own shortcut. For example, type “gb your search” to compare Google and Bing
 • Click the toolbar button to switch the right side to another engine without searching again
-• Keyword rules can switch the right-side engine for you, for example to Baidu when your search has Chinese characters. Click the toolbar button to see why it switched, or to switch back
+• Keyword rules can switch the right-side engine for you, for example to YouTube when your search contains “video”, and they can also remove that word from the search. Click the toolbar button to see why it switched, or to switch back
 • Or press a keyboard shortcut to switch the right side to the next engine. No shortcut is set by default; set one on Chrome’s Keyboard shortcuts page (chrome://extensions/shortcuts)
 • When the window is narrow, the right side opens in a background tab next to the left one instead. You can turn this off
 • Both sides are regular tabs, so you stay signed in and your site settings still apply
@@ -61,7 +61,7 @@ PRIVACY
 Split Search sends nothing to the developer or any other third party. What you look up goes only to the engines you chose, including one you switch to from the popup or with the keyboard shortcut. It has no servers, analytics or ads. To open the split view, it reads the URL of your search on your device, the current tab’s URL when you click the toolbar button, and the other tab’s URL when needed. It doesn’t store those URLs. It reads the selected text or an image’s address only when you choose one of its right-click menu items, and it doesn’t read the page’s URL or anything else on the page. Some image addresses include access credentials, so the engine can open that image too. What you searched and the two engines are kept in browser memory so the popup can show them and switch engines, and they’re cleared when you close the browser. Split Search doesn’t read your browsing history.
 ```
 
-字数：3255（含换行）
+字数：3303（含换行）
 
 措辞说明：
 

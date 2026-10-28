@@ -721,7 +721,7 @@
   },
   "engine_left_discouraged_suffix": {
     "message": "$NAME$ (better on the right)",
-    "description": "Option in the left engine picker of the pair generator for an engine better used on the right (e.g. Perplexity). The placeholder is the engine name.",
+    "description": "Option text in the left engine pickers (the default pair card and the pair generator) for an engine better used on the right (e.g. Perplexity). The placeholder is the engine name.",
     "placeholders": {
       "NAME": {
         "content": "$1",
@@ -1386,7 +1386,7 @@
     "description": "Rule dialog: checkbox label under the words field."
   },
   "options_rules_strip_hint": {
-    "message": "For example, if the word is vd, searching “vd cats” searches just “cats” on both sides. If the search contains only these words, it runs as typed.",
+    "message": "For example, with the word vd, “vd cats” becomes just “cats” on both sides. If the search is only these words, nothing is removed.",
     "description": "Rule dialog: hint under the strip checkbox."
   },
   "options_discard_title": {
@@ -1394,7 +1394,7 @@
     "description": "Confirm dialog shown when clicking outside a settings dialog with unsaved edits: title."
   },
   "options_discard_drop": {
-    "message": "Don't save",
+    "message": "Don’t save",
     "description": "Confirm dialog: button that closes the form and drops the edits."
   },
   "options_discard_keep": {
@@ -1403,7 +1403,7 @@
   },
   "options_rules_strip_row": {
     "message": "· removes these words",
-    "description": "Rule row: note after the target engine when the rule removes its words."
+    "description": "Rule row: note after the target engine when the rule removes its words from the search. Keep the leading middle dot; the row reads like “Contains vd → YouTube · removes these words”."
   },
   "options_rules_script_label": {
     "message": "Writing system",

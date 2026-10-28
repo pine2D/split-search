@@ -721,7 +721,7 @@
   },
   "engine_left_discouraged_suffix": {
     "message": "$NAME$ (mejor a la derecha)",
-    "description": "Option in the left engine picker of the pair generator for an engine better used on the right (e.g. Perplexity). The placeholder is the engine name.",
+    "description": "Option text in the left engine pickers (the default pair card and the pair generator) for an engine better used on the right (e.g. Perplexity). The placeholder is the engine name.",
     "placeholders": {
       "NAME": {
         "content": "$1",
@@ -1386,7 +1386,7 @@
     "description": "Rule dialog: checkbox label under the words field."
   },
   "options_rules_strip_hint": {
-    "message": "Por ejemplo, si la palabra es vd, al buscar «vd gatos» se busca solo «gatos» en ambos lados. Si la búsqueda solo contiene estas palabras, se hace tal cual.",
+    "message": "Por ejemplo, con la palabra vd, al buscar «vd gatos» ambos lados buscan solo «gatos». Si la búsqueda consiste únicamente en estas palabras, se deja tal cual.",
     "description": "Rule dialog: hint under the strip checkbox."
   },
   "options_discard_title": {
@@ -1403,7 +1403,7 @@
   },
   "options_rules_strip_row": {
     "message": "· quita estas palabras",
-    "description": "Rule row: note after the target engine when the rule removes its words."
+    "description": "Rule row: note after the target engine when the rule removes its words from the search. Keep the leading middle dot; the row reads like “Contains vd → YouTube · removes these words”."
   },
   "options_rules_script_label": {
     "message": "Sistema de escritura",

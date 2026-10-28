@@ -16,7 +16,7 @@ Search from the address bar or drag text to the tab strip, and Split Search open
 - The engine catalog has translation, reference, video, map and other sites that work well on the right side, plus AI assistants, ready to add
 - Set up several engine pairs, each with its own shortcut. For example, type “gb your search” to compare Google and Bing
 - Click the toolbar button to switch the right side to another engine without searching again
-- Keyword rules can switch the right-side engine for you, for example to Baidu when your search has Chinese characters. Click the toolbar button to see why it switched, or to switch back
+- Keyword rules can switch the right-side engine for you, for example to YouTube when your search contains “video”, and they can also remove that word from the search. Click the toolbar button to see why it switched, or to switch back
 - Or press a keyboard shortcut to switch the right side to the next engine. No shortcut is set by default; set one at `chrome://extensions/shortcuts`
 - When the window is narrow, the right side opens in a background tab next to the left one instead. You can turn this off on the settings page
 - Both sides are regular tabs, so you stay signed in and your site settings still apply

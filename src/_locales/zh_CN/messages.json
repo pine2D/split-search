@@ -721,7 +721,7 @@
   },
   "engine_left_discouraged_suffix": {
     "message": "$NAME$（建议作右侧）",
-    "description": "Option in the left engine picker of the pair generator for an engine better used on the right (e.g. Perplexity). The placeholder is the engine name.",
+    "description": "Option text in the left engine pickers (the default pair card and the pair generator) for an engine better used on the right (e.g. Perplexity). The placeholder is the engine name.",
     "placeholders": {
       "NAME": {
         "content": "$1",
@@ -1386,7 +1386,7 @@
     "description": "Rule dialog: checkbox label under the words field."
   },
   "options_rules_strip_hint": {
-    "message": "例如词是 vd：搜“vd 猫”时，两侧都只搜“猫”。搜索里只有这些词时照常搜索。",
+    "message": "例如词是 vd：搜“vd 猫”时，两侧都只搜“猫”。搜索里只有这些词时不去掉。",
     "description": "Rule dialog: hint under the strip checkbox."
   },
   "options_discard_title": {
@@ -1403,7 +1403,7 @@
   },
   "options_rules_strip_row": {
     "message": "· 去掉这些词",
-    "description": "Rule row: note after the target engine when the rule removes its words."
+    "description": "Rule row: note after the target engine when the rule removes its words from the search. Keep the leading middle dot; the row reads like “Contains vd → YouTube · removes these words”."
   },
   "options_rules_script_label": {
     "message": "文字",

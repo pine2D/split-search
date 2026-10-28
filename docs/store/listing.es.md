@@ -34,7 +34,7 @@ FUNCIONES
 • El catálogo de buscadores incluye sitios de traducción, enciclopedias, video, mapas y asistentes de IA, entre otros, pensados para el lado derecho y listos para añadir
 • Puedes crear varias combinaciones, cada una con su propio atajo; por ejemplo, escribe «gb palabras clave» para comparar Google y Bing
 • Haz clic en el botón de la barra de herramientas para cambiar el buscador de la derecha sin volver a buscar
-• Con reglas de palabras clave, el buscador de la derecha cambia automáticamente; por ejemplo, a Baidu cuando tu búsqueda contiene caracteres chinos. El botón de la barra de herramientas te muestra por qué cambió y te permite volver al de antes
+• Con reglas de palabras clave, el buscador de la derecha cambia automáticamente; por ejemplo, a YouTube cuando tu búsqueda contiene «video», y la regla también puede quitar esa palabra de la búsqueda. El botón de la barra de herramientas te muestra por qué cambió y te permite volver al de antes
 • También puedes pulsar un acceso directo de teclado para pasar el lado derecho al siguiente buscador. No viene configurado: elígelo en la página Accesos directos de Chrome (chrome://extensions/shortcuts)
 • Si la ventana es estrecha, el lado derecho se abre en una pestaña en segundo plano junto a la de la izquierda. Puedes desactivarlo
 • Los dos lados son pestañas normales, así que conservas tus sesiones iniciadas y la configuración de cada sitio
@@ -55,7 +55,7 @@ PRIVACIDAD
 Split Search no envía nada al desarrollador ni a otros terceros: lo que buscas solo llega a los buscadores que elijas, incluido el que pongas desde la ventana emergente o con el acceso directo. No usa servidores propios ni incluye estadísticas de uso ni publicidad. Para abrir la vista dividida, la extensión lee en tu dispositivo la URL de tu búsqueda, la de la pestaña actual cuando haces clic en el botón de la barra de herramientas y, si hace falta, la de la otra pestaña; no guarda esas URL. Solo lee el texto seleccionado o la dirección de una imagen cuando eliges una de sus opciones del menú contextual, y no lee la URL de la página ni nada más de ella. Algunas direcciones de imagen incluyen credenciales de acceso, así que el buscador también puede abrir esa imagen. Lo que buscaste y los dos buscadores solo se guardan en la memoria del navegador, para mostrarlos en la ventana emergente y cambiar de buscador, y se borran al cerrar el navegador. Split Search no lee tu historial.
 ```
 
-字数：3948（含换行）
+字数：4000（含换行）
 
 用词说明（v0.3，2026-10-25）：
 

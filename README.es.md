@@ -16,7 +16,7 @@ Busca en la barra de direcciones o arrastra texto a la barra de pestañas, y Spl
 - El catálogo de buscadores incluye sitios de traducción, enciclopedias, video, mapas y asistentes de IA, entre otros, pensados para el lado derecho y listos para añadir.
 - Puedes crear varias combinaciones, cada una con su propio atajo. Por ejemplo, escribe «gb palabras clave» para comparar Google y Bing.
 - Haz clic en el botón de la barra de herramientas para cambiar el buscador de la derecha sin volver a buscar.
-- Con reglas de palabras clave, el buscador de la derecha cambia automáticamente; por ejemplo, a Baidu cuando tu búsqueda contiene caracteres chinos. El botón de la barra de herramientas te muestra por qué cambió y te permite volver al de antes.
+- Con reglas de palabras clave, el buscador de la derecha cambia automáticamente; por ejemplo, a YouTube cuando tu búsqueda contiene «video», y la regla también puede quitar esa palabra de la búsqueda. El botón de la barra de herramientas te muestra por qué cambió y te permite volver al de antes.
 - También puedes pulsar un acceso directo de teclado para pasar el lado derecho al siguiente buscador. No viene configurado: elígelo en `chrome://extensions/shortcuts`.
 - Si la ventana es estrecha, el lado derecho se abre en una pestaña en segundo plano junto a la de la izquierda. Puedes desactivarlo en la configuración de Split Search.
 - Los dos lados son pestañas normales, así que conservas tus sesiones iniciadas y la configuración de cada sitio.

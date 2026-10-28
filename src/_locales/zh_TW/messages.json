@@ -721,7 +721,7 @@
   },
   "engine_left_discouraged_suffix": {
     "message": "$NAME$（建議放右側）",
-    "description": "Option in the left engine picker of the pair generator for an engine better used on the right (e.g. Perplexity). The placeholder is the engine name.",
+    "description": "Option text in the left engine pickers (the default pair card and the pair generator) for an engine better used on the right (e.g. Perplexity). The placeholder is the engine name.",
     "placeholders": {
       "NAME": {
         "content": "$1",
@@ -1382,11 +1382,11 @@
     "description": "Rule dialog: hint under the words field. The example words are typed by the user, so they may be translated; keep the js/jsonl example as is."
   },
   "options_rules_strip_label": {
-    "message": "搜尋時去掉這些詞",
+    "message": "搜尋時移除這些字詞",
     "description": "Rule dialog: checkbox label under the words field."
   },
   "options_rules_strip_hint": {
-    "message": "例如詞是 vd：搜尋「vd 貓」時，兩側都只搜尋「貓」。搜尋裡只有這些詞時照常搜尋。",
+    "message": "例如字詞是 vd：搜尋「vd 貓」時，兩側都只搜尋「貓」。搜尋內容只有這些字詞時不會移除。",
     "description": "Rule dialog: hint under the strip checkbox."
   },
   "options_discard_title": {
@@ -1402,8 +1402,8 @@
     "description": "Confirm dialog: button that returns to the form to keep editing."
   },
   "options_rules_strip_row": {
-    "message": "· 去掉這些詞",
-    "description": "Rule row: note after the target engine when the rule removes its words."
+    "message": "· 移除這些字詞",
+    "description": "Rule row: note after the target engine when the rule removes its words from the search. Keep the leading middle dot; the row reads like “Contains vd → YouTube · removes these words”."
   },
   "options_rules_script_label": {
     "message": "文字",
