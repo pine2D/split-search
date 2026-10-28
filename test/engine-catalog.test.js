@@ -19,7 +19,7 @@ for (const locale of ["en", "zh_CN", "zh_TW", "es"]) {
 
 test("目录 id 互不重复", () => assert.equal(new Set(CATALOG.map(e => e.id)).size, CATALOG.length));
 
-test("目录恰好收录附录 A 的 13 个条目，leftDiscouraged 有 5 个，AI 只有 ChatGPT 和 Claude", () => {
+test("引擎库的 13 个条目（v0.7 起去掉百度），leftDiscouraged 有 5 个，AI 只有 ChatGPT 和 Claude", () => {
   assert.deepEqual(CATALOG.map(e => e.name).sort(), [
     "Amazon", "Bilibili", "Bing Translator", "Cambridge Dictionary", "ChatGPT", "Claude", "GitHub",
     "Google Maps", "Google Scholar", "Google Translate", "MDN", "Wikipedia", "YouTube",

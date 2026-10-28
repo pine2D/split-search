@@ -129,6 +129,20 @@ async function confirmFlow(ctx, page, items) {
     return verdict(p, `表单开着，名称“${s.name}”，焦点 ${s.focus}`);
   });
 
+  await step("(d′) 确认框上按 Esc：只关确认框，表单仍开、修改还在、焦点回到名称框", async () => {
+    await clickBackdrop(ctx, page, "engine-dialog");
+    await until(page, isOpen("discard-dialog"), "#discard-dialog 打开");
+    await pressEsc(ctx, page);
+    await until(page, `!${isOpen("discard-dialog")}`, "Esc 后 #discard-dialog 关掉");
+    await sleep(200); // close 事件异步派发，等它跑完再读焦点
+    const s = await state(page);
+    const p = [];
+    if (!s.engine) p.push("#engine-dialog 应还开着");
+    if (s.name !== NEW_NAME) p.push(`名称应仍是“${NEW_NAME}”，实际“${s.name}”`);
+    if (s.focus !== "dlg-name") p.push(`焦点应回到 #dlg-name，实际 ${s.focus}`);
+    return verdict(p, `Esc 只关确认框，名称“${s.name}”，焦点 ${s.focus}`);
+  });
+
   await step("(e) 确认框的遮罩等同“继续编辑”；再点外部 →“不保存”：两个都关，存储不变", async () => {
     const before = await syncDigest(ctx);
     const p = [];
@@ -136,15 +150,20 @@ async function confirmFlow(ctx, page, items) {
     await until(page, isOpen("discard-dialog"), "#discard-dialog 打开");
     await clickBackdrop(ctx, page, "discard-dialog");
     await until(page, `!${isOpen("discard-dialog")}`, "点确认框外部后它关掉");
+    await sleep(200);
     const kept = await state(page);
     if (!kept.engine || kept.name !== NEW_NAME) p.push(`点确认框外部应回到表单、修改还在，实际 ${J(kept)}`);
+    if (kept.focus !== "dlg-name") p.push(`点确认框外部后焦点应回到 #dlg-name，实际 ${kept.focus}`);
     await clickBackdrop(ctx, page, "engine-dialog");
     await until(page, isOpen("discard-dialog"), "#discard-dialog 再次打开");
     await clickEl(ctx, page, "discard-drop");
     await until(page, `!${isOpen("discard-dialog")} && !${isOpen("engine-dialog")}`, "两个对话框都关掉");
     await sleep(300);
     if (await syncDigest(ctx) !== before) p.push("“不保存”后 storage.sync 变了");
-    return verdict(p, "确认框外部回到表单；“不保存”后两个都关，storage.sync 不变");
+    // 焦点同“取消”：对话框原生归还给打开它的 #edit-ec
+    const dropped = await state(page);
+    if (dropped.focus !== "edit-ec") p.push(`“不保存”后焦点应同“取消”回到 #edit-ec，实际 ${dropped.focus}`);
+    return verdict(p, `确认框外部回到表单、焦点 ${kept.focus}；“不保存”后两个都关，storage.sync 不变，焦点 ${dropped.focus}`);
   });
 
   await step("(f) 再改 →“保存”：两个都关，存储写入新名称", async () => {
@@ -197,10 +216,44 @@ async function confirmFlow(ctx, page, items) {
     if (page.dialogs.length) p.push(`弹了 JS 对话框：${page.dialogs.join("；")}`);
     return verdict(p, "Esc、“取消”都直接关掉");
   });
+
+  await step("(j) 保存进行中（storage.sync.set 被扣住）点外部：不关、不弹确认；放行后只写一次", async () => {
+    const p = [];
+    await openEditEc(ctx, page);
+    await setField(page, "dlg-name", NEW_NAME + "慢");
+    await page.run(HOLD_SETS);
+    try {
+      await clickEl(ctx, page, "dlg-save");
+      await until(page, `document.getElementById("dlg-save").disabled && window.__e2eSets === 1`, "保存按钮禁用、set 被扣住");
+      await clickBackdrop(ctx, page, "engine-dialog");
+      await sleep(300);
+      const s = await state(page);
+      if (!s.engine) p.push("保存进行中点外部不该关掉 #engine-dialog");
+      if (s.discard) p.push("保存进行中点外部不该弹 #discard-dialog");
+      await page.run(`return window.__e2eRelease();`);
+      await until(page, `!${isOpen("engine-dialog")} && !${isOpen("discard-dialog")}`, "放行后两个对话框都关掉");
+      const sets = await page.run(`return window.__e2eSets;`);
+      if (sets !== 1) p.push(`storage.sync.set 应只调用 1 次，实际 ${sets}`);
+      const name = await ecName(ctx, NEW_NAME + "慢");
+      if (name !== NEW_NAME + "慢") p.push(`ec 的名称应为“${NEW_NAME}慢”，实际 ${J(name)}`);
+      return verdict(p, `保存中点外部不关不问，set ${sets} 次，ec 改名为“${name}”`);
+    } finally {
+      await page.run(`window.__e2eRelease?.(); window.__e2eRestore?.(); return true;`).catch(() => {});
+    }
+  });
 }
 
+// 在设置页里扣住 chrome.storage.sync.set：调用计数，结果等 __e2eRelease() 才放行；__e2eRestore() 换回原来的函数
+const HOLD_SETS = `const area = chrome.storage.sync, orig = area.set, held = [];
+  window.__e2eSets = 0;
+  area.set = function (...args) { window.__e2eSets++; return new Promise((res, rej) => held.push(() => orig.apply(area, args).then(res, rej))); };
+  if (area.set === orig) throw new Error("chrome.storage.sync.set 换不掉");
+  window.__e2eRelease = () => { const fs = held.splice(0); fs.forEach(f => f()); return fs.length; };
+  window.__e2eRestore = () => { area.set = orig; delete window.__e2eRelease; delete window.__e2eRestore; };
+  return true;`;
+
 const B22 = {
-  id: "B22", title: "设置页对话框点外部：引擎库关闭、表单没改关闭、改过先问（继续编辑 / 不保存 / 保存）、拖出不算、Esc 与取消不问（自动判定）",
+  id: "B22", title: "设置页对话框点外部：引擎库关闭、表单没改关闭、改过先问（继续编辑 / Esc / 不保存 / 保存）、拖出不算、Esc 与取消不问、保存中不问（自动判定）",
   kind: "auto", needs: [], timeoutMs: 120000,
   run: ctx => guarded(ctx, ["customEngines"], async () => {
     const page = await openOptions(ctx.browser, { tab: "engines" });

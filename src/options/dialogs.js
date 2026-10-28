@@ -37,7 +37,7 @@ function watchBackdrop(dialog, onBackdrop) {
 
 // ---- 保存确认 ----
 
-let confirmCtx = null; // 正在问的那次：{ form, onClose, active }
+let confirmCtx = null; // 正在问的那次：{ form, submit, onClose, active }
 let confirmReady = false;
 
 const confirmDialog = () => document.getElementById("discard-dialog");
@@ -52,7 +52,11 @@ function keepEditing(ctx) {
   back?.focus();
 }
 
+// 保存进行中：提交按钮被各表单的 submit 处理禁用着。requestSubmit() 不看按钮是否禁用，这时再提交会写出重复的引擎或规则
+const saving = (submit) => !!submit?.disabled;
+
 function choose(kind) {
+  if (kind === "save" && saving(confirmCtx?.submit)) return;
   const ctx = confirmCtx;
   confirmCtx = null;
   confirmDialog().close();
@@ -80,8 +84,8 @@ function setupConfirm() {
   });
 }
 
-function askToSave(form, onClose, active) {
-  confirmCtx = { form, onClose, active };
+function askToSave(form, submit, onClose, active) {
+  confirmCtx = { form, submit, onClose, active };
   const dlg = confirmDialog();
   if (!dlg.open) dlg.showModal();
   document.getElementById("discard-save").focus();
@@ -91,10 +95,20 @@ function askToSave(form, onClose, active) {
 // onClose 由调用方给：走与“关闭”/“取消”相同的关闭与焦点归还。mark() 在填好初值、showModal() 之后调用
 export function lightDismiss(dialog, { form, onClose }) {
   let snapshot = null;
-  if (form) setupConfirm();
+  const submit = form?.querySelector('[type="submit"]') ?? null;
+  if (form) {
+    setupConfirm();
+    // 表单对话框关掉（保存成功、Esc 等）时，还在问它的确认框一起关掉，免得留下指向已关表单的确认框
+    dialog.addEventListener("close", () => {
+      if (dialog.open || confirmCtx?.form !== form) return;
+      confirmCtx = null;
+      confirmDialog().close();
+    });
+  }
   watchBackdrop(dialog, (active) => {
+    if (saving(submit)) return; // 保存进行中不关、不问
     if (!form || formSnapshot(form.elements) === snapshot) onClose();
-    else askToSave(form, onClose, active);
+    else askToSave(form, submit, onClose, active);
   });
   return { mark() { if (form) snapshot = formSnapshot(form.elements); } };
 }
