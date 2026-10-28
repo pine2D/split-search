@@ -8,18 +8,10 @@ Search from the address bar or drag text to the tab strip, and Split Search open
 
 ## Features
 
-- Works from the address bar, from text dragged to the tab strip, and from the Search [engine] for “…” item in Chrome’s right-click menu
-- On a results page from one of your engines, click the toolbar button and pick another engine to open the same search next to it in a split view
-- Select text on a web page and right-click to look it up in a split view, with the page staying on the left
-- Right-click an image to search it with Google Lens or another image search engine, next to the page you’re on
-- Google, Bing, DuckDuckGo, Perplexity and Kagi are built in, and you can add other search engines
-- The engine catalog has translation, reference, video, map and other sites that work well on the right side, plus AI assistants, ready to add
-- Set up several engine pairs, each with its own shortcut. For example, type “gb your search” to compare Google and Bing
+- Compare two engines from the address bar or by dragging text onto the tab strip. Pick your engines, add your own, and set up several pairs, each with its own shortcut
+- Right-click selected text or an image to look it up next to the page you’re on
 - Click the toolbar button to switch the right side to another engine without searching again
-- Keyword rules can switch the right-side engine for you, for example to YouTube when your search contains “video”, and they can also remove that word from the search. Click the toolbar button to see why it switched, or to switch back
-- Or press a keyboard shortcut to switch the right side to the next engine. No shortcut is set by default; set one at `chrome://extensions/shortcuts`
-- When the window is narrow, the right side opens in a background tab next to the left one instead. You can turn this off on the settings page
-- Both sides are regular tabs, so you stay signed in and your site settings still apply
+- The right-side engine can switch automatically by keyword, for example to YouTube when your search contains “video”
 
 ## Install
 
@@ -37,16 +29,11 @@ The first time you open the settings page, the “Get started” card on the “
 2. **Copy the URL**: on the “Search pairs” tab, pick a left and a right engine for the default pair. Then copy the generated URL on the “Add to Chrome” tab.
 3. **Add it and make it default**: enter `chrome://settings/searchEngines` in the address bar. Under “Site search”, click “Add”. Enter any name and a shortcut of your choice (for example, `gb`), paste the URL you copied into “URL with %s in place of query” and click “Add”. Then open the ⋮ menu next to the new entry and choose “Make default”.
 
-If you only want the shortcut, skip “Make default” and type “shortcut + space + search terms” in the address bar. Dragged text and Chrome’s own right-click search then still use your current default search engine.
-
-To switch the right side by keyword, open the “Search pairs” tab on the settings page and add a rule under “Keyword rules for the right side”. Rules apply only to the default pair.
-
 ## Good to know
 
-- In Incognito windows, on other devices, or when the extension isn’t active, you get a normal search.
 - After you choose “Make default”, the address bar no longer shows search suggestions.
-- Only images with a public address can be searched, and engines usually can’t get images that need a sign-in.
+- In Incognito windows or on other devices, you get a normal search.
 
 ## Privacy
 
-Split Search sends nothing to the developer or any other third party, and what you look up goes only to the engines you chose. It has no servers, analytics or ads. It reads the selected text or an image’s address only when you choose one of its right-click menu items, and it doesn’t read the page’s URL or anything else on the page. What you searched and the two engines are kept in browser memory so the popup and keyboard shortcut can switch engines, and they’re cleared when you close the browser. Keyword rules are checked on your device. You write the words in them on the settings page, and they sync with Chrome like your other settings. Read the [privacy policy](https://pine2d.github.io/split-search/privacy).
+What you look up goes only to the search engines you choose, never to the developer or any other third party. Split Search has no servers, analytics or ads. To open the split view, it reads your search URL and the current tab’s URL on your device and doesn’t store them. It reads selected text or an image’s address only when you use its right-click menu. Your searches are kept in browser memory and cleared when you close the browser. Read the [privacy policy](https://pine2d.github.io/split-search/privacy).
