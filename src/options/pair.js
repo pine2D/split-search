@@ -67,7 +67,7 @@ export function pairSection({ cfg, byId, granted, mode, render }) {
   ({ rec: pairChanged, show } = pairChangedView(pairChanged, { pair: cfg.defaultPair, mode }));
   const lefts = cfg.engines.filter(canBeLeft);
   const [l, r] = cfg.defaultPair;
-  const leftSel = h("select", { id: "pair-left" }, lefts.map(e => option(e.id, e.name, e.id === l)));
+  const leftSel = h("select", { id: "pair-left" }, lefts.map(e => option(e.id, e.leftDiscouraged ? t("engine_left_discouraged_suffix", e.name) : e.name, e.id === l)));
   const rightSel = h("select", { id: "pair-right" }, cfg.engines.map(e => option(e.id, e.name, e.id === r)));
   const save = () => act(raw => setDefaultPair(raw, leftSel.value, rightSel.value), result => {
     const key = pairSavedKey(pairChanged, result.patch.defaultPair, mode);

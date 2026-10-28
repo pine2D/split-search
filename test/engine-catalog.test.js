@@ -19,9 +19,9 @@ for (const locale of ["en", "zh_CN", "zh_TW", "es"]) {
 
 test("目录 id 互不重复", () => assert.equal(new Set(CATALOG.map(e => e.id)).size, CATALOG.length));
 
-test("目录恰好收录附录 A 的 14 个条目，leftDiscouraged 有 5 个，AI 只有 ChatGPT 和 Claude", () => {
+test("目录恰好收录附录 A 的 13 个条目，leftDiscouraged 有 5 个，AI 只有 ChatGPT 和 Claude", () => {
   assert.deepEqual(CATALOG.map(e => e.name).sort(), [
-    "Amazon", "Baidu", "Bilibili", "Bing Translator", "Cambridge Dictionary", "ChatGPT", "Claude", "GitHub",
+    "Amazon", "Bilibili", "Bing Translator", "Cambridge Dictionary", "ChatGPT", "Claude", "GitHub",
     "Google Maps", "Google Scholar", "Google Translate", "MDN", "Wikipedia", "YouTube",
   ]);
   assert.deepEqual(CATALOG.filter(e => e.leftDiscouraged).map(e => e.name).sort(),
@@ -95,4 +95,10 @@ test("每个条目在每种界面语言下恰好一个 %s", () => {
   for (const locale of ["en", "zh_CN", "zh_TW", "es"]) {
     for (const e of CATALOG) assert.equal(catalogUrl(e, locale).split("%s").length - 1, 1, `${e.id}@${locale}`);
   }
+});
+
+test("catalog has no baidu and no empty category", () => {
+  assert.equal(CATALOG.some(e => e.id === "baidu" || /baidu\./.test(e.url)), false);
+  for (const c of CATEGORIES) assert.ok(CATALOG.some(e => e.category === c.id), `empty category ${c.id}`);
+  assert.equal(CATEGORIES.some(c => c.id === "chinese"), false);
 });

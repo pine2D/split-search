@@ -109,7 +109,7 @@
     "placeholders": {
       "ENGINE_ID": {
         "content": "$1",
-        "example": "baidu"
+        "example": "sogou"
       }
     }
   },
@@ -161,7 +161,7 @@
     "placeholders": {
       "ID": {
         "content": "$1",
-        "example": "baidu"
+        "example": "sogou"
       }
     }
   },
@@ -423,7 +423,7 @@
     "placeholders": {
       "ID": {
         "content": "$1",
-        "example": "baidu"
+        "example": "sogou"
       }
     }
   },
@@ -597,7 +597,7 @@
     "placeholders": {
       "NAME": {
         "content": "$1",
-        "example": "Baidu"
+        "example": "Sogou"
       }
     }
   },
@@ -845,7 +845,7 @@
     "placeholders": {
       "NAME": {
         "content": "$1",
-        "example": "Baidu"
+        "example": "Sogou"
       }
     }
   },
@@ -855,7 +855,7 @@
     "placeholders": {
       "NAME": {
         "content": "$1",
-        "example": "Baidu"
+        "example": "Sogou"
       }
     }
   },
@@ -869,7 +869,7 @@
     "placeholders": {
       "NAME": {
         "content": "$1",
-        "example": "Baidu"
+        "example": "Sogou"
       }
     }
   },
@@ -893,7 +893,7 @@
     "placeholders": {
       "NAME": {
         "content": "$1",
-        "example": "Baidu"
+        "example": "Sogou"
       }
     }
   },
@@ -903,7 +903,7 @@
     "placeholders": {
       "ENGINE": {
         "content": "$1",
-        "example": "Baidu"
+        "example": "Sogou"
       },
       "N": {
         "content": "$2",
@@ -1443,10 +1443,6 @@
     "message": "Compras",
     "description": "Category heading in the engine catalog dialog: Shopping."
   },
-  "catalog_cat_chinese": {
-    "message": "Sitios en chino",
-    "description": "Category heading in the engine catalog dialog: Chinese-language sites (Baidu)."
-  },
   "catalog_cat_ai": {
     "message": "Asistentes de IA",
     "description": "Catalog category heading: AI assistants (ChatGPT, Claude). The prompt is prefilled, not sent."
@@ -1735,7 +1731,7 @@
       },
       "ENGINE": {
         "content": "$2",
-        "example": "Baidu"
+        "example": "Sogou"
       }
     }
   },
