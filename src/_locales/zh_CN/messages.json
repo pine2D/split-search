@@ -265,9 +265,19 @@
       }
     }
   },
+  "options_pair_chrome_hint": {
+    "message": "Chrome 的默认搜索需单独设置。更改组合后，请更新对应的网站搜索网址，并确认它已设为默认。 $STEPS$",
+    "description": "Persistent neutral reminder below the default pair selectors. Chrome’s default search is configured separately; changing the pair requires updating the matching site search URL and checking that it is the default. This is guidance, not detected status. $STEPS$ is the link to the setup steps.",
+    "placeholders": {
+      "STEPS": {
+        "content": "$1",
+        "example": "See setup steps"
+      }
+    }
+  },
   "options_pair_changed": {
-    "message": "默认组合已改成 $PAIR$。Chrome 里的网站搜索还在用旧网址，复制下面的新网址，把旧的换掉。",
-    "description": "Box shown in the default pair card after the pair was changed on this page and setup was already done: Chrome’s site search still has the old trigger URL. $PAIR$ is the new pair, such as “Google | Bing”.",
+    "message": "默认组合已改成 $PAIR$。请复制下面的新网址，更新 Chrome 中对应的网站搜索，并确认它已设为默认。",
+    "description": "Box shown after changing the default pair on this page once setup is done: asks the user to update the matching site search in Chrome and check that it is the default. Does not claim to have read Chrome’s settings. $PAIR$ is the new pair, such as “Google | Bing”.",
     "placeholders": {
       "PAIR": {
         "content": "$1",
@@ -281,7 +291,7 @@
   },
   "options_pair_changed_steps": {
     "message": "查看设置步骤",
-    "description": "Link in the changed-pair box; opens the setup steps in the Add to Chrome tab."
+    "description": "Link below the default pair selectors or in the changed-pair box; opens the setup steps in the Add to Chrome tab."
   },
   "options_pair_changed_continue": {
     "message": "继续设置",
@@ -760,8 +770,8 @@
     "description": "Error on the trigger URL card when no trigger URL can be built for the default pair."
   },
   "guide_default_hint": {
-    "message": "按下方步骤添加为网站搜索后，在该条目的 ⋮ 菜单里选“设为默认选项”。之后地址栏直接搜索、拖拽文字到标签栏都会打开拆分视图。",
-    "description": "Hint on the default pair card. \"Make default\" must match Chrome's label; ⋮ is the More actions menu icon."
+    "message": "请在 Chrome 中添加或更新这条网站搜索，网址与上方保持一致，并在其 ⋮ 菜单里选“设为默认选项”。之后地址栏直接搜索、拖拽文字到标签栏都会打开拆分视图。",
+    "description": "Instructions next to the default trigger URL: add or update the site search in Chrome with this URL and make it the default. “Make default” must match Chrome’s label; ⋮ is the More actions menu icon."
   },
   "guide_other_pairs_title": {
     "message": "其他组合",
@@ -942,8 +952,8 @@
     }
   },
   "notice_pair_saved": {
-    "message": "默认组合已保存。Chrome 里的网站搜索还在用旧网址，复制“默认组合”里的新网址，把旧的换掉。",
-    "description": "Notice after changing the default pair once setup is done: Chrome’s site search still has the old trigger URL; the new one is shown in the default pair card. The quoted card name must match options_pair_title."
+    "message": "默认组合已保存。请复制“默认组合”里的新网址，更新 Chrome 中对应的网站搜索。",
+    "description": "Notice after changing the default pair once setup is done: asks the user to copy the new URL from the default pair card and update the matching site search in Chrome. Does not claim to have read Chrome’s settings. The quoted card name must match options_pair_title."
   },
   "notice_pair_saved_setup": {
     "message": "默认组合已保存，“开始使用”里的网址已按新组合更新。",

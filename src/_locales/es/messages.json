@@ -265,9 +265,19 @@
       }
     }
   },
+  "options_pair_chrome_hint": {
+    "message": "La búsqueda predeterminada de Chrome se configura por separado. Si cambias esta combinación, actualiza su URL de búsqueda en el sitio y comprueba que esté configurada como predeterminada. $STEPS$",
+    "description": "Persistent neutral reminder below the default pair selectors. Chrome’s default search is configured separately; changing the pair requires updating the matching site search URL and checking that it is the default. This is guidance, not detected status. $STEPS$ is the link to the setup steps.",
+    "placeholders": {
+      "STEPS": {
+        "content": "$1",
+        "example": "See setup steps"
+      }
+    }
+  },
   "options_pair_changed": {
-    "message": "Tu combinación predeterminada ahora es $PAIR$. La búsqueda en el sitio que añadiste a Chrome sigue usando la URL anterior. Copia la URL nueva de abajo y úsala en su lugar.",
-    "description": "Box shown in the default pair card after the pair was changed on this page and setup was already done: Chrome’s site search still has the old trigger URL. $PAIR$ is the new pair, such as “Google | Bing”.",
+    "message": "Tu combinación predeterminada ahora es $PAIR$. Copia la URL de abajo, actualiza la búsqueda en el sitio correspondiente en Chrome y comprueba que esté configurada como predeterminada.",
+    "description": "Box shown after changing the default pair on this page once setup is done: asks the user to update the matching site search in Chrome and check that it is the default. Does not claim to have read Chrome’s settings. $PAIR$ is the new pair, such as “Google | Bing”.",
     "placeholders": {
       "PAIR": {
         "content": "$1",
@@ -281,7 +291,7 @@
   },
   "options_pair_changed_steps": {
     "message": "Ver los pasos de configuración",
-    "description": "Link in the changed-pair box; opens the setup steps in the Add to Chrome tab."
+    "description": "Link below the default pair selectors or in the changed-pair box; opens the setup steps in the Add to Chrome tab."
   },
   "options_pair_changed_continue": {
     "message": "Seguir configurando",
@@ -760,8 +770,8 @@
     "description": "Error on the trigger URL card when no trigger URL can be built for the default pair."
   },
   "guide_default_hint": {
-    "message": "Después de añadirla como búsqueda en el sitio con los pasos de abajo, selecciona «Elegir como predeterminado» («Configurar como predeterminado») en su menú ⋮. A partir de entonces, las búsquedas desde la barra de direcciones y el texto que arrastres a la barra de pestañas abrirán la vista dividida.",
-    "description": "Hint on the default pair card. \"Make default\" must match Chrome's label; ⋮ is the More actions menu icon."
+    "message": "Añade o actualiza esta búsqueda en el sitio en Chrome con la URL de arriba y selecciona «Elegir como predeterminado» («Configurar como predeterminado») en su menú ⋮. A partir de entonces, las búsquedas desde la barra de direcciones y el texto que arrastres a la barra de pestañas abrirán la vista dividida.",
+    "description": "Instructions next to the default trigger URL: add or update the site search in Chrome with this URL and make it the default. “Make default” must match Chrome’s label; ⋮ is the More actions menu icon."
   },
   "guide_other_pairs_title": {
     "message": "Otras combinaciones",
@@ -942,8 +952,8 @@
     }
   },
   "notice_pair_saved": {
-    "message": "Combinación predeterminada guardada. La búsqueda en el sitio que añadiste a Chrome sigue usando la URL anterior. Copia la URL nueva de «Combinación predeterminada» y úsala en su lugar.",
-    "description": "Notice after changing the default pair once setup is done: Chrome’s site search still has the old trigger URL; the new one is shown in the default pair card. The quoted card name must match options_pair_title."
+    "message": "Combinación predeterminada guardada. Copia la URL nueva de «Combinación predeterminada» para actualizar la búsqueda en el sitio correspondiente en Chrome.",
+    "description": "Notice after changing the default pair once setup is done: asks the user to copy the new URL from the default pair card and update the matching site search in Chrome. Does not claim to have read Chrome’s settings. The quoted card name must match options_pair_title."
   },
   "notice_pair_saved_setup": {
     "message": "Combinación predeterminada guardada. La URL de «Primeros pasos» ya usa la nueva combinación.",

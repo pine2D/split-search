@@ -190,7 +190,7 @@ export function setDefaultPair(raw, leftId, rightId) {
   return { ok: true, patch: { defaultPair: [leftId, rightId] } };
 }
 
-// 改了默认组合后“Chrome 里还是旧网址”的提示（设计稿 3.9 第 1 条）。rec 是本页内存的 { from, mode }：
+// 改了默认组合后提醒更新 Chrome 中的网站搜索（设计稿 3.9 第 1 条）。rec 是本页内存的 { from, mode }：
 // from 是第一次改之前的组合，mode 是那时 setupView 的 mode；只记一次，之后再改不覆盖
 const samePair = (a, b) => a[0] === b[0] && a[1] === b[1];
 export function notePairChange(rec, { from, mode }) {

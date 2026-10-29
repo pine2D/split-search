@@ -1,4 +1,4 @@
-// “搜索组合”tab 的默认组合卡（#pair-body）：左右两个窗格、改了组合后的提示（#pair-changed）、窄窗口开关、
+// “搜索组合”tab 的默认组合卡（#pair-body）：左右两个窗格、Chrome 设置核对说明与改了组合后的提示、窄窗口开关、
 // 左侧未授权的提示框、末行指向“添加到 Chrome”的指引。关键词规则在紧跟其后的规则卡里（options.js 渲染 #rules-body）。
 // render 由 options.js 传入（不 import options.js，免得循环）。
 import { buildTriggerTemplate } from "../lib/trigger.js";
@@ -33,7 +33,14 @@ function triggerOf(left, right) {
 // 左键交给页内的 reveal（切到“添加到 Chrome”并定位）；中键、Ctrl+点照常按 href 新开
 const revealLink = (href, key, run) => ht("a", { href, onclick: (ev) => { if (!plainLeft(ev)) return; ev.preventDefault(); run(); } }, key);
 
-// 改了默认组合之后：steps 档说“开始使用”里的网址已换成新的；其余档说 Chrome 里还是旧网址，给新网址和设置步骤。
+// 未在本页改组合时也保留核对入口：只作说明，不推断 Chrome 的当前默认搜索。与修改后的提示互斥。
+function chromeNote() {
+  const link = revealLink("#guide-steps", "options_pair_changed_steps", revealGuideSteps);
+  link.id = "pair-chrome-steps";
+  return h("p", { class: "hint", id: "pair-chrome-hint" }, ...tNodes("options_pair_chrome_hint", [link]));
+}
+
+// 改了默认组合之后：steps 档说“开始使用”里的网址已换成新的；其余档给新网址和更新 Chrome 的步骤。
 // 不设 role：它随每次渲染整个重建，播报交给保存时的提示（#notices）
 function changedNote(show, left, right) {
   if (show === "setup") {
@@ -79,7 +86,7 @@ export function pairSection({ cfg, byId, granted, mode, render }) {
 
   const left = byId.get(l);
   const nodes = [pickerPanes(leftSel, rightSel)];
-  if (show) nodes.push(changedNote(show, left, byId.get(r)));
+  nodes.push(show ? changedNote(show, left, byId.get(r)) : chromeNote());
   nodes.push(narrowRow(cfg));
   // 卡片在“添加到 Chrome”里，用户在这里换成未授权的左侧时这里也要说
   if (left && !granted.get(left.id)) {

@@ -265,9 +265,19 @@
       }
     }
   },
+  "options_pair_chrome_hint": {
+    "message": "Chrome’s default search is set separately. After changing this pair, update its site search URL in Chrome and make sure it is the default. $STEPS$",
+    "description": "Persistent neutral reminder below the default pair selectors. Chrome’s default search is configured separately; changing the pair requires updating the matching site search URL and checking that it is the default. This is guidance, not detected status. $STEPS$ is the link to the setup steps.",
+    "placeholders": {
+      "STEPS": {
+        "content": "$1",
+        "example": "See setup steps"
+      }
+    }
+  },
   "options_pair_changed": {
-    "message": "Your default pair is now $PAIR$. The site search you added to Chrome still uses the old URL. Copy the new one below to replace it.",
-    "description": "Box shown in the default pair card after the pair was changed on this page and setup was already done: Chrome’s site search still has the old trigger URL. $PAIR$ is the new pair, such as “Google | Bing”.",
+    "message": "Your default pair is now $PAIR$. Copy the URL below, update the matching site search in Chrome, and make sure it is the default.",
+    "description": "Box shown after changing the default pair on this page once setup is done: asks the user to update the matching site search in Chrome and check that it is the default. Does not claim to have read Chrome’s settings. $PAIR$ is the new pair, such as “Google | Bing”.",
     "placeholders": {
       "PAIR": {
         "content": "$1",
@@ -281,7 +291,7 @@
   },
   "options_pair_changed_steps": {
     "message": "See setup steps",
-    "description": "Link in the changed-pair box; opens the setup steps in the Add to Chrome tab."
+    "description": "Link below the default pair selectors or in the changed-pair box; opens the setup steps in the Add to Chrome tab."
   },
   "options_pair_changed_continue": {
     "message": "Continue setup",
@@ -760,8 +770,8 @@
     "description": "Error on the trigger URL card when no trigger URL can be built for the default pair."
   },
   "guide_default_hint": {
-    "message": "Add it as a site search using the steps below, then choose “Make default” from the entry’s ⋮ menu. After that, searching from the address bar or dragging text to the tab strip opens a split view.",
-    "description": "Hint on the default pair card. \"Make default\" must match Chrome's label; ⋮ is the More actions menu icon."
+    "message": "Add or update this site search in Chrome using the URL above, then choose “Make default” from its ⋮ menu. After that, searching from the address bar or dragging text to the tab strip opens a split view.",
+    "description": "Instructions next to the default trigger URL: add or update the site search in Chrome with this URL and make it the default. “Make default” must match Chrome’s label; ⋮ is the More actions menu icon."
   },
   "guide_other_pairs_title": {
     "message": "Other pairs",
@@ -942,8 +952,8 @@
     }
   },
   "notice_pair_saved": {
-    "message": "Default pair saved. The site search you added to Chrome still uses the old URL. Copy the new one from “Default pair” to replace it.",
-    "description": "Notice after changing the default pair once setup is done: Chrome’s site search still has the old trigger URL; the new one is shown in the default pair card. The quoted card name must match options_pair_title."
+    "message": "Default pair saved. Copy the new URL from “Default pair” to update the matching site search in Chrome.",
+    "description": "Notice after changing the default pair once setup is done: asks the user to copy the new URL from the default pair card and update the matching site search in Chrome. Does not claim to have read Chrome’s settings. The quoted card name must match options_pair_title."
   },
   "notice_pair_saved_setup": {
     "message": "Default pair saved. The URL in “Get started” now uses the new pair.",

@@ -417,7 +417,8 @@ dialog:focus { outline: none; }
   .tab { padding-inline: 12px; }
 }
 
-/* ---- 搜索组合：改了默认组合后的提示（#pair-changed，不是警告）与窄窗口开关行 ---- */
+/* ---- 搜索组合：Chrome 设置核对说明、修改后的提示（不是警告）与窄窗口开关行 ---- */
+#pair-chrome-hint { margin: 8px 0 0; }
 #pair-changed { display: block; background: var(--accent-soft); border: 1px solid var(--border); }
 #pair-changed > p { margin: 0; }
 #pair-changed .url-line { margin: 6px 0; }

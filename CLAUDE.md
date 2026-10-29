@@ -334,6 +334,7 @@ split-search/
 
 ## 已知事实（spec 2.2 核查结论，避免重复踩坑）
 
+- 默认搜索设置核对（2026-10-29）：Chrome 公开 `search` API 只能发起查询，不能读当前默认引擎。设置页 `pair.js` 在未显示 `#pair-changed` 时，于选择框下保留普通说明 `#pair-chrome-hint`（刷新后仍有）；`#pair-chrome-steps` 复用 `revealGuideSteps` 定位到“添加到 Chrome”的设置步骤。修改提示、保存提示和默认触发网址旁的说明都只引导用户核对/更新，不声称已检测到不一致；不新增权限、存储或测试搜索。设计与验证见 `docs/superpowers/specs/2026-10-29-chrome-setup-hint-design.md`、`docs/superpowers/plans/2026-10-29-chrome-setup-hint.md`。
 - DNR `redirect` 只要求请求网址的 host 权限，可通过 `optional_host_permissions` 运行时授予；main_frame 导航不检查 initiator 权限。`regexSubstitution` 可指向 `chrome-extension://`，`\0` 代表整个匹配串。
 - 有某 origin 的 host 权限但没有 `tabs` 权限时，可读到该 origin 上标签的 `url`；`tabs.query({splitViewId})` 不需要 `tabs` 权限。
 - `incognito: "not_allowed"` 合法，DNR 规则不作用于无痕窗口。若改用 `spanning` 并允许无痕，重定向到扩展页会以 `ERR_BLOCKED_BY_CLIENT` 失败，用户看到错误页而不是降级为普通搜索。
