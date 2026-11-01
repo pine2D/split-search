@@ -1970,5 +1970,21 @@
         "example": "Google Lens"
       }
     }
+  },
+  "options_close_pair_label": {
+    "message": "關閉一側時，同時關閉另一側",
+    "description": "Default-off switch: closing either tab also closes the other tab in an extension-owned search split view."
+  },
+  "options_close_pair_hint": {
+    "message": "僅適用於本擴充功能建立的搜尋分割畫面，前往其他網頁後仍會連動。右鍵查詢和窄視窗中的相鄰分頁不受影響。",
+    "description": "Scope of linked closing: search pairs remain linked after navigation; context-menu lookup pairs and narrow-window adjacent pairs are excluded."
+  },
+  "options_close_pair_warning": {
+    "message": "取消分割畫面後立即關閉分頁，另一側仍可能一起關閉。",
+    "description": "Known browser event ambiguity: separating a split view and immediately closing a tab may still close its former peer."
+  },
+  "notice_close_pair_saved": {
+    "message": "連動關閉設定已儲存",
+    "description": "Save confirmation for the linked closing switch."
   }
 }

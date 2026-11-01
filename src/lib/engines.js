@@ -105,7 +105,8 @@ export function mergeConfig(stored = {}) {
   const lookupEngine = lookupFollow ? pair[1] : stored.lookupEngine;
   const imageEngine = imageEngines.some(e => e.id === stored.imageEngine) ? stored.imageEngine : IMAGE_PRESET.id;
   return { engines, hidden, defaultPair: pair, uiLocale: normalizeLocalePref(stored.uiLocale),
-    narrowFallback: stored.narrowFallback !== false, cycleExclude: cleanIdList(stored.cycleExclude),
+    narrowFallback: stored.narrowFallback !== false, closePairTogether: stored.closePairTogether === true,
+    cycleExclude: cleanIdList(stored.cycleExclude),
     imageEngines, imageEngine, lookupEngine, lookupFollow,
     rightRules: cleanRules(stored.rightRules, { engines, hidden, defaultPair: pair, isEngineId: id => ID_PATTERN.test(id) }) };
 }

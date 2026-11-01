@@ -4,7 +4,11 @@ import { readFileSync } from "node:fs";
 
 // 整个 SW 只导入一次：监听器在导入时注册，之后各测试改 state 再触发监听器。
 const listeners = {};
-const event = (name) => ({ addListener: (fn) => { (listeners[name] ||= []).push(fn); } });
+const event = (name) => ({
+  addListener(fn) { if (!this.hasListener(fn)) (listeners[name] ||= []).push(fn); },
+  removeListener(fn) { listeners[name] = (listeners[name] || []).filter(f => f !== fn); },
+  hasListener(fn) { return (listeners[name] || []).includes(fn); },
+});
 let state;
 import { expandTemplate } from "../src/lib/trigger.js";
 import { IMAGE_CATALOG } from "../src/lib/image-engines.js";
@@ -50,7 +54,7 @@ globalThis.chrome = {
     sync: { async get() { return state.sync; } },
     session: {
       async get(key) {
-        const keys = [].concat(key);
+        const keys = key == null ? [...state.session.keys()] : [].concat(key);
         return Object.fromEntries(keys.filter(k => state.session.has(k)).map(k => [k, state.session.get(k)]));
       },
       async set(obj) { for (const [k, v] of Object.entries(obj)) state.session.set(k, v); },
@@ -82,14 +86,16 @@ globalThis.chrome = {
   },
   tabs: {
     onRemoved: event("tabs.onRemoved"),
+    onUpdated: event("tabs.onUpdated"),
+    onDetached: event("tabs.onDetached"),
+    onAttached: event("tabs.onAttached"),
     async get(id) {
       if (!state.tabs[id]) throw new Error(`No tab with id: ${id}.`);
       return state.tabs[id];
     },
     async query(q) {
       state.calls.push(["tabs.query", q]);
-      return Object.values(state.tabs).filter(t =>
-        q.splitViewId !== undefined ? t.splitViewId === q.splitViewId : t.active === q.active && t.windowId === q.windowId);
+      return Object.values(state.tabs).filter(t => Object.entries(q).every(([k, v]) => t[k] === v));
     },
     async update(id, props) {
       state.calls.push(["tabs.update", id, props]);

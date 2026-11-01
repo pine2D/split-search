@@ -1,5 +1,6 @@
 import { mergeConfig } from "../lib/engines.js";
 import { codedError } from "../lib/errors.js";
+import { withPairLock } from "./pair-lock.js";
 
 const MAX_ITEM_BYTES = 8192; // chrome.storage.sync 单项上限（键名 + JSON 值）
 const defaultArea = () => globalThis.chrome?.storage.sync;
@@ -20,10 +21,13 @@ export async function saveKeys(patch, area = defaultArea()) {
       throw codedError("config_too_large", key);
     }
   }
-  await area.set(patch);
+  // 本地关闭开关与发起联动在同一把锁上排序；保存成功后不再发出新的自动关闭。
+  if (Object.hasOwn(patch, "closePairTogether")) await withPairLock(() => area.set(patch));
+  else await area.set(patch);
 }
 
 // 删掉整键（如“回到跟随默认组合”时删 lookupEngine）
 export async function removeKeys(keys, area = defaultArea()) {
-  await area.remove(keys);
+  if ([].concat(keys).includes("closePairTogether")) await withPairLock(() => area.remove(keys));
+  else await area.remove(keys);
 }

@@ -37,6 +37,7 @@ The first time you open the settings page, the “Get started” card on the “
 
 ## Good to know
 
+- On “Search pairs”, you can enable “Close both tabs when either one is closed” (off by default). It applies to search split views created by this extension, even after navigating to another page. Context-menu lookups and adjacent tabs in narrow windows are excluded. If you separate a split view and immediately close a tab, the other tab may still close with it.
 - After you choose “Make default”, the address bar no longer shows search suggestions.
 - In Incognito windows or on other devices, you get a normal search.
 

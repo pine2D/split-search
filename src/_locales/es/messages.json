@@ -1970,5 +1970,21 @@
         "example": "Google Lens"
       }
     }
+  },
+  "options_close_pair_label": {
+    "message": "Cerrar ambas pestañas al cerrar una",
+    "description": "Default-off switch: closing either tab also closes the other tab in an extension-owned search split view."
+  },
+  "options_close_pair_hint": {
+    "message": "Se aplica a las vistas divididas de búsqueda creadas por esta extensión, incluso después de navegar a otra página. No afecta a las consultas del menú contextual ni a las pestañas contiguas en ventanas estrechas.",
+    "description": "Scope of linked closing: search pairs remain linked after navigation; context-menu lookup pairs and narrow-window adjacent pairs are excluded."
+  },
+  "options_close_pair_warning": {
+    "message": "Si separas una vista dividida y cierras una pestaña de inmediato, la otra también podría cerrarse.",
+    "description": "Known browser event ambiguity: separating a split view and immediately closing a tab may still close its former peer."
+  },
+  "notice_close_pair_saved": {
+    "message": "Ajuste de cierre conjunto guardado",
+    "description": "Save confirmation for the linked closing switch."
   }
 }

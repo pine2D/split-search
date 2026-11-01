@@ -3,6 +3,7 @@
 // 只做 Chrome 原生拆分视图菜单没有的事：换右侧引擎、补成分屏。互换左右、取消拆分视图用原生菜单。
 import { loadConfig } from "../chrome/config-store.js";
 import { ownedPair, switchRight } from "../chrome/right-switch.js";
+import { withPairLock } from "../chrome/pair-lock.js";
 import { popupView, targetTabId, popupMode, completeView, switchTarget } from "../lib/popup-view.js";
 import { matchResultPage } from "../lib/result-match.js";
 import { splitWindowType } from "../lib/window-kind.js";
@@ -33,7 +34,7 @@ async function targetTab() {
 // 返回 { mode, pair, match, cfg, tab, setup }，mode 见 popupMode："pair"（本扩展的一对）、"complete"（补成分屏）、
 // "not-ours"（说明与按设置进度分档的引导，见 idle.js；只有这时才读 setup：左侧授权与 setupDone）；没有目标标签返回 null。不是本扩展的一对时才读窗口（带 populate，区分 PiP）和识别结果页：
 // tab.url 只在用户点了图标（activeTab）或引擎已授权时读得到，读不到就识别不出。读取失败照常抛出，由调用方记日志。
-async function load() {
+async function loadState() {
   const tab = await targetTab();
   if (!tab) return null;
   const cfg = await loadConfig();
@@ -48,6 +49,8 @@ async function load() {
   const setup = mode === "not-ours" ? await readSetupState(cfg) : null;
   return { mode, pair, match, cfg, tab, setup };
 }
+// 归属检查可能清理失效记录；普通渲染也参与锁。切换时用 loadState，避免同锁重入。
+const load = () => withPairLock(loadState);
 
 // 引擎名是用户数据，直接写 textContent，并去掉 data-i18n，切换语言时不会被改写；
 // 引擎已删除时写“已删除的引擎”文案。
@@ -172,14 +175,14 @@ async function onSwitch(engineId) {
   setButtonsDisabled(true);
   showError(null);
   try {
-    const state = await load();
-    const engine = switchTarget(state?.pair, state?.cfg, engineId);
-    if (!engine) {
-      log("popup: the split or the engine is gone, nothing switched", engineId);
-      showError("popup_switch_failed");
-    } else {
+    const switched = await withPairLock(async () => {
+      const state = await loadState();
+      const engine = switchTarget(state?.pair, state?.cfg, engineId);
+      if (!engine) return false;
       await switchRight(state.pair, engine);
-    }
+      return true;
+    });
+    if (!switched) showError("popup_switch_failed");
   } catch (err) {
     log("popup: switching the right side failed", err);
     showError("popup_switch_failed");

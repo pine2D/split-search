@@ -37,6 +37,7 @@ La primera vez que abras la configuración de Split Search, la tarjeta «Primero
 
 ## Ten en cuenta
 
+- En «Combinaciones», puedes activar «Cerrar ambas pestañas al cerrar una» (desactivado de forma predeterminada). Se aplica a las vistas divididas de búsqueda creadas por esta extensión, incluso después de navegar a otra página. No afecta a las consultas del menú contextual ni a las pestañas contiguas en ventanas estrechas. Si separas una vista dividida y cierras una pestaña de inmediato, la otra también podría cerrarse.
 - Mientras uses Split Search como buscador predeterminado, la barra de direcciones no muestra sugerencias de búsqueda.
 - En ventanas de incógnito o en otros dispositivos, se hace una búsqueda normal.
 

@@ -1,6 +1,7 @@
 import { loadConfig } from "./chrome/config-store.js";
 import { RULE_ID, buildRedirectRule, leftHosts } from "./lib/rules.js";
-import { clearPair } from "./chrome/split-state.js";
+import { installClosePair } from "./chrome/close-pair.js";
+import { withPairLock } from "./chrome/pair-lock.js";
 import { ownedPair, switchRight } from "./chrome/right-switch.js";
 import { nextRightEngine, cycleCandidates } from "./lib/cycle.js";
 import { lastSplitWindow } from "./chrome/split-actions.js";
@@ -14,7 +15,7 @@ import { safeArgs } from "./lib/safe-error.js";
 const log = (...args) => console.error("[split-search]", ...safeArgs(args));
 
 // SW 全局串行链（spec 3.1“SW 里的串行”）：右键查询与 ⑦ 的 complete-split 共用，每次在链上重新判定再执行，
-// 两次几乎同时的右键不会都去建分屏。
+// 两次几乎同时的右键不会都去建分屏；动作再进跨上下文锁，和 go/弹窗/联动关闭互斥。
 const swQueue = serialQueue();
 
 async function doRebuild() {
@@ -73,22 +74,22 @@ chrome.storage.onChanged.addListener((_changes, areaName) => {
 chrome.permissions.onAdded.addListener(rebuildRules);
 chrome.permissions.onRemoved.addListener(rebuildRules);
 // 点工具栏图标打开 action.default_popup（有弹窗时 action.onClicked 不再触发），设置页从弹窗进入。
-// 标签关闭时删掉它的分屏记录；对侧记录只有指回它时才删。clearPair 自己吞掉错误。
-chrome.tabs.onRemoved.addListener((tabId) => { clearPair(tabId); });
+// 联动模块顶层注册事件；默认关闭仍清理旧记录，启用时先判定、消费，再发起关闭。
+installClosePair(swQueue);
 // 返回处理完成的 promise（Chrome 不用这个返回值），测试据此等它跑完
 chrome.commands.onCommand.addListener((command) => {
   if (command !== "cycle-right") return undefined;
-  return cycleRight().catch(err => log("cycle-right failed", err));
+  return swQueue(() => withPairLock(cycleRight)).catch(err => log("cycle-right failed", err));
 });
 // 右键查询（② ⑧）：经 swQueue 串行；同样返回处理完成的 promise 供测试等待
 chrome.contextMenus.onClicked.addListener((info, tab) =>
-  swQueue(() => handleMenuClick(info, tab)).catch(err => log("lookup failed", err)));
+  swQueue(() => withPairLock(() => handleMenuClick(info, tab))).catch(err => log("lookup failed", err)));
 // ⑦ 补成分屏（弹窗发来 complete-split）：同样经 swQueue 串行。return true 后用 sendResponse 异步回复，
 // 不依赖“监听器返回 Promise”。只有本扩展自己的页面能发进来（没有 onMessageExternal、没有 externally_connectable），
 // 发送方和字段在 handleCompleteMessage 里校验。弹窗发给设置页的 reveal-setup 也会送到这里：不回复、不处理，由设置页回复。
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (isRevealSetup(msg)) return undefined;
-  swQueue(() => handleCompleteMessage(msg, sender)).then(sendResponse, (err) => {
+  swQueue(() => withPairLock(() => handleCompleteMessage(msg, sender))).then(sendResponse, (err) => {
     log("complete-split failed", err);
     sendResponse({ ok: false, code: "split_failed" });
   });

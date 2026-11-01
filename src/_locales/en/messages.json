@@ -1970,5 +1970,21 @@
         "example": "Google Lens"
       }
     }
+  },
+  "options_close_pair_label": {
+    "message": "Close both tabs when either one is closed",
+    "description": "Default-off switch: closing either tab also closes the other tab in an extension-owned search split view."
+  },
+  "options_close_pair_hint": {
+    "message": "Applies to search split views created by this extension, even after navigating to another page. Excludes context-menu lookups and adjacent tabs in narrow windows.",
+    "description": "Scope of linked closing: search pairs remain linked after navigation; context-menu lookup pairs and narrow-window adjacent pairs are excluded."
+  },
+  "options_close_pair_warning": {
+    "message": "If you separate a split view and immediately close a tab, the other tab may still close with it.",
+    "description": "Known browser event ambiguity: separating a split view and immediately closing a tab may still close its former peer."
+  },
+  "notice_close_pair_saved": {
+    "message": "Linked closing setting saved",
+    "description": "Save confirmation for the linked closing switch."
   }
 }

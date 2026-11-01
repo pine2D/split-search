@@ -1,9 +1,9 @@
-// “搜索组合”tab 的默认组合卡（#pair-body）：左右两个窗格、Chrome 设置核对说明与改了组合后的提示、窄窗口开关、
+// “搜索组合”tab 的默认组合卡（#pair-body）：左右两个窗格、Chrome 设置核对说明与改了组合后的提示、窄窗口与联动关闭开关、
 // 左侧未授权的提示框、末行指向“添加到 Chrome”的指引。关键词规则在紧跟其后的规则卡里（options.js 渲染 #rules-body）。
 // render 由 options.js 传入（不 import options.js，免得循环）。
 import { buildTriggerTemplate } from "../lib/trigger.js";
 import { h, ht, authButton, option } from "./ui.js";
-import { setDefaultPair, canBeLeft, setNarrowFallback, notePairChange, pairChangedView, pairSavedKey } from "./edits.js";
+import { setDefaultPair, canBeLeft, setNarrowFallback, setClosePairTogether, notePairChange, pairChangedView, pairSavedKey } from "./edits.js";
 import { act } from "./actions.js";
 import { urlBox, revealGuideSteps } from "./guide.js";
 import { requestReveal } from "./setup.js";
@@ -68,6 +68,19 @@ function narrowRow(cfg) {
     input);
 }
 
+function closeRow(cfg) {
+  const input = h("input", { type: "checkbox", role: "switch", id: "close-pair-together", class: "switch",
+    "aria-describedby": "close-pair-hint close-pair-warning" });
+  input.checked = cfg.closePairTogether;
+  input.addEventListener("change", () => act(raw => setClosePairTogether(raw, input.checked), ["notice_close_pair_saved"]));
+  return h("div", { class: "switch-row" },
+    h("div", { class: "switch-text" },
+      ht("label", { for: "close-pair-together" }, "options_close_pair_label"),
+      ht("p", { class: "hint", id: "close-pair-hint" }, "options_close_pair_hint"),
+      ht("p", { class: "hint", id: "close-pair-warning" }, "options_close_pair_warning")),
+    input);
+}
+
 // mode 是 setupView 的 mode（steps / regrant / done / hidden）；返回 #pair-body 的子节点
 export function pairSection({ cfg, byId, granted, mode, render }) {
   let show;
@@ -87,7 +100,7 @@ export function pairSection({ cfg, byId, granted, mode, render }) {
   const left = byId.get(l);
   const nodes = [pickerPanes(leftSel, rightSel)];
   nodes.push(show ? changedNote(show, left, byId.get(r)) : chromeNote());
-  nodes.push(narrowRow(cfg));
+  nodes.push(narrowRow(cfg), closeRow(cfg));
   // 卡片在“添加到 Chrome”里，用户在这里换成未授权的左侧时这里也要说
   if (left && !granted.get(left.id)) {
     const btn = authButton([left], ["engine_grant_named", left.name], { cls: "btn btn-small btn-attention", onDone: render });

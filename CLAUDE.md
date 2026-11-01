@@ -96,10 +96,19 @@ Chrome MV3 扩展：用户在地址栏搜索，或把文字拖到标签栏时，
        5 reuse-adjacent / 6 join（相邻查询对的 page 一侧：窄窗口更新并激活查询标签；否则更新后 createSplit 拼成分屏）
        7 beside-pair（相邻查询对的 lookup 一侧：在这一对右边开普通标签）  8 new（其他：createPaired，记 page ↔ lookup）
        只有当前标签是查询对的 page 一侧时才改写它的 lookup 一侧，用户的页面一律不导航。
-  记录在 tabs.onRemoved 时清理。读到失效记录（stale，例如拆开后又拼回去）时，只有记录里的对侧已经关掉才顺手清理；对侧还在就保留两条，这一对一直判“不是本扩展的”，不会落到兜底被覆盖。当前标签没有记录、对侧却有记录时同样判“不是”；两侧都没有记录（如浏览器重启后）时兜底仍可能判出 fallback-own，但它不允许任何调用方改写标签：decideSplit 按 foreign 处理，在旁边新开一对，原来两侧都不动（v0.4 起，取消了 v0.3 的兜底复用）。相邻对（adjacent）失效且对侧还在时（拖开、中间夹进别的标签），两条记录改写成永久失效标记（mode "split" 配 splitViewId -1），之后拖回相邻或手动拼成分屏都不再算本扩展的。记录写入在同一页面/SW 里串行执行（split-state.js 的队列）。join 时 `createSplit` 成功但复核两次（间隔 150 ms）都不一致，不写 adjacent 记录，删掉旧记录，之后按实际状态判定。兜底的路径型模板 `%s` 前只有根路径 `/` 时不认。
+  记录在 tabs.onRemoved 时由 chrome/close-pair.js 清理；开启 closePairTogether 时先按下节判定是否联动关闭。读到失效记录（stale，例如拆开后又拼回去）时，只有记录里的对侧已经关掉才顺手清理；对侧还在就保留两条，这一对一直判“不是本扩展的”，不会落到兜底被覆盖。当前标签没有记录、对侧却有记录时同样判“不是”；两侧都没有记录（如浏览器重启后）时兜底仍可能判出 fallback-own，但它不允许任何调用方改写标签：decideSplit 按 foreign 处理，在旁边新开一对，原来两侧都不动（v0.4 起，取消了 v0.3 的兜底复用）。相邻对（adjacent）失效且对侧还在时（拖开、中间夹进别的标签），两条记录改写成永久失效标记（mode "split" 配 splitViewId -1），之后拖回相邻或手动拼成分屏都不再算本扩展的。记录写入在同一页面/SW 里串行执行（split-state.js 的队列）。join 时 `createSplit` 成功但复核两次（间隔 150 ms）都不一致，不写 adjacent 记录，删掉旧记录，之后按实际状态判定。兜底的路径型模板 `%s` 前只有根路径 `/` 时不认。
 ```
 
 触发网址 = 左侧引擎真实搜索网址 + 标记参数 `_ss=<左id>,<右id>`，例如 `https://www.google.com/search?q=%s&_ss=google,bing`。
+
+## 搜索分屏联动关闭
+
+- 设计：`docs/superpowers/specs/2026-11-01-close-search-pair-design.md`；验收：`docs/acceptance-close-pair.md`。设置页“搜索组合”里的开关默认关闭，仅作用于记录互指且同一原生 splitViewId 的 search/search 对；page/lookup、adjacent、失效记录和用户手动建的分屏都不授予关闭权。导航到其他页面不解除联动。
+- `chrome/close-store.js` 在 SW 中核实原生布局，签发 `storage.session` 的 `linked:<splitViewId>` → `[较小标签id, 较大标签id]`。开启时扫描已有记录、之后响应 session 的分屏记录变化；关闭时清许可。浏览器重启后 session 清空，不从网址恢复关闭权。
+- `chrome/close-pair.js` 顶层注册监听；偏好读完为 false 时移除 onUpdated。只处理 changeInfo 中的 splitViewId，在 await/排队前发送一次 tabs.query({}) 快照，只使用标签 id。两侧 -1 更新都在同一 SW 实例看到同一侧缺失才提供一次性证据；两侧仍在即撤销许可。跨窗口移动也撤销，窗口关闭不联动。
+- onRemoved 在串行链和跨上下文锁内复核最新互指记录、许可和偏好，先成功消费许可及记录，再确认对侧仍在原窗口、splitViewId 明确为 -1，发出 tabs.remove。**不 await/return 这个 Promise，不重试**：取消 beforeunload 后它可能长期 pending。失败或证据不足只清理。清理按最新互指关系，不删新 B/C 配对。
+- go 的“读取→判定→执行”、弹窗的 inspect/switch、SW 的补成分屏/右键查询/轮换/关闭，以及 closePairTogether 本地保存均使用 `chrome/pair-lock.js` 的同一个独占 Web Lock（等待超时 5 秒）。持锁期间不导航、不等待弹窗消息或用户确认；helpers 不重复拿锁。拿不到锁自动关闭跳过；缺少 Web Locks 时旧功能仍可用。
+- 已接受的浏览器边界：取消拆分视图后立即关闭标签，仍可能联动关闭另一侧，冷启动时尤其如此。设置项旁与四种语言 README 都保留提示，不宣称完全区分关闭与拆开。
 
 ## 目录与职责
 
@@ -145,7 +154,7 @@ split-search/
 │   ├── manifest.json
 │   ├── _locales/                 界面文案：en、zh_CN（源文案）、zh_TW、es 各一份 messages.json
 │   ├── icons/                    工具栏与扩展管理页图标，16/32/48/128，配色 c6 pine-fog；16/32/48 由按像素对齐的 icon-16|32|48.svg 导出
-│   ├── background.js             SW：重建 DNR 规则与右键菜单、tabs.onRemoved 清理记录、onCommand（cycle-right）、contextMenus.onClicked 与 runtime.onMessage（complete-split，二者共用一条串行链；reveal-setup 不回复、不记日志）；无 action.onClicked
+│   ├── background.js             SW：重建 DNR 规则与右键菜单、安装 close-pair 生命周期监听、onCommand（cycle-right）、contextMenus.onClicked 与 runtime.onMessage（complete-split，二者共用一条串行链；reveal-setup 不回复、不记日志）；无 action.onClicked
 │   ├── popup/popup.html|css|js   工具栏弹窗（action.default_popup）：显示关键词与左右引擎（查询对按“网页”“查询”）、换右侧、进入设置页
 │   ├── popup/rule-note.js        弹窗的“按关键词换右侧”说明（#rule-note）：右侧是规则换的时说因为哪个词或哪种文字换的，加“换回 <原右侧>”按钮（走 popup.js 的 onSwitch）；只显示，不写记录、不记日志
 │   ├── popup/complete.js         弹窗的“补成分屏”区：显示识别结果与右侧候选，点一个就发 complete-split 给 SW（自己不建标签、不写记录）
@@ -201,7 +210,7 @@ split-search/
 │   ├── lib/i18n.js               语言选择、占位符替换等纯逻辑
 │   ├── lib/errors.js             错误码：lib 和设置页逻辑只返回码，页面经 t("err_<code>") 显示
 │   ├── chrome/i18n.js            页内文案加载器：t()，fetch 读包内 _locales，按 uiLocale 切换
-│   ├── chrome/config-store.js    storage.sync 读写封装；顶层键 uiLocale（"auto"|"en"|"zh_CN"|"zh_TW"|"es"）、narrowFallback（缺省 true）、cycleExclude（不参与轮换的引擎 id 数组）、lookupEngine（查词引擎 id，缺省跟随默认组合右侧，不写默认值）、imageEngine（所选以图搜图引擎 id，缺省 lens）、imageEngines（自定义以图搜图引擎 { id, name, url }[]）、rightRules（关键词规则 { id, when: words|script, words?, script?, engine? | keep: true, strip?: true }[]，有序，键不存在即没有规则，删光时 removeKeys；strip 只在 words 规则上、不勾选时不写这个键）；自定义引擎可带 leftDiscouraged
+│   ├── chrome/config-store.js    storage.sync 读写封装；顶层键 uiLocale（"auto"|"en"|"zh_CN"|"zh_TW"|"es"）、narrowFallback（缺省 true）、closePairTogether（仅 true 开启，缺省 false；此键的写入/删除也持 pair-lock）、cycleExclude（不参与轮换的引擎 id 数组）、lookupEngine（查词引擎 id，缺省跟随默认组合右侧，不写默认值）、imageEngine（所选以图搜图引擎 id，缺省 lens）、imageEngines（自定义以图搜图引擎 { id, name, url }[]）、rightRules（关键词规则 { id, when: words|script, words?, script?, engine? | keep: true, strip?: true }[]，有序，键不存在即没有规则，删光时 removeKeys；strip 只在 words 规则上、不勾选时不写这个键）；自定义引擎可带 leftDiscouraged
 │   ├── chrome/split-actions.js   分屏动作执行（tabs / windows 薄封装，记录经 split-state.js）
 │   ├── chrome/split-state.js     记录读写与 inspectTab（对侧已关闭、storage 抛错都按“无记录”处理）；writePair 返回是否写成、透传 autoA/autoB；writeEngine 去掉 rule/base
 │   ├── chrome/setup-store.js     “开始使用”卡的存储：storage.local 的 setupDone（readSetupDone、go.html 用的 noteSetupPair）与 storage.session 的 setupTryTabs（rememberTryTab）；失败只记 info 日志
@@ -230,7 +239,7 @@ split-search/
 - 以图搜图预置（只写在代码里，不能删除）：`lens` Google Lens `https://lens.google.com/uploadbyurl?url=%s`，缺省选用。以图搜图引擎不经过 DNR、不申请任何 host 权限，设置页不显示授权按钮。
 - 用户界面文案一律写在 `src/_locales/<语言>/messages.json`（首期 `en`、`zh_CN`、`zh_TW`、`es`），代码和 HTML 里不得出现界面文字。页面经 `src/chrome/i18n.js` 的 `t()` 取文案（按设置页所选语言，默认跟随浏览器），SW 里的右键菜单标题同样经 `t()`；`chrome.i18n.getMessage` 只用于 manifest 的 `__MSG_…__`。`zh_CN` 是源文案，`default_locale` 是 `en`。新增或修改文案时 4 种语言的 key 必须同时补齐（`test/i18n-catalog.test.js` 检查）。唯一允许的 `fetch` 是读取扩展包内的 `_locales`。文案的术语、润色与翻译流程见“## 文案”。
 - 日志（`console.info`/`console.error`）不得带标签网址、关键词、关键词规则命中的词、选中文字或图片网址；打印错误对象一律经 `lib/safe-error.js`（`test/log-wiring.test.js` 守着），不直接传 Chrome 的错误对象。
-- `storage.local` 只存布尔值 `setupDone`（“开始使用”卡是否完成，只由 go.html 经 `chrome/setup-store.js` 写），不放查询词、网址或其他数据。`storage.session` 除分屏记录外只多一个 `setupTryTabs`（“试一下”打开的标签 id 数组，最多 50 个，不含网址或关键词）。
+- `storage.local` 只存布尔值 `setupDone`（“开始使用”卡是否完成，只由 go.html 经 `chrome/setup-store.js` 写），不放查询词、网址或其他数据。`storage.session` 除分屏记录外还有 `setupTryTabs`（“试一下”打开的标签 id 数组，最多 50 个）和 `linked:<splitViewId>`（联动关闭许可，值为升序的两个标签 id）；这两类数据都不含网址或关键词。
 - 颜色只在 `src/styles/tokens.css` 定义（浅色、深色两段），各界面样式表只用 `var(--…)`（`test/popup-css.test.js` 守着）；图标用 `ui/icons.js` 的内联 SVG，不用 Unicode 字符或 emoji（`test/ui-icons.test.js` 守着）。
 - 不使用 iframe，不修改响应头。只有经过用户确认的“本扩展分屏”才允许被覆盖，而且只改写记录确认属于本扩展的那一侧（查询对只改写 `lookup` 一侧；兜底判出的 `fallback-own` 不允许任何调用方改写标签）。调分屏 API 前窗口必须经 `splitWindowType` 判为 `normal`（读窗口带 `populate: true`）。
 - 开发镜像目录：`/mnt/d/APP/Chrome-Extensions/split-search`。之后只用“重新加载”，不要移除后重装。

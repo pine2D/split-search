@@ -211,6 +211,10 @@ export function setNarrowFallback(_raw, enabled) {
   return { ok: true, patch: { narrowFallback: enabled === true } };
 }
 
+export function setClosePairTogether(_raw, enabled) {
+  return { ok: true, patch: { closePairTogether: enabled === true } };
+}
+
 // 返回移动后的新数组；越界时原样返回同一个数组
 export function moveId(ids, id, delta) {
   const i = ids.indexOf(id);

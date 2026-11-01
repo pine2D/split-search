@@ -6,6 +6,7 @@ import { validateTemplate } from "./lib/engines.js";
 import { loadConfig } from "./chrome/config-store.js";
 import { ACTIONS, leaveTab } from "./chrome/split-actions.js";
 import { inspectTab } from "./chrome/split-state.js";
+import { withPairLock } from "./chrome/pair-lock.js";
 import { noteSetupPair } from "./chrome/setup-store.js";
 import { openOptionsTab } from "./chrome/options-page.js";
 import { errorTab } from "./lib/options-route.js";
@@ -67,11 +68,14 @@ async function gatherContext(engines) {
 
 // auto：关键词规则选的右侧（{ rule, base }），没有时为 null；执行层只把它写进右侧标签的记录
 async function split(engines, narrowEnabled, { left, right, query, auto }, leftUrl, rightUrl) {
-  const ctx = await gatherContext(engines);
-  // 判定经 decideFor：PiP 归为 "pip"，走 other-window，不在它上面调分屏 API（test/go-wiring.test.js 守着这条接线）
-  const action = decideFor(ctx, narrowEnabled);
-  const outcome = await ACTIONS[action]({
-    ...ctx, leftUrl, rightUrl, leftId: left.id, rightId: right.id, query, narrowEnabled, auto,
+  const { ctx, outcome } = await withPairLock(async () => {
+    const ctx = await gatherContext(engines);
+    // 判定经 decideFor：PiP 归为 "pip"，走 other-window，不在它上面调分屏 API。
+    const action = decideFor(ctx, narrowEnabled);
+    const outcome = await ACTIONS[action]({
+      ...ctx, leftUrl, rightUrl, leftId: left.id, rightId: right.id, query, narrowEnabled, auto,
+    });
+    return { ctx, outcome };
   });
   // 写成了一对搜索记录：经 lib/setup-state.js 判定后写 setupDone（“开始使用”卡完成）。
   // 跳转前做（跳转会中断它）；noteSetupPair 从不抛错、最多等 500 ms，不影响分屏流程

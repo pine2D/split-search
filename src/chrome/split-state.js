@@ -8,8 +8,8 @@ const log = (...args) => console.error("[split-search]", ...safeArgs(args));
 
 // 记录写入（writePair / writeEngine / clearPair / markStale）在同一个上下文（页面或 SW）里串行执行：
 // clearPair 先读后删，不串行时紧随其后的 writePair 会被它删掉。每个操作自己吞掉错误，链不会断。
-// 跨上下文（go.html、弹窗、SW 各自一条链）仍可能交错；最坏结果是记录被删或被标成失效，
-// 之后判成 stale / none（不覆盖、新开一对），方向是安全的，不会把别人的标签当成本扩展的。
+// 跨上下文由动作入口的 pair-lock 保护（go、弹窗、SW）；本模块不重复拿锁，避免死锁。
+// 此队列仍保持同一动作内部的写入顺序；不得把旧快照带出锁后再写回。
 let queue = Promise.resolve();
 function serial(fn) {
   const run = queue.then(fn);
