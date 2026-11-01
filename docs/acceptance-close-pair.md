@@ -1,6 +1,6 @@
 # 搜索分屏联动关闭验收
 
-设计见 [2026-11-01-close-search-pair-design.md](superpowers/specs/2026-11-01-close-search-pair-design.md)。不增加权限，版本号保持 0.7.0；功能尚未发布。
+设计见 [2026-11-01-close-search-pair-design.md](superpowers/specs/2026-11-01-close-search-pair-design.md)。适用于 0.8.0，不增加权限。
 
 ## 适用范围与边界
 
