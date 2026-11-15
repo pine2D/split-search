@@ -339,7 +339,9 @@ split-search/
 
 ## 提交
 
-使用 git-commit skill（Conventional Commits）。仓库没有 git 身份配置时，用内联身份：`git -c user.name=pine2D -c user.email=oumu323@gmail.com commit`。
+使用 git-commit skill（Conventional Commits）。提交作者与提交者统一使用 `pine2D <569091+pine2D@users.noreply.github.com>`，不使用真实邮箱。
+
+提交前用 `git var GIT_AUTHOR_IDENT` 和 `git var GIT_COMMITTER_IDENT` 核对有效身份；已有正确配置时直接使用。若需命令级指定，也必须使用上述 noreply 身份，不为提交修改持久 Git 配置。
 
 ## 已知事实（spec 2.2 核查结论，避免重复踩坑）
 

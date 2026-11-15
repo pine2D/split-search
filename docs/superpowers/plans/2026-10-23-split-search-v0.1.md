@@ -122,7 +122,7 @@ assert.equal(m.chrome_settings_overrides, undefined);
   - **硬约束**：抄录本计划 Global Constraints 的全部条目，并写明“违反任一条视为缺陷”；
   - **命令**：`npm test`、`bash scripts/sync-to-windows.sh`、`bash scripts/gen-key.sh`（私钥位置，以及“私钥丢了扩展 ID 就会变，所有授权和 sync 数据都会作废”）；
   - **测试纪律**：`src/lib/` 新增逻辑先写 node 测试；涉及分屏、DNR、权限的行为，只能在 Windows Chrome 155+ 里按 spec §7（T1–T15）手测，WSL 里的 Chrome 版本不够，不能用；
-  - **提交**：使用 git-commit skill（Conventional Commits），仓库没有 git 身份配置时用内联身份 `-c user.name=pine2D -c user.email=oumu323@gmail.com`；
+  - **提交**：使用 git-commit skill（Conventional Commits），仓库没有 git 身份配置时用内联身份 `-c user.name=pine2D -c user.email=569091+pine2D@users.noreply.github.com`；
   - **已知事实**：摘录 spec §2.2 的核查结论，比如 `%s` 在 query 中时空格编为 `+`、Kagi 会把逗号改成 `%2C`、popup 窗口不能分屏、不要用 `navigation.canGoBack`，避免以后重复踩坑。
 
 - [ ] **Step 11: 运行 `npm test`。** 预期 manifest 测试 PASS。

@@ -59,7 +59,7 @@
 - 日志（`console.info`/`console.error`）不带网址、关键词；打印错误一律经 `lib/safe-error.js`（`test/log-wiring.test.js` 守着）。
 - e2e 只在测试配置 `~/.cache/split-search-e2e/profile` 里跑，运行前关掉占用它的 Chrome；绝不读写 `~/.config/google-chrome`、`~/.chrome-debug-profile` 或任何 Windows 配置。扩展只用“重新加载”，manifest 的 `key` 不动。
 - `src/manifest.json`、`package.json` 在 Task 1–5 期间保持 `0.5.0`，只在 Task 6 的 release 提交里改成 `0.6.0`。
-- 提交用 git-commit skill（Conventional Commits），命令 `git -c user.name=pine2D -c user.email=oumu323@gmail.com commit`，消息末尾两行：
+- 提交用 git-commit skill（Conventional Commits），命令 `git -c user.name=pine2D -c user.email=569091+pine2D@users.noreply.github.com commit`，消息末尾两行：
   `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`
   `Claude-Session: https://claude.ai/code/session_01QAFczmx2FRoPgu46A1z6D9`
 - 不推送、不打标签。
@@ -348,7 +348,7 @@ Expected: 17 步全部 pass，退出码 0；`.e2e/report-*.md` 里 B21 的 (a)(b
 
 ```bash
 git add src/lib/options-route.js src/options src/_locales test/options-route.test.js test/options-wiring.test.js test/e2e-b21.test.js test/e2e-i18n.test.js scripts/e2e/steps
-git -c user.name=pine2D -c user.email=oumu323@gmail.com commit -F - <<'EOF'
+git -c user.name=pine2D -c user.email=569091+pine2D@users.noreply.github.com commit -F - <<'EOF'
 feat(options): split the settings page into four tabs
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
@@ -475,7 +475,7 @@ Expected: 17 步全部 pass，退出码 0；B21 的 (l) 通过，detail 写明�
 
 ```bash
 git add src/lib/url-break.js src/options src/_locales test/url-break.test.js test/e2e-b21.test.js test/e2e-i18n.test.js scripts/e2e/steps
-git -c user.name=pine2D -c user.email=oumu323@gmail.com commit -F - <<'EOF'
+git -c user.name=pine2D -c user.email=569091+pine2D@users.noreply.github.com commit -F - <<'EOF'
 feat(options): align settings content to one 680px column
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
@@ -615,7 +615,7 @@ Expected: 17 步全部 pass，退出码 0；B21 的 (f)(g)(h)(k) 通过；B19 (d
 
 ```bash
 git add src/options src/_locales test/options-edits.test.js test/i18n-catalog.test.js scripts/e2e/steps
-git -c user.name=pine2D -c user.email=oumu323@gmail.com commit -F - <<'EOF'
+git -c user.name=pine2D -c user.email=569091+pine2D@users.noreply.github.com commit -F - <<'EOF'
 feat(options): connect settings that depend on other tabs
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
@@ -668,7 +668,7 @@ Expected: 17 步全部 pass，退出码 0；`.e2e/i18n/<locale>-options-rules.pn
 
 ```bash
 git add src/options src/_locales scripts/e2e/steps
-git -c user.name=pine2D -c user.email=oumu323@gmail.com commit -F - <<'EOF'
+git -c user.name=pine2D -c user.email=569091+pine2D@users.noreply.github.com commit -F - <<'EOF'
 feat(options): move keyword rules into their own card
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
@@ -715,7 +715,7 @@ Expected: 6 步全部 pass，退出码 0；I18N 四种语言没有原样 key、�
 
 ```bash
 git add src/_locales
-git -c user.name=pine2D -c user.email=oumu323@gmail.com commit -F - <<'EOF'
+git -c user.name=pine2D -c user.email=569091+pine2D@users.noreply.github.com commit -F - <<'EOF'
 chore(i18n): finalize the settings tab copy in four languages
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
@@ -786,7 +786,7 @@ Expected: 四个数相同；PASS。
 
 ```bash
 git add CLAUDE.md README.md README.zh-CN.md README.zh-TW.md README.es.md docs/acceptance-v0.6.md docs/acceptance-v0.4.md docs/acceptance-v0.5.md docs/_config.yml docs/superpowers/specs/2026-10-27-options-tabs-design.md
-git -c user.name=pine2D -c user.email=oumu323@gmail.com commit -F - <<'EOF'
+git -c user.name=pine2D -c user.email=569091+pine2D@users.noreply.github.com commit -F - <<'EOF'
 docs: describe the tabbed settings page
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
@@ -805,7 +805,7 @@ Expected: 渲染器没有溢出和超行报告；商店截图 4 与顶部宣传�
 
 ```bash
 git add assets
-git -c user.name=pine2D -c user.email=oumu323@gmail.com commit -F - <<'EOF'
+git -c user.name=pine2D -c user.email=569091+pine2D@users.noreply.github.com commit -F - <<'EOF'
 docs(assets): reshoot the en settings captures for the tabbed page
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
@@ -824,7 +824,7 @@ Expected: PASS。
 
 ```bash
 git add src/manifest.json package.json CHANGELOG.md
-git -c user.name=pine2D -c user.email=oumu323@gmail.com commit -F - <<'EOF'
+git -c user.name=pine2D -c user.email=569091+pine2D@users.noreply.github.com commit -F - <<'EOF'
 chore: release v0.6.0
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>

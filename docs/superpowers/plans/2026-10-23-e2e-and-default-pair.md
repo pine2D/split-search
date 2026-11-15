@@ -24,7 +24,7 @@
 - 测试前把 `chrome.storage.sync` 全量快照写入 `.e2e/storage-snapshot.json`，结束后（包括中断）恢复；启动时如果发现有遗留快照，先恢复它。
 - 报告写到 `.e2e/report-<YYYYMMDD-HHMMSS>.md` 和同名 `.json`；`.e2e/` 加入 `.gitignore`。有失败时退出码为 1，前置条件缺失时为 2。
 - 向导页和终端输出用简体中文；向导页适配深色模式；DOM 操作只用 textContent / createElement。
-- 提交身份：`git -c user.name=pine2D -c user.email=oumu323@gmail.com commit`，Conventional Commits，body 以 `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` 结尾。
+- 提交身份：`git -c user.name=pine2D -c user.email=569091+pine2D@users.noreply.github.com commit`，Conventional Commits，body 以 `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` 结尾。
 
 ## Review Focus
 

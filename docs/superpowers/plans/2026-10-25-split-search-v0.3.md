@@ -21,7 +21,7 @@
 - 快捷键：`commands` 里只有 `cycle-right`，**不写 `suggested_key`**；`_execute_action` 不绑定。
 - 不做“互换左右”“拆开分屏”按钮或命令。
 - 窄窗口阈值 `960`（`windows.get` 的 `width`，DIP，含边框），`width < 960` 为窄；`storage.sync.narrowFallback` 缺省视为 `true`。
-- 提交用 git-commit skill（Conventional Commits）；本仓库无 git 身份，用 `git -c user.name=pine2D -c user.email=oumu323@gmail.com commit`；提交信息末尾加 `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`。
+- 提交用 git-commit skill（Conventional Commits）；本仓库无 git 身份，用 `git -c user.name=pine2D -c user.email=569091+pine2D@users.noreply.github.com commit`；提交信息末尾加 `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`。
 - 每个任务结束前 `npm test` 全绿。
 
 ## Review Focus

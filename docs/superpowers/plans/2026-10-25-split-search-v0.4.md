@@ -28,7 +28,7 @@
 - 菜单项 id：`ss-lookup-text`（`contexts: ["selection"]`）、`ss-lookup-image`（`contexts: ["image"]`，`targetUrlPatterns: ["https://*/*", "http://*/*"]`），两项 `documentUrlPatterns: ["https://*/*", "http://*/*"]`。
 - `storage.sync` 新顶层键：`lookupEngine`（缺省 = 跟随默认组合右侧，不写默认值）、`imageEngine`（缺省 `lens`）、`imageEngines`（`{ id, name, url }[]`）；单项 8192 字节上限沿用 `saveKeys` 预检。
 - ⑦ 消息形状 `{ type: "complete-split", tabId, engineId }`；回复 `{ ok: true, mode: "split" | "adjacent" | "plain" }` 或 `{ ok: false, code }`。新错误码：`not_results_page`、`window_unsupported`、`split_failed`、`message_rejected`。
-- 提交用 Conventional Commits，内联身份 `git -c user.name=pine2D -c user.email=oumu323@gmail.com commit`；提交信息末尾空一行后是两行 `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` 和 `Claude-Session: https://claude.ai/code/session_01QAFczmx2FRoPgu46A1z6D9`（下文的 `-m A -m B` 写法正好产生这个格式）。`git add` 一律写明路径。
+- 提交用 Conventional Commits，内联身份 `git -c user.name=pine2D -c user.email=569091+pine2D@users.noreply.github.com commit`；提交信息末尾空一行后是两行 `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` 和 `Claude-Session: https://claude.ai/code/session_01QAFczmx2FRoPgu46A1z6D9`（下文的 `-m A -m B` 写法正好产生这个格式）。`git add` 一律写明路径。
 - 每个任务结束前 `npm test` 全绿。中间任务写的文案初稿照常写 `description`，不得用 `[needs-translation]` 标记（`test/i18n-catalog.test.js` 会拒绝）；待 Task 15 定稿的 key 就是各任务 Files 里列出的那些。
 - 日志分两级：预期的拒绝和忽略（右键 `ignore` 的各个 `reason`、`not_results_page`、`message_rejected`、`window_unsupported`）只用 `console.info("[split-search]", <事件>, <code 或 reason>)`；`console.error`（现有的 `log`）只留给真正的异常（API 抛错、写记录失败、菜单 `runtime.lastError`）。e2e 的 B15 只收 `error` 级，所以 T20、T23、T24 有意走的拒绝路径不会让它判失败。两级日志都不带选中文字、图片网址、关键词、`pageUrl` 和标签网址。
 
@@ -123,10 +123,10 @@ Expected: PASS；冒烟打印的权限警告与 v0.3 相同（证明两个新权
 
 ```bash
 git add src/manifest.json scripts/pack-lib.mjs CLAUDE.md test/manifest.test.js test/pack.test.js
-git -c user.name=pine2D -c user.email=oumu323@gmail.com commit -m "feat(manifest): request activeTab and contextMenus" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+git -c user.name=pine2D -c user.email=569091+pine2D@users.noreply.github.com commit -m "feat(manifest): request activeTab and contextMenus" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01QAFczmx2FRoPgu46A1z6D9"
 git add scripts/pack-smoke.mjs
-git -c user.name=pine2D -c user.email=oumu323@gmail.com commit -m "test(pack): check that the smoke install shows no new permission warnings" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+git -c user.name=pine2D -c user.email=569091+pine2D@users.noreply.github.com commit -m "test(pack): check that the smoke install shows no new permission warnings" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01QAFczmx2FRoPgu46A1z6D9"
 ```
 
@@ -239,7 +239,7 @@ Expected: PASS。对 `session.set` 做全等断言的旧用例会因多了 `role
 
 ```bash
 git add src/lib/split-owner.js src/lib/split-decision.js test/split-owner.test.js test/split-decision.test.js test/split-actions.test.js test/split-state.test.js test/right-switch.test.js test/background.test.js
-git -c user.name=pine2D -c user.email=oumu323@gmail.com commit -m "feat(split): tell search pairs from lookup pairs and stop fallback reuse" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+git -c user.name=pine2D -c user.email=569091+pine2D@users.noreply.github.com commit -m "feat(split): tell search pairs from lookup pairs and stop fallback reuse" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01QAFczmx2FRoPgu46A1z6D9"
 ```
 
@@ -292,7 +292,7 @@ Expected: PASS；T5 的重启子项按新期望通过（重启后分屏没有恢
 
 ```bash
 git add src/chrome/split-state.js src/chrome/split-actions.js src/go.js scripts/e2e/steps/v03-lib.mjs scripts/e2e/steps/v03-split.mjs scripts/e2e/steps/flow-restart.mjs scripts/e2e/steps/flow.mjs test/split-state.test.js test/split-actions.test.js test/e2e-v03.test.js
-git -c user.name=pine2D -c user.email=oumu323@gmail.com commit -m "fix(split): keep roles through record writes and never overwrite on fallback" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+git -c user.name=pine2D -c user.email=569091+pine2D@users.noreply.github.com commit -m "fix(split): keep roles through record writes and never overwrite on fallback" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01QAFczmx2FRoPgu46A1z6D9"
 ```
 
@@ -388,7 +388,7 @@ Expected: PASS
 
 ```bash
 git add src/lib/image-engines.js src/lib/engines.js test/image-engines.test.js test/engines.test.js
-git -c user.name=pine2D -c user.email=oumu323@gmail.com commit -m "feat(engines): add image search engines and a lookup engine setting" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+git -c user.name=pine2D -c user.email=569091+pine2D@users.noreply.github.com commit -m "feat(engines): add image search engines and a lookup engine setting" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01QAFczmx2FRoPgu46A1z6D9"
 ```
 
@@ -454,7 +454,7 @@ Expected: PASS（搜索对的弹窗与快捷键行为不变）
 
 ```bash
 git add src/chrome/right-switch.js src/lib/cycle.js src/lib/popup-view.js src/popup/popup.js src/popup/popup.html src/background.js src/_locales test/right-switch.test.js test/cycle.test.js test/popup-view.test.js test/background.test.js
-git -c user.name=pine2D -c user.email=oumu323@gmail.com commit -m "feat(popup): switch the lookup side of a lookup pair by input kind" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+git -c user.name=pine2D -c user.email=569091+pine2D@users.noreply.github.com commit -m "feat(popup): switch the lookup side of a lookup pair by input kind" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01QAFczmx2FRoPgu46A1z6D9"
 ```
 
@@ -540,7 +540,7 @@ Expected: PASS；每个文件 ≤ 300 行
 
 ```bash
 git add src/options src/chrome/config-store.js src/_locales test/options-edits.test.js test/image-edits.test.js test/config-store.test.js
-git -c user.name=pine2D -c user.email=oumu323@gmail.com commit -m "feat(options): add the right-click lookup card" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+git -c user.name=pine2D -c user.email=569091+pine2D@users.noreply.github.com commit -m "feat(options): add the right-click lookup card" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01QAFczmx2FRoPgu46A1z6D9"
 ```
 
@@ -614,7 +614,7 @@ Expected: pass
 
 ```bash
 git add src/lib/menu-spec.js src/lib/serial.js src/chrome/menus.js src/chrome/i18n.js src/background.js src/_locales scripts/pack-smoke.mjs scripts/e2e/steps/xauto.mjs test/menu-spec.test.js test/serial.test.js test/menus.test.js test/i18n.test.js test/chrome-i18n.test.js test/i18n-catalog.test.js test/background.test.js
-git -c user.name=pine2D -c user.email=oumu323@gmail.com commit -m "feat(menus): register localized lookup items in the service worker" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+git -c user.name=pine2D -c user.email=569091+pine2D@users.noreply.github.com commit -m "feat(menus): register localized lookup items in the service worker" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01QAFczmx2FRoPgu46A1z6D9"
 ```
 
@@ -714,7 +714,7 @@ Expected: PASS
 
 ```bash
 git add src/lib/lookup-input.js src/lib/lookup-decision.js test/lookup-input.test.js test/lookup-decision.test.js
-git -c user.name=pine2D -c user.email=oumu323@gmail.com commit -m "feat(lookup): normalize menu input and decide where results open" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+git -c user.name=pine2D -c user.email=569091+pine2D@users.noreply.github.com commit -m "feat(lookup): normalize menu input and decide where results open" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01QAFczmx2FRoPgu46A1z6D9"
 ```
 
@@ -766,7 +766,7 @@ Expected: PASS；每个文件 ≤ 300 行
 
 ```bash
 git add src/chrome/lookup-actions.js src/background.js test/lookup-actions.test.js test/background.test.js
-git -c user.name=pine2D -c user.email=oumu323@gmail.com commit -m "feat(lookup): open selected text and images next to the current page" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+git -c user.name=pine2D -c user.email=569091+pine2D@users.noreply.github.com commit -m "feat(lookup): open selected text and images next to the current page" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01QAFczmx2FRoPgu46A1z6D9"
 ```
 
@@ -866,7 +866,7 @@ Expected: PASS（含 `test/errors.test.js`、`test/i18n-catalog.test.js`）
 
 ```bash
 git add src/lib/result-match.js src/lib/messages.js src/lib/popup-view.js src/lib/errors.js src/_locales test/result-match.test.js test/messages.test.js test/popup-view.test.js test/errors.test.js
-git -c user.name=pine2D -c user.email=oumu323@gmail.com commit -m "feat(popup): recognize search results pages for completing a split" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+git -c user.name=pine2D -c user.email=569091+pine2D@users.noreply.github.com commit -m "feat(popup): recognize search results pages for completing a split" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01QAFczmx2FRoPgu46A1z6D9"
 ```
 
@@ -914,7 +914,7 @@ Expected: PASS；每个文件 ≤ 300 行
 
 ```bash
 git add src/chrome/complete-actions.js src/popup src/background.js src/_locales test/complete-actions.test.js test/background.test.js
-git -c user.name=pine2D -c user.email=oumu323@gmail.com commit -m "feat(popup): complete an existing search into a split view" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+git -c user.name=pine2D -c user.email=569091+pine2D@users.noreply.github.com commit -m "feat(popup): complete an existing search into a split view" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01QAFczmx2FRoPgu46A1z6D9"
 ```
 
@@ -938,7 +938,7 @@ Claude-Session: https://claude.ai/code/session_01QAFczmx2FRoPgu46A1z6D9"
 
 ```bash
 git add docs/superpowers/plans/2026-10-25-split-search-v0.4.md
-git -c user.name=pine2D -c user.email=oumu323@gmail.com commit -m "docs(plan): record the S8-S12 spike results" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+git -c user.name=pine2D -c user.email=569091+pine2D@users.noreply.github.com commit -m "docs(plan): record the S8-S12 spike results" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01QAFczmx2FRoPgu46A1z6D9"
 ```
 
@@ -986,7 +986,7 @@ Expected: 全部 pass（B2、T17、T18 证明 `POPUP_STATE` 与 `sizeTo` 的改�
 
 ```bash
 git add scripts/e2e/config.mjs scripts/e2e/server.mjs scripts/e2e/steps/v03-popup.mjs scripts/e2e/steps/v03-lib.mjs scripts/e2e/steps/v03-narrow.mjs scripts/e2e/steps/index.mjs scripts/e2e/steps/v04-lib.mjs scripts/e2e/steps/v04-complete.mjs scripts/e2e/steps/v04-options.mjs test/e2e-v04.test.js
-git -c user.name=pine2D -c user.email=oumu323@gmail.com commit -m "test(e2e): cover completing a split through activeTab and the lookup card" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+git -c user.name=pine2D -c user.email=569091+pine2D@users.noreply.github.com commit -m "test(e2e): cover completing a split through activeTab and the lookup card" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01QAFczmx2FRoPgu46A1z6D9"
 ```
 
@@ -1029,7 +1029,7 @@ Expected: 全部 pass（T11 证明本扩展的菜单项没有改变它点的那�
 
 ```bash
 git add scripts/e2e/gesture-ui.mjs scripts/e2e/screen.mjs scripts/e2e/steps/index.mjs scripts/e2e/steps/v04-lib.mjs scripts/e2e/steps/v04-lookup.mjs test/e2e-gesture.test.js test/e2e-v04.test.js
-git -c user.name=pine2D -c user.email=oumu323@gmail.com commit -m "test(e2e): drive the lookup context menu items with real input" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+git -c user.name=pine2D -c user.email=569091+pine2D@users.noreply.github.com commit -m "test(e2e): drive the lookup context menu items with real input" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01QAFczmx2FRoPgu46A1z6D9"
 ```
 
@@ -1076,7 +1076,7 @@ Expected: 每个文件 ≤ 300 行；全部 pass（(i)、(d') 可以是 skip 并
 
 ```bash
 git add scripts/e2e/steps/v04-guard.mjs scripts/e2e/steps/v04-i18n.mjs scripts/e2e/steps/index.mjs scripts/e2e/steps/i18n.mjs scripts/e2e/steps/b14.mjs docs/acceptance-v0.4.md docs/acceptance-v0.1.md docs/_config.yml test/e2e-v04.test.js
-git -c user.name=pine2D -c user.email=oumu323@gmail.com commit -m "test(e2e): guard user pages against every rewrite path" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+git -c user.name=pine2D -c user.email=569091+pine2D@users.noreply.github.com commit -m "test(e2e): guard user pages against every rewrite path" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01QAFczmx2FRoPgu46A1z6D9"
 ```
 
@@ -1103,13 +1103,13 @@ Expected: PASS（含 `test/i18n-catalog.test.js` 的 4 语言 key 对齐、`test
 
 ```bash
 git add src/_locales docs/i18n/chrome-terms.md
-git -c user.name=pine2D -c user.email=oumu323@gmail.com commit -m "docs(i18n): finalize v0.4 interface copy in four languages" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+git -c user.name=pine2D -c user.email=569091+pine2D@users.noreply.github.com commit -m "docs(i18n): finalize v0.4 interface copy in four languages" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01QAFczmx2FRoPgu46A1z6D9"
 git add docs/store/privacy.md docs/privacy.md docs/privacy.zh-CN.md docs/store/listing.en.md docs/store/listing.zh-CN.md docs/store/listing.zh-TW.md docs/store/listing.es.md
-git -c user.name=pine2D -c user.email=oumu323@gmail.com commit -m "docs(store): disclose selected text and image addresses sent to engines" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+git -c user.name=pine2D -c user.email=569091+pine2D@users.noreply.github.com commit -m "docs(store): disclose selected text and image addresses sent to engines" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01QAFczmx2FRoPgu46A1z6D9"
 git add README.md README.zh-CN.md README.zh-TW.md README.es.md docs/index.md CHANGELOG.md
-git -c user.name=pine2D -c user.email=oumu323@gmail.com commit -m "docs: describe v0.4 features in the readmes and changelog" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+git -c user.name=pine2D -c user.email=569091+pine2D@users.noreply.github.com commit -m "docs: describe v0.4 features in the readmes and changelog" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01QAFczmx2FRoPgu46A1z6D9"
 ```
 
@@ -1140,7 +1140,7 @@ Expected: 全部 pass，或已知的预期降级（T14）与写明原因的 skip
 
 ```bash
 git add src/manifest.json package.json test/manifest.test.js CHANGELOG.md CLAUDE.md
-git -c user.name=pine2D -c user.email=oumu323@gmail.com commit -m "chore: release v0.4.0" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+git -c user.name=pine2D -c user.email=569091+pine2D@users.noreply.github.com commit -m "chore: release v0.4.0" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01QAFczmx2FRoPgu46A1z6D9"
 ```
 

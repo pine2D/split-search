@@ -17,7 +17,7 @@
 - 只杀本次运行起的 X 服务器（pid 文件 + 进程名 + 命令行中的显示号三重核对）；绝不碰 :0 或其他已有显示号。
 - 测试配置固定为 `~/.cache/split-search-e2e/profile`；绝不读写用户的真实 Chrome 配置；启动参数不含 `--enable-automation`；`--disable-sync`。
 - 报告与日志一律经 redact。用户可见文案用简体中文。
-- 提交：`git -c user.name=pine2D -c user.email=oumu323@gmail.com commit`，Conventional Commits，末行 `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`。
+- 提交：`git -c user.name=pine2D -c user.email=569091+pine2D@users.noreply.github.com commit`，Conventional Commits，末行 `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`。
 - 只有 Xvfb 下可以由子代理跑真实输入，它对用户不可见；Xephyr 和 host 下的真实运行由控制端安排。
 
 ## Review Focus
