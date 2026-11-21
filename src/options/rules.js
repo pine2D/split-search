@@ -22,7 +22,6 @@ export function renderRules(cfg, actions) {
     rules.map((rule, i) => ruleRow(cfg, rule, i, n, shadows.filter(s => s.ruleId === rule.id), posOf, actions)));
   return [
     ht("p", { class: "hint" }, "options_rules_intro"),
-    ht("p", { class: "hint" }, "options_rules_privacy"),
     list,
     !n && ht("p", { id: "rule-empty", class: "muted" }, "options_rules_empty"),
     ht("button", { type: "button", id: "rule-add", class: "btn btn-small", onclick: () => openRuleDialog(null, "rule-add") }, "options_rules_add"),

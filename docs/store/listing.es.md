@@ -23,27 +23,27 @@ Busca en la barra de direcciones o arrastra texto a la barra de pestañas y comp
 ## Descripción detallada
 
 ```text
-Busca en la barra de direcciones o arrastra texto seleccionado a la barra de pestañas, y Split Search abrirá los resultados de dos buscadores en la vista dividida de Chrome, uno al lado del otro, para que los compares.
+Busca una vez y compara los resultados de dos buscadores uno junto a otro en la vista dividida de Chrome.
 
 FUNCIONES
-• Compara dos buscadores desde la barra de direcciones o arrastrando texto a la barra de pestañas. Elige tus buscadores, añade otros y crea varias combinaciones, cada una con su propio atajo
-• Haz clic con el botón derecho en un texto seleccionado o en una imagen para buscarlo junto a la página que estás viendo
-• Haz clic en el botón de la barra de herramientas para cambiar el buscador de la derecha sin volver a buscar
-• El buscador de la derecha puede cambiar solo según lo que busques; por ejemplo, a YouTube cuando tu búsqueda contiene «video»
+• Busca desde la barra de direcciones o arrastra texto a la barra de pestañas para comparar dos buscadores en paralelo. Añade tus propios buscadores y crea varias combinaciones, cada una con su atajo.
+• Haz clic derecho en un texto seleccionado o en una imagen para buscar sin salir de la página que estás leyendo.
+• En la página de resultados de uno de tus buscadores, pulsa el icono de la barra de herramientas para abrir un segundo buscador a la derecha, o cámbialo en cualquier momento desde ahí o con un acceso directo de teclado sin volver a escribir.
+• Cambia automáticamente el buscador derecho según palabras clave o sistema de escritura (por ejemplo, usa YouTube cuando buscas «video», con opción de quitar esa palabra).
 
-CONFIGURACIÓN
-1. En una página de resultados de Google, Bing u otro buscador que hayas añadido, haz clic en Split Search en la barra de herramientas y elige otro buscador. Puedes mantener tu buscador predeterminado.
-2. Para usar una combinación desde la barra de direcciones, da acceso al buscador de la izquierda en los ajustes de la extensión. Copia su URL, haz clic en «Abrir los ajustes de búsqueda de Chrome» y añádela a «Búsquedas en el sitio» («Búsqueda en sitios»). Usa el atajo o elige «Elegir como predeterminado» («Configurar como predeterminado») para utilizarla también en las búsquedas normales y al arrastrar texto a la barra de pestañas.
+PRIMEROS PASOS
+1. Úsala en páginas de resultados: en los resultados de Google o Bing, pulsa Split Search en la barra de herramientas y elige un segundo buscador. Tu buscador predeterminado no cambia.
+2. Busca desde la barra de direcciones: da acceso al buscador izquierdo en la configuración de la extensión, copia la URL de la combinación, pulsa «Abrir los ajustes de búsqueda de Chrome» y añádela a «Búsquedas en el sitio» («Búsqueda en sitios»). Escribe su atajo, pulsa Tab y escribe tu búsqueda, o elige «Elegir como predeterminado» («Configurar como predeterminado») para usarla también en búsquedas directas y al arrastrar texto.
 
-TEN EN CUENTA
+NOTAS
 • Requiere Chrome 155 o posterior
-• Mientras uses Split Search como buscador predeterminado, la barra de direcciones no muestra sugerencias de búsqueda
-• En ventanas de incógnito o en otros dispositivos, se hace una búsqueda normal
+• Si se elige como buscador predeterminado, la barra de direcciones deja de mostrar sugerencias
+• En ventanas de incógnito, en otros dispositivos sin la extensión o antes de dar acceso al buscador izquierdo, la URL de la combinación abre una búsqueda normal en el buscador izquierdo
 
 PRIVACIDAD
-Lo que buscas solo llega a los buscadores que elijas, nunca al desarrollador ni a otros terceros. Split Search no usa servidores propios ni incluye estadísticas de uso ni publicidad. Para abrir la vista dividida, lee en tu dispositivo la URL de tu búsqueda y la de la pestaña actual, y no las guarda. Solo lee el texto seleccionado o la dirección de una imagen cuando usas su menú contextual. Tus búsquedas se guardan en la memoria del navegador y se borran al cerrarlo.
+Lo que buscas, el texto seleccionado y las URL de imágenes solo se envían a los buscadores que elijas, nunca al desarrollador ni a terceros. Split Search no tiene servidores, analíticas ni publicidad: lee en tu dispositivo la URL de búsqueda y la de la pestaña activa para abrir la vista dividida sin guardarlas; solo lee el texto seleccionado o la URL de una imagen cuando usas su menú contextual; y mantiene las consultas activas únicamente en la memoria del navegador hasta que lo cierras.
 ```
 
-字数：2165（含换行）
+字数：2313（含换行）
 
 措辞说明：2026-10-28 按用户要求精简为核心内容：四条功能、两步设置、三条须知，次要功能和实现细节不写。隐私段仍写明本机读取哪些网址且不保存、只在用户用右键菜单时读选区和图片网址、查询只暂存在内存；不说“不收集”“不读取网页内容”，与 privacy.md 和数据使用披露（网页浏览记录、网站内容）一致，再删要先对照 privacy.md。术语沿用此前各版核实过的 Chrome 界面叫法。

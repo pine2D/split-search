@@ -1,6 +1,6 @@
 {
   "ext_description": {
-    "message": "在網址列搜尋，或把文字拖曳到分頁列，就能用兩個搜尋引擎開啟 Chrome 分割畫面，左右對照搜尋結果。",
+    "message": "在網址列搜尋或把文字拖到分頁列，用 Chrome 分割畫面並排對照兩個搜尋引擎。",
     "description": "Extension description shown in the Chrome Web Store and chrome://extensions."
   },
   "ext_action_title": {
@@ -16,31 +16,31 @@
     "description": "Status line on the trigger page when the split view could not be opened; an error box with the reason follows."
   },
   "go_status_kept": {
-    "message": "搜尋結果已在右側新的分割畫面中開啟，這個頁面可以關閉了。",
+    "message": "已在右側新的分割畫面開啟結果，此分頁可直接關閉。",
     "description": "Status line on the trigger page after the results were opened in a new split view next to the current one and this tab could not close itself; tells the user they may close the page."
   },
   "go_status_no_repeat": {
-    "message": "這個頁面不會自動再次開啟分割畫面。",
+    "message": "為避免重複開啟分頁，返回、前進或重新整理時不會自動重開分割畫面。",
     "description": "Status line when the user comes back to the trigger page via Back, Forward or reload: the page does not open the split view again by itself (a Run again button is offered)."
   },
   "go_btn_rerun": {
-    "message": "重新執行",
+    "message": "重新開啟",
     "description": "Button on the trigger page that runs the split search again after Back/Forward/reload."
   },
   "go_btn_left_only": {
-    "message": "只開啟左側搜尋",
+    "message": "只用左側引擎搜尋",
     "description": "Button on the trigger page error screen: open only the left engine's search (a normal search, no split view)."
   },
   "go_err_no_trigger": {
-    "message": "沒有收到觸發網址。請在網址列搜尋，或把文字拖曳到分頁列，不要直接開啟這個頁面。",
+    "message": "此頁面僅於搜尋時自動運作，無須直接開啟。請從網址列搜尋，或把文字拖到分頁列。",
     "description": "Error on the trigger page when it was opened without a trigger URL (e.g. typed directly); the user should start a search from the address bar or by drag-and-drop instead."
   },
   "go_err_config_unreadable": {
-    "message": "讀取設定失敗，也無法辨識觸發網址，沒有可開啟的搜尋。請在擴充功能頁面（chrome://extensions）將 Split Search 關閉後再開啟，或重新啟動 Chrome，然後再搜尋一次。",
+    "message": "無法讀取設定，也無法辨識這次的搜尋網址。請到 chrome://extensions 將 Split Search 停用再啟用，或重新啟動 Chrome 後再試。",
     "description": "Error on the trigger page: the settings could not be read and the trigger URL is not a usable http(s) URL, so not even the left search can be opened."
   },
   "go_err_bad_template": {
-    "message": "$ENGINE$ 的網址範本無效，不能作為左側引擎。請到設定頁檢查它的網址。",
+    "message": "$ENGINE$ 的網址範本有誤，無法放在左側。請到設定頁檢查。",
     "description": "Error on the trigger page: the left engine's URL template is invalid; the user should check it on the settings page. The placeholder is the engine name (not translated).",
     "placeholders": {
       "ENGINE": {
@@ -50,11 +50,11 @@
     }
   },
   "go_err_bad_url": {
-    "message": "無法辨識觸發網址，可能被截斷或修改過。請重新搜尋，或到設定頁重新複製觸發網址。",
+    "message": "無法辨識這筆搜尋網址，可能不完整或被改過。請重新搜尋，或到設定頁重新複製組合網址。",
     "description": "Error on the trigger page: the trigger URL cannot be parsed; the user should search again or copy the trigger URL again from the settings page."
   },
   "go_err_not_left": {
-    "message": "$ENGINE$ 的網址不能作為左側引擎。請到設定頁檢查它的網址，或改用其他引擎作左側。",
+    "message": "$ENGINE$ 的網址無法放在左側。請到設定頁更換左側引擎或檢查網址。",
     "description": "Error on the trigger page: the left engine's URL template cannot be used as the left side of a split view. The placeholder is the engine name (not translated).",
     "placeholders": {
       "ENGINE": {
@@ -64,11 +64,11 @@
     }
   },
   "engine_tpl_ok": {
-    "message": "可放左側或右側",
+    "message": "左右兩側皆可用",
     "description": "Live hint under the URL template field in the engine dialog: the template can be used on either side of the split view."
   },
   "engine_tpl_right_only": {
-    "message": "只能放右側。要放左側，網址須符合：小寫 %s 剛好出現一次，而且是某個查詢參數的完整值（例如 ?q=%s），該參數名稱只出現一次，網址不含 #",
+    "message": "只能放右側。左側網址須將唯一的小寫 %s 單獨作為某查詢參數的完整值（如 ?q=%s，同名參數不重複且不含 #）。",
     "description": "Live hint under the URL template field: the template can only be used on the right side. Contains the full 'can be left side' rule; keep the rule wording identical to err_default_left_url. Do not translate %s, ?q=%s or #."
   },
   "err_bad_url": {
@@ -88,7 +88,7 @@
     "description": "Error in the URL template field: the template has no host name."
   },
   "err_tpl_wildcard_host": {
-    "message": "網域不能包含 *，請填寫實際的網站網址",
+    "message": "網域不能包含萬用字元 *，請填寫具體網址",
     "description": "Error in the URL template field: the host name contains a * wildcard."
   },
   "err_tpl_ipv6": {
@@ -96,15 +96,15 @@
     "description": "Error in the URL template field: the host is an IPv6 address literal."
   },
   "err_tpl_reserved_param": {
-    "message": "_ss 是保留參數，網址不能包含它",
+    "message": "網址不能包含參數 _ss（請填搜尋引擎本身的網址，勿貼上組合網址）",
     "description": "Error in the URL template field: the template contains the reserved _ss parameter. Do not translate _ss."
   },
   "err_marker_format": {
-    "message": "觸發網址不完整或格式不正確。請到設定頁重新複製觸發網址。",
+    "message": "組合網址不完整或格式有誤，請到設定頁重新複製，並更新 Chrome 中對應的網站搜尋。",
     "description": "Error page after a search: the trigger URL is incomplete or malformed (its engine marker is not two engine ids). Don't mention the parameter name; tell the user to copy the trigger URL again."
   },
   "err_unknown_engine": {
-    "message": "找不到這筆網站搜尋指向的引擎「$ENGINE_ID$」。這個引擎可能已被刪除或隱藏，也可能是這筆網站搜尋的網址被修改過。請到 Chrome 搜尋引擎設定刪除或修正這筆網站搜尋，或在設定頁重新新增這個引擎。",
+    "message": "找不到引擎「$ENGINE_ID$」（可能已隱藏或刪除）。請在設定頁還原或重新新增，或在 Chrome 搜尋設定中更新這筆網站搜尋。",
     "description": "Error page after a search: the trigger URL names an engine id that does not exist (the engine was deleted or hidden, or the site search URL was edited).",
     "placeholders": {
       "ENGINE_ID": {
@@ -124,11 +124,11 @@
     }
   },
   "err_template_mismatch": {
-    "message": "觸發網址與左側引擎目前的網址範本不一致，可能是這個引擎的網址被修改過。請到設定頁重新複製觸發網址，再用它更新這筆網站搜尋。",
+    "message": "左側引擎的網址已變更。請到設定頁重新複製組合網址，並更新 Chrome 中對應的網站搜尋。",
     "description": "Error page after a search: the trigger URL no longer matches the left engine's current template; the user must copy the trigger URL again from the settings page."
   },
   "err_config_too_large": {
-    "message": "設定資料過大，無法儲存：$KEY$",
+    "message": "設定內容過多，超出儲存上限（$KEY$），請刪減一些項目後再試",
     "description": "Error when saving settings: one stored item exceeds chrome.storage.sync's per-item size limit. The placeholder is an internal storage key name (not translated).",
     "placeholders": {
       "KEY": {
@@ -152,7 +152,7 @@
     }
   },
   "err_id_format": {
-    "message": "ID 只能包含小寫字母、數字和 -，長度 1–20",
+    "message": "請使用 1–20 個小寫字母、數字或連字號（-）",
     "description": "Error in the engine dialog: the engine id has invalid characters or length."
   },
   "err_id_taken": {
@@ -180,7 +180,7 @@
     "description": "Error in the engine dialog: the engine being edited no longer exists (probably deleted on another synced device)."
   },
   "err_default_left_url": {
-    "message": "無法儲存：這個引擎是預設組合的左側，但新網址不能放在左側。要放左側，網址須符合：小寫 %s 剛好出現一次，而且是某個查詢參數的完整值（例如 ?q=%s），該參數名稱只出現一次，網址不含 #。如果確定要用這個網址，請先把預設組合的左側換成其他引擎。",
+    "message": "無法儲存：這是目前的預設左側引擎，但新網址只能放右側（左側網址須將唯一的小寫 %s 單獨作為某查詢參數的完整值，如 ?q=%s，同名參數不重複且不含 #）。請先更換預設左側引擎。",
     "description": "Error in the engine dialog: the engine is the left side of the default pair and the new URL cannot be a left side. Contains the full 'can be left side' rule; keep the rule wording identical to engine_tpl_right_only. Do not translate %s, ?q=%s or #."
   },
   "err_only_preset_hide": {
@@ -216,7 +216,7 @@
     "description": "Settings page title: browser tab title and the page heading. Keep the product name Split Search untranslated."
   },
   "options_tagline": {
-    "message": "在網址列搜尋，或把文字拖曳到分頁列，一次用兩個搜尋引擎開啟 Chrome 分割畫面。",
+    "message": "一次搜尋，在 Chrome 分割畫面中並排對照兩個搜尋引擎。",
     "description": "One-line summary under the settings page heading."
   },
   "options_tabs_label": {
@@ -251,12 +251,8 @@
     "message": "預設組合",
     "description": "Heading of the settings card where the user picks the default engine pair (left and right engine)."
   },
-  "options_pair_hint": {
-    "message": "選擇預設組合左右兩側的搜尋引擎。",
-    "description": "What the default pair selects, independent of Chrome's default search provider."
-  },
   "options_pair_other": {
-    "message": "還想用其他組合？到「$LINK$」產生它們的觸發網址。",
+    "message": "需要多組搭配？前往「$LINK$」產生組合網址。",
     "description": "Last line of the default pair card. $LINK$ is a link whose text is the tab name options_tab_add; it opens that tab and expands “Other pairs”.",
     "placeholders": {
       "LINK": {
@@ -266,7 +262,7 @@
     }
   },
   "options_pair_chrome_hint": {
-    "message": "更改組合後，請更新 Chrome 中對應的網站搜尋網址。如果想直接輸入關鍵字就使用這個組合，還要確認它已設為預設。 $STEPS$",
+    "message": "更換組合後，請一併更新 Chrome 中的網站搜尋網址；若想不輸入搜尋捷徑就直接從網址列搜尋，請將它設為預設。 $STEPS$",
     "description": "Reminder below the selectors. Changing a pair requires updating its site search. Only direct address-bar use requires making it the default. STEPS links to the guide.",
     "placeholders": {
       "STEPS": {
@@ -276,7 +272,7 @@
     }
   },
   "options_pair_changed": {
-    "message": "預設組合已改為 $PAIR$。請複製下方網址，更新 Chrome 中對應的網站搜尋。若想直接輸入關鍵字就使用這個組合，請確認它已設為預設。",
+    "message": "已改為 $PAIR$。若已在 Chrome 新增過網站搜尋，請複製下方新網址並更新。",
     "description": "After a pair edit, prompt to update the site search URL. Making it the default is optional.",
     "placeholders": {
       "PAIR": {
@@ -286,7 +282,7 @@
     }
   },
   "options_pair_changed_setup": {
-    "message": "「開始使用」中的網址已依新組合更新。",
+    "message": "「開始使用」中的組合網址已同步更新。",
     "description": "Box shown in the default pair card after the pair was changed during first-run setup. The quoted card name must match setup_title."
   },
   "options_pair_changed_steps": {
@@ -318,11 +314,11 @@
     "description": "Button next to chrome://settings/searchEngines (setup guide and Get started step 2): copies that address."
   },
   "guide_copy_default_aria": {
-    "message": "複製預設組合的觸發網址",
+    "message": "複製預設組合網址",
     "description": "Accessible name of the Copy button next to the default pair's trigger URL. Must start with the visible Copy text (common_copy)."
   },
   "guide_copy_gen_aria": {
-    "message": "複製所選組合的觸發網址",
+    "message": "複製所選組合網址",
     "description": "Accessible name of the Copy button next to the trigger URL of the pair picked under “Other pairs”. Must start with the visible Copy text (common_copy)."
   },
   "guide_copy_settings_aria": {
@@ -334,7 +330,7 @@
     "description": "Setup step 2. \"Site search\" and \"Add\" must match Chrome's own labels on chrome://settings/searchEngines in this language."
   },
   "guide_step_fields": {
-    "message": "「姓名」隨意填（例如「Google ｜ Bing」）；「搜尋捷徑」自訂（例如 $KEYWORD$）；把要用的那個組合的觸發網址貼到「以 %s 取代查詢的網址」欄位，最後點選「新增」。",
+    "message": "填寫「姓名」（如「Google ｜ Bing」）與「搜尋捷徑」（如 $KEYWORD$），將組合網址貼到「以 %s 取代查詢的網址」，點選「新增」。",
     "description": "Setup step 3: what to type into Chrome's site search dialog. \"Shortcut\" must match Chrome's label. The placeholder becomes the example shortcut (guide_example_keyword) shown as code.",
     "placeholders": {
       "KEYWORD": {
@@ -348,7 +344,7 @@
     "description": "Example site search shortcut for a Google | Bing pair, shown as code in setup step 3. Pick a short, natural shortcut for this language; ASCII letters only."
   },
   "guide_step_default": {
-    "message": "在網址列輸入搜尋捷徑，按 Tab，再輸入關鍵字。若要讓一般搜尋和拖曳到分頁列的文字也使用這個組合，可在該項目的 ⋮ 選單中選取「設為預設」。",
+    "message": "在網址列輸入搜尋捷徑，按 Tab 後輸入關鍵字就能分割搜尋；若想直接輸入關鍵字或拖曳文字到分頁列也開啟分割畫面，在該項目 ⋮ 選單中選取「設為預設」。",
     "description": "Choose between using a site search shortcut and making it the default. Use Chrome's label for Make default."
   },
   "guide_step_grant": {
@@ -366,27 +362,27 @@
     "description": "Subheading above the list of caveats."
   },
   "guide_caveat_degrade": {
-    "message": "遇到以下情況，觸發網址會變成一般的左側引擎搜尋，不會開啟分割畫面：同步了這組搜尋設定的其他電腦和手機、無痕視窗、擴充功能已停用、授權已撤銷、左側引擎的網站自行接管了頁面載入（例如 Perplexity）。",
+    "message": "在無痕視窗、未啟用本擴充功能的其他裝置、左側引擎未授權，或左側網站自行處理頁面載入（如 Perplexity）時，組合網址只會開啟一般的左側搜尋。",
     "description": "Caveat: cases where the trigger URL falls back to a plain search with the left engine. The last case is a site that handles its own page loads (technically, its service worker takes over navigation); say it in plain words, without mentioning service workers."
   },
   "guide_caveat_no_suggest": {
-    "message": "設為預設後，網址列就不會再顯示原搜尋引擎的搜尋建議。",
+    "message": "作為預設搜尋引擎時，網址列不會顯示搜尋建議。",
     "description": "Trade-off shown at the decision to make a custom site search the default."
   },
   "guide_caveat_context_menu": {
-    "message": "右鍵選單裡的「透過 X 搜尋『…』」同樣會使用觸發網址，開啟分割畫面。",
+    "message": "設為預設後，Chrome 右鍵選單的「透過 X 搜尋『…』」也會開啟分割畫面。",
     "description": "Caveat: the right-click menu item \"Search X for …\" also uses the trigger URL and opens the split view. Match Chrome's wording of that menu item; X stands for the search engine name."
   },
   "guide_caveat_sync": {
-    "message": "Chrome 的搜尋引擎設定會同步到你的所有裝置，但授權不會同步：每台裝置都要在這個頁面個別授權。",
+    "message": "網站搜尋會隨 Chrome 同步，但網站存取授權不會同步；換電腦後須重新授權左側引擎。",
     "description": "Caveat: Chrome syncs search engine settings to all devices but site access granted to the extension does not sync."
   },
   "guide_caveat_template_change": {
-    "message": "修改某個引擎的網址後，把它放在左側的網站搜尋都要重新複製網址。",
+    "message": "修改左側引擎的網址範本後，須重新複製組合網址並更新到 Chrome。",
     "description": "Caveat: after changing an engine's URL, site searches that use it on the left must be copied again."
   },
   "guide_caveat_remove": {
-    "message": "刪除或隱藏引擎前，請先刪除 Chrome 中用到它的網站搜尋：放在左側的會變成一般搜尋，放在右側的會停在「未知引擎」錯誤頁。",
+    "message": "刪除或隱藏引擎前，請先移除 Chrome 中用到它的網站搜尋；否則它在右側時會顯示找不到引擎的錯誤，在左側時只會開啟一般搜尋。",
     "description": "Caveat: delete Chrome site searches that use an engine before deleting or hiding it. \"Unknown engine\" refers to err_unknown_engine."
   },
   "options_engines_title": {
@@ -398,7 +394,7 @@
     "description": "Button that opens the dialog for adding a custom search engine."
   },
   "options_engines_hint": {
-    "message": "若要從網址列使用某個組合，請允許存取該組合左側的引擎。隱藏和刪除在「編輯」裡，排序在「調整順序」裡。",
+    "message": "只有放左側的引擎需要授權，放右側可直接使用；隱藏或刪除請點選「編輯」。",
     "description": "Site access for address-bar use and where to manage engines."
   },
   "options_hidden_title": {
@@ -428,11 +424,11 @@
     "description": "Label of the engine id field in the add-engine dialog."
   },
   "options_dlg_id_hint_add": {
-    "message": "依名稱自動產生，也可以自行修改。只能使用小寫字母、數字和 -，1–20 個字元。它會寫進觸發網址，建立後就無法修改。",
+    "message": "依名稱自動產生，也可手動修改（1–20 個小寫字母、數字或 -）。儲存後無法變更。",
     "description": "Hint under the id field when adding an engine: the id is filled in from the name and can be edited; allowed characters and length; it cannot be changed later because it is written into the trigger URL."
   },
   "options_dlg_id_readonly": {
-    "message": "ID：$ID$。已儲存的網站搜尋網址中含有它，建立後無法修改。",
+    "message": "ID：$ID$（建立後無法變更）",
     "description": "Read-only line in the edit-engine dialog showing the engine id. $ID$ is the id.",
     "placeholders": {
       "ID": {
@@ -466,7 +462,7 @@
     "description": "Hint under the URL template field of the add/edit engine dialog. Keep %s as is."
   },
   "options_dlg_preset_hint": {
-    "message": "內建值：$NAME$，$URL$（改回這兩個值即可還原為內建設定）",
+    "message": "內建預設：$NAME$（$URL$），兩項都填回原值即可還原。",
     "description": "Hint when editing a preset engine: shows its built-in name and URL; setting both back restores the preset.",
     "placeholders": {
       "NAME": {
@@ -480,7 +476,7 @@
     }
   },
   "options_dlg_edit_hint": {
-    "message": "修改網址後，Chrome 中把這個引擎放在左側的網站搜尋需要重新複製網址。",
+    "message": "修改網址後，若有 Chrome 網站搜尋將此引擎放在左側，請重新複製組合網址並更新。",
     "description": "Hint in the edit dialog: after changing the URL, site searches saved in Chrome that use this engine on the left must be copied again."
   },
   "common_cancel": {
@@ -544,7 +540,7 @@
     "description": "Notice after the user allowed site access."
   },
   "notice_grant_denied": {
-    "message": "未取得授權：你拒絕或關閉了授權對話方塊",
+    "message": "未完成授權：已取消或關閉授權提示",
     "description": "Warning notice when the site access prompt was denied or dismissed."
   },
   "engine_list_empty": {
@@ -606,7 +602,7 @@
     "description": "Delete button text after the first click (edit engine dialog, image search engine rows); clicking it again deletes the engine. Blur or Esc restores the button."
   },
   "engine_delete_confirm_hint": {
-    "message": "再點一次就會刪除「$NAME$」。刪除前，請先刪除 Chrome 中用到它的網站搜尋：放在左側的會變成一般搜尋，放在右側的會停在「未知引擎」錯誤頁。",
+    "message": "再點一次刪除「$NAME$」。請先移除 Chrome 中用到它的網站搜尋；否則它在右側時會顯示找不到引擎的錯誤，在左側時只會開啟一般搜尋。",
     "description": "Shown and announced inside the edit dialog, under the Delete button, when the user first clicks Delete on a custom search engine; the button now reads engine_delete_confirm. Keep the warning consistent with guide_caveat_remove.",
     "placeholders": {
       "NAME": {
@@ -634,7 +630,7 @@
     "description": "Visible reason under the unavailable Delete button in the edit engine dialog: the default pair uses this custom engine. The quoted tab name must match options_tab_pair exactly."
   },
   "engine_rules_used_preset": {
-    "message": "有 $N$ 條關鍵字規則用到它。隱藏後，這些規則暫不生效。",
+    "message": "有 $N$ 條關鍵字規則用到它；隱藏期間相關規則暫不生效。",
     "description": "Edit-engine dialog in settings, for a preset engine (presets can only be hidden): shown when N (1 or more) keyword rules send the right side to this engine. N is the number of rules. Hiding the engine pauses those rules; they come back when the engine is restored.",
     "placeholders": {
       "N": {
@@ -644,7 +640,7 @@
     }
   },
   "engine_rules_used_custom": {
-    "message": "有 $N$ 條關鍵字規則用到它。刪除引擎時，這些規則也會一併刪除。",
+    "message": "有 $N$ 條關鍵字規則用到它；刪除引擎時會一併刪除相關規則。",
     "description": "Edit-engine dialog in settings, for a custom engine (custom engines can only be deleted): shown when N (1 or more) keyword rules send the right side to this engine. N is the number of rules. Deleting the engine deletes those rules too.",
     "placeholders": {
       "N": {
@@ -672,7 +668,7 @@
     "description": "Button on a hidden preset engine that shows it again."
   },
   "engine_left_discouraged_hint": {
-    "message": "建議只放右側：這個網站會自行接管頁面載入，放在左側時多半只會開啟一般搜尋，不會開啟分割畫面。",
+    "message": "建議放右側：此網站會自行處理頁面載入，放左側時通常無法分割畫面，只會開啟一般搜尋。",
     "description": "Warning on an engine row (e.g. Perplexity): the site handles its own page loads (technically, its service worker takes over navigation), so as the left engine the split view usually doesn't open. Say it in plain words; don't mention service workers."
   },
   "engine_move_up": {
@@ -712,7 +708,7 @@
     "description": "Text of the same header button while the reorder mode is on; clicking it leaves the mode (the order is saved right away)."
   },
   "engine_reorder_hint": {
-    "message": "用每一列的「上移」「下移」調整順序，變更會自動儲存。下拉式選單和快速鍵輪替都依照這個順序。",
+    "message": "用「上移」「下移」排好順序，變更自動儲存。下拉選單與快速鍵輪替皆依此順序。",
     "description": "Hint under the engine list heading while the reorder mode is on; also announced to screen readers when the mode starts. The quoted button names must match engine_move_up and engine_move_down word for word."
   },
   "engine_moved": {
@@ -748,7 +744,7 @@
     "description": "Tag on the trigger URL card for the default pair."
   },
   "guide_default_url_title": {
-    "message": "預設組合的觸發網址",
+    "message": "預設組合網址",
     "description": "Summary of the collapsible section on the Add to Chrome card that holds the default pair's trigger URL. Shown collapsed while the Get started card is on the page, since that card already shows the same URL."
   },
   "guide_pair_label": {
@@ -770,11 +766,11 @@
     "description": "Shown on the trigger URL card instead of the pair name when the default pair is invalid."
   },
   "guide_no_trigger": {
-    "message": "無法產生觸發網址，請檢查預設組合的左側引擎。",
+    "message": "無法產生組合網址，請檢查預設左側引擎。",
     "description": "Error on the trigger URL card when no trigger URL can be built for the default pair."
   },
   "guide_default_hint": {
-    "message": "將這個網址加入 Chrome 的「網站搜尋」，或用它更新現有項目。輸入該項目的搜尋捷徑即可使用這個組合。",
+    "message": "將此網址加入 Chrome「網站搜尋」，或用來更新現有項目。",
     "description": "Where to use the URL for the default pair, with or without making it Chrome's default."
   },
   "guide_other_pairs_title": {
@@ -782,7 +778,7 @@
     "description": "Title of the card that generates trigger URLs for other engine pairs."
   },
   "guide_pair_shortcut_hint": {
-    "message": "每個組合各新增一筆網站搜尋，用你自訂的搜尋捷徑觸發，例如在網址列輸入「$EXAMPLE$」。",
+    "message": "可為不同組合分別新增網站搜尋，各自設定搜尋捷徑（例如在網址列輸入「$EXAMPLE$」）。",
     "description": "Hint on the other pairs card. The placeholder is guide_example_shortcut_query.",
     "placeholders": {
       "EXAMPLE": {
@@ -810,7 +806,7 @@
     }
   },
   "guide_left_not_granted": {
-    "message": "左側的 $NAME$ 尚未授權，這個組合不會開啟分割畫面，只會開啟一般的 $NAME$ 搜尋。",
+    "message": "左側的 $NAME$ 尚未授權，目前只會開啟一般搜尋。",
     "description": "Warning in the pair generator: the left engine's site is not granted, so this pair opens a plain search instead of a split view.",
     "placeholders": {
       "NAME": {
@@ -820,7 +816,7 @@
     }
   },
   "guide_left_discouraged": {
-    "message": "$NAME$ 建議只放右側：它的網站會自行接管頁面載入，放在左側時通常只會開啟一般的 $NAME$ 搜尋，不會開啟分割畫面。放右側則不受影響。",
+    "message": "$NAME$ 建議放右側：此網站會自行處理頁面載入，放左側時通常只會開啟一般 $NAME$ 搜尋。",
     "description": "Warning when an engine like Perplexity is the left side of a pair: the site handles its own page loads (technically, its service worker takes over navigation), so on the left it usually opens a plain search. Say it in plain words; don't mention service workers.",
     "placeholders": {
       "NAME": {
@@ -844,7 +840,7 @@
     }
   },
   "notice_save_partial": {
-    "message": "已儲存，但有一項相關設定無法清除：$DETAIL$",
+    "message": "設定已儲存，但有一項舊設定未能同步清理：$DETAIL$",
     "description": "Warning when the change was saved but a related setting (for example the chosen lookup or image search engine) could not be removed afterwards. The placeholder is the reason (another message or a browser error).",
     "placeholders": {
       "DETAIL": {
@@ -874,11 +870,11 @@
     }
   },
   "notice_needs_grant": {
-    "message": "它的網站尚未授權，請點選該列醒目顯示的「授權」按鈕。",
+    "message": "若要放左側使用，請點選該列的「授權」按鈕。",
     "description": "Sentence shown right after notice_added / notice_saved when the engine's site is not granted yet. The quoted button is engine_grant."
   },
   "notice_template_changed": {
-    "message": "「$NAME$」的網址已修改。把它當作左側引擎的網站搜尋，需要換成新的觸發網址：請到「新增到 Chrome」重新複製，再到 Chrome 設定中取代那筆網站搜尋的網址。",
+    "message": "「$NAME$」網址已更新。若已新增到 Chrome 的組合將它放在左側，請到「新增到 Chrome」複製新網址並更新。",
     "description": "Sticky notice after an engine's URL changed: site searches that use it on the left need the trigger URL copied again from the Add to Chrome tab and replaced in Chrome's settings. The quoted tab name must match options_tab_add exactly.",
     "placeholders": {
       "NAME": {
@@ -888,7 +884,7 @@
     }
   },
   "notice_template_changed_go": {
-    "message": "查看觸發網址",
+    "message": "查看組合網址",
     "description": "Button in the notice notice_template_changed; opens the Add to Chrome tab at the trigger URLs."
   },
   "notice_hidden": {
@@ -912,7 +908,7 @@
     }
   },
   "notice_deleted_with_rules": {
-    "message": "已刪除「$ENGINE$」，以及用到它的 $N$ 條規則",
+    "message": "已刪除「$ENGINE$」（同時移除 $N$ 條相關規則）",
     "description": "Notice after deleting a custom engine that keyword rules used; those rules were deleted with it. ENGINE is the engine name, N the number of deleted rules (1 or more).",
     "placeholders": {
       "ENGINE": {
@@ -956,15 +952,15 @@
     }
   },
   "notice_pair_saved": {
-    "message": "預設組合已儲存。請複製「預設組合」中的新網址，更新 Chrome 中對應的網站搜尋。",
+    "message": "「預設組合」已儲存（若已在 Chrome 新增網站搜尋，請複製新網址並更新）",
     "description": "Notice after changing the default pair once setup is done: asks the user to copy the new URL from the default pair card and update the matching site search in Chrome. Does not claim to have read Chrome’s settings. The quoted card name must match options_pair_title."
   },
   "notice_pair_saved_setup": {
-    "message": "預設組合已儲存，「開始使用」中的網址已依新組合更新。",
+    "message": "預設組合已儲存，「開始使用」中的網址已同步更新",
     "description": "Notice after changing the default pair during first-run setup. The quoted card name must match setup_title."
   },
   "notice_pair_saved_back": {
-    "message": "預設組合已儲存。",
+    "message": "預設組合已儲存",
     "description": "Notice after changing the default pair back to the pair it had before on this page (nothing to update in Chrome)."
   },
   "setup_title": {
@@ -972,7 +968,7 @@
     "description": "Heading of the first-run “Get started” card at the top of the settings page."
   },
   "setup_toolbar_hint": {
-    "message": "在 $LEFT$ 的搜尋結果頁點選工具列上的 Split Search，再選一個搜尋引擎，就能對照結果。平常的預設搜尋引擎可以照用。",
+    "message": "開啟 $LEFT$ 搜尋結果頁後，點選工具列上的 Split Search 再選一個引擎，就能在右側並排對照，不影響原有的預設搜尋。",
     "description": "First trial using the toolbar on a configured engine's results page. LEFT is the example engine.",
     "placeholders": {
       "LEFT": {
@@ -982,7 +978,7 @@
     }
   },
   "setup_try_grant_hint": {
-    "message": "想在這裡試搜「$QUERY$」，或在網址列使用這個組合，請先允許存取左側的 $LEFT$。",
+    "message": "若想在這裡試試搜尋「$QUERY$」，或之後從網址列分割搜尋，請先授權左側的 $LEFT$。",
     "description": "Before granting the left site, explain what the example and address bar need. QUERY is an example, LEFT is an engine name.",
     "placeholders": {
       "QUERY": {
@@ -996,7 +992,7 @@
     }
   },
   "setup_grant_left": {
-    "message": "允許存取 $LEFT$",
+    "message": "授權 $LEFT$",
     "description": "Button that requests only the left engine's site.",
     "placeholders": {
       "LEFT": {
@@ -1006,15 +1002,15 @@
     }
   },
   "setup_add_title": {
-    "message": "從網址列搜尋（選用）",
+    "message": "從網址列直接分割搜尋（選用）",
     "description": "Optional address-bar setup following the trial."
   },
   "setup_copy_trigger": {
-    "message": "複製要使用的組合網址。",
+    "message": "複製下方的組合網址。",
     "description": "First step before opening Chrome settings."
   },
   "setup_add_paste": {
-    "message": "開啟 Chrome 搜尋設定，在「網站搜尋」旁點選「新增」。填好名稱和搜尋捷徑，在「以 %s 取代查詢的網址」貼上剛複製的網址，再點選「新增」。",
+    "message": "在 Chrome 搜尋設定的「網站搜尋」旁點選「新增」，填好名稱與搜尋捷徑，把網址貼到「以 %s 取代查詢的網址」欄再點選「新增」。",
     "description": "Open Chrome settings using the adjacent button, then paste the URL copied in the preceding step."
   },
   "setup_details_link": {
@@ -1030,11 +1026,11 @@
     "description": "First section of Get started, before any Chrome site search setup."
   },
   "setup_try_button": {
-    "message": "試搜範例",
+    "message": "試試範例搜尋",
     "description": "Button that runs the sample search with the selected pair."
   },
   "setup_try_hint": {
-    "message": "用預設組合試搜「$QUERY$」。",
+    "message": "也可以直接用預設組合試試搜尋「$QUERY$」。",
     "description": "The sample uses the current default pair. QUERY is the sample search text.",
     "placeholders": {
       "QUERY": {
@@ -1048,15 +1044,15 @@
     "description": "Sample search words the Try it button searches for. Pick a short, natural everyday search in this language (not about this extension)."
   },
   "setup_done_title": {
-    "message": "已開啟兩個搜尋結果",
+    "message": "分割搜尋已生效",
     "description": "Confirmation of an observed non-preview search pair, including adjacent tabs."
   },
   "setup_done_text": {
-    "message": "若要直接在網址列搜尋時開啟兩個結果，請到 Chrome 確認想用的那筆網站搜尋已設為預設。",
+    "message": "若想不輸入搜尋捷徑、直接在網址列搜尋也使用此組合，請確認已在 Chrome 中將它「設為預設」。",
     "description": "A real trigger opened a pair. Only Chrome settings can confirm which site search is the default."
   },
   "setup_done_notice": {
-    "message": "已開啟兩個搜尋結果。",
+    "message": "分割搜尋已生效",
     "description": "Accessible confirmation of the observed search pair."
   },
   "setup_regrant_title": {
@@ -1064,7 +1060,7 @@
     "description": "Get started card heading when setup was done before but the left engine's site is not granted now."
   },
   "setup_regrant_text": {
-    "message": "若要繼續從網址列使用這個組合，請再次允許存取左側的 $LEFT$。",
+    "message": "$LEFT$ 的網站存取權限已關閉，重新授權後才能繼續從網址列開啟分割畫面。",
     "description": "Access needed again for address-bar triggers on the current left engine.",
     "placeholders": {
       "LEFT": {
@@ -1074,7 +1070,7 @@
     }
   },
   "setup_revoked_notice": {
-    "message": "存取 $LEFT$ 的權限已移除。從網址列使用這個組合時，只會開啟 $LEFT$ 的搜尋結果。",
+    "message": "$LEFT$ 的存取授權已取消，從網址列搜尋時將只開啟 $LEFT$ 結果頁。",
     "description": "Site access for the default pair's left engine was revoked. LEFT is the engine name.",
     "placeholders": {
       "LEFT": {
@@ -1084,7 +1080,7 @@
     }
   },
   "options_left_not_granted": {
-    "message": "左側的 $NAME$ 尚未授權，目前搜尋不會開啟分割畫面，只會開啟一般的 $NAME$ 搜尋。",
+    "message": "左側的 $NAME$ 尚未授權，目前只會開啟一般搜尋。",
     "description": "Warning in the default pair card: the left engine's site is not granted, so searches open a plain search instead of a split view.",
     "placeholders": {
       "NAME": {
@@ -1108,7 +1104,7 @@
     }
   },
   "lang_note": {
-    "message": "工具列按鈕的提示，以及 chrome://extensions 和 Chrome 線上應用程式商店詳細資料頁中的擴充功能簡介，一律跟隨瀏覽器語言，不受這裡的選擇影響。",
+    "message": "chrome://extensions 中的擴充功能簡介會跟隨瀏覽器語言。",
     "description": "Note under the language drop-down: the extension description, the toolbar button tooltip, the description on chrome://extensions and the Chrome Web Store listing always follow the browser language, not this choice. Keep chrome://extensions as is."
   },
   "lang_name_en": {
@@ -1132,7 +1128,7 @@
     "description": "Switch label covering both background search results and foreground lookups."
   },
   "options_narrow_hint": {
-    "message": "視窗寬度不足 960 像素時，從網址列搜尋或透過工具列新增第二個引擎，結果會在背景分頁開啟。按右鍵查詢文字或圖片時，會切換到結果分頁。",
+    "message": "視窗窄於 960 像素時不再分割畫面：搜尋時右側結果會在背景相鄰分頁開啟，右鍵查詢則直接切到查詢分頁。",
     "description": "Below 960 px, address-bar and toolbar searches keep the second tab in the background. Context-menu lookups activate it."
   },
   "options_rules_title": {
@@ -1140,15 +1136,11 @@
     "description": "Settings, Search pairs tab: heading of the keyword rules card (rules that switch the default pair's right engine when the search contains certain words or a writing system)."
   },
   "options_rules_intro": {
-    "message": "搜尋符合規則時，預設組合的右側會換成規則指定的引擎，左側不變。規則由上往下比對，採用第一條符合的。用其他組合的觸發網址搜尋時，規則不會生效。",
+    "message": "使用預設組合搜尋時，依由上而下第一條符合的規則自動切換右側引擎；其他組合與右鍵查詢不受影響。",
     "description": "Keyword rules card: what the rules do. The last sentence says searches made with the trigger URL of a pair other than the default pair don't use the rules."
   },
-  "options_rules_privacy": {
-    "message": "比對在本機進行，搜尋字詞不會傳到其他地方。規則裡的字詞是你自己輸入的，會和其他設定一樣隨 Chrome 同步。",
-    "description": "Keyword rules card: privacy note. Matching runs locally; the rules sync with the user's other settings through Chrome sync."
-  },
   "options_rules_empty": {
-    "message": "還沒有規則，右側一律是預設組合的右側。",
+    "message": "尚無規則",
     "description": "Keyword rules card: shown when there are no rules."
   },
   "options_rules_words_row": {
@@ -1167,7 +1159,7 @@
     "placeholders": {
       "SCRIPT": {
         "content": "$1",
-        "example": "汉字"
+        "example": "漢字"
       }
     }
   },
@@ -1186,7 +1178,7 @@
     }
   },
   "options_rules_target_default": {
-    "message": "→ $ENGINE$（與預設組合的右側相同）",
+    "message": "→ $ENGINE$（目前預設右側）",
     "description": "Keyword rules list: end of a row whose engine happens to be the default pair's current right engine. ENGINE is that engine's name.",
     "placeholders": {
       "ENGINE": {
@@ -1196,7 +1188,7 @@
     }
   },
   "options_rules_target_keep": {
-    "message": "→ 預設組合的右側（目前是 $ENGINE$）",
+    "message": "→ 維持預設右側（$ENGINE$）",
     "description": "Keyword rules list: end of a row for an exception rule, which keeps the default pair's right engine (and follows it if the default pair changes). ENGINE is the current right engine's name.",
     "placeholders": {
       "ENGINE": {
@@ -1230,7 +1222,7 @@
     }
   },
   "options_rules_shadowed": {
-    "message": "「$WORD$」已被第 $N$ 條用掉，這裡不會符合",
+    "message": "「$WORD$」已被第 $N$ 條規則涵蓋，此處不會生效",
     "description": "Keyword rules list: shown under a rule when one of its words can never match, because an earlier rule already matches every search that has it. WORD is that word; N is the earlier rule's position, counting from 1.",
     "placeholders": {
       "WORD": {
@@ -1244,7 +1236,7 @@
     }
   },
   "options_rules_shadowed_rule": {
-    "message": "第 $N$ 條已涵蓋這條，這條不會符合",
+    "message": "第 $N$ 條已設定相同文字，此條不會生效",
     "description": "Keyword rules list: shown under a writing-system rule that can never match, because an earlier rule checks the same writing system. N is the earlier rule's position, counting from 1.",
     "placeholders": {
       "N": {
@@ -1320,23 +1312,23 @@
     "description": "Title of the rule dialog when editing a rule."
   },
   "options_rules_when_legend": {
-    "message": "什麼時候換右側",
+    "message": "比對條件",
     "description": "Rule dialog: label of the group of two radio buttons that choose the rule's condition."
   },
   "options_rules_when_words": {
-    "message": "搜尋內容有這些字詞",
+    "message": "包含指定字詞",
     "description": "Rule dialog: radio button, the rule matches when the search contains one of the listed words."
   },
   "options_rules_when_script": {
-    "message": "搜尋內容有某種文字",
+    "message": "包含特定語種文字",
     "description": "Rule dialog: radio button, the rule matches when the search contains at least one character of a chosen writing system."
   },
   "options_rules_words_label": {
-    "message": "字詞",
+    "message": "關鍵字",
     "description": "Rule dialog: label of the words field."
   },
   "options_rules_words_hint": {
-    "message": "用逗號分隔，例如：天氣, weather。不分大小寫和全形半形；英文以完整單字比對，js 不會符合 jsonl。",
+    "message": "多個字詞或片語請用逗號隔開，例如 天氣, python list。不區分大小寫與全半形；英文依完整單字比對（js 不會比對到 jsonl）。",
     "description": "Rule dialog: hint under the words field. The example words are typed by the user, so they may be translated; keep the js/jsonl example as is."
   },
   "options_rules_strip_label": {
@@ -1344,7 +1336,7 @@
     "description": "Rule dialog: checkbox label under the words field."
   },
   "options_rules_strip_hint": {
-    "message": "例如字詞是 vd：搜尋「vd 貓」時，兩側都只搜尋「貓」。搜尋內容只有這些字詞時不會移除。",
+    "message": "例如填 vd 時，搜尋「vd 貓」兩側都只會搜「貓」；移除後若無其他字詞則保留原查詢。",
     "description": "Rule dialog: hint under the strip checkbox."
   },
   "options_discard_title": {
@@ -1360,15 +1352,15 @@
     "description": "Confirm dialog: button that returns to the form to keep editing."
   },
   "options_rules_strip_row": {
-    "message": "· 移除這些字詞",
+    "message": "· 搜尋時移除符合字詞",
     "description": "Rule row: note after the target engine when the rule removes its words from the search. Keep the leading middle dot; the row reads like “Contains vd → YouTube · removes these words”."
   },
   "options_rules_script_label": {
-    "message": "文字",
+    "message": "語種文字",
     "description": "Rule dialog: label of the writing-system dropdown (options are script_option_han, script_option_kana, script_option_hangul, script_option_cyrillic). Use the same word as err_rule_script."
   },
   "options_rules_script_hint": {
-    "message": "只要有一個這種字元就算，所以中文搜尋幾乎都會符合。日文搜尋常含漢字，「日文假名」要排在「漢字」前面。",
+    "message": "日文常夾雜漢字；若同時設定，請將「日文假名」排在「漢字」前面。",
     "description": "Rule dialog: hint under the writing-system dropdown. Use the same names as script_option_kana and script_option_han."
   },
   "options_rules_engine_label": {
@@ -1376,7 +1368,7 @@
     "description": "Rule dialog: label of the dropdown that chooses the engine for the right side."
   },
   "options_rules_engine_keep": {
-    "message": "預設組合的右側（不換）",
+    "message": "維持預設右側（作為例外）",
     "description": "Rule dialog, engine dropdown: option that makes the rule an exception and keeps the default pair's right engine (it follows the default pair if that changes)."
   },
   "options_rules_engine_pick": {
@@ -1394,7 +1386,7 @@
     }
   },
   "notice_narrow_saved": {
-    "message": "已儲存窄視窗設定。",
+    "message": "窄視窗設定已儲存",
     "description": "Notice after toggling the narrow-window checkbox."
   },
   "catalog_cat_translate": {
@@ -1440,7 +1432,7 @@
     }
   },
   "err_not_results_page": {
-    "message": "頁面已經變了，請重新點選工具列按鈕。",
+    "message": "目前頁面已變更，請重新點選工具列圖示。",
     "description": "Toolbar popup, completing a split view: the page is no longer a recognized search results page (navigated away, closed, joined a split view or the query is gone) when the user clicked an engine."
   },
   "err_window_unsupported": {
@@ -1452,11 +1444,11 @@
     "description": "Toolbar popup, completing a split view: opening the right-side search failed."
   },
   "err_message_rejected": {
-    "message": "這次沒有成功，請重新點選工具列按鈕再試一次。",
+    "message": "未能完成操作，請重新點選工具列圖示再試。",
     "description": "Toolbar popup, completing a split view: the extension rejected the request (unknown sender, bad fields, or the chosen engine is no longer available)."
   },
   "err_rule_no_words": {
-    "message": "至少輸入一個字詞",
+    "message": "請至少輸入一個字詞",
     "description": "Keyword rule dialog, words field: the user entered no words."
   },
   "err_rule_too_many_words": {
@@ -1482,7 +1474,7 @@
     "description": "Keyword rules: the user tried to add a 21st rule (the limit is 20)."
   },
   "err_rule_script": {
-    "message": "請選擇一種文字",
+    "message": "請選擇一種語種文字",
     "description": "Keyword rule dialog: the rule is 'the search contains a writing system' (Han characters, Japanese kana, Hangul, Cyrillic) but none was chosen."
   },
   "err_rule_engine": {
@@ -1490,7 +1482,7 @@
     "description": "Keyword rule dialog: no valid engine was chosen for the right side (none chosen, hidden, or it is now the default left engine)."
   },
   "err_rule_too_large": {
-    "message": "規則太長，存不下了。請刪掉一些字詞再儲存。",
+    "message": "規則內容過多，無法儲存，請刪減一些字詞後再試。",
     "description": "Keyword rule dialog: all rules together would be too large to store in Chrome sync (over 8000 bytes)."
   },
   "err_rule_gone": {
@@ -1506,7 +1498,7 @@
     "description": "Title of the engine catalog dialog."
   },
   "catalog_hint": {
-    "message": "這些網站適合放在分割畫面的右側。新增後和其他自訂引擎一樣，可以修改或刪除。",
+    "message": "適合放在右側並排對照的常用網站。",
     "description": "Short intro in the engine catalog dialog. Custom engine = user-defined search engine entry."
   },
   "catalog_add": {
@@ -1538,7 +1530,7 @@
     }
   },
   "notice_catalog_added": {
-    "message": "已從引擎庫新增「$NAME$」。",
+    "message": "已從引擎庫新增「$NAME$」",
     "description": "Notice after adding an engine from the catalog. $NAME$ is the engine name.",
     "placeholders": {
       "NAME": {
@@ -1556,7 +1548,7 @@
     "description": "Heading of the keyboard shortcut card on the settings page."
   },
   "options_shortcut_hint": {
-    "message": "在 Split Search 開啟的分割畫面中按下快速鍵，右側會換成下一個加入輪替的引擎（在下方選擇）。預設沒有設定快速鍵，請點選「設定快速鍵」，到 Chrome 的「鍵盤快速鍵」頁面設定。",
+    "message": "在本擴充功能開啟的分割畫面中按快速鍵，可依序切換右側引擎；請到 Chrome「鍵盤快速鍵」頁面設定。",
     "description": "Hint in the keyboard shortcut card; the rotation checkboxes are below it in the same card. The page name must match Chrome's own title of chrome://extensions/shortcuts (Keyboard shortcuts); the quoted button text must match options_shortcut_open."
   },
   "options_shortcut_label": {
@@ -1586,7 +1578,7 @@
     }
   },
   "options_cycle_hint": {
-    "message": "依引擎清單的順序輪替，略過沒有勾選的引擎和目前的左側引擎。",
+    "message": "依引擎清單順序切換，略過未勾選引擎與目前的左側引擎。",
     "description": "Legend of the rotation checkbox group in the keyboard shortcut card: the order of rotation and what is skipped."
   },
   "popup_not_ours": {
@@ -1594,19 +1586,19 @@
     "description": "Explains that the toolbar popup has nothing to switch: the current tab is not in a split view that Split Search opened. \"Split view\" must match Chrome's term. Keep Split Search untranslated."
   },
   "popup_idle_hint": {
-    "message": "用已新增的網站搜尋捷徑搜尋。設為預設後，也可以直接搜尋或將文字拖曳到分頁列。",
+    "message": "在已設定引擎的搜尋結果頁點選此圖示，可在右側並排加開一個引擎。",
     "description": "How to search on demand and when ordinary searches use the pair."
   },
   "popup_setup_needed": {
-    "message": "在已加入引擎的搜尋結果頁點選這個圖示，就能再選一個引擎對照結果。也可以到設定頁試搜範例。",
+    "message": "在已設定引擎（如 Google、Bing）的搜尋結果頁點選此圖示，可在右側加開第二個引擎；也可開啟設定試試範例搜尋。",
     "description": "Toolbar opened on a non-result page before left site access is granted. Explain the toolbar trial."
   },
   "popup_setup_add_engine": {
-    "message": "若要對照兩個引擎的結果，請到設定的「搜尋引擎」新增或還原另一個引擎。",
+    "message": "目前只有一個可用引擎，請先到設定頁「搜尋引擎」新增或還原更多引擎。",
     "description": "Shown when the user needs another visible text engine to compare results from the toolbar."
   },
   "popup_setup_regrant": {
-    "message": "若要繼續從網址列使用這個組合，請再次允許存取 $NAME$。",
+    "message": "$NAME$ 的網站存取權限已關閉，重新授權後才能繼續從網址列分割搜尋。",
     "description": "The default pair lost access to its left engine. NAME is the engine name.",
     "placeholders": {
       "NAME": {
@@ -1620,15 +1612,15 @@
     "description": "Opens the extension's setup card to try a search or grant access."
   },
   "popup_setup_try_note": {
-    "message": "還沒新增搜尋捷徑嗎？",
+    "message": "想從網址列直接分割搜尋？",
     "description": "Conditional help when the address-bar setup has not yet been observed."
   },
   "popup_setup_link": {
-    "message": "查看網址列設定步驟",
+    "message": "查看設定步驟",
     "description": "Opens the setup card for address-bar use."
   },
   "popup_shortcut_label": {
-    "message": "快速鍵換右側",
+    "message": "換下一個右側引擎",
     "description": "Popup footer, before the key combination of the shortcut that switches the right side to the next engine."
   },
   "popup_query_label": {
@@ -1656,11 +1648,11 @@
     "description": "Toolbar popup: shown instead of an engine name when that engine has since been deleted in settings."
   },
   "popup_role_page": {
-    "message": "網頁",
+    "message": "瀏覽頁",
     "description": "Toolbar popup, lookup pair (the user's web page next to a lookup result opened from the right-click menu): label in front of the user's own page. Used instead of \"Left\" because the user may have swapped the two sides."
   },
   "popup_role_lookup": {
-    "message": "查詢",
+    "message": "查詢頁",
     "description": "Toolbar popup, lookup pair: label in front of the engine showing the lookup result (the side the engine list switches). Used instead of \"Right\" because the user may have swapped the two sides."
   },
   "popup_page_origin": {
@@ -1694,7 +1686,7 @@
     "description": "Toolbar popup: shown when switching to the clicked engine failed (the split view was closed or split up, or loading the engine failed). Doesn't say \"right side\": in a lookup pair the switched side may be on the left."
   },
   "popup_rule_word": {
-    "message": "右側依「$WORD$」換成了 $ENGINE$",
+    "message": "因含「$WORD$」，右側已切換為 $ENGINE$",
     "description": "Toolbar popup, own search pair: shown under the left/right panes when a keyword rule replaced the default pair's right engine because the search contains one of the rule's words. WORD is the matched word from the user's own rule; ENGINE is the current right-side engine name.",
     "placeholders": {
       "WORD": {
@@ -1708,7 +1700,7 @@
     }
   },
   "popup_rule_script": {
-    "message": "搜尋內容有$SCRIPT$，右側換成了 $ENGINE$",
+    "message": "因含$SCRIPT$，右側已切換為 $ENGINE$",
     "description": "Toolbar popup, own search pair: shown when a keyword rule replaced the default pair's right engine because the search contains a writing system. SCRIPT is the writing-system name (script_han, script_kana, script_hangul or script_cyrillic); ENGINE is the current right-side engine name.",
     "placeholders": {
       "SCRIPT": {
@@ -1722,7 +1714,7 @@
     }
   },
   "popup_rule_generic": {
-    "message": "右側是關鍵字規則選的",
+    "message": "右側已依關鍵字規則切換",
     "description": "Toolbar popup, own search pair: shown when a keyword rule picked the right-side engine but the rule has since been changed or deleted, so the popup cannot say which word matched."
   },
   "popup_rule_revert": {
@@ -1764,11 +1756,11 @@
     "description": "Option in the writing-system dropdown of the keyword-rule dialog in settings (Korean Hangul). Stands alone, so capitalize it as a list item; same name as script_hangul."
   },
   "script_option_cyrillic": {
-    "message": "西里爾字母",
+    "message": "西里爾字母（俄文等）",
     "description": "Option in the writing-system dropdown of the keyword-rule dialog in settings (Cyrillic letters, used in Russian, Ukrainian and others). Stands alone, so capitalize it as a list item; same name as script_cyrillic."
   },
   "popup_complete_detected": {
-    "message": "偵測到 $ENGINE$ 搜尋：$QUERY$",
+    "message": "目前 $ENGINE$ 搜尋：$QUERY$",
     "description": "Toolbar popup, completing a split view: shown when the current tab is a search results page of a configured engine. $ENGINE$ is the engine name, $QUERY$ the recognized search terms.",
     "placeholders": {
       "ENGINE": {
@@ -1782,7 +1774,7 @@
     }
   },
   "popup_complete_hint": {
-    "message": "選一個引擎放在右側",
+    "message": "在右側並排對照",
     "description": "Toolbar popup, completing a split view: heading above the engine buttons. Clicking one keeps the current page on the left and opens the same search with that engine on the right."
   },
   "popup_complete_aria": {
@@ -1796,11 +1788,11 @@
     }
   },
   "popup_complete_narrow": {
-    "message": "視窗較窄，右側已在旁邊的分頁開啟。",
+    "message": "視窗較窄，已在相鄰分頁開啟。",
     "description": "Toolbar popup, completing a split view: shown after the click when the window is narrow, so the right-side search opened in the background tab next to the current one instead of a split view."
   },
   "popup_complete_plain": {
-    "message": "無法組成分割畫面，已在旁邊的分頁開啟。",
+    "message": "目前無法分割畫面，已在相鄰分頁開啟。",
     "description": "Toolbar popup, completing a split view: shown after the click when Chrome couldn't put the two tabs into a split view; the right-side search opened in the tab next to the current one."
   },
   "options_lookup_title": {
@@ -1808,15 +1800,15 @@
     "description": "Title of the settings card for the right-click lookup feature (select text or right-click an image)."
   },
   "options_lookup_intro": {
-    "message": "在選取的文字或圖片上按右鍵，選擇 Split Search 的選單項目。原網頁會保留。若使用相鄰分頁，畫面會切換到查詢結果。",
+    "message": "選取網頁文字或對圖片按右鍵，即可在目前頁面旁開啟分割畫面查詢；窄視窗改用相鄰分頁時會自動切到查詢分頁。",
     "description": "Context-menu lookup from an ordinary webpage and where focus goes when narrow fallback is used."
   },
   "options_lookup_engine_label": {
-    "message": "查詞引擎",
+    "message": "文字查詢引擎",
     "description": "Label of the dropdown that picks the engine used to look up selected text."
   },
   "options_lookup_follow": {
-    "message": "跟隨預設組合的右側（目前：$ENGINE$）",
+    "message": "跟隨預設右側（目前：$ENGINE$）",
     "description": "First option of the text lookup dropdown: use whatever engine is on the right side of the default pair. $ENGINE$ is its current name.",
     "placeholders": {
       "ENGINE": {
@@ -1842,15 +1834,15 @@
     "description": "Button that opens the dialog for adding a custom reverse image search engine."
   },
   "options_image_note_embedded": {
-    "message": "頁面內嵌的圖片沒有公開網址，無法以圖搜圖，右鍵選單裡不會出現這個項目。",
+    "message": "直接嵌在網頁程式碼中的特殊圖片沒有獨立網址，無法以圖搜圖，按右鍵時不會顯示此項目。",
     "description": "Limitation note: images that exist only inside a page (no public URL)."
   },
   "options_image_note_login": {
-    "message": "需要登入才能看到的圖片，引擎多半抓不到。",
+    "message": "需登入才能檢視的圖片，以圖搜圖引擎通常無法讀取。",
     "description": "Limitation note: images that need a login."
   },
   "options_lookup_privacy": {
-    "message": "選取的文字和圖片網址只會傳給這裡選的引擎。有些圖片網址本身帶有存取憑證，傳出去後引擎也能開啟那張圖片；從圖片網址也可能看得出它來自哪個網站。",
+    "message": "選取的文字與圖片網址只會傳送給所選引擎。圖片網址可能透露來源網站；若網址帶有暫時存取權杖，該引擎也能據此讀取圖片。",
     "description": "Privacy note: what is sent to the chosen engine."
   },
   "options_lookup_notes_title": {
@@ -1860,10 +1852,6 @@
   "catalog_image_title": {
     "message": "以圖搜圖引擎庫",
     "description": "Title of the dialog listing ready-made reverse image search engines."
-  },
-  "catalog_image_hint": {
-    "message": "新增後就是一般的自訂以圖搜圖引擎，可以選用，也可以刪除。",
-    "description": "Short intro in the image search catalog dialog."
   },
   "options_image_dlg_title": {
     "message": "新增以圖搜圖引擎",
@@ -1878,11 +1866,11 @@
     "description": "Hint under the address template field of an image search engine. Keep %s as is."
   },
   "notice_lookup_saved": {
-    "message": "查詞引擎已儲存。",
+    "message": "文字查詢引擎已儲存",
     "description": "Notice after choosing the text lookup engine."
   },
   "notice_image_engine_saved": {
-    "message": "以圖搜圖引擎已儲存。",
+    "message": "以圖搜圖引擎已儲存",
     "description": "Notice after choosing the image search engine."
   },
   "notice_rule_saved": {
@@ -1928,11 +1916,11 @@
     "description": "Default-off switch: closing either tab also closes the other tab in an extension-owned search split view."
   },
   "options_close_pair_hint": {
-    "message": "僅適用於本擴充功能建立的搜尋分割畫面，前往其他網頁後仍會連動。右鍵查詢和窄視窗中的相鄰分頁不受影響。",
+    "message": "只對本次瀏覽階段由本擴充功能開啟的搜尋分割畫面有效（點選連結換頁後仍有效）；右鍵查詢與窄視窗相鄰分頁不會一起關閉。",
     "description": "Scope of linked closing: search pairs remain linked after navigation; context-menu lookup pairs and narrow-window adjacent pairs are excluded."
   },
   "options_close_pair_warning": {
-    "message": "取消分割畫面後立即關閉分頁，另一側仍可能一起關閉。",
+    "message": "取消分割畫面後立即關閉分頁時，另一側偶爾仍可能一併關閉。",
     "description": "Known browser event ambiguity: separating a split view and immediately closing a tab may still close its former peer."
   },
   "notice_close_pair_saved": {

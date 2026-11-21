@@ -29,28 +29,28 @@ Search from the address bar or drag text to the tab strip to compare two search 
 ## Description
 
 ```text
-Search from the address bar or drag selected text onto the tab strip, and Split Search opens results from two search engines side by side in Chrome’s split view, so you can compare them.
+Search once and compare results from two search engines side by side in Chrome’s split view.
 
 FEATURES
-• Compare two engines from the address bar or by dragging text onto the tab strip. Pick your engines, add your own, and set up several pairs, each with its own shortcut
-• Right-click selected text or an image to look it up next to the page you’re on
-• Click the toolbar button to switch the right side to another engine without searching again
-• The right-side engine can switch automatically by keyword, for example to YouTube when your search contains “video”
+• Search from the address bar or drag text onto the tab strip to open two engines side by side. Add custom engines and set up multiple pairs, each with its own shortcut.
+• Right-click selected text or an image to look it up next to the page you’re reading.
+• Click the toolbar icon on a configured engine’s results page to add a second engine on the right, or switch the right-side engine anytime from the toolbar or with a keyboard shortcut without retyping.
+• Automatically switch the right-side engine by keyword or writing system (for example, use YouTube when a search contains “video” and optionally strip that word).
 
-SETUP
-1. On a results page from Google, Bing, or another engine you’ve added, click Split Search in the toolbar and pick a second engine. You can keep your usual default search engine.
-2. To use a pair from the address bar, allow access to its left engine in the extension settings. Copy the pair’s URL, click “Open Chrome search settings”, and add it under “Site search”. Use its shortcut, or choose “Make default” to use the pair for ordinary searches and text dragged to the tab strip.
+QUICK START
+1. Use right on results pages: on a Google or Bing results page, click Split Search in the toolbar and pick a second engine. Your default search stays untouched.
+2. Search from the address bar: grant access to the left engine in extension settings, copy the pair URL, click “Open Chrome search settings”, and add it under “Site search”. Type its shortcut and press Tab to search, or choose “Make default” to also split direct searches and dragged text.
 
-GOOD TO KNOW
+NOTES
 • Requires Chrome 155 or later
-• After you choose “Make default”, the address bar no longer shows search suggestions
-• In Incognito windows or on other devices, you get a normal search
+• Default site searches don’t show address bar search suggestions
+• In Incognito windows, on other devices without the extension, or before left-engine access is granted, the pair URL runs a normal search on the left engine
 
 PRIVACY
-What you look up goes only to the search engines you choose, never to the developer or any other third party. Split Search has no servers, analytics or ads. To open the split view, it reads your search URL and the current tab’s URL on your device and doesn’t store them. It reads selected text or an image’s address only when you use its right-click menu. Your searches are kept in browser memory and cleared when you close the browser.
+Search terms, selected text, and image URLs go only to the engines you choose, never to the developer or any other third party. Split Search has no servers, analytics, or ads. It reads search URLs and the active tab’s URL locally to open split views without storing those URLs, reads selected text or image URLs only when you click its context-menu items, and keeps active split queries in browser memory only until the browser closes.
 ```
 
-字数：1793（含换行）
+字数：1899（含换行）
 
 措辞说明：2026-10-28 按用户要求精简为核心内容：四条功能、两步设置、三条须知，次要功能和实现细节不写。隐私段仍写明本机读取哪些网址且不保存、只在用户用右键菜单时读选区和图片网址、查询只暂存在内存；不说“不收集”“不读取网页内容”，与 privacy.md 和数据使用披露（网页浏览记录、网站内容）一致，再删要先对照 privacy.md。术语沿用此前各版核实过的 Chrome 界面叫法。
 

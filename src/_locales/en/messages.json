@@ -16,31 +16,31 @@
     "description": "Status line on the trigger page when the split view could not be opened; an error box with the reason follows."
   },
   "go_status_kept": {
-    "message": "The results are open in a new split view to the right. You can close this tab.",
+    "message": "Results opened in a new split view to the right. You can close this tab.",
     "description": "Status line on the trigger page after the results were opened in a new split view next to the current one and this tab could not close itself; tells the user they may close the page."
   },
   "go_status_no_repeat": {
-    "message": "This page won’t open the split view again on its own.",
+    "message": "Going back, forward, or reloading won’t reopen the split view automatically.",
     "description": "Status line when the user comes back to the trigger page via Back, Forward or reload: the page does not open the split view again by itself (a Run again button is offered)."
   },
   "go_btn_rerun": {
-    "message": "Run again",
+    "message": "Open again",
     "description": "Button on the trigger page that runs the split search again after Back/Forward/reload."
   },
   "go_btn_left_only": {
-    "message": "Search with the left engine only",
+    "message": "Search with left engine only",
     "description": "Button on the trigger page error screen: open only the left engine's search (a normal search, no split view)."
   },
   "go_err_no_trigger": {
-    "message": "This page didn’t receive a trigger URL. Search from the address bar or drag text onto the tab strip instead of opening this page directly.",
+    "message": "This redirect page runs automatically during a search—no need to open it directly. Search from the address bar or drag text to the tab strip.",
     "description": "Error on the trigger page when it was opened without a trigger URL (e.g. typed directly); the user should start a search from the address bar or by drag-and-drop instead."
   },
   "go_err_config_unreadable": {
-    "message": "The settings couldn’t be read and the trigger URL isn’t recognized, so there’s no search to open. Turn Split Search off and on again on the Extensions page (chrome://extensions), or restart Chrome, then search again.",
+    "message": "Couldn’t read settings or recognize this search URL. Toggle Split Search off and on at chrome://extensions, or restart Chrome.",
     "description": "Error on the trigger page: the settings could not be read and the trigger URL is not a usable http(s) URL, so not even the left search can be opened."
   },
   "go_err_bad_template": {
-    "message": "The URL template for $ENGINE$ is invalid, so it can’t be the left engine. Check its URL on the settings page.",
+    "message": "$ENGINE$ has an invalid URL template and can’t be used on the left. Check it in settings.",
     "description": "Error on the trigger page: the left engine's URL template is invalid; the user should check it on the settings page. The placeholder is the engine name (not translated).",
     "placeholders": {
       "ENGINE": {
@@ -50,11 +50,11 @@
     }
   },
   "go_err_bad_url": {
-    "message": "The trigger URL isn’t recognized. It may have been cut off or changed. Search again, or copy a fresh trigger URL from the settings page.",
+    "message": "Couldn’t recognize this search URL. Try again, or copy a fresh pair URL from settings.",
     "description": "Error on the trigger page: the trigger URL cannot be parsed; the user should search again or copy the trigger URL again from the settings page."
   },
   "go_err_not_left": {
-    "message": "$ENGINE$’s URL can’t be used on the left. Check its URL on the settings page, or pick a different left engine.",
+    "message": "$ENGINE$’s URL can’t be used on the left. Pick another left engine or check its URL in settings.",
     "description": "Error on the trigger page: the left engine's URL template cannot be used as the left side of a split view. The placeholder is the engine name (not translated).",
     "placeholders": {
       "ENGINE": {
@@ -64,11 +64,11 @@
     }
   },
   "engine_tpl_ok": {
-    "message": "Can be used on the left or right",
+    "message": "Works on either side",
     "description": "Live hint under the URL template field in the engine dialog: the template can be used on either side of the split view."
   },
   "engine_tpl_right_only": {
-    "message": "Right side only. A URL on the left needs a lowercase %s exactly once, as the whole value of a query parameter (e.g. ?q=%s). That parameter name can appear only once, and the URL can’t contain #.",
+    "message": "Right side only. Left URLs need a single lowercase %s as the full value of a non-repeating query parameter (like ?q=%s, with no #).",
     "description": "Live hint under the URL template field: the template can only be used on the right side. Contains the full 'can be left side' rule; keep the rule wording identical to err_default_left_url. Do not translate %s, ?q=%s or #."
   },
   "err_bad_url": {
@@ -88,7 +88,7 @@
     "description": "Error in the URL template field: the template has no host name."
   },
   "err_tpl_wildcard_host": {
-    "message": "The domain can’t contain *. Enter the site’s actual address.",
+    "message": "Wildcards (*) aren’t allowed in the domain. Enter a specific site address.",
     "description": "Error in the URL template field: the host name contains a * wildcard."
   },
   "err_tpl_ipv6": {
@@ -96,15 +96,15 @@
     "description": "Error in the URL template field: the host is an IPv6 address literal."
   },
   "err_tpl_reserved_param": {
-    "message": "The URL can’t contain _ss. It’s a reserved parameter.",
+    "message": "URL can’t contain _ss (enter the search engine’s own URL, not a pair URL)",
     "description": "Error in the URL template field: the template contains the reserved _ss parameter. Do not translate _ss."
   },
   "err_marker_format": {
-    "message": "The trigger URL is incomplete or malformed. Copy it again from the settings page.",
+    "message": "This pair URL is incomplete or malformed. Copy it again in settings and update the site search in Chrome.",
     "description": "Error page after a search: the trigger URL is incomplete or malformed (its engine marker is not two engine ids). Don't mention the parameter name; tell the user to copy the trigger URL again."
   },
   "err_unknown_engine": {
-    "message": "Split Search can’t find the engine “$ENGINE_ID$” that this site search points to. It may have been deleted or hidden, or the site search’s URL may have been edited. Delete or fix the site search in Chrome’s search engine settings, or add the engine again on the settings page.",
+    "message": "Can’t find engine “$ENGINE_ID$” (it may be hidden or deleted). Restore or add it in settings, or update the site search in Chrome.",
     "description": "Error page after a search: the trigger URL names an engine id that does not exist (the engine was deleted or hidden, or the site search URL was edited).",
     "placeholders": {
       "ENGINE_ID": {
@@ -124,11 +124,11 @@
     }
   },
   "err_template_mismatch": {
-    "message": "The trigger URL doesn’t match the left engine’s current URL template, possibly because the engine’s URL was edited. Copy the trigger URL again from the settings page and update the site search with it.",
+    "message": "The left engine’s URL changed. Copy the updated pair URL from settings and replace it in Chrome’s site search.",
     "description": "Error page after a search: the trigger URL no longer matches the left engine's current template; the user must copy the trigger URL again from the settings page."
   },
   "err_config_too_large": {
-    "message": "Settings too large to save: $KEY$",
+    "message": "Too much data to save ($KEY$). Remove some entries and try again.",
     "description": "Error when saving settings: one stored item exceeds chrome.storage.sync's per-item size limit. The placeholder is an internal storage key name (not translated).",
     "placeholders": {
       "KEY": {
@@ -152,7 +152,7 @@
     }
   },
   "err_id_format": {
-    "message": "The ID must be 1 to 20 characters: lowercase letters, digits or -",
+    "message": "Use 1–20 lowercase letters, numbers, or hyphens (-)",
     "description": "Error in the engine dialog: the engine id has invalid characters or length."
   },
   "err_id_taken": {
@@ -180,7 +180,7 @@
     "description": "Error in the engine dialog: the engine being edited no longer exists (probably deleted on another synced device)."
   },
   "err_default_left_url": {
-    "message": "Can’t save: this engine is on the left of the default pair, and the new URL can’t be used on the left. A URL on the left needs a lowercase %s exactly once, as the whole value of a query parameter (e.g. ?q=%s). That parameter name can appear only once, and the URL can’t contain #. To use this URL anyway, first put a different engine on the left of the default pair.",
+    "message": "Can’t save: this is your default left engine, and the new URL works on the right side only (left URLs need a single lowercase %s as the full value of a non-repeating query parameter, like ?q=%s, with no #). Change your default left engine first.",
     "description": "Error in the engine dialog: the engine is the left side of the default pair and the new URL cannot be a left side. Contains the full 'can be left side' rule; keep the rule wording identical to engine_tpl_right_only. Do not translate %s, ?q=%s or #."
   },
   "err_only_preset_hide": {
@@ -216,7 +216,7 @@
     "description": "Settings page title: browser tab title and the page heading. Keep the product name Split Search untranslated."
   },
   "options_tagline": {
-    "message": "Search from the address bar, or drag text to the tab strip, and get results from two search engines at once in Chrome’s split view.",
+    "message": "Search once and compare two engines side by side in Chrome’s split view.",
     "description": "One-line summary under the settings page heading."
   },
   "options_tabs_label": {
@@ -251,12 +251,8 @@
     "message": "Default pair",
     "description": "Heading of the settings card where the user picks the default engine pair (left and right engine)."
   },
-  "options_pair_hint": {
-    "message": "Choose the left and right engines for your default pair.",
-    "description": "What the default pair selects, independent of Chrome's default search provider."
-  },
   "options_pair_other": {
-    "message": "Want more pairs? Create their trigger URLs in “$LINK$”.",
+    "message": "Want extra pairs? Generate their URLs in “$LINK$”.",
     "description": "Last line of the default pair card. $LINK$ is a link whose text is the tab name options_tab_add; it opens that tab and expands “Other pairs”.",
     "placeholders": {
       "LINK": {
@@ -266,7 +262,7 @@
     }
   },
   "options_pair_chrome_hint": {
-    "message": "After changing this pair, update its site search URL in Chrome. To use it without typing a shortcut, check that it’s the default. $STEPS$",
+    "message": "If you change this pair, update its site search URL in Chrome. Make it the default to search without a shortcut. $STEPS$",
     "description": "Reminder below the selectors. Changing a pair requires updating its site search. Only direct address-bar use requires making it the default. STEPS links to the guide.",
     "placeholders": {
       "STEPS": {
@@ -276,7 +272,7 @@
     }
   },
   "options_pair_changed": {
-    "message": "Your default pair is now $PAIR$. Copy the URL below and update its site search in Chrome. To use it without a shortcut, check that it’s the default.",
+    "message": "Switched to $PAIR$. Copy the new URL below to update your site search in Chrome.",
     "description": "After a pair edit, prompt to update the site search URL. Making it the default is optional.",
     "placeholders": {
       "PAIR": {
@@ -286,7 +282,7 @@
     }
   },
   "options_pair_changed_setup": {
-    "message": "The URL in “Get started” now uses the new pair.",
+    "message": "The URL in “Get started” has been updated.",
     "description": "Box shown in the default pair card after the pair was changed during first-run setup. The quoted card name must match setup_title."
   },
   "options_pair_changed_steps": {
@@ -318,11 +314,11 @@
     "description": "Button next to chrome://settings/searchEngines (setup guide and Get started step 2): copies that address."
   },
   "guide_copy_default_aria": {
-    "message": "Copy the default pair’s trigger URL",
+    "message": "Copy default pair URL",
     "description": "Accessible name of the Copy button next to the default pair's trigger URL. Must start with the visible Copy text (common_copy)."
   },
   "guide_copy_gen_aria": {
-    "message": "Copy the selected pair’s trigger URL",
+    "message": "Copy selected pair URL",
     "description": "Accessible name of the Copy button next to the trigger URL of the pair picked under “Other pairs”. Must start with the visible Copy text (common_copy)."
   },
   "guide_copy_settings_aria": {
@@ -334,7 +330,7 @@
     "description": "Setup step 2. \"Site search\" and \"Add\" must match Chrome's own labels on chrome://settings/searchEngines in this language."
   },
   "guide_step_fields": {
-    "message": "Enter any name (e.g. “Google | Bing”) and a shortcut of your choice (e.g. $KEYWORD$). In “URL with %s in place of query”, paste the trigger URL of the pair you want to use. Then click “Add”.",
+    "message": "Enter a name (e.g. “Google | Bing”) and shortcut (e.g. $KEYWORD$), paste the pair URL into “URL with %s in place of query”, and click “Add”.",
     "description": "Setup step 3: what to type into Chrome's site search dialog. \"Shortcut\" must match Chrome's label. The placeholder becomes the example shortcut (guide_example_keyword) shown as code.",
     "placeholders": {
       "KEYWORD": {
@@ -348,7 +344,7 @@
     "description": "Example site search shortcut for a Google | Bing pair, shown as code in setup step 3. Pick a short, natural shortcut for this language; ASCII letters only."
   },
   "guide_step_default": {
-    "message": "Type your shortcut in the address bar, press Tab, then enter your search. To use this pair for ordinary searches and text dragged to the tab strip too, choose “Make default” from the entry’s ⋮ menu.",
+    "message": "Type the shortcut in the address bar, press Tab, then enter your search. To also split direct searches and text dragged to the tab strip, open the entry’s ⋮ menu and choose “Make default”.",
     "description": "Choose between using a site search shortcut and making it the default. Use Chrome's label for Make default."
   },
   "guide_step_grant": {
@@ -366,27 +362,27 @@
     "description": "Subheading above the list of caveats."
   },
   "guide_caveat_degrade": {
-    "message": "In these cases the trigger URL runs a normal search on the left engine and no split view opens: on other computers and phones that sync these search settings, in Incognito windows, when the extension is disabled or its access is revoked, and when the left engine’s site handles its own page loads (Perplexity, for example).",
+    "message": "The pair URL runs a normal search on the left engine in Incognito windows, on other devices without the extension, when left-engine access isn’t granted, or on sites that handle their own page loads (like Perplexity).",
     "description": "Caveat: cases where the trigger URL falls back to a plain search with the left engine. The last case is a site that handles its own page loads (technically, its service worker takes over navigation); say it in plain words, without mentioning service workers."
   },
   "guide_caveat_no_suggest": {
-    "message": "Making this entry the default turns off your usual search engine’s suggestions in the address bar.",
+    "message": "Default site searches don’t show address bar search suggestions.",
     "description": "Trade-off shown at the decision to make a custom site search the default."
   },
   "guide_caveat_context_menu": {
-    "message": "Chrome’s right-click item, Search [engine] for “…”, also goes through the trigger URL and opens a split view.",
+    "message": "When the pair is your default search, Chrome’s built-in “Search [engine] for ‘…’” right-click item also opens a split view.",
     "description": "Caveat: the right-click menu item \"Search X for …\" also uses the trigger URL and opens the split view. Match Chrome's wording of that menu item; X stands for the search engine name."
   },
   "guide_caveat_sync": {
-    "message": "Chrome syncs your search engine settings to all your devices, but site access doesn’t sync. Grant access on this page on each device.",
+    "message": "Chrome syncs site searches across devices, but not site access. Grant left-engine access on each computer.",
     "description": "Caveat: Chrome syncs search engine settings to all devices but site access granted to the extension does not sync."
   },
   "guide_caveat_template_change": {
-    "message": "After you change an engine’s URL, copy the trigger URL again for site searches that use it on the left.",
+    "message": "If you edit a left engine’s URL template, copy the updated pair URL and replace it in Chrome.",
     "description": "Caveat: after changing an engine's URL, site searches that use it on the left must be copied again."
   },
   "guide_caveat_remove": {
-    "message": "Before you delete or hide an engine, delete the Chrome site searches that use it. Otherwise, the ones with it on the left fall back to a normal search, and the ones with it on the right stop at an “Unknown engine” error page.",
+    "message": "Before deleting or hiding an engine, remove any Chrome site searches that use it; otherwise pairs with it on the right will show an error, and pairs with it on the left will run a normal search.",
     "description": "Caveat: delete Chrome site searches that use an engine before deleting or hiding it. \"Unknown engine\" refers to err_unknown_engine."
   },
   "options_engines_title": {
@@ -398,7 +394,7 @@
     "description": "Button that opens the dialog for adding a custom search engine."
   },
   "options_engines_hint": {
-    "message": "To use a pair from the address bar, allow access to its left engine. Use “Edit” to hide or delete an engine and “Reorder” to change the order.",
+    "message": "Only engines used on the left need site access; right-side engines work right away. Click “Edit” to modify, hide, or delete.",
     "description": "Site access for address-bar use and where to manage engines."
   },
   "options_hidden_title": {
@@ -428,11 +424,11 @@
     "description": "Label of the engine id field in the add-engine dialog."
   },
   "options_dlg_id_hint_add": {
-    "message": "Filled in from the name; you can change it now. Lowercase letters, digits and -, 1 to 20 characters. It goes into the trigger URL, so it can’t be changed later.",
+    "message": "Auto-filled from the name. Use 1–20 lowercase letters, numbers, or hyphens (-). Can’t be changed after saving.",
     "description": "Hint under the id field when adding an engine: the id is filled in from the name and can be edited; allowed characters and length; it cannot be changed later because it is written into the trigger URL."
   },
   "options_dlg_id_readonly": {
-    "message": "ID: $ID$. It can’t be changed because it’s part of the site search URLs you saved.",
+    "message": "ID: $ID$ (can’t be changed)",
     "description": "Read-only line in the edit-engine dialog showing the engine id. $ID$ is the id.",
     "placeholders": {
       "ID": {
@@ -466,7 +462,7 @@
     "description": "Hint under the URL template field of the add/edit engine dialog. Keep %s as is."
   },
   "options_dlg_preset_hint": {
-    "message": "Built-in values: $NAME$, $URL$ (change both back to restore the built-in engine)",
+    "message": "Default: $NAME$ ($URL$). Change both back to reset.",
     "description": "Hint when editing a preset engine: shows its built-in name and URL; setting both back restores the preset.",
     "placeholders": {
       "NAME": {
@@ -480,7 +476,7 @@
     }
   },
   "options_dlg_edit_hint": {
-    "message": "If you change the URL, copy the trigger URL again for Chrome site searches that use this engine on the left.",
+    "message": "If you change this URL, update any Chrome site search that uses this engine on the left.",
     "description": "Hint in the edit dialog: after changing the URL, site searches saved in Chrome that use this engine on the left must be copied again."
   },
   "common_cancel": {
@@ -544,7 +540,7 @@
     "description": "Notice after the user allowed site access."
   },
   "notice_grant_denied": {
-    "message": "Access not granted: the request was denied or the prompt was closed",
+    "message": "Access not granted: prompt dismissed",
     "description": "Warning notice when the site access prompt was denied or dismissed."
   },
   "engine_list_empty": {
@@ -606,7 +602,7 @@
     "description": "Delete button text after the first click (edit engine dialog, image search engine rows); clicking it again deletes the engine. Blur or Esc restores the button."
   },
   "engine_delete_confirm_hint": {
-    "message": "Click again to delete “$NAME$”. Before you do, delete the Chrome site searches that use it. Otherwise, the ones with it on the left fall back to a normal search, and the ones with it on the right stop at an “Unknown engine” error page.",
+    "message": "Click again to delete “$NAME$”. Remove any Chrome site searches using it first, or pairs with it on the right will show an error and pairs on the left will run a normal search.",
     "description": "Shown and announced inside the edit dialog, under the Delete button, when the user first clicks Delete on a custom search engine; the button now reads engine_delete_confirm. Keep the warning consistent with guide_caveat_remove.",
     "placeholders": {
       "NAME": {
@@ -634,7 +630,7 @@
     "description": "Visible reason under the unavailable Delete button in the edit engine dialog: the default pair uses this custom engine. The quoted tab name must match options_tab_pair exactly."
   },
   "engine_rules_used_preset": {
-    "message": "Keyword rules that use this engine: $N$. While it’s hidden, they’re inactive.",
+    "message": "Keyword rules using this engine: $N$. Hidden engines pause any rules that use them.",
     "description": "Edit-engine dialog in settings, for a preset engine (presets can only be hidden): shown when N (1 or more) keyword rules send the right side to this engine. N is the number of rules. Hiding the engine pauses those rules; they come back when the engine is restored.",
     "placeholders": {
       "N": {
@@ -644,7 +640,7 @@
     }
   },
   "engine_rules_used_custom": {
-    "message": "Keyword rules that use this engine: $N$. Deleting the engine deletes these rules too.",
+    "message": "Keyword rules using this engine: $N$. Deleting this engine also deletes any rules using it.",
     "description": "Edit-engine dialog in settings, for a custom engine (custom engines can only be deleted): shown when N (1 or more) keyword rules send the right side to this engine. N is the number of rules. Deleting the engine deletes those rules too.",
     "placeholders": {
       "N": {
@@ -672,7 +668,7 @@
     "description": "Button on a hidden preset engine that shows it again."
   },
   "engine_left_discouraged_hint": {
-    "message": "Better on the right: this site handles its own page loads, so on the left you’ll usually get a normal search instead of a split view.",
+    "message": "Best on the right: this site handles its own page loads, so on the left it usually opens a normal search.",
     "description": "Warning on an engine row (e.g. Perplexity): the site handles its own page loads (technically, its service worker takes over navigation), so as the left engine the split view usually doesn't open. Say it in plain words; don't mention service workers."
   },
   "engine_move_up": {
@@ -712,7 +708,7 @@
     "description": "Text of the same header button while the reorder mode is on; clicking it leaves the mode (the order is saved right away)."
   },
   "engine_reorder_hint": {
-    "message": "Use “Move up” and “Move down” on each row to change the order. Changes save automatically. The drop-down menus and the shortcut rotation use this order.",
+    "message": "Use “Move up” and “Move down” to set the order for menus and shortcut rotation. Saved automatically.",
     "description": "Hint under the engine list heading while the reorder mode is on; also announced to screen readers when the mode starts. The quoted button names must match engine_move_up and engine_move_down word for word."
   },
   "engine_moved": {
@@ -748,7 +744,7 @@
     "description": "Tag on the trigger URL card for the default pair."
   },
   "guide_default_url_title": {
-    "message": "Trigger URL for the default pair",
+    "message": "Default pair URL",
     "description": "Summary of the collapsible section on the Add to Chrome card that holds the default pair's trigger URL. Shown collapsed while the Get started card is on the page, since that card already shows the same URL."
   },
   "guide_pair_label": {
@@ -770,11 +766,11 @@
     "description": "Shown on the trigger URL card instead of the pair name when the default pair is invalid."
   },
   "guide_no_trigger": {
-    "message": "Can’t create a trigger URL. Check the left engine of the default pair.",
+    "message": "Can’t generate pair URL. Check the default left engine.",
     "description": "Error on the trigger URL card when no trigger URL can be built for the default pair."
   },
   "guide_default_hint": {
-    "message": "Add this URL to “Site search” in Chrome, or update an existing entry with it. Use the entry’s shortcut to search with this pair.",
+    "message": "Add this URL to Chrome’s “Site search”, or update an existing entry.",
     "description": "Where to use the URL for the default pair, with or without making it Chrome's default."
   },
   "guide_other_pairs_title": {
@@ -782,7 +778,7 @@
     "description": "Title of the card that generates trigger URLs for other engine pairs."
   },
   "guide_pair_shortcut_hint": {
-    "message": "Add each pair as its own site search and start it with a shortcut you pick, for example by typing “$EXAMPLE$” in the address bar.",
+    "message": "Add extra pairs as separate site searches, each with its own shortcut (e.g. “$EXAMPLE$” in the address bar).",
     "description": "Hint on the other pairs card. The placeholder is guide_example_shortcut_query.",
     "placeholders": {
       "EXAMPLE": {
@@ -810,7 +806,7 @@
     }
   },
   "guide_left_not_granted": {
-    "message": "Split Search can’t access the left engine, $NAME$, yet, so this pair opens a normal $NAME$ search instead of a split view.",
+    "message": "Access to $NAME$ isn’t granted yet, so this pair will open a normal $NAME$ search.",
     "description": "Warning in the pair generator: the left engine's site is not granted, so this pair opens a plain search instead of a split view.",
     "placeholders": {
       "NAME": {
@@ -820,7 +816,7 @@
     }
   },
   "guide_left_discouraged": {
-    "message": "$NAME$ is better on the right. Its site handles its own page loads, so on the left you usually get a normal $NAME$ search instead of a split view. On the right it isn’t affected.",
+    "message": "$NAME$ works best on the right: it handles its own page loads, so on the left it usually opens a normal $NAME$ search.",
     "description": "Warning when an engine like Perplexity is the left side of a pair: the site handles its own page loads (technically, its service worker takes over navigation), so on the left it usually opens a plain search. Say it in plain words; don't mention service workers.",
     "placeholders": {
       "NAME": {
@@ -874,11 +870,11 @@
     }
   },
   "notice_needs_grant": {
-    "message": "Split Search doesn’t have access to its site yet. Click the highlighted “Grant access” button in its row.",
+    "message": "To use it on the left, click “Grant access” on its row.",
     "description": "Sentence shown right after notice_added / notice_saved when the engine's site is not granted yet. The quoted button is engine_grant."
   },
   "notice_template_changed": {
-    "message": "“$NAME$” has a new URL. Any site search with it on the left needs a new trigger URL. Copy the new one from “Add to Chrome” and paste it into that site search in Chrome settings.",
+    "message": "“$NAME$” URL updated. For any Chrome site search using it on the left, copy the new URL from “Add to Chrome”.",
     "description": "Sticky notice after an engine's URL changed: site searches that use it on the left need the trigger URL copied again from the Add to Chrome tab and replaced in Chrome's settings. The quoted tab name must match options_tab_add exactly.",
     "placeholders": {
       "NAME": {
@@ -888,7 +884,7 @@
     }
   },
   "notice_template_changed_go": {
-    "message": "View trigger URLs",
+    "message": "View pair URLs",
     "description": "Button in the notice notice_template_changed; opens the Add to Chrome tab at the trigger URLs."
   },
   "notice_hidden": {
@@ -912,7 +908,7 @@
     }
   },
   "notice_deleted_with_rules": {
-    "message": "“$ENGINE$” deleted, along with the rules that used it ($N$)",
+    "message": "“$ENGINE$” deleted (keyword rules removed: $N$)",
     "description": "Notice after deleting a custom engine that keyword rules used; those rules were deleted with it. ENGINE is the engine name, N the number of deleted rules (1 or more).",
     "placeholders": {
       "ENGINE": {
@@ -956,15 +952,15 @@
     }
   },
   "notice_pair_saved": {
-    "message": "Default pair saved. Copy the new URL from “Default pair” to update the matching site search in Chrome.",
+    "message": "Default pair saved. Copy the new URL under “Default pair” to update your Chrome site search.",
     "description": "Notice after changing the default pair once setup is done: asks the user to copy the new URL from the default pair card and update the matching site search in Chrome. Does not claim to have read Chrome’s settings. The quoted card name must match options_pair_title."
   },
   "notice_pair_saved_setup": {
-    "message": "Default pair saved. The URL in “Get started” now uses the new pair.",
+    "message": "Default pair saved. The URL in “Get started” has been updated",
     "description": "Notice after changing the default pair during first-run setup. The quoted card name must match setup_title."
   },
   "notice_pair_saved_back": {
-    "message": "Default pair saved.",
+    "message": "Default pair saved",
     "description": "Notice after changing the default pair back to the pair it had before on this page (nothing to update in Chrome)."
   },
   "setup_title": {
@@ -972,7 +968,7 @@
     "description": "Heading of the first-run “Get started” card at the top of the settings page."
   },
   "setup_toolbar_hint": {
-    "message": "On a $LEFT$ results page, click Split Search in the toolbar and choose another engine to compare results. You can keep your usual default search engine.",
+    "message": "On any $LEFT$ results page, click Split Search in the toolbar to compare with a second engine side by side, without changing your default search.",
     "description": "First trial using the toolbar on a configured engine's results page. LEFT is the example engine.",
     "placeholders": {
       "LEFT": {
@@ -982,7 +978,7 @@
     }
   },
   "setup_try_grant_hint": {
-    "message": "To try “$QUERY$” here or use this pair from the address bar, first allow access to the left engine, $LEFT$.",
+    "message": "To try searching “$QUERY$” here or split searches from the address bar, grant access to $LEFT$ first.",
     "description": "Before granting the left site, explain what the example and address bar need. QUERY is an example, LEFT is an engine name.",
     "placeholders": {
       "QUERY": {
@@ -996,7 +992,7 @@
     }
   },
   "setup_grant_left": {
-    "message": "Allow access to $LEFT$",
+    "message": "Grant access to $LEFT$",
     "description": "Button that requests only the left engine's site.",
     "placeholders": {
       "LEFT": {
@@ -1006,15 +1002,15 @@
     }
   },
   "setup_add_title": {
-    "message": "Use the address bar (optional)",
+    "message": "Search from the address bar (optional)",
     "description": "Optional address-bar setup following the trial."
   },
   "setup_copy_trigger": {
-    "message": "Copy the URL for the pair you want to use.",
+    "message": "Copy the pair URL below.",
     "description": "First step before opening Chrome settings."
   },
   "setup_add_paste": {
-    "message": "In Chrome’s search settings, click “Add” next to “Site search”. Enter a name and shortcut, paste the URL you copied into “URL with %s in place of query”, then click “Add”.",
+    "message": "In Chrome search settings, click “Add” next to “Site search”. Enter a name and shortcut, paste the URL into “URL with %s in place of query”, and click “Add”.",
     "description": "Open Chrome settings using the adjacent button, then paste the URL copied in the preceding step."
   },
   "setup_details_link": {
@@ -1034,7 +1030,7 @@
     "description": "Button that runs the sample search with the selected pair."
   },
   "setup_try_hint": {
-    "message": "Try “$QUERY$” with your default pair.",
+    "message": "Or run “$QUERY$” right now with your default pair.",
     "description": "The sample uses the current default pair. QUERY is the sample search text.",
     "placeholders": {
       "QUERY": {
@@ -1048,15 +1044,15 @@
     "description": "Sample search words the Try it button searches for. Pick a short, natural everyday search in this language (not about this extension)."
   },
   "setup_done_title": {
-    "message": "Both search results are open",
+    "message": "Split search is active",
     "description": "Confirmation of an observed non-preview search pair, including adjacent tabs."
   },
   "setup_done_text": {
-    "message": "To open two results when you search directly from the address bar, check that the site search you want is set as the default in Chrome.",
+    "message": "To use this pair when typing directly in the address bar without a shortcut, make sure it’s set to “Make default” in Chrome.",
     "description": "A real trigger opened a pair. Only Chrome settings can confirm which site search is the default."
   },
   "setup_done_notice": {
-    "message": "Both search results are open.",
+    "message": "Split search is active",
     "description": "Accessible confirmation of the observed search pair."
   },
   "setup_regrant_title": {
@@ -1064,7 +1060,7 @@
     "description": "Get started card heading when setup was done before but the left engine's site is not granted now."
   },
   "setup_regrant_text": {
-    "message": "Allow access to $LEFT$ again to keep using this pair from the address bar.",
+    "message": "Site access for $LEFT$ was turned off. Grant access again to keep using this pair from the address bar.",
     "description": "Access needed again for address-bar triggers on the current left engine.",
     "placeholders": {
       "LEFT": {
@@ -1074,7 +1070,7 @@
     }
   },
   "setup_revoked_notice": {
-    "message": "Access to $LEFT$ was removed. Searches with this pair from the address bar now open only the $LEFT$ results.",
+    "message": "Access to $LEFT$ was removed. Address bar searches with this pair will open only $LEFT$.",
     "description": "Site access for the default pair's left engine was revoked. LEFT is the engine name.",
     "placeholders": {
       "LEFT": {
@@ -1084,7 +1080,7 @@
     }
   },
   "options_left_not_granted": {
-    "message": "Split Search can’t access the left engine, $NAME$, yet. For now, searches open a normal $NAME$ search instead of a split view.",
+    "message": "Access to $NAME$ isn’t granted yet. Until granted, searches open a normal $NAME$ search.",
     "description": "Warning in the default pair card: the left engine's site is not granted, so searches open a plain search instead of a split view.",
     "placeholders": {
       "NAME": {
@@ -1108,7 +1104,7 @@
     }
   },
   "lang_note": {
-    "message": "The toolbar button tooltip and the extension description on chrome://extensions and the Chrome Web Store always follow the browser language. This setting doesn’t change them.",
+    "message": "The extension description on chrome://extensions follows your browser language.",
     "description": "Note under the language drop-down: the extension description, the toolbar button tooltip, the description on chrome://extensions and the Chrome Web Store listing always follow the browser language, not this choice. Keep chrome://extensions as is."
   },
   "lang_name_en": {
@@ -1132,7 +1128,7 @@
     "description": "Switch label covering both background search results and foreground lookups."
   },
   "options_narrow_hint": {
-    "message": "Below 960 px, address bar searches and adding an engine from the toolbar open the second result in a background tab. Looking up text or an image from the context menu switches to the result tab.",
+    "message": "In windows under 960 px wide, searches open the second engine in an adjacent background tab, while right-click lookups switch to the lookup tab.",
     "description": "Below 960 px, address-bar and toolbar searches keep the second tab in the background. Context-menu lookups activate it."
   },
   "options_rules_title": {
@@ -1140,15 +1136,11 @@
     "description": "Settings, Search pairs tab: heading of the keyword rules card (rules that switch the default pair's right engine when the search contains certain words or a writing system)."
   },
   "options_rules_intro": {
-    "message": "When a search matches a rule, the default pair’s right side switches to that rule’s engine. The left side stays the same. Rules are checked from top to bottom, and the first match wins. Rules don’t apply to searches made with another pair’s trigger URL.",
+    "message": "Switches the default pair’s right engine locally using the first matching rule from top to bottom. Other pairs and right-click lookups aren’t affected.",
     "description": "Keyword rules card: what the rules do. The last sentence says searches made with the trigger URL of a pair other than the default pair don't use the rules."
   },
-  "options_rules_privacy": {
-    "message": "Matching happens on this device, and your searches aren’t sent anywhere else. You write the words in your rules yourself, and they sync with Chrome like your other settings.",
-    "description": "Keyword rules card: privacy note. Matching runs locally; the rules sync with the user's other settings through Chrome sync."
-  },
   "options_rules_empty": {
-    "message": "No rules yet. The right side always uses the default pair’s right engine.",
+    "message": "No rules yet.",
     "description": "Keyword rules card: shown when there are no rules."
   },
   "options_rules_words_row": {
@@ -1186,7 +1178,7 @@
     }
   },
   "options_rules_target_default": {
-    "message": "→ $ENGINE$ (same as the default pair’s right side)",
+    "message": "→ $ENGINE$ (current default)",
     "description": "Keyword rules list: end of a row whose engine happens to be the default pair's current right engine. ENGINE is that engine's name.",
     "placeholders": {
       "ENGINE": {
@@ -1196,7 +1188,7 @@
     }
   },
   "options_rules_target_keep": {
-    "message": "→ the default pair’s right side (currently $ENGINE$)",
+    "message": "→ Keep default right ($ENGINE$)",
     "description": "Keyword rules list: end of a row for an exception rule, which keeps the default pair's right engine (and follows it if the default pair changes). ENGINE is the current right engine's name.",
     "placeholders": {
       "ENGINE": {
@@ -1230,7 +1222,7 @@
     }
   },
   "options_rules_shadowed": {
-    "message": "“$WORD$” is already caught by rule $N$, so it never matches here",
+    "message": "“$WORD$” is already matched by rule $N$ and won’t match here",
     "description": "Keyword rules list: shown under a rule when one of its words can never match, because an earlier rule already matches every search that has it. WORD is that word; N is the earlier rule's position, counting from 1.",
     "placeholders": {
       "WORD": {
@@ -1244,7 +1236,7 @@
     }
   },
   "options_rules_shadowed_rule": {
-    "message": "Rule $N$ already covers this one, so this rule never matches",
+    "message": "Rule $N$ already matches this writing system, so this rule won’t run",
     "description": "Keyword rules list: shown under a writing-system rule that can never match, because an earlier rule checks the same writing system. N is the earlier rule's position, counting from 1.",
     "placeholders": {
       "N": {
@@ -1320,15 +1312,15 @@
     "description": "Title of the rule dialog when editing a rule."
   },
   "options_rules_when_legend": {
-    "message": "When to switch the right side",
+    "message": "Match condition",
     "description": "Rule dialog: label of the group of two radio buttons that choose the rule's condition."
   },
   "options_rules_when_words": {
-    "message": "The search has these words",
+    "message": "Contains specific words",
     "description": "Rule dialog: radio button, the rule matches when the search contains one of the listed words."
   },
   "options_rules_when_script": {
-    "message": "The search uses a writing system",
+    "message": "Contains a writing system",
     "description": "Rule dialog: radio button, the rule matches when the search contains at least one character of a chosen writing system."
   },
   "options_rules_words_label": {
@@ -1336,7 +1328,7 @@
     "description": "Rule dialog: label of the words field."
   },
   "options_rules_words_hint": {
-    "message": "Separate words with commas, for example: weather, forecast. Case and full-width or half-width forms don’t matter. English words match only as whole words, so js doesn’t match jsonl.",
+    "message": "Separate words or phrases with commas, e.g. weather, python list. Ignores case, accents, and fullwidth forms; Latin words match whole words only (js won’t match jsonl).",
     "description": "Rule dialog: hint under the words field. The example words are typed by the user, so they may be translated; keep the js/jsonl example as is."
   },
   "options_rules_strip_label": {
@@ -1344,7 +1336,7 @@
     "description": "Rule dialog: checkbox label under the words field."
   },
   "options_rules_strip_hint": {
-    "message": "For example, with the word vd, “vd cats” becomes just “cats” on both sides. If the search is only these words, nothing is removed.",
+    "message": "With “vd”, searching “vd cats” sends “cats” to both sides. Kept if no other words remain.",
     "description": "Rule dialog: hint under the strip checkbox."
   },
   "options_discard_title": {
@@ -1368,7 +1360,7 @@
     "description": "Rule dialog: label of the writing-system dropdown (options are script_option_han, script_option_kana, script_option_hangul, script_option_cyrillic). Use the same word as err_rule_script."
   },
   "options_rules_script_hint": {
-    "message": "One such character is enough, so almost every Chinese search matches. Japanese searches often include Chinese characters, so put “Japanese kana” above “Chinese characters”.",
+    "message": "Japanese often mixes kanji and kana—put “Japanese kana” above “Han characters” if you use both.",
     "description": "Rule dialog: hint under the writing-system dropdown. Use the same names as script_option_kana and script_option_han."
   },
   "options_rules_engine_label": {
@@ -1376,7 +1368,7 @@
     "description": "Rule dialog: label of the dropdown that chooses the engine for the right side."
   },
   "options_rules_engine_keep": {
-    "message": "The default pair’s right side (no change)",
+    "message": "Keep default right engine (for exceptions)",
     "description": "Rule dialog, engine dropdown: option that makes the rule an exception and keeps the default pair's right engine (it follows the default pair if that changes)."
   },
   "options_rules_engine_pick": {
@@ -1394,7 +1386,7 @@
     }
   },
   "notice_narrow_saved": {
-    "message": "Narrow-window setting saved.",
+    "message": "Narrow-window setting saved",
     "description": "Notice after toggling the narrow-window checkbox."
   },
   "catalog_cat_translate": {
@@ -1440,7 +1432,7 @@
     }
   },
   "err_not_results_page": {
-    "message": "This page has changed. Click the toolbar button again.",
+    "message": "This page changed. Click the toolbar icon again.",
     "description": "Toolbar popup, completing a split view: the page is no longer a recognized search results page (navigated away, closed, joined a split view or the query is gone) when the user clicked an engine."
   },
   "err_window_unsupported": {
@@ -1452,7 +1444,7 @@
     "description": "Toolbar popup, completing a split view: opening the right-side search failed."
   },
   "err_message_rejected": {
-    "message": "That didn’t work. Click the toolbar button and try again.",
+    "message": "Couldn’t complete the action. Click the toolbar icon and try again.",
     "description": "Toolbar popup, completing a split view: the extension rejected the request (unknown sender, bad fields, or the chosen engine is no longer available)."
   },
   "err_rule_no_words": {
@@ -1506,7 +1498,7 @@
     "description": "Title of the engine catalog dialog."
   },
   "catalog_hint": {
-    "message": "These sites work well on the right side of a split view. Once added, they work like any other custom engine: you can edit or delete them.",
+    "message": "Popular sites that pair well on the right side.",
     "description": "Short intro in the engine catalog dialog. Custom engine = user-defined search engine entry."
   },
   "catalog_add": {
@@ -1538,7 +1530,7 @@
     }
   },
   "notice_catalog_added": {
-    "message": "“$NAME$” added from the catalog.",
+    "message": "“$NAME$” added from the catalog",
     "description": "Notice after adding an engine from the catalog. $NAME$ is the engine name.",
     "placeholders": {
       "NAME": {
@@ -1556,7 +1548,7 @@
     "description": "Heading of the keyboard shortcut card on the settings page."
   },
   "options_shortcut_hint": {
-    "message": "In a split view opened by Split Search, press the shortcut to switch the right side to the next engine in the rotation (choose them below). No shortcut is set by default. Click “Set shortcut” to choose one on Chrome’s Keyboard shortcuts page.",
+    "message": "In a split view opened by Split Search, press the shortcut to cycle the right-side engine. Set it on Chrome’s Keyboard shortcuts page.",
     "description": "Hint in the keyboard shortcut card; the rotation checkboxes are below it in the same card. The page name must match Chrome's own title of chrome://extensions/shortcuts (Keyboard shortcuts); the quoted button text must match options_shortcut_open."
   },
   "options_shortcut_label": {
@@ -1586,7 +1578,7 @@
     }
   },
   "options_cycle_hint": {
-    "message": "Engines rotate in the order of the engine list, skipping unchecked engines and the current left engine.",
+    "message": "Follows your engine list order, skipping unchecked engines and the current left engine.",
     "description": "Legend of the rotation checkbox group in the keyboard shortcut card: the order of rotation and what is skipped."
   },
   "popup_not_ours": {
@@ -1594,19 +1586,19 @@
     "description": "Explains that the toolbar popup has nothing to switch: the current tab is not in a split view that Split Search opened. \"Split view\" must match Chrome's term. Keep Split Search untranslated."
   },
   "popup_idle_hint": {
-    "message": "Use the shortcut for your site search. Make it the default to use it for ordinary searches and text dragged to the tab strip.",
+    "message": "On a results page from one of your engines, click this icon to open a second engine side by side.",
     "description": "How to search on demand and when ordinary searches use the pair."
   },
   "popup_setup_needed": {
-    "message": "On a results page from one of your engines, click this icon and choose a second engine. You can also try an example in settings.",
+    "message": "On a results page from one of your engines (like Google or Bing), click this icon to compare with a second engine, or open settings to run an example search.",
     "description": "Toolbar opened on a non-result page before left site access is granted. Explain the toolbar trial."
   },
   "popup_setup_add_engine": {
-    "message": "To compare two engines, open “Search engines” in settings and add or restore another engine.",
+    "message": "Only one engine is active. Add or restore another in “Search engines” to compare results.",
     "description": "Shown when the user needs another visible text engine to compare results from the toolbar."
   },
   "popup_setup_regrant": {
-    "message": "Allow access to $NAME$ again to use this pair from the address bar.",
+    "message": "Site access for $NAME$ was turned off. Grant access again to keep splitting searches from the address bar.",
     "description": "The default pair lost access to its left engine. NAME is the engine name.",
     "placeholders": {
       "NAME": {
@@ -1620,11 +1612,11 @@
     "description": "Opens the extension's setup card to try a search or grant access."
   },
   "popup_setup_try_note": {
-    "message": "Need to add a shortcut?",
+    "message": "Want to split from the address bar?",
     "description": "Conditional help when the address-bar setup has not yet been observed."
   },
   "popup_setup_link": {
-    "message": "See address bar setup",
+    "message": "See setup steps",
     "description": "Opens the setup card for address-bar use."
   },
   "popup_shortcut_label": {
@@ -1656,7 +1648,7 @@
     "description": "Toolbar popup: shown instead of an engine name when that engine has since been deleted in settings."
   },
   "popup_role_page": {
-    "message": "Page",
+    "message": "Source",
     "description": "Toolbar popup, lookup pair (the user's web page next to a lookup result opened from the right-click menu): label in front of the user's own page. Used instead of \"Left\" because the user may have swapped the two sides."
   },
   "popup_role_lookup": {
@@ -1694,7 +1686,7 @@
     "description": "Toolbar popup: shown when switching to the clicked engine failed (the split view was closed or split up, or loading the engine failed). Doesn't say \"right side\": in a lookup pair the switched side may be on the left."
   },
   "popup_rule_word": {
-    "message": "Your search has “$WORD$”, so the right side switched to $ENGINE$.",
+    "message": "Switched right side to $ENGINE$ for “$WORD$”",
     "description": "Toolbar popup, own search pair: shown under the left/right panes when a keyword rule replaced the default pair's right engine because the search contains one of the rule's words. WORD is the matched word from the user's own rule; ENGINE is the current right-side engine name.",
     "placeholders": {
       "WORD": {
@@ -1708,7 +1700,7 @@
     }
   },
   "popup_rule_script": {
-    "message": "Your search has $SCRIPT$, so the right side switched to $ENGINE$.",
+    "message": "Switched right side to $ENGINE$ ($SCRIPT$)",
     "description": "Toolbar popup, own search pair: shown when a keyword rule replaced the default pair's right engine because the search contains a writing system. SCRIPT is the writing-system name (script_han, script_kana, script_hangul or script_cyrillic); ENGINE is the current right-side engine name.",
     "placeholders": {
       "SCRIPT": {
@@ -1722,7 +1714,7 @@
     }
   },
   "popup_rule_generic": {
-    "message": "A keyword rule chose the right side.",
+    "message": "Switched right side by keyword rule",
     "description": "Toolbar popup, own search pair: shown when a keyword rule picked the right-side engine but the rule has since been changed or deleted, so the popup cannot say which word matched."
   },
   "popup_rule_revert": {
@@ -1782,7 +1774,7 @@
     }
   },
   "popup_complete_hint": {
-    "message": "Pick an engine for the right side",
+    "message": "Compare on the right with",
     "description": "Toolbar popup, completing a split view: heading above the engine buttons. Clicking one keeps the current page on the left and opens the same search with that engine on the right."
   },
   "popup_complete_aria": {
@@ -1796,11 +1788,11 @@
     }
   },
   "popup_complete_narrow": {
-    "message": "The window is narrow, so the right side opened in the next tab.",
+    "message": "Window is narrow; opened in the next tab.",
     "description": "Toolbar popup, completing a split view: shown after the click when the window is narrow, so the right-side search opened in the background tab next to the current one instead of a split view."
   },
   "popup_complete_plain": {
-    "message": "Couldn’t make a split view. The search opened in the next tab.",
+    "message": "Couldn’t open split view; opened in the next tab.",
     "description": "Toolbar popup, completing a split view: shown after the click when Chrome couldn't put the two tabs into a split view; the right-side search opened in the tab next to the current one."
   },
   "options_lookup_title": {
@@ -1808,7 +1800,7 @@
     "description": "Title of the settings card for the right-click lookup feature (select text or right-click an image)."
   },
   "options_lookup_intro": {
-    "message": "Right-click selected text or an image and choose the Split Search menu item. The original page stays open. When results open in an adjacent tab, Chrome switches to it.",
+    "message": "Right-click selected text or an image to look it up side by side without leaving the page. When narrow windows use adjacent tabs, focus switches to the lookup tab.",
     "description": "Context-menu lookup from an ordinary webpage and where focus goes when narrow fallback is used."
   },
   "options_lookup_engine_label": {
@@ -1816,7 +1808,7 @@
     "description": "Label of the dropdown that picks the engine used to look up selected text."
   },
   "options_lookup_follow": {
-    "message": "Same as the right side of the default pair (now: $ENGINE$)",
+    "message": "Follow default right ($ENGINE$)",
     "description": "First option of the text lookup dropdown: use whatever engine is on the right side of the default pair. $ENGINE$ is its current name.",
     "placeholders": {
       "ENGINE": {
@@ -1842,15 +1834,15 @@
     "description": "Button that opens the dialog for adding a custom reverse image search engine."
   },
   "options_image_note_embedded": {
-    "message": "Images embedded in the page have no public address, so they can’t be searched. The menu item doesn’t appear for them.",
+    "message": "Embedded images without a standalone URL can’t be searched, so the menu item isn’t shown.",
     "description": "Limitation note: images that exist only inside a page (no public URL)."
   },
   "options_image_note_login": {
-    "message": "If you have to sign in to see an image, the engine usually can’t get it.",
+    "message": "Search engines usually can’t fetch images behind a login.",
     "description": "Limitation note: images that need a login."
   },
   "options_lookup_privacy": {
-    "message": "Selected text and image addresses go only to the engines you choose here. Some image addresses include access credentials, so the engine can open that image too. An image address may also show which site it came from.",
+    "message": "Selected text and image URLs go only to your chosen engine. An image URL may reveal its source site, or carry temporary access tokens that let the engine fetch it.",
     "description": "Privacy note: what is sent to the chosen engine."
   },
   "options_lookup_notes_title": {
@@ -1860,10 +1852,6 @@
   "catalog_image_title": {
     "message": "Image search engine catalog",
     "description": "Title of the dialog listing ready-made reverse image search engines."
-  },
-  "catalog_image_hint": {
-    "message": "Once added, they work like any custom image search engine: you can pick or delete them.",
-    "description": "Short intro in the image search catalog dialog."
   },
   "options_image_dlg_title": {
     "message": "Add image search engine",
@@ -1878,11 +1866,11 @@
     "description": "Hint under the address template field of an image search engine. Keep %s as is."
   },
   "notice_lookup_saved": {
-    "message": "Text lookup engine saved.",
+    "message": "Text lookup engine saved",
     "description": "Notice after choosing the text lookup engine."
   },
   "notice_image_engine_saved": {
-    "message": "Image search engine saved.",
+    "message": "Image search engine saved",
     "description": "Notice after choosing the image search engine."
   },
   "notice_rule_saved": {
@@ -1924,15 +1912,15 @@
     }
   },
   "options_close_pair_label": {
-    "message": "Close both tabs when either one is closed",
+    "message": "Close both tabs when you close either side",
     "description": "Default-off switch: closing either tab also closes the other tab in an extension-owned search split view."
   },
   "options_close_pair_hint": {
-    "message": "Applies to search split views created by this extension, even after navigating to another page. Excludes context-menu lookups and adjacent tabs in narrow windows.",
+    "message": "Applies only to search split views opened by Split Search in this browser session, even after clicking links. Right-click lookups and adjacent tabs stay separate.",
     "description": "Scope of linked closing: search pairs remain linked after navigation; context-menu lookup pairs and narrow-window adjacent pairs are excluded."
   },
   "options_close_pair_warning": {
-    "message": "If you separate a split view and immediately close a tab, the other tab may still close with it.",
+    "message": "Closing a tab right after separating a split view may still close the other tab.",
     "description": "Known browser event ambiguity: separating a split view and immediately closing a tab may still close its former peer."
   },
   "notice_close_pair_saved": {
