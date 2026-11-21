@@ -1,12 +1,13 @@
 // B19 里弹窗分屏外三档的子项（从 b19.mjs 拆出，行为说明见那边的文件头）。
-// 点“完成设置”/“查看第 2 步”有两条路（src/popup/idle.js 的 openSetup）：
+// 点“打开设置”或“查看地址栏设置步骤”有两条路（src/popup/idle.js 的 openSetup）：
 // - reuse：已开着设置页时不新开标签，把它切成活动标签，发 reveal-setup 让它滚到卡片、焦点给卡片标题；
 // - fresh：先关掉所有设置页再点，退回 tabs.create(options.html#setup)，新开的那页焦点给卡片标题。
-import { OPTIONS_URL, sleep } from "./optpage.mjs";
+import { OPTIONS_URL, guarded, sleep } from "./optpage.mjs";
 import { POPUP_URL, popupPage } from "./v03-popup.mjs";
 import { pageTargets, waitTarget } from "./util.mjs";
 import { msgIn, E2E_LOCALE } from "../i18n.mjs";
-import { mockEngines } from "../config.mjs";
+import { mockEngines, mockEngineU } from "../config.mjs";
+import { PRESETS } from "../../../src/lib/engines.js";
 
 const J = JSON.stringify;
 export const SETUP_URL = `${OPTIONS_URL}#setup`;
@@ -19,6 +20,25 @@ const TIERS = {
 const fmtPopup = s => `${s.idleTier ?? "无"} 档，显示 ${s.idleShown.join("、") || "无"}，说明文字${s.notOurs ? "有" : "无"}，页脚${s.footer ? "有" : "无"}`;
 
 export const verdictOf = (p, detail) => p.length ? { status: "fail", detail: p.join("；") } : { status: "pass", detail };
+
+// 用未授权的模拟引擎 U 作为唯一可见引擎，确认两处试用说明都给出能执行的下一步。
+export function singleEngineTrial(ctx, tabId, optionsPage) {
+  const engine = mockEngineU(ctx.port);
+  const config = { defaultPair: [engine.id, engine.id], customEngines: [engine],
+    presetOverrides: Object.fromEntries(PRESETS.map(e => [e.id, { hidden: true }])) };
+  return guarded(ctx, Object.keys(config), async () => {
+    await ctx.ext.eval(`chrome.storage.sync.set(${J(config)})`);
+    const key = "popup_setup_add_engine";
+    const expected = msgIn(E2E_LOCALE, key);
+    await optionsPage.until(`return document.querySelector('#setup [data-i18n="${key}"]')?.textContent === ${J(expected)}`, 5000);
+    const popup = await popupPage(ctx, { url: `${POPUP_URL}?tabId=${tabId}` });
+    try {
+      await popup.until(s => s.idleTier === "setup", "单引擎未授权");
+      const text = await popup.ev('document.getElementById("idle-setup-text").textContent');
+      return verdictOf(text === expected ? [] : [`单引擎弹窗显示“${text}”`], "设置页和弹窗都提示添加或恢复另一个引擎");
+    } finally { await popup.close(); }
+  });
+}
 
 // 卡片、焦点、选中的 tab、hash 与本页是不是活动标签（options.js 去掉 loading 之后才按 #setup 给焦点；没渲染完返回 null）
 const PAGE_STATE = `(async () => {
@@ -115,7 +135,7 @@ export async function popupTier(ctx, tabId, tier, { click = null, via = "reuse",
     if (tier !== "setup" && s.idlePair.length !== 2) p.push(`${tier} 档应列出默认组合，实际 ${J(s.idlePair)}`);
     if (tier === "setup" && s.idlePair.length) p.push(`setup 档不该列默认组合，实际 ${J(s.idlePair)}`);
     if (tier === "setup") {
-      // 完成过设置、左侧授权没了：说“已无权访问 <左侧引擎>”，不说“还没设置好”
+      // 完成过设置、左侧授权没了：以相应的引擎名提示恢复地址栏权限
       const want = msgIn(E2E_LOCALE, "popup_setup_regrant", mockEngines(ctx.port).find(e => e.id === "ea").name);
       const text = await page.ev(`document.getElementById("idle-setup-text").textContent`);
       if (text !== want) p.push(`setup 档（setupDone 为 true）的说明应为“${want}”，实际“${text}”`);

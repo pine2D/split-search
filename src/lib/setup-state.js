@@ -1,22 +1,17 @@
 // “开始使用”卡的纯逻辑：设置页显示哪几步、每步什么状态；go.html 写入一对搜索记录后算不算“设置完成”。
 // 不得引用 chrome。
 
-// 输入：左右两侧是否已授权、右侧是否是另一个引擎、storage.local 的 setupDone、本页是否刚看到它变成 true。
-// mode：steps（首次，三步）、regrant（完成过但左侧没授权：只显示第 1 步）、done（本页刚完成：一句确认）、hidden。
-// 步骤状态：grant todo|done，add todo（Chrome 里的设置读不到，只能靠完成判定收尾），try ready|blocked（左侧没授权不能试）。
-// rightPending：右侧是另一个引擎且没授权，第 1 步要留一个“建议”的授权入口。
-export function setupView({ leftGranted = false, rightGranted = false, rightDistinct = false, setupDone = false, justCompleted = false } = {}) {
-  const rightPending = rightDistinct && !rightGranted;
-  if (setupDone && !leftGranted) return { mode: "regrant", steps: [{ id: "grant", state: "todo" }], rightPending };
-  if (setupDone) return { mode: justCompleted ? "done" : "hidden", steps: [], rightPending };
+// 工具栏试用无需站点授权。示例和地址栏触发都只需要左侧授权。
+// setupDone 说明真实触发曾打开两个结果，Chrome 中是否设为默认由用户核对。
+export function setupView({ leftGranted = false, setupDone = false, justCompleted = false } = {}) {
+  if (setupDone && !leftGranted) return { mode: "regrant", steps: [{ id: "grant", state: "todo" }] };
+  if (setupDone) return { mode: justCompleted ? "done" : "hidden", steps: [] };
   return {
     mode: "steps",
     steps: [
-      { id: "grant", state: leftGranted ? "done" : "todo" },
+      { id: "try", state: leftGranted ? "ready" : "needs-grant" },
       { id: "add", state: "todo" },
-      { id: "try", state: leftGranted ? "ready" : "blocked" },
     ],
-    rightPending,
   };
 }
 

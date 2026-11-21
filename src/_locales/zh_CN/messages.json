@@ -252,8 +252,8 @@
     "description": "Heading of the settings card where the user picks the default engine pair (left and right engine)."
   },
   "options_pair_hint": {
-    "message": "在地址栏搜索或把文字拖到标签栏时，用这两个引擎打开拆分视图。",
-    "description": "Hint under the default pair card heading: what the default pair is used for. Split view is Chrome's feature name; keep the Chrome term."
+    "message": "选择默认组合的左右两个搜索引擎。",
+    "description": "What the default pair selects, independent of Chrome's default search provider."
   },
   "options_pair_other": {
     "message": "还想用其他组合？到“$LINK$”生成它们的触发网址。",
@@ -266,8 +266,8 @@
     }
   },
   "options_pair_chrome_hint": {
-    "message": "Chrome 的默认搜索需单独设置。更改组合后，请更新对应的网站搜索网址，并确认它已设为默认。 $STEPS$",
-    "description": "Persistent neutral reminder below the default pair selectors. Chrome’s default search is configured separately; changing the pair requires updating the matching site search URL and checking that it is the default. This is guidance, not detected status. $STEPS$ is the link to the setup steps.",
+    "message": "更改组合后，请更新 Chrome 中对应的网站搜索网址。要直接输入搜索词就使用这个组合，还需确认它已设为默认。 $STEPS$",
+    "description": "Reminder below the selectors. Changing a pair requires updating its site search. Only direct address-bar use requires making it the default. STEPS links to the guide.",
     "placeholders": {
       "STEPS": {
         "content": "$1",
@@ -276,8 +276,8 @@
     }
   },
   "options_pair_changed": {
-    "message": "默认组合已改成 $PAIR$。请复制下面的新网址，更新 Chrome 中对应的网站搜索，并确认它已设为默认。",
-    "description": "Box shown after changing the default pair on this page once setup is done: asks the user to update the matching site search in Chrome and check that it is the default. Does not claim to have read Chrome’s settings. $PAIR$ is the new pair, such as “Google | Bing”.",
+    "message": "默认组合已改成 $PAIR$。请复制下面的网址，更新 Chrome 中对应的网站搜索。若想直接输入搜索词就使用它，请确认它已设为默认。",
+    "description": "After a pair edit, prompt to update the site search URL. Making it the default is optional.",
     "placeholders": {
       "PAIR": {
         "content": "$1",
@@ -305,9 +305,13 @@
     "message": "设置步骤",
     "description": "Subheading above the numbered setup steps."
   },
-  "guide_step_open_settings": {
-    "message": "打开 Chrome 的搜索引擎设置。这个地址不能从网页里直接打开，请复制后粘贴到地址栏：",
-    "description": "Setup step 1. The address chrome://settings/searchEngines and a Copy button follow right after this sentence, so it ends with a colon."
+  "guide_open_settings": {
+    "message": "打开 Chrome 搜索设置",
+    "description": "Opens Chrome's search engine settings in a new tab."
+  },
+  "guide_settings_fallback": {
+    "message": "设置页没能打开。请在地址栏打开下面的地址。",
+    "description": "Inline manual fallback shown only if the Chrome settings tab could not be opened."
   },
   "guide_copy_settings_url": {
     "message": "复制地址",
@@ -344,8 +348,8 @@
     "description": "Example site search shortcut for a Google | Bing pair, shown as code in setup step 3. Pick a short, natural shortcut for this language; ASCII letters only."
   },
   "guide_step_default": {
-    "message": "默认组合：在刚添加的条目右侧 ⋮ 菜单里选“设为默认选项”。其他组合不用设为默认，在地址栏输入“快捷字词 + 空格 + 关键词”即可。",
-    "description": "Setup step 4. \"Make default\" and \"shortcut\" must match Chrome's labels; ⋮ is the More actions menu icon."
+    "message": "在地址栏输入快捷字词，按 Tab，再输入搜索词。想让直接搜索和拖到标签栏的文字也使用这个组合，可在该条目的 ⋮ 菜单里选“设为默认选项”。",
+    "description": "Choose between using a site search shortcut and making it the default. Use Chrome's label for Make default."
   },
   "guide_step_grant": {
     "message": "到“$LINK$”确认左侧引擎显示“已授权”。",
@@ -366,8 +370,8 @@
     "description": "Caveat: cases where the trigger URL falls back to a plain search with the left engine. The last case is a site that handles its own page loads (technically, its service worker takes over navigation); say it in plain words, without mentioning service workers."
   },
   "guide_caveat_no_suggest": {
-    "message": "自己添加的网站搜索没有联想网址，设为默认后地址栏不再有搜索联想。",
-    "description": "Caveat: a user-added site search has no suggestion URL, so the address bar shows no search suggestions once it is the default."
+    "message": "设为默认后，地址栏会失去原搜索引擎的搜索联想。",
+    "description": "Trade-off shown at the decision to make a custom site search the default."
   },
   "guide_caveat_context_menu": {
     "message": "右键菜单里的“使用X搜索‘…’”同样会走触发网址，打开拆分视图。",
@@ -394,8 +398,8 @@
     "description": "Button that opens the dialog for adding a custom search engine."
   },
   "options_engines_hint": {
-    "message": "左侧引擎的网站必须授权，右侧建议授权。隐藏和删除在“编辑”里，排序在“调整顺序”里。",
-    "description": "Hint under the engine list heading: site access, where Hide/Delete and the order are. The quoted button texts must match engine_edit and engine_reorder word for word. (How to write a URL template is explained in the add/edit engine dialog.)"
+    "message": "要从地址栏使用某个组合，请授权访问它的左侧引擎。隐藏和删除在“编辑”里，排序在“调整顺序”里。",
+    "description": "Site access for address-bar use and where to manage engines."
   },
   "options_hidden_title": {
     "message": "已隐藏的预置引擎",
@@ -770,8 +774,8 @@
     "description": "Error on the trigger URL card when no trigger URL can be built for the default pair."
   },
   "guide_default_hint": {
-    "message": "请在 Chrome 中添加或更新这条网站搜索，网址与上方保持一致，并在其 ⋮ 菜单里选“设为默认选项”。之后地址栏直接搜索、拖拽文字到标签栏都会打开拆分视图。",
-    "description": "Instructions next to the default trigger URL: add or update the site search in Chrome with this URL and make it the default. “Make default” must match Chrome’s label; ⋮ is the More actions menu icon."
+    "message": "把这个网址添加到 Chrome 的“网站搜索”，或用它更新已有条目。输入该条目的快捷字词即可使用这个组合。",
+    "description": "Where to use the URL for the default pair, with or without making it Chrome's default."
   },
   "guide_other_pairs_title": {
     "message": "其他组合",
@@ -967,27 +971,9 @@
     "message": "开始使用",
     "description": "Heading of the first-run “Get started” card at the top of the settings page."
   },
-  "setup_grant_title": {
-    "message": "授权访问引擎网站",
-    "description": "Get started step 1 heading: grant access to the default pair's engine sites."
-  },
-  "setup_grant_text": {
-    "message": "Split Search 要在左侧 $LEFT$ 的网站上把搜索转成拆分视图，所以必须授权这个网站。如果也授权右侧 $RIGHT$，再次搜索时会直接更新已打开的拆分视图。授权范围只有这两个网站。",
-    "description": "Get started step 1: why access to the left (required) and right (recommended) engine sites is needed. Plain words, no talk of intercepting requests.",
-    "placeholders": {
-      "LEFT": {
-        "content": "$1",
-        "example": "Google"
-      },
-      "RIGHT": {
-        "content": "$2",
-        "example": "Bing"
-      }
-    }
-  },
-  "setup_grant_text_left": {
-    "message": "Split Search 要在左侧 $LEFT$ 的网站上把搜索转成拆分视图，所以必须授权这个网站。授权范围只有这一个网站。",
-    "description": "Get started step 1 when only the left engine needs access (the right one is the same engine or already granted).",
+  "setup_toolbar_hint": {
+    "message": "在 $LEFT$ 的搜索结果页，点工具栏里的 Split Search，再选一个引擎，就能对照结果。原来的默认搜索照常使用。",
+    "description": "First trial using the toolbar on a configured engine's results page. LEFT is the example engine.",
     "placeholders": {
       "LEFT": {
         "content": "$1",
@@ -995,75 +981,41 @@
       }
     }
   },
-  "setup_grant_both": {
-    "message": "授权 $LEFT$（必需）和 $RIGHT$（建议）",
-    "description": "Get started button that requests access to both default engines' sites: left required, right recommended.",
+  "setup_try_grant_hint": {
+    "message": "想在这里试搜“$QUERY$”，或从地址栏使用这个组合，请先授权访问左侧的 $LEFT$。",
+    "description": "Before granting the left site, explain what the example and address bar need. QUERY is an example, LEFT is an engine name.",
     "placeholders": {
-      "LEFT": {
+      "QUERY": {
         "content": "$1",
-        "example": "Google"
+        "example": "banana bread recipe"
       },
-      "RIGHT": {
+      "LEFT": {
         "content": "$2",
-        "example": "Bing"
+        "example": "Google"
       }
     }
   },
   "setup_grant_left": {
-    "message": "授权 $LEFT$（必需）",
-    "description": "Get started button that requests access to the default left engine's site (required).",
+    "message": "授权访问 $LEFT$",
+    "description": "Button that requests only the left engine's site.",
     "placeholders": {
       "LEFT": {
         "content": "$1",
         "example": "Google"
-      }
-    }
-  },
-  "setup_grant_right": {
-    "message": "授权 $RIGHT$（建议）",
-    "description": "Get started button shown after the left engine is granted: requests access to the right engine's site (recommended).",
-    "placeholders": {
-      "RIGHT": {
-        "content": "$1",
-        "example": "Bing"
-      }
-    }
-  },
-  "setup_granted": {
-    "message": "$LEFT$ 已授权",
-    "description": "Get started step 1 status once the left engine's site is granted, next to a check icon.",
-    "placeholders": {
-      "LEFT": {
-        "content": "$1",
-        "example": "Google"
-      }
-    }
-  },
-  "setup_right_hint": {
-    "message": "也建议授权右侧 $RIGHT$：再次搜索时会直接更新已打开的拆分视图。",
-    "description": "Get started step 1, after the left engine is granted: why the right engine's site is still worth granting.",
-    "placeholders": {
-      "RIGHT": {
-        "content": "$1",
-        "example": "Bing"
       }
     }
   },
   "setup_add_title": {
-    "message": "在 Chrome 里添加网站搜索，并设为默认",
-    "description": "Get started step 2 heading. \"Site search\" and \"Make default\" are Chrome's terms (see docs/i18n/chrome-terms.md)."
+    "message": "从地址栏使用（可选）",
+    "description": "Optional address-bar setup following the trial."
   },
-  "setup_add_open": {
-    "message": "复制下面的设置地址，粘贴到地址栏打开。",
-    "description": "Get started step 2, first numbered sub-step: copy chrome://settings/searchEngines (shown below with its own Copy address button) and paste it into the address bar to open Chrome's search engine settings."
+  "setup_copy_trigger": {
+    "message": "复制要用的组合网址。",
+    "description": "First step before opening Chrome settings."
   },
   "setup_add_paste": {
-    "message": "在“网站搜索”旁点“添加”。名称和快捷字词随意填，在“网址格式”里粘贴下面的触发网址，再点“添加”。",
-    "description": "Get started step 2, second sub-step: add a site search and paste the trigger URL (shown below with its own Copy button). Field and button names must match Chrome's labels (docs/i18n/chrome-terms.md, Chrome's .pak)."
-  },
-  "setup_add_default": {
-    "message": "点刚添加这一条右侧的 ⋮，选“设为默认选项”。",
-    "description": "Get started step 2, third sub-step: make the new site search the default. “Make default” must match Chrome's label; ⋮ is the More actions menu icon."
+    "message": "打开 Chrome 搜索设置，在“网站搜索”旁点“添加”。填好名称和快捷字词，在“网址格式”里粘贴刚复制的网址，再点“添加”。",
+    "description": "Open Chrome settings using the adjacent button, then paste the URL copied in the preceding step."
   },
   "setup_details_link": {
     "message": "详细步骤",
@@ -1074,16 +1026,16 @@
     "description": "Link at the end of step 2 of the “Get started” card; opens the Search pairs tab and focuses the left engine picker."
   },
   "setup_try_title": {
-    "message": "确认拆分视图能打开",
-    "description": "Get started step 3 heading: try a search and confirm that a split view opens."
+    "message": "先试一次",
+    "description": "First section of Get started, before any Chrome site search setup."
   },
   "setup_try_button": {
-    "message": "试一下",
-    "description": "Get started step 3 button: opens a sample search with the default pair in a new tab."
+    "message": "试搜示例",
+    "description": "Button that runs the sample search with the selected pair."
   },
   "setup_try_hint": {
-    "message": "点一下会用默认组合搜索“$QUERY$”。之后在地址栏随便搜点什么，能打开拆分视图，就说明设置完成。",
-    "description": "Under the Try it button: what it opens, and how to finish setup (a real search from the address bar). The placeholder is setup_sample_query.",
+    "message": "用默认组合试搜“$QUERY$”。",
+    "description": "The sample uses the current default pair. QUERY is the sample search text.",
     "placeholders": {
       "QUERY": {
         "content": "$1",
@@ -1091,33 +1043,29 @@
       }
     }
   },
-  "setup_try_blocked": {
-    "message": "先完成第 1 步的授权才能试。",
-    "description": "Inline reason next to the disabled Try it button: the left engine's site is not granted yet."
-  },
   "setup_sample_query": {
     "message": "番茄炒蛋做法",
     "description": "Sample search words the Try it button searches for. Pick a short, natural everyday search in this language (not about this extension)."
   },
   "setup_done_title": {
-    "message": "设置完成",
-    "description": "Get started card after setup is detected as complete (shown once, on the page that saw it)."
+    "message": "已打开两个搜索结果",
+    "description": "Confirmation of an observed non-preview search pair, including adjacent tabs."
   },
   "setup_done_text": {
-    "message": "在地址栏搜索，或把文字拖到标签栏，都会打开拆分视图。",
-    "description": "Sentence under setup_done_title."
+    "message": "要直接在地址栏搜索时打开两个结果，请到 Chrome 确认想用的那条网站搜索已设为默认。",
+    "description": "A real trigger opened a pair. Only Chrome settings can confirm which site search is the default."
   },
   "setup_done_notice": {
-    "message": "设置完成。在地址栏搜索或把文字拖到标签栏，都会打开拆分视图。",
-    "description": "Notice announced when setup is detected as complete."
+    "message": "已打开两个搜索结果。",
+    "description": "Accessible confirmation of the observed search pair."
   },
   "setup_regrant_title": {
     "message": "需要授权",
     "description": "Get started card heading when setup was done before but the left engine's site is not granted now."
   },
   "setup_regrant_text": {
-    "message": "左侧 $LEFT$ 目前没有授权，搜索只会打开普通的 $LEFT$ 搜索。",
-    "description": "Get started card when setup was done before but the left engine's site is not granted now: searches fall back to a plain search.",
+    "message": "要继续从地址栏使用这个组合，请重新授权访问左侧的 $LEFT$。",
+    "description": "Access needed again for address-bar triggers on the current left engine.",
     "placeholders": {
       "LEFT": {
         "content": "$1",
@@ -1126,8 +1074,8 @@
     }
   },
   "setup_revoked_notice": {
-    "message": "左侧 $LEFT$ 的授权已取消，现在搜索只会打开普通的 $LEFT$ 搜索。",
-    "description": "Notice when access to the default left engine's site is removed while the settings page is open.",
+    "message": "访问 $LEFT$ 的授权已取消。从地址栏使用这个组合时，只会打开 $LEFT$ 的搜索结果。",
+    "description": "Site access for the default pair's left engine was revoked. LEFT is the engine name.",
     "placeholders": {
       "LEFT": {
         "content": "$1",
@@ -1180,12 +1128,12 @@
     "description": "Native name of Spanish in the language drop-down (本名，不要翻译): identical in every locale, do not translate."
   },
   "options_narrow_label": {
-    "message": "窗口较窄时，右侧改在后台标签页打开",
-    "description": "Name of the switch in the default pair card. Narrow means the window is under 960 px wide."
+    "message": "窗口较窄时改用相邻标签页",
+    "description": "Switch label covering both background search results and foreground lookups."
   },
   "options_narrow_hint": {
-    "message": "窗口宽度不到 960 像素时，拆分视图会太挤。开启后，左侧结果留在你搜索的标签页，右侧结果在旁边的标签页打开。",
-    "description": "Hint under the narrow-window switch on the settings page, describing what happens when it is on. Split view is Chrome's feature name; keep the Chrome term. Do not say \"this tab\": the reader is on the settings page."
+    "message": "窗口宽度不足 960 像素时，地址栏搜索或从工具栏给结果页添加引擎，会在后台打开第二个结果。右键查词或查图会切到结果标签页。",
+    "description": "Below 960 px, address-bar and toolbar searches keep the second tab in the background. Context-menu lookups activate it."
   },
   "options_rules_title": {
     "message": "按关键词换右侧",
@@ -1646,16 +1594,20 @@
     "description": "Explains that the toolbar popup has nothing to switch: the current tab is not in a split view that Split Search opened. \"Split view\" must match Chrome's term. Keep Split Search untranslated."
   },
   "popup_idle_hint": {
-    "message": "在地址栏搜索，或把文字拖到标签栏试试。",
-    "description": "Popup, under popup_not_ours: what to try to open a split view."
+    "message": "用已添加的网站搜索快捷字词搜索。把它设为默认后，也可以直接搜索或拖拽文字到标签栏。",
+    "description": "How to search on demand and when ordinary searches use the pair."
   },
   "popup_setup_needed": {
-    "message": "还没设置好，现在搜索不会打开拆分视图。",
-    "description": "Toolbar popup, outside a Split Search split view, when the default pair's left engine is not granted: searching only does a plain search. Shown with the popup_setup_button primary button."
+    "message": "在已添加引擎的搜索结果页上点这个图标，可以再选一个引擎对照看。也可以到设置页试搜示例。",
+    "description": "Toolbar opened on a non-result page before left site access is granted. Explain the toolbar trial."
+  },
+  "popup_setup_add_engine": {
+    "message": "想对照两个引擎的结果，请先到设置里的“搜索引擎”添加或恢复另一个引擎。",
+    "description": "Shown when the user needs another visible text engine to compare results from the toolbar."
   },
   "popup_setup_regrant": {
-    "message": "Split Search 已无权访问 $NAME$，搜索暂时不会打开拆分视图。",
-    "description": "Toolbar popup, outside a Split Search split view, when setup was finished before but the default pair's left engine ($NAME$, an engine name) is no longer granted: searches only do a plain search. Replaces popup_setup_needed; shown with the popup_setup_button primary button.",
+    "message": "要继续从地址栏使用这个组合，请重新授权访问 $NAME$。",
+    "description": "The default pair lost access to its left engine. NAME is the engine name.",
     "placeholders": {
       "NAME": {
         "content": "$1",
@@ -1664,16 +1616,16 @@
     }
   },
   "popup_setup_button": {
-    "message": "完成设置",
-    "description": "Toolbar popup primary button: opens the settings page at the Get started card."
+    "message": "打开设置",
+    "description": "Opens the extension's setup card to try a search or grant access."
   },
   "popup_setup_try_note": {
-    "message": "搜索后没有打开拆分视图的话，回设置页完成第 2 步。",
-    "description": "Toolbar popup, under popup_idle_hint, when the left engine is granted but setup isn't confirmed yet (also for users upgraded from an older version who already set things up): a conditional hint, must not say setup is unfinished. Step 2 = adding the site search in the Get started card. Followed by the popup_setup_link button."
+    "message": "还没添加快捷字词？",
+    "description": "Conditional help when the address-bar setup has not yet been observed."
   },
   "popup_setup_link": {
-    "message": "查看第 2 步",
-    "description": "Toolbar popup text button after popup_setup_try_note: opens the settings page at the Get started card."
+    "message": "查看地址栏设置步骤",
+    "description": "Opens the setup card for address-bar use."
   },
   "popup_shortcut_label": {
     "message": "快捷键换右侧",
@@ -1856,8 +1808,8 @@
     "description": "Title of the settings card for the right-click lookup feature (select text or right-click an image)."
   },
   "options_lookup_intro": {
-    "message": "在网页上选中文字后右键，或直接在图片上右键，再选 Split Search 的菜单项。当前网页留在左边，结果在右边打开。",
-    "description": "Intro of the right-click lookup card. Menu items are added by Split Search to Chrome's right-click menu."
+    "message": "在选中的文字或图片上点右键，选择 Split Search 的菜单项。原网页会保留。使用相邻标签页时，会切到查询结果。",
+    "description": "Context-menu lookup from an ordinary webpage and where focus goes when narrow fallback is used."
   },
   "options_lookup_engine_label": {
     "message": "查词引擎",

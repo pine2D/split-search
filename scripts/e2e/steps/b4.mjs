@@ -1,6 +1,6 @@
-// B4 “开始使用”卡第 1 步授权（auto）：清掉 setupDone、撤销 Google、Bing 授权后，设置页的 #setup 显示三步、第 1 步待办；
+// B4 “开始使用”卡第 1 步授权（auto）：清掉 setupDone、撤销 Google、Bing 授权后，设置页的 #setup 先显示工具栏试用方法和左侧授权按钮；
 // 脚本在设置页里给 chrome.permissions.request 包一层记录调用，用 CDP Input.dispatchMouseEvent（可信事件，带用户激活）点第 1 步的授权按钮。
-// 判定：恰好一次申请、同时含 www.google.com 与 www.bing.com（对应“一个权限框同时列出两个网站”），之后两者授权生效、第 1 步变为已授权。
+// 判定：恰好一次申请、仅含 www.google.com，之后示例按钮可用，Bing 仍未授权。
 // setupDone 由 keepSetupDone（b19.mjs）写回步骤前的值。
 // 测试配置里这两个网站之前授权过，permissions.remove 只是暂时撤销，Chrome 再次申请时直接批准、不弹框（perm-dialog spike）。
 // 设置页开在单独的新窗口里：授权框挂在浏览器窗口上，只关标签它还留着，关掉窗口才随之消失（perm-dialog spike 第 4 条）。
@@ -26,12 +26,12 @@ const BUTTON_CENTER = `(() => { const b = document.getElementById("setup-grant")
   b.scrollIntoView({ block: "center" }); const r = b.getBoundingClientRect();
   return { x: r.x + r.width / 2, y: r.y + r.height / 2, w: r.width, h: r.height }; })()`;
 
-// 纯逻辑：点第 1 步授权按钮产生的申请记录 → 问题列表（空 = 符合“一次申请同时含两个网站”）
-export function requestProblems(calls, want = GB_ORIGINS) {
+// 纯逻辑：只允许一次请求且只申请默认左侧 origin。
+export function requestProblems(calls) {
   if (!Array.isArray(calls)) return ["没有记录到 chrome.permissions.request 的调用（记录器没装上）"];
   if (calls.length !== 1) return [`点一次授权按钮应申请 1 次，实际 ${calls.length} 次${calls.length ? `：${calls.map(c => c.join("+")).join("；")}` : ""}`];
-  const missing = want.filter(o => !calls[0].includes(o));
-  return missing.length ? [`申请里缺少 ${missing.join("、")}（实际 ${calls[0].join("、")}）`] : [];
+  const origins = calls[0];
+  return origins?.length === 1 && origins[0] === GB_ORIGINS[0] ? [] : [`应只申请 ${GB_ORIGINS[0]}，实际 ${JSON.stringify(origins)}`];
 }
 
 // CDP 可信点击（不经 X，headless 也可用）
@@ -41,11 +41,11 @@ export async function trustedClick(browser, sid, { x, y }) {
   }
 }
 
-const waitGranted = (ctx, ms) => ctx.browser.waitFor(async () => (await contains(ctx.browser, GB_ORIGINS)) === true, { timeoutMs: ms, intervalMs: 300 })
+const waitGranted = (ctx, ms) => ctx.browser.waitFor(async () => (await contains(ctx.browser, [GB_ORIGINS[0]])) === true, { timeoutMs: ms, intervalMs: 300 })
   .then(() => true, () => false);
 
 export const B4 = {
-  id: "B4", title: "“开始使用”卡第 1 步授权：一次申请 Google 和 Bing（CDP 点击，自动判定）", kind: "auto", needs: [], timeoutFactor: 2,
+  id: "B4", title: "“开始使用”卡第 1 步授权：只申请左侧 Google（CDP 点击，自动判定）", kind: "auto", needs: [], timeoutFactor: 2,
   restores: true, timeoutExtraMs: GRANT_TIMEOUT_MS,
   async run(ctx) {
     return keepSetupDone(ctx, () => guarded(ctx, ["defaultPair"], async () => {
@@ -56,12 +56,14 @@ export const B4 = {
       let closed = false;
       try {
         const label = await page.until(`const s = document.getElementById("setup");
-          return !s.hidden && s.dataset.mode === "steps" && s.querySelector('[data-step="grant"]')?.dataset.state === "todo"
+          return !s.hidden && s.dataset.mode === "steps" && s.querySelector('[data-step="try"]')?.dataset.state === "needs-grant"
             && document.getElementById("setup-grant")?.textContent`, 8000).catch(() => null);
         if (!label) return { status: "fail", detail: "清掉 setupDone、撤销 Google、Bing 授权后，设置页的“开始使用”卡没有显示第 1 步的授权按钮" };
         const problems = [];
+        const toolbarHint = await page.ev(`document.querySelector('#setup [data-i18n="setup_toolbar_hint"]')?.textContent`);
+        if (toolbarHint !== msg("setup_toolbar_hint", "Google")) problems.push("授权前应该先说明怎样从普通 Google 结果页试用");
         if (!(await page.ev(`document.querySelector("#tabbtn-add[aria-selected=true]") !== null`))) problems.push("全新状态（卡片显示）打开设置页时应默认选中“添加到 Chrome”tab（#tabbtn-add）");
-        if (!label.includes("Google") || !label.includes("Bing")) problems.push(`授权按钮应同时提到 Google 和 Bing，实际“${label}”`);
+        if (label !== msg("setup_grant_left", "Google")) problems.push(`授权按钮应只提到 Google，实际“${label}”`);
         // 引擎列表：只有默认左侧（Google）是警示样式，没授权的右侧（Bing）是中性样式
         const rows = await page.until(`const r = id => { const p = document.querySelector('.engine-row[data-id="' + id + '"] .perm');
           return p && { cls: p.className, text: p.textContent.trim() }; };
@@ -80,23 +82,24 @@ export const B4 = {
         if (!(await waitGranted(ctx, AUTO_GRANT_MS))) {
           if (ctx.autoOnly) {
             await page.close(); closed = true; // 关掉设置页（它独占的窗口随之关闭），原生授权框也跟着关闭
-            return { status: "skip", detail: `点了第 1 步的授权按钮“${label}”，${AUTO_GRANT_MS / 1000} 秒内没有批准，多半弹出了原生授权框（测试配置里没有这两个网站的已授予记录）；--auto-only 不点原生对话框，已关掉设置页窗口、授权框随之关闭（之后的恢复检查会再申请）` };
+            return { status: "skip", detail: `点了第 1 步的授权按钮“${label}”，${AUTO_GRANT_MS / 1000} 秒内没有批准，多半弹出了原生授权框（测试配置里没有 Google 的已授予记录）；--auto-only 不点原生对话框，已关掉设置页窗口、授权框随之关闭（之后的恢复检查会再申请）` };
           }
           const r = await assist(ctx, {
-            title: "B4 第 1 步授权", what: "Google 和 Bing 都已授权", hint: null, afterShow: () => activate(ctx, page.targetId),
+            title: "B4 第 1 步授权", what: "只授权 Google", hint: null, afterShow: () => activate(ctx, page.targetId),
             instruction: `脚本点了设置页“开始使用”卡第 1 步的授权按钮“${label}”，Chrome 在单独的“Split Search 设置”窗口里弹出了授权框（约 2 秒后切到那个窗口）。\n`
-              + `请确认权限框里同时列出 www.google.com 和 www.bing.com，点${L.allow}，再回到向导页。`,
-            probe: () => contains(ctx.browser, GB_ORIGINS),
+              + `请确认权限框里只列出 www.google.com，点${L.allow}，再回到向导页。`,
+            probe: () => contains(ctx.browser, [GB_ORIGINS[0]]),
           });
           if (r.status !== "pass") return r;
           how = "用户在授权框里点了允许";
         }
         problems.push(...requestProblems(await page.ev("globalThis.__e2eReq ?? null")));
-        const done = await page.until(`return document.querySelector('#setup [data-step="grant"]')?.dataset.state === "done"
-          && !document.getElementById("setup-grant") && !!document.getElementById("setup-grant-status")`, 5000).then(() => true, () => false);
-        if (!done) problems.push("授权后第 1 步没有变为已授权（授权按钮仍在或没有“已授权”状态行）");
+        const done = await page.until(`return document.querySelector('#setup [data-step="try"]')?.dataset.state === "ready"
+          && !document.getElementById("setup-grant") && document.activeElement?.id === "setup-try"`, 5000).then(() => true, () => false);
+        if (!done) problems.push("授权后焦点没有落到可用的示例按钮");
+        if (await contains(ctx.browser, [GB_ORIGINS[1]])) problems.push("右侧 Bing 不应获得授权");
         return problems.length ? { status: "fail", detail: problems.join("；") }
-          : { status: "pass", detail: `第 1 步“${label}”一次申请了 www.google.com 与 www.bing.com（${how}），授权生效后第 1 步变为已授权` };
+          : { status: "pass", detail: `第 1 步“${label}”只申请了 www.google.com（${how}），焦点落到示例按钮，Bing 仍未授权` };
       } finally {
         // 没完成时的授权恢复由 run.mjs 的步骤后检查（restores: true，recover.mjs）负责，不受本步超时限制
         if (!closed) await page.close();

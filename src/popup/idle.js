@@ -86,7 +86,7 @@ async function openSetup() {
   return undefined;
 }
 
-// “完成设置”（setup 档的主按钮）与 try 档“去第 2 步”的入口都打开设置页的“开始使用”卡。只绑一次
+// 两个设置入口都定位到“开始使用”卡。只绑一次
 export function bindIdle() {
   const open = () => { openSetup().catch((err) => log("popup: opening Get started failed", err)); };
   $("idle-setup-open").addEventListener("click", open);
@@ -104,6 +104,7 @@ export function showIdle(cfg, setup) {
   // regrant 时 leftGranted 一定读到了 false，左侧引擎一定存在；引擎名是用户数据，经占位符写入
   const left = view.regrant && engineById(cfg, "text", cfg.defaultPair[0]);
   if (left) setI18nText($("idle-setup-text"), "popup_setup_regrant", left.name);
+  else if (cfg?.engines.length < 2) setI18nText($("idle-setup-text"), "popup_setup_add_engine");
   else setI18nText($("idle-setup-text"), "popup_setup_needed");
   $("idle-try").hidden = !view.tryHint;
   $("idle-setup-note").hidden = !view.setupLink;

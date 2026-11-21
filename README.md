@@ -29,16 +29,18 @@ To update, unzip the new version into the same folder and click “Reload” on 
 
 ## Setup
 
-The first time you open the settings page, the “Get started” card on the “Add to Chrome” tab walks you through these steps and ends with a test search.
+To try it, open a results page from Google, Bing, or another engine in Split Search. Click Split Search in the toolbar and choose a second engine. You can keep your usual default search engine. To run an example instead, open “Get started” in settings, allow access to the left engine, and click “Run example search”.
 
-1. **Grant access**: on the “Search engines” tab of the settings page, click “Grant access” for each engine you want to use.
-2. **Copy the URL**: on the “Search pairs” tab, pick a left and a right engine for the default pair. Then copy the generated URL on the “Add to Chrome” tab.
-3. **Add it and make it default**: enter `chrome://settings/searchEngines` in the address bar. Under “Site search”, click “Add”. Enter any name and a shortcut of your choice (for example, `gb`), paste the URL you copied into “URL with %s in place of query” and click “Add”. Then open the ⋮ menu next to the new entry and choose “Make default”.
+To use Split Search from the address bar, add a site search in Chrome.
+
+1. Choose the two engines under “Search pairs”, then open “Add to Chrome”. Allow access to the left engine if prompted, copy the pair’s URL, then click “Open Chrome search settings”.
+2. Click “Add” next to “Site search”. Enter a name and a shortcut (for example, `gb`), paste the URL into “URL with %s in place of query”, and click “Add”.
+3. Type the shortcut in the address bar, press Tab, then enter your search. To use the pair for ordinary searches and text dragged to the tab strip too, choose “Make default” from the entry’s ⋮ menu. This turns off your usual search engine’s suggestions in the address bar.
 
 ## Good to know
 
 - On “Search pairs”, you can enable “Close both tabs when either one is closed” (off by default). It applies to search split views created by this extension, even after navigating to another page. Context-menu lookups and adjacent tabs in narrow windows are excluded. If you separate a split view and immediately close a tab, the other tab may still close with it.
-- After you choose “Make default”, the address bar no longer shows search suggestions.
+- In narrow windows, results open in adjacent tabs by default. When you search from the address bar or add an engine from the toolbar, the second result opens in the background. Looking up text or an image from the context menu switches to the result tab.
 - In Incognito windows or on other devices, you get a normal search.
 
 ## Privacy

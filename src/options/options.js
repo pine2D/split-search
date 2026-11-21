@@ -26,14 +26,14 @@ addChevrons();
 const i18nReady = initI18n().catch(log);
 bindActions({ render: () => render(), current: () => current });
 
-// 重建后焦点原来的元素没了（授权成功后授权按钮消失）：焦点交给这一步的状态行；
+// 首次授权成功后按钮消失，焦点交给同一步的“试搜示例”；
 // 卡片整个不见了（重新授权成功后隐藏）或目标在别的 tab 里：focusIn 交给当前选中的 tab 按钮。
 // 上移 / 下移移到边缘后被禁用（禁用的按钮 focus() 悄悄不生效）：交给同一行另一个方向的；
 // 两个都没了就交给卡头看得见的那个：模式中是“完成”（“新增引擎”这时隐藏，focus() 不生效），
 // 平时（“调整顺序”自动退出）是“新增引擎”。
 // “已隐藏”里的“恢复”成功后这一行没了：焦点交给这个引擎新出现的那一行，模式中是它的上移（边缘被禁用时照上面交给下移），平时是它的“编辑”
 // “搜索组合”里左侧未授权的提示框授权成功后消失：焦点交给同一 tab 的左侧下拉框；“其他组合”生成器的同样交给它自己的左侧下拉框
-const FOCUS_FALLBACK = { "setup-grant": "setup-grant-status", "setup-grant-right": "setup-grant-status", "pair-grant": "pair-left",
+const FOCUS_FALLBACK = { "setup-grant": "setup-try", "pair-grant": "pair-left",
   "gen-grant": "gen-left" };
 function focusAfterRender(focused) {
   const restored = focused.startsWith("restore-") && !$(focused) ? focused.slice("restore-".length) : null;

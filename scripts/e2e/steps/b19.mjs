@@ -1,15 +1,15 @@
-// B19 设置页“开始使用”卡（auto）：(a) 清掉 setupDone 后卡片显示；(b) 点“试一下”打开的一对出现后仍未完成
-// （它的标签 id 在 storage.session 的 setupTryTabs 里）；(c) 不经“试一下”、在新标签里打开模拟引擎的触发网址出现一对后，
+// B19 设置页“开始使用”卡（auto）：(a) 清掉 setupDone 后卡片显示；(b) 点“试搜示例”打开的一对出现后仍未完成
+// （它的标签 id 在 storage.session 的 setupTryTabs 里）；(c) 不经“试搜示例”、在新标签里打开模拟引擎的触发网址出现一对后，
 // setupDone 为 true、卡片换成完成确认，重新打开后消失；(c') 设置页关着时触发一次，重新打开设置页卡片不显示；
 // (d) 撤销左侧（模拟引擎 A）授权后卡片重新出现、只有第 1 步，恢复授权后消失。
-// 第 2 步拆成三个编号小步（先复制设置地址，再复制触发网址，最后设为默认），(a) 核对每步只带自己的复制按钮。
+// 第 2 步拆成三个编号小步（先复制组合网址，再直达 Chrome 设置，最后选择快捷字词或设为默认），(a) 核对按钮顺序、直达与失败兜底。
 // 卡片显示时“添加到 Chrome”卡的默认组合一段和 5 步说明都收在默认收起的 <details> 里，(c) 重新打开后卡片不显示时照常显示
 // （def、guideSteps）；(a) 最后点第 2 步的“详细步骤”，两段都展开、滚到 5 步说明、hash 不变、焦点落在 5 步说明的 summary 上，
-// 之后一次无关的重渲染（临时 sync 键）不重建折叠区、不丢复制按钮上的焦点；再直接打开 options.html#guide-steps
+// 之后一次无关的重渲染（临时 sync 键）不重建折叠区、保留 Chrome 设置按钮上的焦点；再直接打开 options.html#guide-steps
 // （中键、Ctrl+点这个链接时的网址），效果应与左键点击相同（这几项在 b19-guide.mjs）。
 // 弹窗分屏外的三档（src/lib/popup-view.js 的 idleView）跟着走（子项在 b19-popup.mjs）：(a') try 档（左侧已授权、setupDone 没写），
-// 先关掉所有设置页再点“查看第 2 步”，退回新开 options.html#setup，焦点落在卡片标题；(e) ready 档（setupDone 为 true），
-// 这时直接打开 #setup 卡片不显示、焦点不动；(d) 撤销左侧授权后是 setup 档（只有“完成设置”，不显示说明文字和页脚），
+// 先关掉所有设置页再点“查看地址栏设置步骤”，退回新开 options.html#setup，焦点落在卡片标题；(e) ready 档（setupDone 为 true），
+// 这时直接打开 #setup 卡片不显示、焦点不动；(d) 撤销左侧授权后是 setup 档（只有“打开设置”，不显示说明文字和页脚），
 // 设置页开着时点它不新开标签，已开的设置页成为活动标签、焦点落在重新授权的卡片标题。
 // 完成由 go.html 判定并写 setupDone（chrome/setup-store.js），设置页只监听；所以 (c') 不需要开着的设置页。
 // storage.local 的 setupDone 与 storage.session 的 setupTryTabs 都不在 run.mjs 的 storage 快照里：keepSetupDone 记下步骤前的值，
@@ -21,8 +21,9 @@ import { plainTab } from "./v03-popup.mjs";
 import { resetTabs, openTab, waitState, findPair, trigger, summarize, nonce } from "./util.mjs";
 import { msgIn, E2E_LOCALE } from "../i18n.mjs";
 import { HOSTS } from "../config.mjs";
-import { popupTier, readyTier, verdictOf } from "./b19-popup.mjs";
-import { detailsLink, hashOpen } from "./b19-guide.mjs";
+import { popupTier, readyTier, singleEngineTrial, verdictOf } from "./b19-popup.mjs";
+import { detailsLink, hashOpen, searchSettingsCheck } from "./b19-guide.mjs";
+import { expectLeft, expectRight, ruleTrigger, waitRulePair } from "./v05-lib.mjs";
 
 const J = JSON.stringify;
 const KEY = "setupDone";
@@ -89,15 +90,14 @@ const waitRecords = (ctx, pair) => ctx.browser.waitFor(async () => {
 // ---- 第 2 步的三个小步 ----
 
 const SUBSTEPS = `[...document.querySelectorAll('#setup [data-step="add"] .setup-substeps > li')]
-  .map(li => ({ buttons: li.querySelectorAll("button").length, box: li.querySelector(".url-box")?.textContent ?? "" }))`;
-const SETTINGS = "chrome://settings/searchEngines";
+  .map(li => ({ buttons: li.querySelectorAll("button").length, opensSettings: !!li.querySelector("#setup-open-settings"), box: li.querySelector(".url-box")?.textContent ?? "" }))`;
 
-// 纯判定：三个小步依次是设置地址（一个复制按钮）、触发网址（一个复制按钮）、设为默认（没有复制框）
+// 只有第一步复制网址，第二步直接打开 Chrome 设置。
 export function substepProblems(subs) {
   if (!Array.isArray(subs) || subs.length !== 3) return [`第 2 步应有 3 个小步，实际 ${subs?.length ?? 0} 个`];
   const p = [];
-  if (subs[0].buttons !== 1 || subs[0].box !== SETTINGS) p.push(`第 ① 步应只带 ${SETTINGS} 的复制按钮：${J(subs[0])}`);
-  if (subs[1].buttons !== 1 || !subs[1].box.includes("_ss=")) p.push(`第 ② 步应只带触发网址的复制按钮：${J(subs[1])}`);
+  if (subs[0].buttons !== 1 || !subs[0].box.includes("_ss=") || subs[0].opensSettings) p.push(`第 ① 步应只带组合网址的复制按钮：${J(subs[0])}`);
+  if (subs[1].buttons !== 1 || !subs[1].opensSettings || subs[1].box) p.push(`第 ② 步应直接打开 Chrome 设置：${J(subs[1])}`);
   if (subs[2].buttons !== 0 || subs[2].box) p.push(`第 ③ 步不该有复制框：${J(subs[2])}`);
   return p;
 }
@@ -107,47 +107,52 @@ async function item(name, fn) {
 }
 
 async function shown(ctx, page) {
-  const c = await waitCard(page, c => !c.hidden && c.mode === "steps" && c.steps.length === 3, "卡片显示三步");
-  if (c.steps[0] !== "grant:done") return { status: "fail", detail: `模拟引擎 A 已授权，第 1 步应为 done：${fmt(c)}` };
-  if (c.tryDisabled !== false) return { status: "fail", detail: "左侧已授权，“试一下”按钮应可点" };
+  const c = await waitCard(page, c => !c.hidden && c.mode === "steps" && c.steps.join(",") === "try:ready,add:todo", "默认组合恢复，卡片先显示可用的示例，再显示地址栏设置");
+  if (c.tryDisabled !== false) return { status: "fail", detail: "左侧已授权，“试搜示例”按钮应可点" };
   if (c.def !== "closed") return { status: "fail", detail: `卡片显示时“添加到 Chrome”卡的默认组合一段应收在收起的 <details> 里，实际 ${c.def}` };
   if (c.guideSteps !== "closed") return { status: "fail", detail: `卡片显示时“添加到 Chrome”卡的 5 步说明应收在收起的 <details> 里，实际 ${c.guideSteps}` };
   const subs = await page.ev(SUBSTEPS);
   const problems = substepProblems(subs);
+  problems.push(...await searchSettingsCheck(ctx.browser, page));
   const link = await detailsLink(page);
   problems.push(...link.p);
   const direct = await hashOpen(ctx.browser);
   problems.push(...direct.p);
-  return verdictOf(problems, `${fmt(c)}；第 2 步 3 个小步，复制按钮 ${subs.map(x => x.buttons).join("/")}；${link.detail}；${direct.detail}`);
+  return verdictOf(problems, `${fmt(c)}；直达设置及手动兜底，各小步按钮 ${subs.map(x => x.buttons).join("/")}；${link.detail}；${direct.detail}`);
 }
 
 async function tryNotDone(ctx, page) {
   const q = encodeURIComponent(msgIn(E2E_LOCALE, "setup_sample_query"));
   if (!(await page.ev(`(() => { const b = document.getElementById("setup-try"); if (!b || b.disabled) return false; b.click(); return true; })()`))) {
-    return { status: "fail", detail: "“试一下”按钮不存在或不可点" };
+    return { status: "fail", detail: "“试搜示例”按钮不存在或不可点" };
   }
-  const pair = await waitState(ctx, st => findPair(st, ctx.port, q), `“试一下”打开的分屏（关键词 ${decodeURIComponent(q)}）`);
+  const pair = await waitState(ctx, st => findPair(st, ctx.port, q), `“试搜示例”打开的分屏（关键词 ${decodeURIComponent(q)}）`);
   await waitRecords(ctx, pair);
   await sleep(1500); // go.html 写 setupDone 在跳转之前；多等一会儿，确认确实没写
   const done = await readDone(ctx);
   const tried = await readTry(ctx);
   const c = await page.ev(CARD);
-  if (done === true) return { status: "fail", detail: `“试一下”打开的一对（标签 ${pair[0].id}/${pair[1].id}）被判成完成：setupDone 已是 true` };
+  if (done === true) return { status: "fail", detail: `“试搜示例”打开的一对（标签 ${pair[0].id}/${pair[1].id}）被判成完成：setupDone 已是 true` };
   if (!Array.isArray(tried) || !pair.some(t => tried.includes(t.id))) {
-    return { status: "fail", detail: `setupTryTabs 里应有“试一下”打开的标签（${pair[0].id}/${pair[1].id} 之一），实际 ${J(tried)}` };
+    return { status: "fail", detail: `setupTryTabs 里应有“试搜示例”打开的标签（${pair[0].id}/${pair[1].id} 之一），实际 ${J(tried)}` };
   }
-  if (c.mode !== "steps") return { status: "fail", detail: `“试一下”之后卡片应仍显示三步：${fmt(c)}` };
+  if (c.mode !== "steps" || c.steps.length !== 2) return { status: "fail", detail: `试搜示例后卡片应仍显示两步：${fmt(c)}` };
   return { status: "pass", detail: `分屏 ${pair[0].id}/${pair[1].id} 出现、记录已写，setupTryTabs ${J(tried)}，setupDone 仍为 ${J(done)}，${fmt(c)}` };
 }
 
 async function realDone(ctx, page) {
-  const q = `b19+${nonce()}`;
-  await openTab(ctx, trigger(ctx.port, q));
-  const pair = await waitState(ctx, st => findPair(st, ctx.port, q), `新标签触发的分屏（${q}）`);
+  const q = `b19 ${nonce()}`;
+  await openTab(ctx, ruleTrigger(ctx.port, q, "ea,ec")); // 默认组合是 A/B，任一有效网站搜索都能触发确认
+  const pair = await waitRulePair(ctx, expectLeft(ctx.port, q), expectRight(ctx.port, "ec", q));
   await waitRecords(ctx, pair);
   await ctx.browser.waitFor(async () => (await readDone(ctx)) === true, { timeoutMs: 5000, intervalMs: 200 })
     .catch(() => { throw new Error(`分屏 ${pair[0].id}/${pair[1].id} 出现后 5 秒内 setupDone 没有变成 true`); });
   const c = await waitCard(page, c => c.mode === "done" && c.steps.length === 0 && !c.hidden, "卡片换成完成确认");
+  const confirmation = await page.ev(`(() => { const s = document.getElementById("setup");
+    return { title: s.querySelector("h2")?.textContent, text: s.querySelector("p")?.textContent,
+      link: s.querySelector('a[href="#guide-steps"]')?.checkVisibility() }; })()`);
+  if (confirmation.title !== msgIn(E2E_LOCALE, "setup_done_title") || confirmation.text !== msgIn(E2E_LOCALE, "setup_done_text") || !confirmation.link)
+    return { status: "fail", detail: "非默认组合打开一对后，卡片应确认两个结果已打开并提供核对设置的入口" };
   await page.reload();
   const after = await page.ev(CARD);
   if (!after.hidden || after.mode !== "hidden") return { status: "fail", detail: `完成后重新打开设置页，卡片应消失：${fmt(after)}` };
@@ -203,7 +208,7 @@ async function regrant(ctx, page, tabId) {
 }
 
 export const B19 = {
-  id: "B19", title: "设置页“开始使用”卡：第 2 步三个小步、“试一下”不算完成、真实触发算完成（设置页关着也算）、撤销左侧授权后重新出现；弹窗分屏外三档与 #setup 定位（自动判定）", kind: "auto", needs: [],
+  id: "B19", title: "设置页“开始使用”卡：先试用，再按需配置地址栏；示例不计入确认，真实触发才确认打开了两个结果、撤销左侧授权后重新出现；弹窗分屏外三档与 #setup 定位（自动判定）", kind: "auto", needs: [],
   timeoutFactor: 2, restores: true, timeoutExtraMs: GRANT_TIMEOUT_MS,
   run: ctx => keepSetupDone(ctx, async () => {
     const base = await resetTabs(ctx);
@@ -212,14 +217,15 @@ export const B19 = {
     let page = await openOptions(ctx.browser);
     const items = [];
     try {
-      items.push(await item("(a) 清掉 setupDone 后卡片显示三步，第 2 步分成三个小步", () => shown(ctx, page)));
-      items.push(await item("(a') 弹窗 try 档：没有设置页时点“查看第 2 步”新开 #setup，焦点在卡片标题", async () => {
+      items.push(await item("只有一个可用引擎时的试用说明", () => singleEngineTrial(ctx, idleTab, page)));
+      items.push(await item("(a) 清掉 setupDone 后先试用，再复制网址、直达 Chrome 设置", () => shown(ctx, page)));
+      items.push(await item("(a') 弹窗 try 档：没有设置页时点“查看地址栏设置步骤”新开 #setup，焦点在卡片标题", async () => {
         await page.close(); // 关掉所有设置页（其余的由 popupTier 关），测 tabs.create 的退回路径
         const r = await popupTier(ctx, idleTab, "try", { click: "idle-setup-link", via: "fresh", mode: "steps" });
         return verdictOf(r.p, r.detail);
       }));
       page = await openOptions(ctx.browser);
-      items.push(await item("(b) “试一下”打开的一对不算完成", () => tryNotDone(ctx, page)));
+      items.push(await item("(b) “试搜示例”打开的一对不算完成", () => tryNotDone(ctx, page)));
       items.push(await item("(c) 新标签里真实触发算完成", () => realDone(ctx, page)));
       items.push(await item("(c') 设置页关着时触发也算完成，重新打开卡片不显示", () => closedDone(ctx, page)));
       items.push(await item("(e) 弹窗 ready 档；卡片不显示时 #setup 不移动焦点", async () => {
@@ -227,7 +233,7 @@ export const B19 = {
         return readyTier(ctx, idleTab);
       }));
       page = await openOptions(ctx.browser);
-      items.push(await item("(d) 撤销左侧授权后重新出现（弹窗 setup 档、“完成设置”复用已开的设置页），恢复后消失", () => regrant(ctx, page, idleTab)));
+      items.push(await item("(d) 撤销左侧授权后重新出现（弹窗 setup 档、“打开设置”复用已开的设置页），恢复后消失", () => regrant(ctx, page, idleTab)));
     } finally { await page.close().catch(() => {}); }
     return summarize(items);
   }),

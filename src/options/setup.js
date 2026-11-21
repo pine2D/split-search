@@ -1,6 +1,6 @@
-// 设置页顶部的“开始使用”卡（#setup）：授权 → 在 Chrome 里添加网站搜索并设为默认 → 试一下。
+// 设置页顶部的“开始使用”卡（#setup）：先试用工具栏或示例，再按需配置地址栏。
 // 显示哪几步见 lib/setup-state.js。完成由 go.html 判定并写 storage.local 的 setupDone（chrome/setup-store.js），
-// 设置页开着、关着都一样；这里只读它、监听它的变化。“试一下”打开的标签 id 记进 storage.session 的 setupTryTabs，
+// 设置页开着、关着都一样；这里只读它、监听它的变化。“试搜示例”打开的标签 id 记进 storage.session 的 setupTryTabs，
 // go.html 据此不把它算成完成（它绕过了用户的网站搜索设置）。
 import { buildTriggerTemplate, expandTemplate } from "../lib/trigger.js";
 import { setupView } from "../lib/setup-state.js";
@@ -9,7 +9,7 @@ import { acceptRevealSetup, isRevealSetup } from "../lib/messages.js";
 import { routeFromHash } from "../lib/options-route.js";
 import { DONE_KEY, readSetupDone, rememberTryTab } from "../chrome/setup-store.js";
 import { h, ht, notify, errorText, authButton } from "./ui.js";
-import { urlBox, leftWarn, revealGuideSteps, SETTINGS_URL } from "./guide.js";
+import { urlBox, leftWarn, revealGuideSteps, searchSettingsControl } from "./guide.js";
 import { showTab, plainLeft } from "./tabs.js";
 import { t } from "../chrome/i18n.js";
 import { icon } from "../ui/icons.js";
@@ -74,7 +74,7 @@ export function listenReveal() {
   chrome.runtime.onMessage.addListener(onRevealMessage);
 }
 
-// 弹窗的“完成设置”“去第 2 步”找到已开的设置页时发 reveal-setup（同一 hash 再导航一次不会触发 hashchange）：
+// 弹窗里的设置入口找到已开的设置页时发 reveal-setup（同一 hash 再导航一次不会触发 hashchange）：
 // 与 #setup 一样滚到卡片、焦点给标题，卡片不显示时什么都不做。别的消息（complete-split 等）不回复，留给 SW。
 // 本页刚打开、还没读到自己的标签 id 时先等它（只有这时才返回 true 留着回复通道）；首次渲染前到达的由 revealSetup 留到渲染后再做
 function onRevealMessage(msg, sender, sendResponse) {
@@ -105,31 +105,10 @@ function triggerOf(left, right) {
   }
 }
 
-function grantButton(engines, label, id, cls) {
-  const btn = authButton(engines, label, { cls, onDone: () => rerender() });
-  btn.id = id;
+function grantButton(left) {
+  const btn = authButton([left], ["setup_grant_left", left.name], { cls: "btn btn-primary", onDone: rerender });
+  btn.id = "setup-grant";
   return btn;
-}
-
-// 第 1 步还没完成（regrant 时 textKey 换成“需要授权”的说明）
-function grantTodo({ left, right, rightPending }, textKey) {
-  const both = rightPending;
-  const key = textKey ?? (both ? "setup_grant_text" : "setup_grant_text_left");
-  const textArgs = key === "setup_grant_text" ? [left.name, right.name] : [left.name];
-  return [
-    ht("p", { class: "hint" }, key, ...textArgs),
-    h("div", { class: "step-actions" }, grantButton(both ? [left, right] : [left],
-      both ? ["setup_grant_both", left.name, right.name] : ["setup_grant_left", left.name], "setup-grant", "btn btn-primary")),
-  ];
-}
-
-function grantDone({ left, right, rightPending }) {
-  return [
-    h("p", { class: "step-status", id: "setup-grant-status", tabindex: "-1" }, checkIcon(), ht("span", null, "setup_granted", left.name)),
-    rightPending && h("div", { class: "step-actions" },
-      ht("span", { class: "hint" }, "setup_right_hint", right.name),
-      grantButton([right], ["setup_grant_right", right.name], "setup-grant-right", "btn btn-small")),
-  ];
 }
 
 // “详细步骤”：“添加到 Chrome”卡的 5 步说明和默认组合一段这时收着，先展开再滚过去（不改 hash，免得和 #setup 定位搅在一起）
@@ -139,46 +118,41 @@ function openDetails(ev) {
   revealGuideSteps();
 }
 
-// 第 2 步按操作顺序拆成三个编号小步（<ol> 的序号），每步只带它自己要复制的东西：剪贴板一次只装一样，
-// 先复制设置地址打开设置页，再复制触发网址粘进“网站搜索”，最后设为默认
+// 先复制组合网址，再直达 Chrome 设置。设为默认与快捷字词两种用法共用同一条网站搜索。
 function addBody({ left, url }) {
   const sub = (key, ...rest) => h("li", null, ht("p", { class: "hint" }, key), ...rest);
+  const box = url ? urlBox(url, undefined, "guide_copy_default_aria") : ht("p", { class: "hint hint-error" }, "guide_no_trigger");
+  if (url) box.querySelector("button").id = "setup-copy-trigger";
   return [
     h("ol", { class: "setup-substeps" },
-      sub("setup_add_open", urlBox(SETTINGS_URL, ["guide_copy_settings_url"], "guide_copy_settings_aria")),
-      sub("setup_add_paste",
-        url ? urlBox(url, undefined, "guide_copy_default_aria") : ht("p", { class: "hint hint-error" }, "guide_no_trigger"),
-        url && left.leftDiscouraged && leftWarn(left)),
-      sub("setup_add_default")),
-    // “更换组合”是 href="#tab-pair" 的页内链接：左键由 tabs.js 委托处理，切到“搜索组合”后焦点给左侧下拉框
+      sub("setup_copy_trigger", box, url && left.leftDiscouraged && leftWarn(left)),
+      sub("setup_add_paste", searchSettingsControl("setup-open-settings")),
+      sub("guide_step_default", ht("p", { class: "hint" }, "guide_caveat_no_suggest"))),
     h("div", { class: "step-links" },
       ht("a", { href: "#guide-steps", class: "step-link", onclick: openDetails }, "setup_details_link"),
       ht("a", { href: "#tab-pair", id: "setup-change-pair", class: "step-link", "data-reveal": "pair-left" }, "setup_change_pair")),
   ];
 }
 
-function tryBody({ url, grantOk }) {
+function tryBody({ left, url, canCompare }, ready) {
+  const intro = canCompare ? ht("p", { class: "hint" }, "setup_toolbar_hint", left.name)
+    : ht("p", { class: "hint" }, "popup_setup_add_engine");
+  if (!url) return [intro, ht("p", { class: "hint hint-error" }, "guide_no_trigger")];
   const query = t("setup_sample_query");
-  const reason = !url ? "guide_no_trigger" : grantOk ? null : "setup_try_blocked";
-  const btn = ht("button", { type: "button", id: "setup-try", class: grantOk ? "btn btn-primary" : "btn",
-    disabled: !!reason, "aria-describedby": reason ? "setup-try-reason" : null }, "setup_try_button");
-  btn.addEventListener("click", () => { tryIt(expandTemplate(url, query)).catch(err => log("failed to open the try tab", err)); });
-  return [
-    h("div", { class: "step-actions" }, btn, reason && ht("span", { id: "setup-try-reason", class: "hint" }, reason)),
-    ht("p", { class: "hint" }, "setup_try_hint", query),
-  ];
+  const hint = ready ? ht("p", { class: "hint" }, "setup_try_hint", query)
+    : ht("p", { class: "hint" }, "setup_try_grant_hint", query, left.name);
+  const button = ready ? ht("button", { type: "button", id: "setup-try", class: "btn btn-primary",
+    onclick: () => tryIt(expandTemplate(url, query)).catch(err => log("failed to open the try tab", err)) }, "setup_try_button")
+    : grantButton(left);
+  return [intro, hint, left.leftDiscouraged && leftWarn(left), h("div", { class: "step-actions" }, button)];
 }
 
-const STEP_TITLES = { grant: "setup_grant_title", add: "setup_add_title", try: "setup_try_title" };
-
 function stepList(v, info) {
-  const current = v.steps.findIndex(s => s.state !== "done");
-  const body = s => s.id === "grant" ? (s.state === "done" ? grantDone(info) : grantTodo(info))
-    : s.id === "add" ? addBody(info) : tryBody({ ...info, grantOk: s.state === "ready" });
   return h("ol", { class: "setup-steps" }, v.steps.map((s, i) =>
-    h("li", { class: i === current ? "setup-step current" : "setup-step", "data-step": s.id, "data-state": s.state },
-      h("span", { class: "step-mark", "aria-hidden": "true" }, s.state === "done" ? checkIcon() : String(i + 1)),
-      h("div", { class: "step-body" }, ht("h3", null, STEP_TITLES[s.id]), body(s)))));
+    h("li", { class: "setup-step", "data-step": s.id, "data-state": s.state },
+      h("span", { class: "step-mark", "aria-hidden": "true" }, String(i + 1)),
+      h("div", { class: "step-body" }, ht("h3", null, s.id === "try" ? "setup_try_title" : "setup_add_title"),
+        s.id === "try" ? tryBody(info, s.state === "ready") : addBody(info)))));
 }
 
 // 左侧授权从有变没有（例如在 chrome://extensions 里撤销）时经 #notices 播报；授权成功由授权按钮自己播报
@@ -194,7 +168,7 @@ const title = (key, props = {}, ...children) => children.length
   ? h("h2", { id: "setup-title", tabindex: "-1", ...props }, ...children)
   : ht("h2", { id: "setup-title", tabindex: "-1", ...props }, key);
 
-// 网址带 #setup（弹窗的“完成设置”“去第 2 步”新开的设置页）：页面第一次显示出来后滚到卡片、焦点给标题；卡片不显示时什么都不做。
+// 网址带 #setup（从弹窗新开的设置页）：页面第一次显示出来后滚到卡片、焦点给标题；卡片不显示时什么都不做。
 // 网址带 #guide-steps（中键或 Ctrl+点“详细步骤”在新标签打开的）：同样等页面显示出来，再做与左键点击相同的 revealGuideSteps。
 // 只做一次，之后 hash 再变成这两者之一（tabs.js 的 hashchange 经 onReveal 调 requestReveal）或收到弹窗的 reveal-setup 才再做。
 // 卡片显示时先切到“添加到 Chrome”（从别的 tab 过来就写 #tab-add）；卡片隐藏时什么都不做，也不切 tab
@@ -219,11 +193,9 @@ export function revealSetup() {
 export function renderSetup(el, { cfg, byId, granted }) {
   const [left, right] = cfg.defaultPair.map(id => byId.get(id));
   const leftGranted = !!left && granted.get(left.id) === true;
-  const rightDistinct = !!right && right.id !== left?.id;
-  const rightGranted = rightDistinct && granted.get(right.id) === true;
   announce(left, leftGranted);
-  const v = setupView({ leftGranted, rightGranted, rightDistinct, setupDone, justCompleted });
-  const info = { left, right, rightPending: v.rightPending, url: triggerOf(left, right) };
+  const v = setupView({ leftGranted, setupDone, justCompleted });
+  const info = { left, url: triggerOf(left, right), canCompare: cfg.engines.length > 1 };
   let nodes = [];
   if (!left && v.mode !== "hidden" && v.mode !== "done") {
     nodes = [title("setup_title"), ht("p", { class: "hint hint-error" }, "guide_no_trigger")];
@@ -231,10 +203,12 @@ export function renderSetup(el, { cfg, byId, granted }) {
     nodes = [title("setup_title"), stepList(v, info)];
   } else if (v.mode === "regrant") {
     nodes = [title("setup_regrant_title"),
-      h("div", { class: "setup-step", "data-step": "grant", "data-state": "todo" }, grantTodo(info, "setup_regrant_text"))];
+      h("div", { class: "setup-step", "data-step": "grant", "data-state": "todo" },
+        ht("p", { class: "hint" }, "setup_regrant_text", left.name), h("div", { class: "step-actions" }, grantButton(left)))];
   } else if (v.mode === "done") {
     nodes = [title(null, { class: "setup-done-title" }, checkIcon(), ht("span", null, "setup_done_title")),
-      ht("p", { class: "hint" }, "setup_done_text")];
+      ht("p", { class: "hint" }, "setup_done_text"),
+      ht("a", { class: "step-link", href: "#guide-steps", onclick: openDetails }, "options_pair_changed_steps")];
   }
   el.replaceChildren(...nodes);
   el.dataset.mode = v.mode;

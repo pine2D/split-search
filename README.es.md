@@ -29,16 +29,18 @@ Para actualizarla, descomprime la nueva versión en la misma carpeta y haz clic 
 
 ## Configuración
 
-La primera vez que abras la configuración de Split Search, la tarjeta «Primeros pasos» de la pestaña «Añadir a Chrome» te guiará por estos pasos y terminará con una búsqueda de prueba.
+Para probar Split Search, abre una página de resultados de Google, Bing u otro buscador de la extensión. Haz clic en Split Search en la barra de herramientas y elige otro buscador para comparar los resultados. Puedes mantener tu buscador predeterminado. Si prefieres probar un ejemplo, abre «Primeros pasos» en los ajustes, da acceso al buscador de la izquierda y haz clic en «Probar el ejemplo».
 
-1. **Da acceso**: en la pestaña «Buscadores» de la configuración de Split Search, haz clic en «Dar acceso» junto a cada buscador que vayas a usar.
-2. **Copia la URL**: en la pestaña «Combinaciones», elige el buscador de la izquierda y el de la derecha de la combinación predeterminada. Luego copia la URL generada en la pestaña «Añadir a Chrome».
-3. **Añádela y elígela como predeterminada**: escribe `chrome://settings/searchEngines` en la barra de direcciones. En la sección «Búsquedas en el sitio» («Búsqueda en sitios»), haz clic en «Añadir» («Agregar»). En «Nombre», pon lo que quieras; en «Atajo», el que prefieras (por ejemplo, `gb`); en «URL con %s en el lugar de la consulta» («URL con %s en lugar de la consulta»), pega la URL que copiaste. Haz clic en «Añadir» («Agregar»). Por último, en el menú ⋮ a la derecha de esa entrada, selecciona «Elegir como predeterminado» («Configurar como predeterminado»).
+Para usar Split Search desde la barra de direcciones, añade una búsqueda en el sitio en Chrome.
+
+1. Elige los dos buscadores en «Combinaciones» y abre «Añadir a Chrome». Si se te pide, da acceso al buscador de la izquierda. Copia la URL de la combinación y haz clic en «Abrir los ajustes de búsqueda de Chrome».
+2. Junto a «Búsquedas en el sitio» («Búsqueda en sitios»), haz clic en «Añadir» («Agregar»). Escribe un nombre y un atajo (por ejemplo, `gb`), pega la URL en «URL con %s en el lugar de la consulta» («URL con %s en lugar de la consulta») y guarda la entrada.
+3. Escribe el atajo en la barra de direcciones, pulsa Tab e introduce tu búsqueda. Si también quieres usar la combinación al buscar directamente o al arrastrar texto a la barra de pestañas, elige «Elegir como predeterminado» («Configurar como predeterminado») en el menú ⋮ de la entrada. Dejarás de ver las sugerencias de tu buscador habitual en la barra de direcciones.
 
 ## Ten en cuenta
 
 - En «Combinaciones», puedes activar «Cerrar ambas pestañas al cerrar una» (desactivado de forma predeterminada). Se aplica a las vistas divididas de búsqueda creadas por esta extensión, incluso después de navegar a otra página. No afecta a las consultas del menú contextual ni a las pestañas contiguas en ventanas estrechas. Si separas una vista dividida y cierras una pestaña de inmediato, la otra también podría cerrarse.
-- Mientras uses Split Search como buscador predeterminado, la barra de direcciones no muestra sugerencias de búsqueda.
+- En las ventanas estrechas, los resultados se abren en pestañas contiguas de forma predeterminada. Al buscar desde la barra de direcciones o añadir otro buscador desde la barra de herramientas, el segundo resultado se abre en segundo plano. Si buscas texto o una imagen con el botón derecho, pasas a la pestaña del resultado.
 - En ventanas de incógnito o en otros dispositivos, se hace una búsqueda normal.
 
 ## Privacidad

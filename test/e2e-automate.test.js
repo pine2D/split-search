@@ -47,12 +47,12 @@ test("otrVerdict: 普通左侧搜索、在新上下文里、导航记录无 go.h
   }
 });
 
-test("requestProblems: 横幅点一次只申请一次，且同时含 Google 与 Bing", () => {
-  assert.deepEqual(requestProblems([[...GB_ORIGINS]]), []);
-  assert.deepEqual(requestProblems([["https://www.bing.com/*", "https://www.google.com/*", "https://x.com/*"]]), []);
+test("requestProblems: 点一次只申请左侧站点，包括额外右侧在内的任何其他请求都失败", () => {
+  assert.deepEqual(requestProblems([[GB_ORIGINS[0]]]), []);
+  assert.match(requestProblems([[...GB_ORIGINS]])[0], /应只申请/);
+  assert.match(requestProblems([[GB_ORIGINS[1]]])[0], /应只申请/);
   assert.match(requestProblems([])[0], /应申请 1 次，实际 0 次/);
   assert.match(requestProblems([[GB_ORIGINS[0]], [GB_ORIGINS[1]]])[0], /实际 2 次/);
-  assert.match(requestProblems([[GB_ORIGINS[0]]])[0], /缺少 https:\/\/www\.bing\.com/);
   assert.match(requestProblems(null)[0], /记录器/);
 });
 

@@ -2,40 +2,15 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { setupView, countsAsSetup, addTryTab, TRY_TABS_MAX } from "../src/lib/setup-state.js";
 
-const base = { leftGranted: false, rightGranted: false, rightDistinct: true, setupDone: false, justCompleted: false };
-const view = o => setupView({ ...base, ...o });
-const states = v => Object.fromEntries(v.steps.map(s => [s.id, s.state]));
+const view = opts => setupView(opts);
 
-// ---- setupView ----
-
-test("首次：三步都显示；左侧未授权时第 1 步待办、第 3 步不能点", () => {
-  const v = view({});
-  assert.equal(v.mode, "steps");
-  assert.deepEqual(v.steps.map(s => s.id), ["grant", "add", "try"]);
-  assert.deepEqual(states(v), { grant: "todo", add: "todo", try: "blocked" });
-  assert.equal(v.rightPending, true);
+// 工具栏试用一直可用。只有从设置页发起的示例和地址栏触发需要左侧站点授权。
+test("首次打开先试用，再选是否配置地址栏；示例等左侧授权", () => {
+  assert.deepEqual(view({}).steps, [{ id: "try", state: "needs-grant" }, { id: "add", state: "todo" }]);
 });
 
-test("左侧已授权、右侧没授权：第 1 步算完成，另留右侧（建议）的授权", () => {
-  const v = view({ leftGranted: true });
-  assert.deepEqual(states(v), { grant: "done", add: "todo", try: "ready" });
-  assert.equal(v.rightPending, true);
-});
-
-test("两侧都授权：没有剩下的授权按钮", () => {
-  const v = view({ leftGranted: true, rightGranted: true });
-  assert.deepEqual(states(v), { grant: "done", add: "todo", try: "ready" });
-  assert.equal(v.rightPending, false);
-});
-
-test("右侧与左侧是同一个引擎：不另要右侧授权", () => {
-  assert.equal(view({ rightDistinct: false }).rightPending, false);
-});
-
-test("只授权了右侧：第 1 步仍待办，只差左侧", () => {
-  const v = view({ rightGranted: true });
-  assert.equal(states(v).grant, "todo");
-  assert.equal(v.rightPending, false);
+test("只给左侧授权就能试搜示例", () => {
+  assert.deepEqual(view({ leftGranted: true }).steps, [{ id: "try", state: "ready" }, { id: "add", state: "todo" }]);
 });
 
 test("已完成且左侧已授权：不显示", () => {
@@ -55,7 +30,6 @@ test("已完成但左侧授权被撤销：重新显示，只有第 1 步", () =>
     const v = view({ setupDone: true, leftGranted: false, justCompleted });
     assert.equal(v.mode, "regrant");
     assert.deepEqual(v.steps, [{ id: "grant", state: "todo" }]);
-    assert.equal(v.rightPending, true);
   }
 });
 

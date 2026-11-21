@@ -32,9 +32,8 @@ FUNCIONES
 • El buscador de la derecha puede cambiar solo según lo que busques; por ejemplo, a YouTube cuando tu búsqueda contiene «video»
 
 CONFIGURACIÓN
-1. En la configuración de Split Search, da acceso a tus buscadores
-2. Copia la URL que se genera, añádela en «Búsquedas en el sitio» («Búsqueda en sitios») de la configuración de Chrome y selecciona «Elegir como predeterminado» («Configurar como predeterminado»)
-En la configuración de Split Search encontrarás instrucciones paso a paso.
+1. En una página de resultados de Google, Bing u otro buscador que hayas añadido, haz clic en Split Search en la barra de herramientas y elige otro buscador. Puedes mantener tu buscador predeterminado.
+2. Para usar una combinación desde la barra de direcciones, da acceso al buscador de la izquierda en los ajustes de la extensión. Copia su URL, haz clic en «Abrir los ajustes de búsqueda de Chrome» y añádela a «Búsquedas en el sitio» («Búsqueda en sitios»). Usa el atajo o elige «Elegir como predeterminado» («Configurar como predeterminado») para utilizarla también en las búsquedas normales y al arrastrar texto a la barra de pestañas.
 
 TEN EN CUENTA
 • Requiere Chrome 155 o posterior
@@ -45,6 +44,6 @@ PRIVACIDAD
 Lo que buscas solo llega a los buscadores que elijas, nunca al desarrollador ni a otros terceros. Split Search no usa servidores propios ni incluye estadísticas de uso ni publicidad. Para abrir la vista dividida, lee en tu dispositivo la URL de tu búsqueda y la de la pestaña actual, y no las guarda. Solo lee el texto seleccionado o la dirección de una imagen cuando usas su menú contextual. Tus búsquedas se guardan en la memoria del navegador y se borran al cerrarlo.
 ```
 
-字数：1863（含换行）
+字数：2165（含换行）
 
 措辞说明：2026-10-28 按用户要求精简为核心内容：四条功能、两步设置、三条须知，次要功能和实现细节不写。隐私段仍写明本机读取哪些网址且不保存、只在用户用右键菜单时读选区和图片网址、查询只暂存在内存；不说“不收集”“不读取网页内容”，与 privacy.md 和数据使用披露（网页浏览记录、网站内容）一致，再删要先对照 privacy.md。术语沿用此前各版核实过的 Chrome 界面叫法。

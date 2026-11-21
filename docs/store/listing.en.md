@@ -38,9 +38,8 @@ FEATURES
 • The right-side engine can switch automatically by keyword, for example to YouTube when your search contains “video”
 
 SETUP
-1. On the settings page, grant access to your search engines
-2. Copy the URL the settings page generates, add it under “Site search” in Chrome settings, and choose “Make default”
-The settings page walks you through each step.
+1. On a results page from Google, Bing, or another engine you’ve added, click Split Search in the toolbar and pick a second engine. You can keep your usual default search engine.
+2. To use a pair from the address bar, allow access to its left engine in the extension settings. Copy the pair’s URL, click “Open Chrome search settings”, and add it under “Site search”. Use its shortcut, or choose “Make default” to use the pair for ordinary searches and text dragged to the tab strip.
 
 GOOD TO KNOW
 • Requires Chrome 155 or later
@@ -51,7 +50,7 @@ PRIVACY
 What you look up goes only to the search engines you choose, never to the developer or any other third party. Split Search has no servers, analytics or ads. To open the split view, it reads your search URL and the current tab’s URL on your device and doesn’t store them. It reads selected text or an image’s address only when you use its right-click menu. Your searches are kept in browser memory and cleared when you close the browser.
 ```
 
-字数：1536（含换行）
+字数：1793（含换行）
 
 措辞说明：2026-10-28 按用户要求精简为核心内容：四条功能、两步设置、三条须知，次要功能和实现细节不写。隐私段仍写明本机读取哪些网址且不保存、只在用户用右键菜单时读选区和图片网址、查询只暂存在内存；不说“不收集”“不读取网页内容”，与 privacy.md 和数据使用披露（网页浏览记录、网站内容）一致，再删要先对照 privacy.md。术语沿用此前各版核实过的 Chrome 界面叫法。
 

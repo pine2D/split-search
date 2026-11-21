@@ -6,8 +6,7 @@ import { h, ht, copyButton, authButton, option, disclosure } from "./ui.js";
 import { canBeLeft, generatorPick } from "./edits.js";
 import { t } from "../chrome/i18n.js";
 import { showTab, focusIn } from "./tabs.js";
-
-export const SETTINGS_URL = "chrome://settings/searchEngines";
+import { openSearchSettings, SEARCH_SETTINGS_URL } from "../chrome/options-page.js";
 
 // 用户在生成器里亲手选过的 [leftId, rightId]，跨重渲染保留（仍有效时，见 generatorPick）。
 // 只在下拉框的 change 里记下；没改过时每次渲染都按当前默认组合重新取初值，默认组合改了初值跟着变
@@ -16,8 +15,22 @@ let userGen = null;
 const withId = (el, id) => { el.id = id; return el; };
 
 export function setupGuide() {
-  const slot = document.getElementById("settings-url-copy");
-  slot.replaceChildren(copyButton(() => SETTINGS_URL, ["guide_copy_settings_url"], "guide_copy_settings_aria"));
+  document.getElementById("guide-settings-action").replaceChildren(searchSettingsControl("guide-open-settings"));
+}
+
+// 正常路径只复制组合网址。Chrome 打不开设置页时才提供手动打开的地址。
+export function searchSettingsControl(id) {
+  const fallback = h("div", { role: "status" });
+  const button = ht("button", { id, type: "button", class: "btn btn-small", onclick: async () => {
+    try {
+      await openSearchSettings();
+      fallback.replaceChildren();
+    } catch {
+      fallback.replaceChildren(ht("p", { class: "hint" }, "guide_settings_fallback"),
+        urlBox(SEARCH_SETTINGS_URL, ["guide_copy_settings_url"], "guide_copy_settings_aria"));
+    }
+  } }, "guide_open_settings");
+  return h("div", { class: "settings-action" }, button, fallback);
 }
 
 function triggerOf(left, right) {
@@ -105,7 +118,7 @@ function genOutput(left, right, { cfg, granted, refresh, setupShown }) {
   if (!inSetupCard && granted.get(left.id) !== true) {
     nodes.push(h("div", { class: "callout callout-warn" },
       ht("span", null, "guide_left_not_granted", left.name),
-      withId(authButton([left, right], ["engine_grant_named", left.name], { cls: "btn btn-small btn-attention", onDone: refresh }), "gen-grant")));
+      withId(authButton([left], ["engine_grant_named", left.name], { cls: "btn btn-small btn-attention", onDone: refresh }), "gen-grant")));
   }
   return nodes;
 }
@@ -117,12 +130,12 @@ export function leftWarn(e) {
 }
 
 // 5 步说明（options.html 的 #guide-steps：小标题 + ol.steps）。ol 是静态节点，只在两种外壳之间移动，
-// 里面的复制按钮（settings-url-copy）和 guide-step-fields 的富文本跟着走；小标题每次按 key 新建，切换语言时 applyI18n 照常重写
+// 里面的 Chrome 设置按钮和 guide-step-fields 的富文本跟着走；小标题每次按 key 新建，切换语言时 applyI18n 照常重写
 export function renderGuideSteps(setupShown) {
   const slot = document.getElementById("guide-steps");
   const list = slot?.querySelector("ol.steps");
   if (!list) return;
-  // 外壳已经是要的那种就不动：重建会把焦点所在的复制按钮、summary 拿出文档（它们没有 id，还不回来），读屏器也会重读。
+  // 外壳相同就保留节点，避免重置按钮或 summary 的焦点和读屏位置。
   // 文字随语言切换由 applyStatic 按 data-i18n 更新，不靠重建
   if (slot.firstElementChild?.id === (setupShown ? "guide-steps-details" : "guide-steps-title")) return;
   if (setupShown) slot.replaceChildren(withId(disclosure("guide-steps", "guide_steps_title", list), "guide-steps-details"));

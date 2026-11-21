@@ -252,8 +252,8 @@
     "description": "Heading of the settings card where the user picks the default engine pair (left and right engine)."
   },
   "options_pair_hint": {
-    "message": "Searching from the address bar or dragging text to the tab strip opens these two engines in a split view.",
-    "description": "Hint under the default pair card heading: what the default pair is used for. Split view is Chrome's feature name; keep the Chrome term."
+    "message": "Choose the left and right engines for your default pair.",
+    "description": "What the default pair selects, independent of Chrome's default search provider."
   },
   "options_pair_other": {
     "message": "Want more pairs? Create their trigger URLs in “$LINK$”.",
@@ -266,8 +266,8 @@
     }
   },
   "options_pair_chrome_hint": {
-    "message": "Chrome’s default search is set separately. After changing this pair, update its site search URL in Chrome and make sure it is the default. $STEPS$",
-    "description": "Persistent neutral reminder below the default pair selectors. Chrome’s default search is configured separately; changing the pair requires updating the matching site search URL and checking that it is the default. This is guidance, not detected status. $STEPS$ is the link to the setup steps.",
+    "message": "After changing this pair, update its site search URL in Chrome. To use it without typing a shortcut, check that it’s the default. $STEPS$",
+    "description": "Reminder below the selectors. Changing a pair requires updating its site search. Only direct address-bar use requires making it the default. STEPS links to the guide.",
     "placeholders": {
       "STEPS": {
         "content": "$1",
@@ -276,8 +276,8 @@
     }
   },
   "options_pair_changed": {
-    "message": "Your default pair is now $PAIR$. Copy the URL below, update the matching site search in Chrome, and make sure it is the default.",
-    "description": "Box shown after changing the default pair on this page once setup is done: asks the user to update the matching site search in Chrome and check that it is the default. Does not claim to have read Chrome’s settings. $PAIR$ is the new pair, such as “Google | Bing”.",
+    "message": "Your default pair is now $PAIR$. Copy the URL below and update its site search in Chrome. To use it without a shortcut, check that it’s the default.",
+    "description": "After a pair edit, prompt to update the site search URL. Making it the default is optional.",
     "placeholders": {
       "PAIR": {
         "content": "$1",
@@ -305,9 +305,13 @@
     "message": "Setup",
     "description": "Subheading above the numbered setup steps."
   },
-  "guide_step_open_settings": {
-    "message": "Open Chrome’s search engine settings. Web pages can’t open this address directly, so copy it and paste it into the address bar:",
-    "description": "Setup step 1. The address chrome://settings/searchEngines and a Copy button follow right after this sentence, so it ends with a colon."
+  "guide_open_settings": {
+    "message": "Open Chrome search settings",
+    "description": "Opens Chrome's search engine settings in a new tab."
+  },
+  "guide_settings_fallback": {
+    "message": "Chrome settings didn’t open. Enter this address in the address bar.",
+    "description": "Inline manual fallback shown only if the Chrome settings tab could not be opened."
   },
   "guide_copy_settings_url": {
     "message": "Copy address",
@@ -344,8 +348,8 @@
     "description": "Example site search shortcut for a Google | Bing pair, shown as code in setup step 3. Pick a short, natural shortcut for this language; ASCII letters only."
   },
   "guide_step_default": {
-    "message": "For the default pair, open the ⋮ menu next to the new entry and choose “Make default”. Other pairs don’t need to be the default. To use one, type “shortcut + space + search terms” in the address bar.",
-    "description": "Setup step 4. \"Make default\" and \"shortcut\" must match Chrome's labels; ⋮ is the More actions menu icon."
+    "message": "Type your shortcut in the address bar, press Tab, then enter your search. To use this pair for ordinary searches and text dragged to the tab strip too, choose “Make default” from the entry’s ⋮ menu.",
+    "description": "Choose between using a site search shortcut and making it the default. Use Chrome's label for Make default."
   },
   "guide_step_grant": {
     "message": "In “$LINK$”, make sure the left engine shows “Access granted”.",
@@ -366,8 +370,8 @@
     "description": "Caveat: cases where the trigger URL falls back to a plain search with the left engine. The last case is a site that handles its own page loads (technically, its service worker takes over navigation); say it in plain words, without mentioning service workers."
   },
   "guide_caveat_no_suggest": {
-    "message": "Site searches you add yourself have no suggestion URL, so while one is your default, the address bar shows no search suggestions.",
-    "description": "Caveat: a user-added site search has no suggestion URL, so the address bar shows no search suggestions once it is the default."
+    "message": "Making this entry the default turns off your usual search engine’s suggestions in the address bar.",
+    "description": "Trade-off shown at the decision to make a custom site search the default."
   },
   "guide_caveat_context_menu": {
     "message": "Chrome’s right-click item, Search [engine] for “…”, also goes through the trigger URL and opens a split view.",
@@ -394,8 +398,8 @@
     "description": "Button that opens the dialog for adding a custom search engine."
   },
   "options_engines_hint": {
-    "message": "Split Search needs access to the left engine’s site; for the right engine, access is recommended. To hide or delete an engine, use “Edit”; to change the order, use “Reorder”.",
-    "description": "Hint under the engine list heading: site access, where Hide/Delete and the order are. The quoted button texts must match engine_edit and engine_reorder word for word. (How to write a URL template is explained in the add/edit engine dialog.)"
+    "message": "To use a pair from the address bar, allow access to its left engine. Use “Edit” to hide or delete an engine and “Reorder” to change the order.",
+    "description": "Site access for address-bar use and where to manage engines."
   },
   "options_hidden_title": {
     "message": "Hidden built-in engines",
@@ -770,8 +774,8 @@
     "description": "Error on the trigger URL card when no trigger URL can be built for the default pair."
   },
   "guide_default_hint": {
-    "message": "Add or update this site search in Chrome using the URL above, then choose “Make default” from its ⋮ menu. After that, searching from the address bar or dragging text to the tab strip opens a split view.",
-    "description": "Instructions next to the default trigger URL: add or update the site search in Chrome with this URL and make it the default. “Make default” must match Chrome’s label; ⋮ is the More actions menu icon."
+    "message": "Add this URL to “Site search” in Chrome, or update an existing entry with it. Use the entry’s shortcut to search with this pair.",
+    "description": "Where to use the URL for the default pair, with or without making it Chrome's default."
   },
   "guide_other_pairs_title": {
     "message": "Other pairs",
@@ -967,27 +971,9 @@
     "message": "Get started",
     "description": "Heading of the first-run “Get started” card at the top of the settings page."
   },
-  "setup_grant_title": {
-    "message": "Allow access to the engine sites",
-    "description": "Get started step 1 heading: grant access to the default pair's engine sites."
-  },
-  "setup_grant_text": {
-    "message": "Split Search turns searches on the left engine’s site, $LEFT$, into a split view, so it needs access to that site. If you also allow the right engine, $RIGHT$, a new search updates the split view that’s already open. Access covers only these two sites.",
-    "description": "Get started step 1: why access to the left (required) and right (recommended) engine sites is needed. Plain words, no talk of intercepting requests.",
-    "placeholders": {
-      "LEFT": {
-        "content": "$1",
-        "example": "Google"
-      },
-      "RIGHT": {
-        "content": "$2",
-        "example": "Bing"
-      }
-    }
-  },
-  "setup_grant_text_left": {
-    "message": "Split Search turns searches on the left engine’s site, $LEFT$, into a split view, so it needs access to that site. Access covers only this site.",
-    "description": "Get started step 1 when only the left engine needs access (the right one is the same engine or already granted).",
+  "setup_toolbar_hint": {
+    "message": "On a $LEFT$ results page, click Split Search in the toolbar and choose another engine to compare results. You can keep your usual default search engine.",
+    "description": "First trial using the toolbar on a configured engine's results page. LEFT is the example engine.",
     "placeholders": {
       "LEFT": {
         "content": "$1",
@@ -995,75 +981,41 @@
       }
     }
   },
-  "setup_grant_both": {
-    "message": "Grant access to $LEFT$ (required) and $RIGHT$ (recommended)",
-    "description": "Get started button that requests access to both default engines' sites: left required, right recommended.",
+  "setup_try_grant_hint": {
+    "message": "To try “$QUERY$” here or use this pair from the address bar, first allow access to the left engine, $LEFT$.",
+    "description": "Before granting the left site, explain what the example and address bar need. QUERY is an example, LEFT is an engine name.",
     "placeholders": {
-      "LEFT": {
+      "QUERY": {
         "content": "$1",
-        "example": "Google"
+        "example": "banana bread recipe"
       },
-      "RIGHT": {
+      "LEFT": {
         "content": "$2",
-        "example": "Bing"
+        "example": "Google"
       }
     }
   },
   "setup_grant_left": {
-    "message": "Grant access to $LEFT$ (required)",
-    "description": "Get started button that requests access to the default left engine's site (required).",
+    "message": "Allow access to $LEFT$",
+    "description": "Button that requests only the left engine's site.",
     "placeholders": {
       "LEFT": {
         "content": "$1",
         "example": "Google"
-      }
-    }
-  },
-  "setup_grant_right": {
-    "message": "Grant access to $RIGHT$ (recommended)",
-    "description": "Get started button shown after the left engine is granted: requests access to the right engine's site (recommended).",
-    "placeholders": {
-      "RIGHT": {
-        "content": "$1",
-        "example": "Bing"
-      }
-    }
-  },
-  "setup_granted": {
-    "message": "$LEFT$: access granted",
-    "description": "Get started step 1 status once the left engine's site is granted, next to a check icon.",
-    "placeholders": {
-      "LEFT": {
-        "content": "$1",
-        "example": "Google"
-      }
-    }
-  },
-  "setup_right_hint": {
-    "message": "Allowing the right engine, $RIGHT$, too lets a new search update the split view that’s already open.",
-    "description": "Get started step 1, after the left engine is granted: why the right engine's site is still worth granting.",
-    "placeholders": {
-      "RIGHT": {
-        "content": "$1",
-        "example": "Bing"
       }
     }
   },
   "setup_add_title": {
-    "message": "Add a site search in Chrome and make it the default",
-    "description": "Get started step 2 heading. \"Site search\" and \"Make default\" are Chrome's terms (see docs/i18n/chrome-terms.md)."
+    "message": "Use the address bar (optional)",
+    "description": "Optional address-bar setup following the trial."
   },
-  "setup_add_open": {
-    "message": "Copy the settings address below and paste it into the address bar.",
-    "description": "Get started step 2, first numbered sub-step: copy chrome://settings/searchEngines (shown below with its own Copy address button) and paste it into the address bar to open Chrome's search engine settings."
+  "setup_copy_trigger": {
+    "message": "Copy the URL for the pair you want to use.",
+    "description": "First step before opening Chrome settings."
   },
   "setup_add_paste": {
-    "message": "Next to “Site search”, click “Add”. Enter any name and shortcut, paste the trigger URL below into “URL with %s in place of query”, and click “Add”.",
-    "description": "Get started step 2, second sub-step: add a site search and paste the trigger URL (shown below with its own Copy button). Field and button names must match Chrome's labels (docs/i18n/chrome-terms.md, Chrome's .pak)."
-  },
-  "setup_add_default": {
-    "message": "Open the new entry’s ⋮ menu and choose “Make default”.",
-    "description": "Get started step 2, third sub-step: make the new site search the default. “Make default” must match Chrome's label; ⋮ is the More actions menu icon."
+    "message": "In Chrome’s search settings, click “Add” next to “Site search”. Enter a name and shortcut, paste the URL you copied into “URL with %s in place of query”, then click “Add”.",
+    "description": "Open Chrome settings using the adjacent button, then paste the URL copied in the preceding step."
   },
   "setup_details_link": {
     "message": "Detailed steps",
@@ -1074,16 +1026,16 @@
     "description": "Link at the end of step 2 of the “Get started” card; opens the Search pairs tab and focuses the left engine picker."
   },
   "setup_try_title": {
-    "message": "Check that a split view opens",
-    "description": "Get started step 3 heading: try a search and confirm that a split view opens."
+    "message": "Try a search",
+    "description": "First section of Get started, before any Chrome site search setup."
   },
   "setup_try_button": {
-    "message": "Try it",
-    "description": "Get started step 3 button: opens a sample search with the default pair in a new tab."
+    "message": "Run example search",
+    "description": "Button that runs the sample search with the selected pair."
   },
   "setup_try_hint": {
-    "message": "This searches for “$QUERY$” with your default pair. Then search for anything from the address bar. If a split view opens, you’re all set.",
-    "description": "Under the Try it button: what it opens, and how to finish setup (a real search from the address bar). The placeholder is setup_sample_query.",
+    "message": "Try “$QUERY$” with your default pair.",
+    "description": "The sample uses the current default pair. QUERY is the sample search text.",
     "placeholders": {
       "QUERY": {
         "content": "$1",
@@ -1091,33 +1043,29 @@
       }
     }
   },
-  "setup_try_blocked": {
-    "message": "Finish step 1 first.",
-    "description": "Inline reason next to the disabled Try it button: the left engine's site is not granted yet."
-  },
   "setup_sample_query": {
     "message": "banana bread recipe",
     "description": "Sample search words the Try it button searches for. Pick a short, natural everyday search in this language (not about this extension)."
   },
   "setup_done_title": {
-    "message": "You’re all set",
-    "description": "Get started card after setup is detected as complete (shown once, on the page that saw it)."
+    "message": "Both search results are open",
+    "description": "Confirmation of an observed non-preview search pair, including adjacent tabs."
   },
   "setup_done_text": {
-    "message": "Searching from the address bar or dragging text to the tab strip opens a split view.",
-    "description": "Sentence under setup_done_title."
+    "message": "To open two results when you search directly from the address bar, check that the site search you want is set as the default in Chrome.",
+    "description": "A real trigger opened a pair. Only Chrome settings can confirm which site search is the default."
   },
   "setup_done_notice": {
-    "message": "Setup complete. Searching from the address bar or dragging text to the tab strip opens a split view.",
-    "description": "Notice announced when setup is detected as complete."
+    "message": "Both search results are open.",
+    "description": "Accessible confirmation of the observed search pair."
   },
   "setup_regrant_title": {
     "message": "Access needed",
     "description": "Get started card heading when setup was done before but the left engine's site is not granted now."
   },
   "setup_regrant_text": {
-    "message": "Split Search can’t access the left engine, $LEFT$. For now, searches open a normal $LEFT$ search.",
-    "description": "Get started card when setup was done before but the left engine's site is not granted now: searches fall back to a plain search.",
+    "message": "Allow access to $LEFT$ again to keep using this pair from the address bar.",
+    "description": "Access needed again for address-bar triggers on the current left engine.",
     "placeholders": {
       "LEFT": {
         "content": "$1",
@@ -1126,8 +1074,8 @@
     }
   },
   "setup_revoked_notice": {
-    "message": "Access to the left engine, $LEFT$, was removed. Searches now open a normal $LEFT$ search.",
-    "description": "Notice when access to the default left engine's site is removed while the settings page is open.",
+    "message": "Access to $LEFT$ was removed. Searches with this pair from the address bar now open only the $LEFT$ results.",
+    "description": "Site access for the default pair's left engine was revoked. LEFT is the engine name.",
     "placeholders": {
       "LEFT": {
         "content": "$1",
@@ -1180,12 +1128,12 @@
     "description": "Native name of Spanish in the language drop-down (本名，不要翻译): identical in every locale, do not translate."
   },
   "options_narrow_label": {
-    "message": "Open the right side in a background tab when the window is narrow",
-    "description": "Name of the switch in the default pair card. Narrow means the window is under 960 px wide."
+    "message": "Use adjacent tabs in narrow windows",
+    "description": "Switch label covering both background search results and foreground lookups."
   },
   "options_narrow_hint": {
-    "message": "Below 960 px wide, a split view gets too cramped. With this on, the left results stay in the tab you searched from, and the right results open in the tab next to it.",
-    "description": "Hint under the narrow-window switch on the settings page, describing what happens when it is on. Split view is Chrome's feature name; keep the Chrome term. Do not say \"this tab\": the reader is on the settings page."
+    "message": "Below 960 px, address bar searches and adding an engine from the toolbar open the second result in a background tab. Looking up text or an image from the context menu switches to the result tab.",
+    "description": "Below 960 px, address-bar and toolbar searches keep the second tab in the background. Context-menu lookups activate it."
   },
   "options_rules_title": {
     "message": "Keyword rules for the right side",
@@ -1646,16 +1594,20 @@
     "description": "Explains that the toolbar popup has nothing to switch: the current tab is not in a split view that Split Search opened. \"Split view\" must match Chrome's term. Keep Split Search untranslated."
   },
   "popup_idle_hint": {
-    "message": "Try searching from the address bar, or drag text to the tab strip.",
-    "description": "Popup, under popup_not_ours: what to try to open a split view."
+    "message": "Use the shortcut for your site search. Make it the default to use it for ordinary searches and text dragged to the tab strip.",
+    "description": "How to search on demand and when ordinary searches use the pair."
   },
   "popup_setup_needed": {
-    "message": "Setup isn’t finished, so searches won’t open a split view yet.",
-    "description": "Toolbar popup, outside a Split Search split view, when the default pair's left engine is not granted: searching only does a plain search. Shown with the popup_setup_button primary button."
+    "message": "On a results page from one of your engines, click this icon and choose a second engine. You can also try an example in settings.",
+    "description": "Toolbar opened on a non-result page before left site access is granted. Explain the toolbar trial."
+  },
+  "popup_setup_add_engine": {
+    "message": "To compare two engines, open “Search engines” in settings and add or restore another engine.",
+    "description": "Shown when the user needs another visible text engine to compare results from the toolbar."
   },
   "popup_setup_regrant": {
-    "message": "Split Search can’t access $NAME$ anymore, so searches won’t open a split view for now.",
-    "description": "Toolbar popup, outside a Split Search split view, when setup was finished before but the default pair's left engine ($NAME$, an engine name) is no longer granted: searches only do a plain search. Replaces popup_setup_needed; shown with the popup_setup_button primary button.",
+    "message": "Allow access to $NAME$ again to use this pair from the address bar.",
+    "description": "The default pair lost access to its left engine. NAME is the engine name.",
     "placeholders": {
       "NAME": {
         "content": "$1",
@@ -1664,16 +1616,16 @@
     }
   },
   "popup_setup_button": {
-    "message": "Finish setup",
-    "description": "Toolbar popup primary button: opens the settings page at the Get started card."
+    "message": "Open settings",
+    "description": "Opens the extension's setup card to try a search or grant access."
   },
   "popup_setup_try_note": {
-    "message": "If a search doesn’t open a split view, finish step 2 in settings.",
-    "description": "Toolbar popup, under popup_idle_hint, when the left engine is granted but setup isn't confirmed yet (also for users upgraded from an older version who already set things up): a conditional hint, must not say setup is unfinished. Step 2 = adding the site search in the Get started card. Followed by the popup_setup_link button."
+    "message": "Need to add a shortcut?",
+    "description": "Conditional help when the address-bar setup has not yet been observed."
   },
   "popup_setup_link": {
-    "message": "See step 2",
-    "description": "Toolbar popup text button after popup_setup_try_note: opens the settings page at the Get started card."
+    "message": "See address bar setup",
+    "description": "Opens the setup card for address-bar use."
   },
   "popup_shortcut_label": {
     "message": "Next right engine",
@@ -1856,8 +1808,8 @@
     "description": "Title of the settings card for the right-click lookup feature (select text or right-click an image)."
   },
   "options_lookup_intro": {
-    "message": "Select text on a web page and right-click it, or right-click an image, then choose the Split Search item. The page stays on the left and the result opens on the right.",
-    "description": "Intro of the right-click lookup card. Menu items are added by Split Search to Chrome's right-click menu."
+    "message": "Right-click selected text or an image and choose the Split Search menu item. The original page stays open. When results open in an adjacent tab, Chrome switches to it.",
+    "description": "Context-menu lookup from an ordinary webpage and where focus goes when narrow fallback is used."
   },
   "options_lookup_engine_label": {
     "message": "Text lookup engine",

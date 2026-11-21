@@ -253,13 +253,13 @@ test("popupStateOf：分屏外 setup 档（说明文字隐藏、只显示 #idle�
   assert.equal(old.footer, true);
 });
 
-test("B19 substepProblems：第 2 步依次是设置地址、触发网址（各一个复制按钮）、设为默认（没有复制框）", async () => {
+test("B19 substepProblems：依次复制组合网址、直达 Chrome 设置、选择地址栏用法", async () => {
   const { substepProblems } = await import("../scripts/e2e/steps/b19.mjs");
-  const ok = [{ buttons: 1, box: "chrome://settings/searchEngines" }, { buttons: 1, box: "http://engine-a.localhost:8765/search?q=%s&_ss=ea,eb" }, { buttons: 0, box: "" }];
+  const ok = [{ buttons: 1, box: "http://engine-a.localhost:8765/search?q=%s&_ss=ea,eb" }, { buttons: 1, opensSettings: true, box: "" }, { buttons: 0, box: "" }];
   assert.deepEqual(substepProblems(ok), []);
   assert.equal(substepProblems(ok.slice(0, 2)).length, 1);
   assert.equal(substepProblems(null).length, 1);
-  assert.equal(substepProblems([ok[1], ok[0], ok[2]]).length, 2, "顺序反了（先触发网址）两步都报");
+  assert.equal(substepProblems([ok[1], ok[0], ok[2]]).length, 2, "顺序反了（先打开设置）两步都报");
   assert.equal(substepProblems([ok[0], { ...ok[1], buttons: 2 }, ok[2]]).length, 1);
   assert.equal(substepProblems([ok[0], ok[1], { buttons: 1, box: "x" }]).length, 1);
 });

@@ -1,7 +1,7 @@
 // B21 (l) 宽度（从 b21.mjs 拆出；设计稿 2026-10-27-options-tabs-design.md 3.4、5.4 (l)）：
 // 四种语言 × 1280 / 600 两档视口（Emulation.setDeviceMetricsOverride，用完 clear），每档把四个 tab 逐一切过去、展开所有折叠区后量：
 // 说明文字计算出的 max-width 都是 none；折行的说明块文字右缘 ÷ 父节点内容盒宽度 ≥ 0.9（同一条右边界）；
-// 5 步说明里的网址行与触发网址行右缘相差 ≤ 2px；右键查询卡的两个下拉框等于卡片内宽 ±1px；
+// 5 步说明里的 Chrome 设置操作区与组合网址行右缘相差 ≤ 2px；右键查询卡的两个下拉框等于卡片内宽 ±1px；
 // “其他组合”生成器两个 label 的左缘与默认组合两个窗格的左缘对齐 ±1px；页面没有横向溢出、tab 栏没有竖向溢出；
 // 600 档每个引擎行（含一行“未授权（可选）”）左块与右侧控件组顶边相同（没折行）；600 档页头 h1 只有一行、与语言框同行（竖向中线相差不到较矮一方高度的一半）。
 // 状态：setupDone 为 true、默认组合两侧已授权（卡片不显示）；加一个模板在没授权的 engine-u.localhost 上的自定义引擎（模拟引擎 U）。
@@ -33,8 +33,8 @@ export function widthProblems(m) {
   if (wide.length) p.push(`max-width 应为 none：${list(wide, x => `${x.sel} ${x.value}`)}`);
   const short = m.ratios.filter(x => !(x.ratio >= 0.9));
   if (short.length) p.push(`折行的说明没铺到右边界（右缘 ÷ 父节点内容宽 < 0.9）：${list(short, x => `${x.sel} ${x.ratio.toFixed(3)}`)}`);
-  if (!num(m.urlLineDiff)) p.push("没量到 5 步说明或触发网址的网址行（.steps .url-line、.trigger-card .url-line）");
-  else if (m.urlLineDiff > 2) p.push(`5 步说明的网址行与触发网址行右缘相差 ${r1(m.urlLineDiff)}px（应 ≤ 2）`);
+  if (!num(m.urlLineDiff)) p.push("没量到 Chrome 设置操作区或组合网址行");
+  else if (m.urlLineDiff > 2) p.push(`Chrome 设置操作区与组合网址行右缘相差 ${r1(m.urlLineDiff)}px（应 ≤ 2）`);
   const sel = m.lookupSelects.filter(x => !(Math.abs(x.w - x.inner) <= 1));
   if (sel.length) p.push(`右键查询卡的下拉框应等于卡片内宽：${list(sel, x => `${r1(x.w)} / ${r1(x.inner)}px`)}`);
   if (m.genDiffs.some(d => !(d <= 1))) p.push(`“其他组合”两个 label 与默认组合两个窗格的左缘相差 ${m.genDiffs.map(r1).join("、")}px（应 ≤ 1）`);
@@ -94,7 +94,7 @@ const MEASURE = key => `(() => {
     ratios.push({ sel: name(el), ratio: (right - c.left) / c.width, natural: (l.right - c.left) / c.width });
   }
   const right = sel => { const el = [...panel.querySelectorAll(sel)].find(vis); return el ? el.getBoundingClientRect().right : null; };
-  const a = right(".steps .url-line"), b = right(".trigger-card .url-line");
+  const a = right("#guide-settings-action .settings-action"), b = right(".trigger-default .url-line");
   const lookupSelects = [...panel.querySelectorAll(".lookup-card select")].filter(vis)
     .map(s => ({ w: s.getBoundingClientRect().width, inner: content(s.closest(".card")).width }));
   const leftOf = el => (el && vis(el) ? el.getBoundingClientRect().left : null);

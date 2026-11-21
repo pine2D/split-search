@@ -31,7 +31,7 @@ export async function hashOpen(browser) {
 }
 
 // 第 2 步的“详细步骤”：点了以后默认组合一段和 5 步说明都展开，页面滚到 5 步说明（容器顶边在视口内），网址的 hash 不变，
-// 焦点落在 5 步说明的 summary 上（会改这一页的展开状态，放在 (a) 最后）。之后把焦点放到折叠区里第 1 步的复制按钮上，
+// 焦点落在 5 步说明的 summary 上（会改这一页的展开状态，放在 (a) 最后）。之后把焦点放到折叠区里的 Chrome 设置按钮上，
 // 写一个临时的 sync 键触发一次重渲染，核对折叠区没被重建、焦点还在那个按钮上
 export async function detailsLink(page) {
   const hashBefore = await page.ev("location.hash");
@@ -52,22 +52,44 @@ export async function detailsLink(page) {
 }
 
 const PROBE = "e2eB19Probe";
+
+// 只关闭本次点击新开的设置标签。模拟打开失败时检查手动入口，并立即恢复该页面的 API。
+export async function searchSettingsCheck(browser, page) {
+  const url = "chrome://settings/searchEngines";
+  const before = new Set((await browser.targets()).map(t => t.targetId));
+  await page.ev('document.getElementById("setup-open-settings").click()');
+  const opened = await browser.waitFor(async () => (await browser.targets()).find(t =>
+    t.type === "page" && t.url === url && !before.has(t.targetId)));
+  await browser.client.send("Target.closeTarget", { targetId: opened.targetId });
+  const fallback = await page.run(`
+    const original = chrome.tabs.create;
+    try {
+      chrome.tabs.create = () => Promise.reject(new Error("test"));
+      const button = document.getElementById("setup-open-settings");
+      button.click();
+      await Promise.resolve();
+      const box = button.parentElement.querySelector('[role="status"]');
+      return box.querySelector("button")?.checkVisibility() && box.querySelector("code")?.textContent;
+    } finally { chrome.tabs.create = original; }`);
+  return fallback === url ? [] : ["打开设置失败后没有显示可复制的设置地址"];
+}
+
 async function keepsFocus(page) {
-  const ok = await page.ev(`(() => { const b = document.querySelector("#guide-steps-details #settings-url-copy button");
+  const ok = await page.ev(`(() => { const b = document.querySelector("#guide-steps-details #guide-open-settings");
     const e = document.getElementById("engines").firstElementChild;
     if (!b || !e) return false; b.focus(); document.getElementById("guide-steps-details").__b19 = 1; e.__b19 = 1;
     return document.activeElement === b; })()`);
-  if (!ok) return { p: ["折叠区里第 1 步没有可聚焦的复制按钮"], detail: "" };
+  if (!ok) return { p: ["折叠区里没有可聚焦的 Chrome 设置按钮"], detail: "" };
   try {
     await page.ev(`chrome.storage.sync.set({ ${PROBE}: ${J(nonce())} })`);
     await waitFor(page, `!document.getElementById("engines").firstElementChild?.__b19`, "写临时 sync 键后设置页重渲染");
     const r = await page.ev(`(() => { const d = document.getElementById("guide-steps-details"), a = document.activeElement;
-      return { same: d?.__b19 === 1, open: !!d?.open, focus: !!a?.closest("#settings-url-copy") && a.tagName === "BUTTON" }; })()`);
+      return { same: d?.__b19 === 1, open: !!d?.open, focus: a?.id === "guide-open-settings" }; })()`);
     const p = [];
     if (!r.same) p.push("与卡片状态无关的重渲染不该重建 5 步说明的折叠区");
     if (!r.open) p.push("重渲染后 5 步说明的折叠区应仍展开");
-    if (!r.focus) p.push("重渲染后焦点应仍在第 1 步的复制按钮上");
-    return { p, detail: "无关的重渲染后折叠区原样保留、焦点仍在复制按钮上" };
+    if (!r.focus) p.push("重渲染后焦点应仍在 Chrome 设置按钮上");
+    return { p, detail: "无关的重渲染后折叠区原样保留、焦点仍在 Chrome 设置按钮上" };
   } catch (e) {
     return { p: [e.message], detail: "" };
   } finally {

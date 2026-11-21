@@ -252,8 +252,8 @@
     "description": "Heading of the settings card where the user picks the default engine pair (left and right engine)."
   },
   "options_pair_hint": {
-    "message": "Al buscar desde la barra de direcciones o arrastrar texto a la barra de pestañas, estos dos buscadores se abren en vista dividida.",
-    "description": "Hint under the default pair card heading: what the default pair is used for. Split view is Chrome's feature name; keep the Chrome term."
+    "message": "Elige los buscadores de la izquierda y la derecha para tu combinación predeterminada.",
+    "description": "What the default pair selects, independent of Chrome's default search provider."
   },
   "options_pair_other": {
     "message": "¿Quieres usar más combinaciones? Crea sus URL de activación en «$LINK$».",
@@ -266,8 +266,8 @@
     }
   },
   "options_pair_chrome_hint": {
-    "message": "La búsqueda predeterminada de Chrome se configura por separado. Si cambias esta combinación, actualiza su URL de búsqueda en el sitio y comprueba que esté configurada como predeterminada. $STEPS$",
-    "description": "Persistent neutral reminder below the default pair selectors. Chrome’s default search is configured separately; changing the pair requires updating the matching site search URL and checking that it is the default. This is guidance, not detected status. $STEPS$ is the link to the setup steps.",
+    "message": "Si cambias esta combinación, actualiza su URL de búsqueda en el sitio en Chrome. Para usarla sin escribir el atajo, comprueba que sea la predeterminada. $STEPS$",
+    "description": "Reminder below the selectors. Changing a pair requires updating its site search. Only direct address-bar use requires making it the default. STEPS links to the guide.",
     "placeholders": {
       "STEPS": {
         "content": "$1",
@@ -276,8 +276,8 @@
     }
   },
   "options_pair_changed": {
-    "message": "Tu combinación predeterminada ahora es $PAIR$. Copia la URL de abajo, actualiza la búsqueda en el sitio correspondiente en Chrome y comprueba que esté configurada como predeterminada.",
-    "description": "Box shown after changing the default pair on this page once setup is done: asks the user to update the matching site search in Chrome and check that it is the default. Does not claim to have read Chrome’s settings. $PAIR$ is the new pair, such as “Google | Bing”.",
+    "message": "Tu combinación predeterminada es ahora $PAIR$. Copia la URL de abajo y actualiza la entrada correspondiente en Chrome. Si quieres usarla sin atajo, comprueba que sea la predeterminada.",
+    "description": "After a pair edit, prompt to update the site search URL. Making it the default is optional.",
     "placeholders": {
       "PAIR": {
         "content": "$1",
@@ -305,9 +305,13 @@
     "message": "Pasos de configuración",
     "description": "Subheading above the numbered setup steps."
   },
-  "guide_step_open_settings": {
-    "message": "Abre la configuración de buscadores de Chrome. Esta dirección no se puede abrir desde una página web; cópiala y pégala en la barra de direcciones:",
-    "description": "Setup step 1. The address chrome://settings/searchEngines and a Copy button follow right after this sentence, so it ends with a colon."
+  "guide_open_settings": {
+    "message": "Abrir los ajustes de búsqueda de Chrome",
+    "description": "Opens Chrome's search engine settings in a new tab."
+  },
+  "guide_settings_fallback": {
+    "message": "No se han podido abrir los ajustes. Escribe esta dirección en la barra de direcciones.",
+    "description": "Inline manual fallback shown only if the Chrome settings tab could not be opened."
   },
   "guide_copy_settings_url": {
     "message": "Copiar dirección",
@@ -344,8 +348,8 @@
     "description": "Example site search shortcut for a Google | Bing pair, shown as code in setup step 3. Pick a short, natural shortcut for this language; ASCII letters only."
   },
   "guide_step_default": {
-    "message": "Para la combinación predeterminada: en el menú ⋮ a la derecha de la entrada que acabas de añadir, selecciona «Elegir como predeterminado» («Configurar como predeterminado»). No hace falta poner las demás combinaciones como predeterminadas: basta con escribir «atajo + espacio + palabras clave» en la barra de direcciones.",
-    "description": "Setup step 4. \"Make default\" and \"shortcut\" must match Chrome's labels; ⋮ is the More actions menu icon."
+    "message": "Escribe el atajo en la barra de direcciones, pulsa Tab e introduce tu búsqueda. Si también quieres usar esta combinación al buscar directamente o al arrastrar texto a la barra de pestañas, elige «Elegir como predeterminado» en el menú ⋮ de la entrada.",
+    "description": "Choose between using a site search shortcut and making it the default. Use Chrome's label for Make default."
   },
   "guide_step_grant": {
     "message": "En «$LINK$», asegúrate de que el buscador de la izquierda muestre «Con acceso».",
@@ -366,8 +370,8 @@
     "description": "Caveat: cases where the trigger URL falls back to a plain search with the left engine. The last case is a site that handles its own page loads (technically, its service worker takes over navigation); say it in plain words, without mentioning service workers."
   },
   "guide_caveat_no_suggest": {
-    "message": "Las búsquedas en el sitio que añades tú no tienen URL de sugerencias, así que, si eliges una como predeterminada, la barra de direcciones deja de mostrar sugerencias de búsqueda.",
-    "description": "Caveat: a user-added site search has no suggestion URL, so the address bar shows no search suggestions once it is the default."
+    "message": "Si eliges esta entrada como predeterminada, dejarás de ver las sugerencias de tu buscador habitual en la barra de direcciones.",
+    "description": "Trade-off shown at the decision to make a custom site search the default."
   },
   "guide_caveat_context_menu": {
     "message": "La opción «Buscar … en X» («Buscar “…” en X») del menú contextual también pasa por la URL de activación y abre la vista dividida.",
@@ -394,8 +398,8 @@
     "description": "Button that opens the dialog for adding a custom search engine."
   },
   "options_engines_hint": {
-    "message": "Debes dar acceso al sitio del buscador de la izquierda, y conviene darlo también al de la derecha. Para ocultar o eliminar un buscador, usa «Editar». Para cambiar el orden, usa «Reordenar».",
-    "description": "Hint under the engine list heading: site access, where Hide/Delete and the order are. The quoted button texts must match engine_edit and engine_reorder word for word. (How to write a URL template is explained in the add/edit engine dialog.)"
+    "message": "Para usar una combinación desde la barra de direcciones, da acceso al buscador de la izquierda. Usa «Editar» para ocultar o eliminar un buscador y «Reordenar» para cambiar el orden.",
+    "description": "Site access for address-bar use and where to manage engines."
   },
   "options_hidden_title": {
     "message": "Buscadores predefinidos ocultos",
@@ -770,8 +774,8 @@
     "description": "Error on the trigger URL card when no trigger URL can be built for the default pair."
   },
   "guide_default_hint": {
-    "message": "Añade o actualiza esta búsqueda en el sitio en Chrome con la URL de arriba y selecciona «Elegir como predeterminado» («Configurar como predeterminado») en su menú ⋮. A partir de entonces, las búsquedas desde la barra de direcciones y el texto que arrastres a la barra de pestañas abrirán la vista dividida.",
-    "description": "Instructions next to the default trigger URL: add or update the site search in Chrome with this URL and make it the default. “Make default” must match Chrome’s label; ⋮ is the More actions menu icon."
+    "message": "Añade esta URL a «Búsquedas en el sitio» en Chrome o úsala para actualizar una entrada. Con su atajo podrás buscar con esta combinación.",
+    "description": "Where to use the URL for the default pair, with or without making it Chrome's default."
   },
   "guide_other_pairs_title": {
     "message": "Otras combinaciones",
@@ -967,27 +971,9 @@
     "message": "Primeros pasos",
     "description": "Heading of the first-run “Get started” card at the top of the settings page."
   },
-  "setup_grant_title": {
-    "message": "Da acceso a los sitios de los buscadores",
-    "description": "Get started step 1 heading: grant access to the default pair's engine sites."
-  },
-  "setup_grant_text": {
-    "message": "Split Search convierte en vista dividida las búsquedas que haces en el sitio del buscador de la izquierda, $LEFT$, así que necesita acceso a ese sitio. Si también das acceso a $RIGHT$, el de la derecha, al volver a buscar se actualizará la vista dividida que ya está abierta. El acceso se limita a estos dos sitios.",
-    "description": "Get started step 1: why access to the left (required) and right (recommended) engine sites is needed. Plain words, no talk of intercepting requests.",
-    "placeholders": {
-      "LEFT": {
-        "content": "$1",
-        "example": "Google"
-      },
-      "RIGHT": {
-        "content": "$2",
-        "example": "Bing"
-      }
-    }
-  },
-  "setup_grant_text_left": {
-    "message": "Split Search convierte en vista dividida las búsquedas que haces en el sitio del buscador de la izquierda, $LEFT$, así que necesita acceso a ese sitio. El acceso se limita a ese sitio.",
-    "description": "Get started step 1 when only the left engine needs access (the right one is the same engine or already granted).",
+  "setup_toolbar_hint": {
+    "message": "En una página de resultados de $LEFT$, haz clic en Split Search en la barra de herramientas y elige otro buscador para comparar los resultados. Puedes mantener tu buscador predeterminado.",
+    "description": "First trial using the toolbar on a configured engine's results page. LEFT is the example engine.",
     "placeholders": {
       "LEFT": {
         "content": "$1",
@@ -995,75 +981,41 @@
       }
     }
   },
-  "setup_grant_both": {
-    "message": "Dar acceso a $LEFT$ (necesario) y $RIGHT$ (recomendado)",
-    "description": "Get started button that requests access to both default engines' sites: left required, right recommended.",
+  "setup_try_grant_hint": {
+    "message": "Para probar «$QUERY$» aquí o usar esta combinación desde la barra de direcciones, da acceso al buscador de la izquierda, $LEFT$.",
+    "description": "Before granting the left site, explain what the example and address bar need. QUERY is an example, LEFT is an engine name.",
     "placeholders": {
-      "LEFT": {
+      "QUERY": {
         "content": "$1",
-        "example": "Google"
+        "example": "banana bread recipe"
       },
-      "RIGHT": {
+      "LEFT": {
         "content": "$2",
-        "example": "Bing"
+        "example": "Google"
       }
     }
   },
   "setup_grant_left": {
-    "message": "Dar acceso a $LEFT$ (necesario)",
-    "description": "Get started button that requests access to the default left engine's site (required).",
+    "message": "Dar acceso a $LEFT$",
+    "description": "Button that requests only the left engine's site.",
     "placeholders": {
       "LEFT": {
         "content": "$1",
         "example": "Google"
-      }
-    }
-  },
-  "setup_grant_right": {
-    "message": "Dar acceso a $RIGHT$ (recomendado)",
-    "description": "Get started button shown after the left engine is granted: requests access to the right engine's site (recommended).",
-    "placeholders": {
-      "RIGHT": {
-        "content": "$1",
-        "example": "Bing"
-      }
-    }
-  },
-  "setup_granted": {
-    "message": "$LEFT$: con acceso",
-    "description": "Get started step 1 status once the left engine's site is granted, next to a check icon.",
-    "placeholders": {
-      "LEFT": {
-        "content": "$1",
-        "example": "Google"
-      }
-    }
-  },
-  "setup_right_hint": {
-    "message": "También conviene dar acceso a $RIGHT$, el de la derecha: así, al volver a buscar se actualiza la vista dividida que ya está abierta.",
-    "description": "Get started step 1, after the left engine is granted: why the right engine's site is still worth granting.",
-    "placeholders": {
-      "RIGHT": {
-        "content": "$1",
-        "example": "Bing"
       }
     }
   },
   "setup_add_title": {
-    "message": "Añade a Chrome una búsqueda en el sitio y elígela como predeterminada",
-    "description": "Get started step 2 heading. \"Site search\" and \"Make default\" are Chrome's terms (see docs/i18n/chrome-terms.md)."
+    "message": "Buscar desde la barra de direcciones (opcional)",
+    "description": "Optional address-bar setup following the trial."
   },
-  "setup_add_open": {
-    "message": "Copia la dirección de configuración de abajo y pégala en la barra de direcciones.",
-    "description": "Get started step 2, first numbered sub-step: copy chrome://settings/searchEngines (shown below with its own Copy address button) and paste it into the address bar to open Chrome's search engine settings."
+  "setup_copy_trigger": {
+    "message": "Copia la URL de la combinación que quieras usar.",
+    "description": "First step before opening Chrome settings."
   },
   "setup_add_paste": {
-    "message": "Junto a «Búsquedas en el sitio», haz clic en «Añadir». Pon el nombre y el atajo que quieras, pega la URL de activación de abajo en «URL con %s en el lugar de la consulta» y haz clic en «Añadir».",
-    "description": "Get started step 2, second sub-step: add a site search and paste the trigger URL (shown below with its own Copy button). Field and button names must match Chrome's labels (docs/i18n/chrome-terms.md, Chrome's .pak)."
-  },
-  "setup_add_default": {
-    "message": "Abre el menú ⋮ de la entrada que acabas de añadir y selecciona «Elegir como predeterminado».",
-    "description": "Get started step 2, third sub-step: make the new site search the default. “Make default” must match Chrome's label; ⋮ is the More actions menu icon."
+    "message": "Abre los ajustes de búsqueda de Chrome y haz clic en «Añadir» junto a «Búsquedas en el sitio». Escribe un nombre y un atajo, pega la URL que copiaste en «URL con %s en el lugar de la consulta» y haz clic en «Añadir».",
+    "description": "Open Chrome settings using the adjacent button, then paste the URL copied in the preceding step."
   },
   "setup_details_link": {
     "message": "Pasos detallados",
@@ -1074,16 +1026,16 @@
     "description": "Link at the end of step 2 of the “Get started” card; opens the Search pairs tab and focuses the left engine picker."
   },
   "setup_try_title": {
-    "message": "Comprueba que se abre la vista dividida",
-    "description": "Get started step 3 heading: try a search and confirm that a split view opens."
+    "message": "Prueba una búsqueda",
+    "description": "First section of Get started, before any Chrome site search setup."
   },
   "setup_try_button": {
-    "message": "Probar",
-    "description": "Get started step 3 button: opens a sample search with the default pair in a new tab."
+    "message": "Probar el ejemplo",
+    "description": "Button that runs the sample search with the selected pair."
   },
   "setup_try_hint": {
-    "message": "Se buscará «$QUERY$» con tu combinación predeterminada. Después, busca lo que quieras desde la barra de direcciones: si se abre la vista dividida, ya está todo listo.",
-    "description": "Under the Try it button: what it opens, and how to finish setup (a real search from the address bar). The placeholder is setup_sample_query.",
+    "message": "Prueba a buscar «$QUERY$» con tu combinación predeterminada.",
+    "description": "The sample uses the current default pair. QUERY is the sample search text.",
     "placeholders": {
       "QUERY": {
         "content": "$1",
@@ -1091,33 +1043,29 @@
       }
     }
   },
-  "setup_try_blocked": {
-    "message": "Primero completa el paso 1.",
-    "description": "Inline reason next to the disabled Try it button: the left engine's site is not granted yet."
-  },
   "setup_sample_query": {
     "message": "receta de guacamole",
     "description": "Sample search words the Try it button searches for. Pick a short, natural everyday search in this language (not about this extension)."
   },
   "setup_done_title": {
-    "message": "Todo listo",
-    "description": "Get started card after setup is detected as complete (shown once, on the page that saw it)."
+    "message": "Se han abierto ambos resultados",
+    "description": "Confirmation of an observed non-preview search pair, including adjacent tabs."
   },
   "setup_done_text": {
-    "message": "Al buscar desde la barra de direcciones o arrastrar texto a la barra de pestañas, se abre la vista dividida.",
-    "description": "Sentence under setup_done_title."
+    "message": "Para abrir dos resultados al buscar directamente desde la barra de direcciones, comprueba en Chrome que la búsqueda en el sitio que quieras usar sea la predeterminada.",
+    "description": "A real trigger opened a pair. Only Chrome settings can confirm which site search is the default."
   },
   "setup_done_notice": {
-    "message": "Configuración completa. Al buscar desde la barra de direcciones o arrastrar texto a la barra de pestañas, se abre la vista dividida.",
-    "description": "Notice announced when setup is detected as complete."
+    "message": "Se han abierto ambos resultados.",
+    "description": "Accessible confirmation of the observed search pair."
   },
   "setup_regrant_title": {
     "message": "Falta dar acceso",
     "description": "Get started card heading when setup was done before but the left engine's site is not granted now."
   },
   "setup_regrant_text": {
-    "message": "Split Search no tiene acceso a $LEFT$, el buscador de la izquierda. Por ahora, al buscar solo se abre una búsqueda normal en $LEFT$.",
-    "description": "Get started card when setup was done before but the left engine's site is not granted now: searches fall back to a plain search.",
+    "message": "Vuelve a dar acceso a $LEFT$ para seguir usando esta combinación desde la barra de direcciones.",
+    "description": "Access needed again for address-bar triggers on the current left engine.",
     "placeholders": {
       "LEFT": {
         "content": "$1",
@@ -1126,8 +1074,8 @@
     }
   },
   "setup_revoked_notice": {
-    "message": "Se quitó el acceso a $LEFT$, el buscador de la izquierda. Ahora, al buscar solo se abre una búsqueda normal en $LEFT$.",
-    "description": "Notice when access to the default left engine's site is removed while the settings page is open.",
+    "message": "Se ha retirado el permiso de acceso a $LEFT$. Al usar esta combinación desde la barra de direcciones solo se abrirán los resultados de $LEFT$.",
+    "description": "Site access for the default pair's left engine was revoked. LEFT is the engine name.",
     "placeholders": {
       "LEFT": {
         "content": "$1",
@@ -1180,12 +1128,12 @@
     "description": "Native name of Spanish in the language drop-down (本名，不要翻译): identical in every locale, do not translate."
   },
   "options_narrow_label": {
-    "message": "Si la ventana es estrecha, abrir el lado derecho en una pestaña en segundo plano",
-    "description": "Name of the switch in the default pair card. Narrow means the window is under 960 px wide."
+    "message": "Usar pestañas contiguas en ventanas estrechas",
+    "description": "Switch label covering both background search results and foreground lookups."
   },
   "options_narrow_hint": {
-    "message": "Si la ventana mide menos de 960 px de ancho, la vista dividida queda demasiado apretada. Al activar esta opción, los resultados de la izquierda se quedan en la pestaña desde la que buscaste y los de la derecha se abren en la pestaña de al lado.",
-    "description": "Hint under the narrow-window switch on the settings page, describing what happens when it is on. Split view is Chrome's feature name; keep the Chrome term. Do not say \"this tab\": the reader is on the settings page."
+    "message": "Si la ventana tiene menos de 960 px de ancho, al buscar desde la barra de direcciones o añadir un buscador desde la barra de herramientas, el segundo resultado se abre en segundo plano. Si buscas texto o una imagen con el botón derecho, pasas a la pestaña del resultado.",
+    "description": "Below 960 px, address-bar and toolbar searches keep the second tab in the background. Context-menu lookups activate it."
   },
   "options_rules_title": {
     "message": "Reglas de palabras clave para el lado derecho",
@@ -1646,16 +1594,20 @@
     "description": "Explains that the toolbar popup has nothing to switch: the current tab is not in a split view that Split Search opened. \"Split view\" must match Chrome's term. Keep Split Search untranslated."
   },
   "popup_idle_hint": {
-    "message": "Busca desde la barra de direcciones o arrastra texto a la barra de pestañas.",
-    "description": "Popup, under popup_not_ours: what to try to open a split view."
+    "message": "Usa el atajo de tu búsqueda en el sitio. Si la eliges como predeterminada, también se usará al buscar directamente o al arrastrar texto a la barra de pestañas.",
+    "description": "How to search on demand and when ordinary searches use the pair."
   },
   "popup_setup_needed": {
-    "message": "Aún falta terminar la configuración: por ahora, las búsquedas no abren una vista dividida.",
-    "description": "Toolbar popup, outside a Split Search split view, when the default pair's left engine is not granted: searching only does a plain search. Shown with the popup_setup_button primary button."
+    "message": "En una página de resultados de uno de tus buscadores, haz clic en este icono y elige un segundo buscador. También puedes probar un ejemplo en los ajustes.",
+    "description": "Toolbar opened on a non-result page before left site access is granted. Explain the toolbar trial."
+  },
+  "popup_setup_add_engine": {
+    "message": "Para comparar dos buscadores, abre «Buscadores» en los ajustes y añade o restaura otro.",
+    "description": "Shown when the user needs another visible text engine to compare results from the toolbar."
   },
   "popup_setup_regrant": {
-    "message": "Split Search ya no tiene acceso a $NAME$, así que por ahora las búsquedas no abren una vista dividida.",
-    "description": "Toolbar popup, outside a Split Search split view, when setup was finished before but the default pair's left engine ($NAME$, an engine name) is no longer granted: searches only do a plain search. Replaces popup_setup_needed; shown with the popup_setup_button primary button.",
+    "message": "Vuelve a dar acceso a $NAME$ para usar esta combinación desde la barra de direcciones.",
+    "description": "The default pair lost access to its left engine. NAME is the engine name.",
     "placeholders": {
       "NAME": {
         "content": "$1",
@@ -1664,16 +1616,16 @@
     }
   },
   "popup_setup_button": {
-    "message": "Terminar la configuración",
-    "description": "Toolbar popup primary button: opens the settings page at the Get started card."
+    "message": "Abrir los ajustes",
+    "description": "Opens the extension's setup card to try a search or grant access."
   },
   "popup_setup_try_note": {
-    "message": "Si una búsqueda no abre una vista dividida, completa el paso 2 en la configuración.",
-    "description": "Toolbar popup, under popup_idle_hint, when the left engine is granted but setup isn't confirmed yet (also for users upgraded from an older version who already set things up): a conditional hint, must not say setup is unfinished. Step 2 = adding the site search in the Get started card. Followed by the popup_setup_link button."
+    "message": "¿Te falta añadir un atajo?",
+    "description": "Conditional help when the address-bar setup has not yet been observed."
   },
   "popup_setup_link": {
-    "message": "Ver el paso 2",
-    "description": "Toolbar popup text button after popup_setup_try_note: opens the settings page at the Get started card."
+    "message": "Ver cómo configurar la barra de direcciones",
+    "description": "Opens the setup card for address-bar use."
   },
   "popup_shortcut_label": {
     "message": "Siguiente buscador a la derecha",
@@ -1856,8 +1808,8 @@
     "description": "Title of the settings card for the right-click lookup feature (select text or right-click an image)."
   },
   "options_lookup_intro": {
-    "message": "Selecciona texto en una página y haz clic con el botón derecho, o haz clic con el botón derecho en una imagen, y elige la opción de Split Search. La página se queda a la izquierda y el resultado se abre a la derecha.",
-    "description": "Intro of the right-click lookup card. Menu items are added by Split Search to Chrome's right-click menu."
+    "message": "Haz clic con el botón derecho en el texto seleccionado o en una imagen y elige la opción de Split Search. La página original sigue abierta. Si el resultado se abre en una pestaña contigua, Chrome cambia a ella.",
+    "description": "Context-menu lookup from an ordinary webpage and where focus goes when narrow fallback is used."
   },
   "options_lookup_engine_label": {
     "message": "Buscador para texto",

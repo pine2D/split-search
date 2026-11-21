@@ -4,6 +4,11 @@ import { pickOptionsTab } from "../lib/messages.js";
 import { tabHash } from "../lib/options-route.js";
 
 const OPTIONS_PAGE = "options/options.html";
+export const SEARCH_SETTINGS_URL = "chrome://settings/searchEngines";
+
+export function openSearchSettings() {
+  return chrome.tabs.create({ url: SEARCH_SETTINGS_URL });
+}
 
 async function lookup() {
   const optionsUrl = chrome.runtime.getURL(OPTIONS_PAGE);
